@@ -7,9 +7,9 @@
 |---|---|---|
 | T01 | CONCLUÍDA | Bootstrap Phaser 4 + TS + Vite e CI de build |
 | T02 | IMPLEMENTADA — validar em navegador/mobile | Canvas FIT, safe areas e sandbox com nave controlável, tiros, alvos e score |
-| T03–T70 | A FAZER | A seguir, priorizadas por gameplay |
+| T03 | IMPLEMENTADA — QA manual pendente | Projéteis inimigos, HP, invulnerabilidade, respawn, game over; [detalhes](16_T03_COMBATE_E_DANO.md) |\n| T04–T70 | A FAZER | A seguir, priorizadas por gameplay |
 
-A avaliação de T02 inclui CI build/typecheck e teste manual de viewport e toque. Para detalhes ver [T02](15_T02_GAMEPLAY_FIRST.md).
+A avaliação de T02 inclui CI build/typecheck e teste manual de viewport e toque. Para detalhes ver [T02](15_T02_GAMEPLAY_FIRST.md). A T03 implementa dano/vidas com [registro de aceite](16_T03_COMBATE_E_DANO.md).
 
 ## Primeiro ciclo: 1 minuto jogável (T03–T10)
 
