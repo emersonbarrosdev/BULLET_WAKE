@@ -1,42 +1,48 @@
-# 11 — Roadmap e tarefas em PT-BR
+# 11 — Roadmap de produção (prioridade: GAMEPLAY)
 
-**Status:** tudo listado como **A FAZER**. Não há implementação neste commit. Uma tarefa só conclui com arquivo real, aceites, testes e registro do commit. Mensagens de commits de implementação sugeridas em espanhol no padrão Conventional Commits. Branch principal pedida: **master**. Versão do Codex só deve ser preenchida quando for realmente usada, nunca inventada. Regressão completa após cada 10 tarefas.
+**Decisão de priorização:** gameplay antes de acabamento visual. Primeiro construir o ciclo de movimentação → disparo → reação do inimigo → dano → derrota/vitória, e **depois substituir os elementos diagnósticos por sprites animados autorais**. Nenhum marcador do protótipo serve como arte final.
 
-## Marco A: 1 minuto jogável
-| ID | Tarefa | Critério de aceite |
+## Estado
+| Tarefa | Estado | Entrega |
 |---|---|---|
-| T01 | Bootstrap Phaser 4 + TS + Vite | dev/build/typecheck sem Angular |
-| T02 | Canvas lógico, WebGL e pixel-perfect | FIT 16:9 sem blur |
-| T03 | Produzir sprites reais Rivet (idle/subida/descida) | frames diferentes e anchors |
-| T04 | Movimento 8 direções e bounds | deltaTime, diagonal normalizada |
-| T05 | Criar tiros e muzzle FX Nolan | tiros saem do canhão |
-| T06 | Gerenciar cooldown e pool de balas | cadência por tempo, sem memory leak |
-| T07 | Criar sprites Scout e Lancer | animações reais/autorais |
-| T08 | Enemy FSM e primeiro spawner | aviso de ataque e padrões |
-| T09 | HP, colisões e respawn | 3 HP, i-frame, 3 vidas |
-| T10 | Cenário orbital com parallax e 1 minuto de sequência | jogável do início ao fim |
+| T01 | CONCLUÍDA | Bootstrap Phaser 4 + TS + Vite e CI de build |
+| T02 | IMPLEMENTADA — validar em navegador/mobile | Canvas FIT, safe areas e sandbox com nave controlável, tiros, alvos e score |
+| T03–T70 | A FAZER | A seguir, priorizadas por gameplay |
 
-**Gate 10:** vídeos de idle/subir/descer, teste de HP, perfil de FPS, smoke e regressão.
+A avaliação de T02 inclui CI build/typecheck e teste manual de viewport e toque. Para detalhes ver [T02](15_T02_GAMEPLAY_FIRST.md).
 
-## Marco B: 2 minutos + 3 pilotos
-T11 HUD score/HP/vidas/arma; T12 FX impacto/explosão; T13 SFX básicos; T14 drone Dart; T15 torres e obstáculos; T16 roteirizar 2 min; T17 Moth com sprites e controles; T18 Knuckle com sprites, recoil e ataques; T19 menu 3 pilotos; T20 balancear DPS e velocidade. **Gate 20:** três pilotos completam 2min, teste preliminar touch.
+## Primeiro ciclo: 1 minuto jogável (T03–T10)
 
-## Marco C: 5 minutos + especiais
-T21 upgrades LV1–3; T22 pickup/reparo/bomba/energia; T23 especial Tempestade Prismática; T24 especial Salto Fantasma; T25 especial Ruptura Nova; T26 bombas + ressonância; T27 checkpoint; T28 miniboss fase 1; T29 roteiro completo 5min; T30 regressão e ajuste. **Gate 30:** todos especiais testados contra cenários/obstáculos e tempos reais.
+| ID | Prioridade | Tarefa | Critério de aceite |
+|---|---|---|---|
+| T03 | Alta | Adicionar dano à nave e projéteis inimigos | Integridade 3, i-frames, morte, respawn e colisões honestas |
+| T04 | Alta | HUD vivo e reinício de tentativa | Vidas, HP, score, botão reiniciar e Game Over funcionais |
+| T05 | Alta | Primeiro inimigo real e ondas roteirizadas | Scout + Lancer com telegraph, tiros e spawns reproduzíveis |
+| T06 | Alta | Seleção dos três pilotos com atributos reais | Nolan, Cora e Harlan mudam controle/cadência/dano |
+| T07 | Alta | Sistema de arma e especial básico por piloto | Cada piloto possui ao menos 1 comportamento exclusivo verificável |
+| T08 | Alta | Eventos, pickups e miniboss simples | Loop de combate de 45–60s com começo, risco e objetivo |
+| T09 | Alta | Integrar spritesheets autorais e animados na primeira vertical slice | Rivet idle/climb/dive, tiros, dois inimigos e explosões, sem shapes de debug |
+| T10 | Alta | Fechar 1 minuto + bateria de regressão | 3 pilotos, teste mobile inicial, controles, colisões, FPS medido |
 
-## Marco D: primeira fase completa
-T31 kit cenário 01 definitivo; T32 arte modular KRM-17; T33 boss com 3 etapas e partes; T34 Pause/Game Over/Continue; T35 Score/combos/ranking; T36 save versionado; T37 controles Android/safe area; T38 menus em pixel art; T39 trilha + mixer fase 1; T40 primeira fase completa (~8–10min). **Gate 40:** três pilotos, duas dificuldades, PC e Android real.
+**Gate QA após T10**: testes de movimentação, hitbox, tiro, IA, animação (frames diferentes), viewport, arte, performance; só então ampliar conteúdo.
 
-## Marco E: fases e release
-T41–T45: bioma/IA/hazards/chefe/QA fase 2. T46–T50: fase 3. T51–T55: fase 4. T56–T60: fase 5 e epílogos. T61–T70: polimento, acessibilidade, menus, Android build, fontes e licenças, otimização, testes automatizados, teste de finais, pacote release. Gates T50, T60, T70 conforme matriz de QA.
+## 2 minutos + profundidade (T11–T20)
+- T11: níveis de armas 1–3 para uma família. T12: impacto/explosões definitivos.
+- T13: efeitos sonoros básicos e mixer. T14: drone Dart e nova formação.
+- T15: cenário com torres/obstáculos colisionáveis.
+- T16: sequência completa 2 minutos e checkpoint.
+- T17: sprites Moth e estados de animação. T18: sprites Knuckle com recuo.
+- T19: UI de escolha refinada com retratos e preview.
+- T20: balancear 3 pilotos + regressão do gate T20.
 
-## Template de tarefa
-- TÍTULO / ID / PRIORIDADE / STATUS / PROJETO
-- DESCRIÇÃO com problema e solução técnica/visual
-- DEPENDÊNCIAS E ARQUIVOS
-- CRITÉRIOS DE ACEITE verificáveis
-- TESTES EXECUTADOS, PLATAFORMA, EVIDÊNCIA visual
-- RESPONSÁVEL / VERSÃO DO AGENTE, quando aplicável
-- SHA DO COMMIT, RISCOS e PRÓXIMA TAREFA
+## 5 minutos + recursos avançados (T21–T30)
+T21 upgrades de todas as armas; T22 pickups reparo/escudo/bomba; T23 Tempestade Prismática final; T24 Salto Fantasma final; T25 Ruptura Nova final; T26 ressonância e bombas; T27 salvamento de checkpoint; T28 miniboss modular completo; T29 trecho de 5min; T30 QA e balanceamento.
 
-Todo trabalho deve respeitar os briefs: **não trocar os nomes aprovados, não transformar o jogo em top-down, não substituir sprites finais por shapes**. Tarefas T41–T70 ainda exigem detalhamento antes de execução, mas esta divisão define o macroescopo.
+## Primeira fase completa (T31–T40)
+T31 cenário Cinturão de Ferrugem; T32 boss KRM-17 arte modular; T33 boss 3 estados e ataques; T34 Pause/Continue/Game Over refinados; T35 score/combos/rank; T36 save de campanha; T37 Android controles e safe areas finalizados; T38 menus pixel art; T39 trilha, áudio e mix fase 1; T40 finalizar ~8–10 minutos e QA PC/Android.
+
+## Campanha (T41–T70)
+T41–T45 fase 2; T46–T50 fase 3; T51–T55 fase 4; T56–T60 fase 5. T61–T70 ajustes, release, acessibilidade, builds Android, licenças, testes e otimização. Gates de regressão a cada 10 tarefas continuam obrigatórios.
+
+## Regra de definição de pronto
+Tarefas em PT-BR, commits em espanhol (Conventional Commits); branch de trabalho `master` quando solicitado pelo proprietário. Não declarar arte final, teste Android ou gameplay terminado apenas pelo build. Cada tarefa registra código/arte real, arquivos, testes, captura quando disponível, commit e pendências. Não inventar versão de agente ou status de dispositivo.
