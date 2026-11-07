@@ -1,0 +1,23 @@
+{
+  "name": "bullet-wake",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "BULLET WAKE — original cinematic horizontal arcade shooter",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "phaser": "4.2.1"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vite": "8.0.0"
+  }
+}
