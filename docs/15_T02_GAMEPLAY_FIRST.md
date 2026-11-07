@@ -4,6 +4,7 @@
 
 ## O que foi implementado
 - Configuração Phaser FIT em canvas 384×216, com pixelArt e nearest-neighbor CSS, barras laterais quando a tela não é 16:9.
+- **Centralização controlada somente pelo CSS Flexbox**. Phaser Scale usa NO_CENTER para não aplicar uma segunda centralização, que deslocava o Canvas horizontalmente.
 - Host 100dvh e `env(safe-area-inset-*)` para telas com notch; em portrait mobile, aviso de rotação.
 - Cena `PrototypeScene` usada no lugar da cena diagnóstica do T01.
 - WASD/setas com movimento em 8 direções, diagonal normalizada e limites da arena.

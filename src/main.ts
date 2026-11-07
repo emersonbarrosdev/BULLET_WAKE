@@ -18,7 +18,8 @@ const config: Phaser.Types.Core.GameConfig = {
   render: { pixelArt: true },
   scale: {
     mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
+    // O CSS Flexbox centraliza o Canvas. Não centralizar também pelo Scale Manager.
+    autoCenter: Phaser.Scale.NO_CENTER,
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
   },

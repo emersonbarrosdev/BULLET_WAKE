@@ -26,8 +26,7 @@ body {
 }
 #game canvas {
   display: block;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
+  flex: 0 0 auto;
   image-rendering: pixelated;
   touch-action: none;
 }
