@@ -43,8 +43,13 @@ export class CombatHud {
   // ZONA C: Base
   private readonly weaponText: Phaser.GameObjects.Text;
   private readonly weaponPips: Phaser.GameObjects.Text;
+  private readonly heatBarFill: Phaser.GameObjects.Rectangle;
+  private readonly heatText: Phaser.GameObjects.Text;
   private readonly resonanceBarFill: Phaser.GameObjects.Rectangle;
   private readonly resonanceText: Phaser.GameObjects.Text;
+  private readonly chargeContainer: Phaser.GameObjects.Container;
+  private readonly chargeBarFill: Phaser.GameObjects.Rectangle;
+  private readonly chargeText: Phaser.GameObjects.Text;
   private readonly bombText: Phaser.GameObjects.Text;
 
   private statusRemainingMs = 0;
@@ -141,19 +146,51 @@ export class CombatHud {
 
     // Base Esquerda: Arma e Nível
     this.weaponText = this.hudText(12, botY + 6, 'PULSO', 12, '#38bdf8');
-    this.weaponPips = this.hudText(90, botY + 7, '● ○ ○', 11, '#38bdf8');
+    this.weaponPips = this.hudText(76, botY + 7, '● ○ ○', 11, '#38bdf8');
+
+    // Base Esquerda-Centro: Medidor Térmico (Calor e Sobreaquecimento)
+    this.hudText(128, botY + 6, 'CALOR', 10, '#64748b');
+    scene.add.rectangle(190, botY + 14, 46, 7, 0x111d28)
+      .setStrokeStyle(1, 0x1f3c4d).setDepth(41);
+    this.heatBarFill = scene.add.rectangle(168, botY + 14, 1, 5, 0x38bdf8)
+      .setOrigin(0, 0.5).setDepth(42);
+    this.heatText = this.hudText(218, botY + 6, '0%', 10, '#94a3b8');
 
     // Base Centro: Medidor de Ressonância
-    const resX = GAME_WIDTH / 2;
-    this.hudText(resX - 85, botY + 6, 'RESSONÂNCIA', 11, '#c084fc').setOrigin(1, 0);
-    scene.add.rectangle(resX + 5, botY + 14, 120, 8, 0x190d26)
+    const resX = 350;
+    this.hudText(resX - 70, botY + 6, 'RESSONÂNCIA', 10, '#c084fc').setOrigin(1, 0);
+    scene.add.rectangle(resX + 15, botY + 14, 100, 7, 0x190d26)
       .setStrokeStyle(1, 0x4a1d6d).setDepth(41);
-    this.resonanceBarFill = scene.add.rectangle(resX + 5 - 59, botY + 14, 1, 6, 0xa855f7)
+    this.resonanceBarFill = scene.add.rectangle(resX + 15 - 49, botY + 14, 1, 5, 0xa855f7)
       .setOrigin(0, 0.5).setDepth(42);
-    this.resonanceText = this.hudText(resX + 72, botY + 6, '0%', 11, '#ffffff');
+    this.resonanceText = this.hudText(resX + 72, botY + 6, '0%', 10, '#ffffff');
+
+    // Base Centro-Direita: Indicador de Carga Wave Cannon
+    const chargeX = 490;
+    const chargeLabel = scene.add.text(-40, -4, 'CARGA', {
+      fontFamily: FONT_HUD,
+      fontSize: '10px',
+      color: '#38bdf8',
+    }).setOrigin(0, 0);
+    const chargeBg = scene.add.rectangle(20, 0, 56, 7, 0x0c2538)
+      .setStrokeStyle(1, 0x0284c7);
+    this.chargeBarFill = scene.add.rectangle(-7, 0, 1, 5, 0x38bdf8)
+      .setOrigin(0, 0.5);
+    this.chargeText = scene.add.text(54, -4, 'LV1', {
+      fontFamily: FONT_HUD,
+      fontSize: '10px',
+      color: '#38bdf8',
+    }).setOrigin(0, 0);
+
+    this.chargeContainer = scene.add.container(chargeX, botY + 14, [
+      chargeLabel,
+      chargeBg,
+      this.chargeBarFill,
+      this.chargeText,
+    ]).setDepth(42).setVisible(false);
 
     // Base Direita: Bombas, Mísseis e Reset
-    this.bombText = this.hudText(GAME_WIDTH - 210, botY + 6, 'BOMBAS: 💣 02', 11, '#ff6b6b');
+    this.bombText = this.hudText(GAME_WIDTH - 200, botY + 6, 'BOMBAS: 💣 02', 11, '#ff6b6b');
 
     const resetBtn = scene.add.rectangle(
       GAME_WIDTH - 50, botY + HUD_BOTTOM / 2, 76, 18, 0x132338, 0.9,
@@ -202,6 +239,49 @@ export class CombatHud {
     } else {
       this.weaponText.setColor('#94a3b8');
       this.weaponPips.setColor('#94a3b8');
+    }
+  }
+
+  setHeat(heat: number, isOverheated: boolean): void {
+    const clamped = Math.max(0, Math.min(100, heat));
+    const width = Math.max(1, (44 * clamped) / 100);
+    this.heatBarFill.setSize(width, 5);
+
+    if (isOverheated) {
+      this.heatBarFill.setFillStyle(0xef4444);
+      this.heatText.setText('VENT!').setColor('#ef4444');
+    } else if (clamped >= 75) {
+      this.heatBarFill.setFillStyle(0xf97316);
+      this.heatText.setText(`${Math.floor(clamped)}%`).setColor('#f97316');
+    } else if (clamped >= 40) {
+      this.heatBarFill.setFillStyle(0xfacc15);
+      this.heatText.setText(`${Math.floor(clamped)}%`).setColor('#facc15');
+    } else {
+      this.heatBarFill.setFillStyle(0x38bdf8);
+      this.heatText.setText(`${Math.floor(clamped)}%`).setColor('#94a3b8');
+    }
+  }
+
+  setCharge(chargeMs: number, maxChargeMs: number, isCharging: boolean): void {
+    if (!isCharging && chargeMs <= 0) {
+      this.chargeContainer.setVisible(false);
+      return;
+    }
+
+    this.chargeContainer.setVisible(true);
+    const ratio = Math.max(0, Math.min(1, chargeMs / (maxChargeMs || 1400)));
+    const width = Math.max(1, 54 * ratio);
+    this.chargeBarFill.setSize(width, 5);
+
+    if (ratio >= 0.78) {
+      this.chargeBarFill.setFillStyle(0x00f0ff);
+      this.chargeText.setText('MAX!').setColor('#00f0ff');
+    } else if (ratio >= 0.28) {
+      this.chargeBarFill.setFillStyle(0x38bdf8);
+      this.chargeText.setText('LV1').setColor('#38bdf8');
+    } else {
+      this.chargeBarFill.setFillStyle(0x0284c7);
+      this.chargeText.setText('...').setColor('#64748b');
     }
   }
 

@@ -18,6 +18,15 @@
   - Inimigos com múltiplos comportamentos: Scouts (esquadrões ágeis), Darts (mergulho rasante), Lancers (disparo em leque triplo de contenção), Cutters (investida horizontal veloz) e Swarms (salvas sincronizadas).
   - Progressão contínua sem vácuos de combate, anti-camping e telegrafia justa.
   - Duelos contra chefes balanceados e estratégicos com transições de fases e vulnerabilidade em pontos fracos críticos.
+- **[PRIORIDADE MÁXIMA] Diretriz Oficial de Controles, Disparos e Armas Carregáveis (docs/26_DIRETRIZ_CONTROLES_E_DISPAROS.md):**
+  - Correção definitiva do bug do mouse no PC: clique do mouse nunca afeta posição, velocidade ou vetor da nave.
+  - Camada de entrada unificada (`InputManager` / `processInputFrame`): mapeamento semântico desacoplado do hardware físico.
+  - Três modalidades de disparo integradas:
+    1. *Auto-Fire:* Pressionamento sustentado de Espaço ou Clique Esquerdo na cadência base da nave.
+    2. *Tapping / Burst Manual:* Cliques manuais rápidos aumentam a cadência em ~28%, gerando calor acumulado e risco de sobreaquecimento temporário (`MAX_HEAT = 100`, bloqueio de 650ms).
+    3. *Armas Carregáveis (Wave Cannon):* Segurar Shift ou Botão Direito carrega energia até Carga Máxima (>=1100ms), liberando disparos de alto impacto com identidades de classe: Nolan (Feixe Penetrante), Cora (Leque de Agulhas + Ventilação de Calor 100%), Harlan (Mega-Canhão Cinético de 12.0 de dano).
+  - Desativação do menu de contexto nativo no canvas do jogo para viabilizar clique direito fluido.
+  - Bateria de testes automatizados dedicados cobrindo os cenários A a G (`tests/controls_firing.test.mjs`).
 
 ## Decisão de engenharia da pré-produção
 **Phaser 4 + TypeScript + Vite + Canvas/WebGL**. Angular fora do gameplay inicial; opcional para ferramenta externa futura. Primeiro web desktop, depois Android via empacotamento candidato (Capacitor a validar). Phaser versão exata a travar no lockfile durante implementação.

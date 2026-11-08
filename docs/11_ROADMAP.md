@@ -68,3 +68,13 @@ Medição em combate automatizado via Headless Chrome:
 - **Anti-Camping & Geometria de Tiro:** Padrões em leque triplo (fan spread -18°/0°/+18°), tiros direcionados rápidos e rasantes que eliminam safe spots.
 - **Diversidade de Classes:** Scouts, Darts, Swarms, Lancers e Cutters em formações coordenadas.
 - **Chefes com Múltiplas Fases e Ponto Fraco:** Duelos de ~35-45s com telegrafia justa e aberturas de esquiva calculadas.
+
+### 7. Diretriz de Controles, Disparos Avançados e Armas Carregáveis (docs/26_DIRETRIZ_CONTROLES_E_DISPAROS.md)
+- **Correção Urgente do Bug do Mouse:** No Desktop PC, o clique esquerdo ou direito NUNCA altera o vetor, a velocidade ou a posição da nave.
+- **Camada Unificada de Entrada (`InputManager`):** Desacopla hardware físico (teclado, mouse, touch) em intenções de gameplay puras (`processInputFrame`).
+- **Três Modalidades de Disparo:**
+  1. *Auto-Fire:* Pressionamento sustentado de Espaço ou Clique Esquerdo na cadência base da nave.
+  2. *Tapping / Burst Manual:* Cliques manuais aumentam a taxa de disparo em ~28%, gerando calor acumulado e risco de sobreaquecimento temporário (`MAX_HEAT = 100`, bloqueio de 650ms).
+  3. *Armas Carregáveis (Wave Cannon):* Segurar Shift ou Botão Direito carrega energia até Carga Máxima (>=1100ms), liberando disparos de alto impacto com identidades de classe: Nolan (Feixe Penetrante), Cora (Leque de Agulhas + Ventilação de Calor 100%), Harlan (Mega-Canhão Cinético de 12.0 de dano).
+- **Desativação de Context Menu:** Suporte total a botão direito para disparos carregados sem acionar menus nativos do navegador.
+- **Bateria de Testes Automatizados (Testes A a G):** Validação completa em `tests/controls_firing.test.mjs` com 7 testes dedicados e 100% de aprovação.

@@ -314,6 +314,103 @@ export class AudioSystem {
     });
   }
 
+  playChargeWindup(ratio: number): void {
+    this.unlock();
+    if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sawtooth';
+    const baseFreq = 220 + ratio * 440;
+    osc.frequency.setValueAtTime(baseFreq, now);
+    osc.frequency.linearRampToValueAtTime(baseFreq + 30, now + 0.06);
+
+    gain.gain.setValueAtTime(0.04 + ratio * 0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(now);
+    osc.stop(now + 0.06);
+  }
+
+  playChargedShot(pilotId: string, level = 2): void {
+    this.unlock();
+    if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    const now = this.ctx.currentTime;
+
+    if (pilotId === 'nolan') {
+      // Disparo de Feixe Penetrante: impacto e zunido denso de plasma
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(680, now);
+      osc.frequency.exponentialRampToValueAtTime(140, now + 0.32);
+
+      gain.gain.setValueAtTime(0.35 * level, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(now);
+      osc.stop(now + 0.35);
+    } else if (pilotId === 'cora') {
+      // Sobrecarga de Agulhas: chiado supersônico
+      for (let i = 0; i < 3; i++) {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        const t = now + i * 0.04;
+        osc.frequency.setValueAtTime(1100 + i * 220, t);
+        osc.frequency.exponentialRampToValueAtTime(450, t + 0.18);
+
+        gain.gain.setValueAtTime(0.24, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.start(t);
+        osc.stop(t + 0.18);
+      }
+    } else {
+      // Mega-Canhão Cinético: estrondo profundo com ressonância de metal
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(180, now);
+      osc.frequency.exponentialRampToValueAtTime(30, now + 0.45);
+
+      gain.gain.setValueAtTime(0.55 * level, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(now);
+      osc.stop(now + 0.48);
+    }
+  }
+
+  playOverheat(): void {
+    this.unlock();
+    if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(880, now);
+    osc.frequency.setValueAtTime(440, now + 0.06);
+
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(now);
+    osc.stop(now + 0.12);
+  }
+
   // --- MÚSICA PROCEDURAL RETRO SCI-FI ---
 
   startStageMusic(): void {

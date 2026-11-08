@@ -4,7 +4,7 @@ import { clamp, moveInBounds } from '../systems/movement';
 import { advanceHealth, applyPlayerHit, initialPlayerHealth, type HitEvent, type PlayerHealth } from '../systems/combat';
 import { StageDirector, type EnemyModel, type EnemyShotEvent } from '../systems/stageDirector';
 import { CombatHud } from '../ui/CombatHud';
-import { getPilot, shotIntervalMs, type PilotDefinition } from '../data/pilots';
+import { getPilot, type PilotDefinition } from '../data/pilots';
 import { loadGameSprites, registerGameAnimations } from '../assets/spriteAssets';
 import { GameOverOverlay } from '../ui/GameOverOverlay';
 import { StageCompleteOverlay } from '../ui/StageCompleteOverlay';
@@ -24,9 +24,16 @@ import {
   resetWeaponsOnRespawn,
   getPrimaryProjectiles,
   getSecondaryProjectiles,
+  getChargedProjectiles,
+  recordPrimaryShot,
+  updateWeaponCharge,
+  releaseWeaponCharge,
+  PILOT_WEAPON_SPECS,
+  MAX_CHARGE_MS,
   type PlayerWeaponsState,
   type ProjectileSpawnDef,
 } from '../systems/weaponSystem.ts';
+import { InputManager } from '../systems/inputSystem.ts';
 import { PickupSystem, determineEnemyDrop } from '../systems/pickupSystem.ts';
 import {
   initialScoreCombo,
@@ -37,11 +44,6 @@ import {
   type ScoreComboState,
 } from '../systems/scoreComboSystem.ts';
 import { globalAudio } from '../audio/audioSystem.ts';
-
-type Keys = Record<
-  'W' | 'A' | 'S' | 'D' | 'SPACE' | 'R' | 'ESC' | 'M' | 'X' | 'K' | 'B' | 'L' | 'SHIFT' | 'ENTER' | 'ONE' | 'TWO' | 'THREE',
-  Phaser.Input.Keyboard.Key
->;
 
 interface Projectile {
   node: Phaser.GameObjects.Sprite;
@@ -88,8 +90,7 @@ export class PrototypeScene extends Phaser.Scene {
 
   private hud!: CombatHud;
   private backdrop!: StageBackdrop;
-  private keyboardControls?: Keys;
-  private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
+  private inputManager!: InputManager;
 
   private shots: Projectile[] = [];
   private enemyShots: Projectile[] = [];
@@ -144,10 +145,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.shootCooldown = 0;
 
     this.backdrop = new StageBackdrop(this, this.stageNumber);
-    this.keyboardControls = this.input.keyboard?.addKeys(
-      'W,A,S,D,SPACE,R,ESC,M,X,K,B,L,SHIFT,ENTER,ONE,TWO,THREE',
-    ) as Keys | undefined;
-    this.cursors = this.input.keyboard?.createCursorKeys();
+    this.inputManager = new InputManager(this);
 
     this.hud = new CombatHud(this, () => this.restart());
     this.hud.setPilot(this.pilot.shipName);
@@ -170,11 +168,13 @@ export class PrototypeScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     const dt = clamp(delta, 0, 50);
 
-    if (this.keyboardControls && Phaser.Input.Keyboard.JustDown(this.keyboardControls.R)) {
+    const commands = this.inputManager.sample(this.vectorShip.x, this.vectorShip.y);
+
+    if (commands.restart) {
       this.restart();
       return;
     }
-    if (this.keyboardControls && Phaser.Input.Keyboard.JustDown(this.keyboardControls.ESC)) {
+    if (commands.menuOrBack) {
       this.choosePilot();
       return;
     }
@@ -196,6 +196,8 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.setBombs(this.weapons.bombs);
     this.hud.setResonance(this.weapons.resonance, this.weapons.specialActiveMs > 0);
     this.hud.setScore(this.scoreCombo.score, this.scoreCombo.comboCount, getComboMultiplier(this.scoreCombo.comboCount));
+    this.hud.setHeat(this.weapons.heat, this.weapons.isOverheated);
+    this.hud.setCharge(this.weapons.chargeMs, MAX_CHARGE_MS, this.weapons.isCharging);
 
     // Efeito de invulnerabilidade (piscar transparente)
     this.vectorShip.setAlpha(
@@ -203,19 +205,9 @@ export class PrototypeScene extends Phaser.Scene {
         ? 0.35 : 1,
     );
 
-    // Input do jogador
-    const key = (name: keyof Keys): boolean => Boolean(this.keyboardControls?.[name].isDown);
-    const justDown = (name: keyof Keys): boolean => Boolean(this.keyboardControls && Phaser.Input.Keyboard.JustDown(this.keyboardControls[name]));
-
-    let dx = Number(key('D') || this.cursors?.right.isDown) - Number(key('A') || this.cursors?.left.isDown);
-    let dy = Number(key('S') || this.cursors?.down.isDown) - Number(key('W') || this.cursors?.up.isDown);
-    const pointer = this.input.activePointer;
-    const finger = pointer.isDown && pointer.y > HUD_TOP + 4 && pointer.y < GAME_HEIGHT - HUD_BOTTOM - 4;
-
-    if (finger) {
-      dx = Math.abs(pointer.x - this.vectorShip.x) > 12 ? Math.sign(pointer.x - this.vectorShip.x) : 0;
-      dy = Math.abs(pointer.y - this.vectorShip.y) > 12 ? Math.sign(pointer.y - this.vectorShip.y) : 0;
-    }
+    // Movimentação da nave (no PC, mouse NUNCA afeta dx ou dy!)
+    let dx = commands.moveX;
+    let dy = commands.moveY;
 
     // Se estiver executando o Salto Fantasma (Cora), move em dash de alta velocidade
     let speed = this.pilot.speed * PLAYER_SPEED_FACTOR;
@@ -240,25 +232,56 @@ export class PrototypeScene extends Phaser.Scene {
     this.vectorShip.setPosition(moved.x, moved.y);
     this.vectorShip.updateShip(dt, dy, dx > 0, this.hitPoseMs, this.weapons.hasShield);
 
-    // Disparo principal contínuo
-    this.shootCooldown = Math.max(0, this.shootCooldown - dt);
-    if ((key('SPACE') || this.cursors?.space.isDown || finger) && this.shootCooldown <= 0) {
-      this.firePrimary();
-      this.shootCooldown += shotIntervalMs(this.pilot);
+    // 1. Atualização e Liberação de Disparo Carregado (Wave Cannon)
+    this.weapons = updateWeaponCharge(this.weapons, dt, commands.chargeHeld);
+    if (this.weapons.isCharging && this.weapons.chargeMs > 250) {
+      const chargeRatio = this.weapons.chargeMs / MAX_CHARGE_MS;
+      if (Math.floor(this.weapons.chargeMs / 140) % 2 === 0) {
+        globalAudio.playChargeWindup(chargeRatio);
+      }
+      this.vectorShip.triggerMuzzleFlash();
     }
 
-    // Disparo secundário / Mísseis (tecla M)
-    if ((justDown('M') || key('M')) && this.weapons.missileCooldownMs <= 0) {
+    if (commands.chargeReleased) {
+      const result = releaseWeaponCharge(this.weapons);
+      this.weapons = result.state;
+      if (result.chargeLevel === 1 || result.chargeLevel === 2) {
+        this.fireChargedShot(result.chargeLevel);
+      }
+    }
+
+    // 2. Disparos Primários: Tapping Rápido (Burst) vs Auto-Fire Contínuo
+    const specs = PILOT_WEAPON_SPECS[this.pilot.id] || PILOT_WEAPON_SPECS.nolan;
+    this.shootCooldown = Math.max(0, this.shootCooldown - dt);
+
+    if (!this.weapons.isCharging && !this.weapons.isOverheated) {
+      if (commands.firePrimaryTap && this.shootCooldown <= 0) {
+        // Modalidade 2: Disparo Manual Controlado (Tapping / Burst acelerado)
+        this.firePrimary();
+        this.shootCooldown = specs.burstIntervalMs;
+      } else if (commands.firePrimary && this.shootCooldown <= 0) {
+        // Modalidade 1: Disparo Automático Contínuo (Auto-fire base)
+        this.firePrimary();
+        this.shootCooldown = specs.autoIntervalMs;
+      }
+    } else if (this.weapons.isOverheated && (commands.firePrimary || commands.firePrimaryTap)) {
+      if (Math.floor(this.weapons.overheatCooldownMs / 160) % 2 === 0) {
+        this.hud.flash('SUPER-AQUECIMENTO! RESFRIANDO...', '#ef4444', 300);
+      }
+    }
+
+    // 3. Disparo Secundário / Mísseis (tecla M)
+    if (commands.missile && this.weapons.missileCooldownMs <= 0) {
       this.fireSecondary();
     }
 
-    // Ativação do Especial (tecla X, K ou Shift)
-    if (justDown('X') || justDown('K') || justDown('SHIFT')) {
+    // 4. Ativação do Especial (tecla X ou K)
+    if (commands.special) {
       this.triggerSpecial();
     }
 
-    // Bomba (tecla B ou L)
-    if (justDown('B') || justDown('L')) {
+    // 5. Bomba Defensiva (tecla B ou L)
+    if (commands.bomb) {
       this.detonateBomb();
     }
 
@@ -377,8 +400,39 @@ export class PrototypeScene extends Phaser.Scene {
       this.createPlayerProjectile(def);
     }
 
+    const result = recordPrimaryShot(this.weapons);
+    this.weapons = result.state;
+    if (result.overheatedNow) {
+      globalAudio.playOverheat();
+      this.hud.flash('ARMA SUPER-AQUECIDA! RESFRIANDO...', '#ef4444', 900);
+      this.cameras.main.shake(120, 0.005);
+    }
+
     this.playEffect('muzzle', originX, originY);
     globalAudio.playShot(this.pilot.id, this.weapons.weaponLevel);
+  }
+
+  private fireChargedShot(chargeLevel: 1 | 2): void {
+    const originX = this.vectorShip.x + this.vectorShip.halfWidth + 4;
+    const originY = this.vectorShip.y;
+    this.vectorShip.triggerMuzzleFlash();
+
+    const defs = getChargedProjectiles(this.pilot.id, chargeLevel, originX, originY);
+    for (const def of defs) {
+      this.createPlayerProjectile(def);
+    }
+
+    globalAudio.playChargedShot(this.pilot.id, chargeLevel);
+    this.playEffect('muzzle', originX, originY);
+    this.cameras.main.shake(180, chargeLevel === 2 ? 0.009 : 0.004);
+
+    const shotName = this.pilot.id === 'nolan'
+      ? (chargeLevel === 2 ? 'FEIXE PRISMATICO MAXIMO!' : 'FEIXE PENETRANTE')
+      : this.pilot.id === 'cora'
+      ? (chargeLevel === 2 ? 'OVERDRIVE AGULHAS (VENTILADO)!' : 'RAJADA AGULHAS')
+      : (chargeLevel === 2 ? 'MEGA-CANHAO CINETICO!' : 'IMPACTO PESADO');
+
+    this.hud.flash(shotName, chargeLevel === 2 ? '#00f0ff' : '#ffd166', 800);
   }
 
   private fireSecondary(): void {
