@@ -28,7 +28,9 @@ export function loadGameSprites(scene: Phaser.Scene): void {
   scene.load.on('loaderror', (file: Phaser.Loader.File) => {
     console.error('[BULLET WAKE] Falha ao carregar sprite:', file.key);
   });
-  const base = import.meta.env.BASE_URL.replace(/\\/$/, '');
+  const base = import.meta.env.BASE_URL.endsWith('/')
+    ? import.meta.env.BASE_URL.slice(0, -1)
+    : import.meta.env.BASE_URL;
   for (const sheet of SPRITE_SHEETS) {
     if (scene.textures.exists(sheet.key)) continue;
     // Caminho absoluto relativo ao base do Vite funciona em dev e deploy.
