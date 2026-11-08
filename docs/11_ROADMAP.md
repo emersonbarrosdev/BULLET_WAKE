@@ -51,8 +51,14 @@
 
 ### 4. Verificação de Performance e 60 FPS
 Medição em combate automatizado via Headless Chrome:
-- **FPS Médio:** 59.6 FPS (meta 60 FPS)
-- **Frame Time Médio:** 16.78 ms (meta ~16.6 ms)
+- **FPS Médio:** 60.1 FPS (meta 60 FPS)
+- **Frame Time Médio:** 16.64 ms (meta ~16.6 ms)
 - **Percentil 95% e 99%:** 16.8 ms
 - **Consumo de Memória JS Heap:** 22 MB estáveis
 - **Erros de Textura:** 0 erros registrados
+
+### 5. Diretriz Oficial de UI, HUD e Seleção de Pilotos (docs/24_DIRETRIZ_UI_HUD_MENUS.md)
+- **HUD 3 Zonas:** Zona A (Topo), Zona B (Campo Limpo), Zona C (Base compacta).
+- **Seleção de Pilotos (Espírito Sonic Wings):** Retrato do piloto em destaque, callsign tático, especial e nave subordinada.
+- **Tipografia:** Máximo de 2 famílias (`Orbitron` e `Chakra Petch`).
+- **Vitalidade de Inimigos:** Zero poluição no campo; barras somente para chefes no HUD superior.

@@ -7,9 +7,13 @@ export type PilotId = 'nolan' | 'cora' | 'harlan';
 export interface PilotDefinition {
   id: PilotId;
   name: string;
+  callsign: string;
   shipName: string;
   role: string;
   specialName: string;
+  specialDescription: string;
+  bio: string;
+  portraitKey: string;
   speed: number;
   shotsPerSecond: number;
   damage: number;
@@ -22,9 +26,13 @@ export const PILOTS: readonly PilotDefinition[] = [
   {
     id: 'nolan',
     name: 'Nolan Fitch',
+    callsign: 'CORRIDOR VANGUARD',
     shipName: 'Rivet',
-    role: 'CADENCIA',
+    role: 'FOGO SUSTENTADO',
     specialName: 'TEMPESTADE PRISMATICA',
+    specialDescription: 'Rajada de 3 feixes prismáticos contínuos de alta perfuração.',
+    bio: 'Especialista militar em fogo de contenção e defesa de comboios de evacuação.',
+    portraitKey: 'portrait-nolan',
     speed: 190,
     shotsPerSecond: 8,
     damage: 1,
@@ -35,9 +43,13 @@ export const PILOTS: readonly PilotDefinition[] = [
   {
     id: 'cora',
     name: 'Cora Wren',
+    callsign: 'WAKE WEAVER',
     shipName: 'Moth',
-    role: 'AGILIDADE',
+    role: 'ALTA AGILIDADE',
     specialName: 'SALTO FANTASMA',
+    specialDescription: 'Dash ultrassônico invulnerável com pós-imagens e dano por contato.',
+    bio: 'Navegadora de vanguarda com leitura precisa de fendas e anomalias do Wake.',
+    portraitKey: 'portrait-cora',
     speed: 215,
     shotsPerSecond: 6,
     damage: 1.33,
@@ -48,9 +60,13 @@ export const PILOTS: readonly PilotDefinition[] = [
   {
     id: 'harlan',
     name: 'Harlan Greer',
+    callsign: 'IRON BULWARK',
     shipName: 'Knuckle',
-    role: 'POTENCIA',
+    role: 'IMPACTO PESADO',
     specialName: 'RUPTURA NOVA',
+    specialDescription: 'Detonação cinética radial que anula balas hostis e causa dano maciço.',
+    bio: 'Veterano calmo com décadas de experiência em blindagens pesadas e hardware industrial.',
+    portraitKey: 'portrait-harlan',
     speed: 175,
     shotsPerSecond: 5,
     damage: 1.6,

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH, FONT_TITLE, FONT_HUD, FONT_TECH } from '../constants';
+import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH, FONT_TITLE, FONT_HUD } from '../constants';
 import { StageBackdrop } from './StageBackdrop';
 import { loadGameSprites, registerGameAnimations } from '../assets/spriteAssets';
 import { globalAudio } from '../audio/audioSystem.ts';
@@ -8,18 +8,30 @@ import { saveSystem } from '../systems/saveSystem.ts';
 interface MenuItem {
   text: string;
   badge?: string;
+  isPrimary?: boolean;
   action: () => void;
 }
 
+/**
+ * Menu principal tático do BULLET WAKE (docs/24_DIRETRIZ_UI_HUD_MENUS.md).
+ * Transmite atmosfera de ficção militar, centro de operações e arcade premium.
+ * Destaque visual evidente para a ação principal e estados de interação limpos.
+ */
 export class TitleScene extends Phaser.Scene {
   private backdrop!: StageBackdrop;
   private previewDistance = 0;
   private selectedIndex = 0;
   private menuItems: MenuItem[] = [];
-  private menuButtons: { bg: Phaser.GameObjects.Rectangle; label: Phaser.GameObjects.Text; border: Phaser.GameObjects.Rectangle }[] = [];
+  private menuButtons: {
+    bg: Phaser.GameObjects.Rectangle;
+    label: Phaser.GameObjects.Text;
+    border: Phaser.GameObjects.Rectangle;
+    isPrimary?: boolean;
+  }[] = [];
   private modalContainer?: Phaser.GameObjects.Container;
   private glowTimer = 0;
   private titleGlow!: Phaser.GameObjects.Text;
+  private primaryGlow?: Phaser.GameObjects.Rectangle;
 
   constructor() {
     super({ key: 'TitleScene' });
@@ -37,125 +49,164 @@ export class TitleScene extends Phaser.Scene {
     this.selectedIndex = 0;
     this.menuButtons = [];
 
-    // Fundo de vinheta translúcida central
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x050c17, 0.45);
+    // Fundo de vinheta de centro de comando
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040b15, 0.48);
 
-    // Moldura cibernética do Título
-    this.add.rectangle(GAME_WIDTH / 2, 78, 640, 110, 0x071322, 0.88)
-      .setStrokeStyle(1.5, 0x224d63);
+    // Barra superior de status da operação militar
+    this.add.rectangle(GAME_WIDTH / 2, 10, GAME_WIDTH, 20, 0x050e18, 0.9);
+    this.add.text(
+      GAME_WIDTH / 2,
+      4,
+      'COMANDO DE DEFESA ORBITAL  //  PROTOCOLO WAKE INICIADO  //  SISTEMA ESTÁVEL [60-240 FPS]',
+      {
+        fontFamily: FONT_HUD,
+        fontSize: '10px',
+        color: '#64748b',
+        letterSpacing: 2,
+      },
+    ).setOrigin(0.5, 0).setResolution(2);
+
+    // Moldura cibernética do Título com linhas duplas
+    this.add.rectangle(GAME_WIDTH / 2, 75, 620, 94, 0x071322, 0.92)
+      .setStrokeStyle(1.5, 0x1f3c4d);
+    this.add.rectangle(GAME_WIDTH / 2, 75, 628, 102, 0x00f0ff, 0.1)
+      .setStrokeStyle(1, 0x00f0ff, 0.3);
 
     // Efeito de brilho neon no título
-    this.titleGlow = this.add.text(GAME_WIDTH / 2, 36, 'BULLET WAKE', {
+    this.titleGlow = this.add.text(GAME_WIDTH / 2, 38, 'BULLET WAKE', {
       fontFamily: FONT_TITLE,
-      fontSize: '44px',
-      color: '#38bdf8',
-    }).setOrigin(0.5, 0).setAlpha(0.4);
+      fontSize: '40px',
+      color: '#00f0ff',
+    }).setOrigin(0.5, 0).setAlpha(0.35);
 
-    this.add.text(GAME_WIDTH / 2, 36, 'BULLET WAKE', {
+    this.add.text(GAME_WIDTH / 2, 38, 'BULLET WAKE', {
       fontFamily: FONT_TITLE,
-      fontSize: '44px',
+      fontSize: '40px',
       color: '#ffffff',
-    }).setOrigin(0.5, 0).setStroke('#0f2b3c', 6);
+    }).setOrigin(0.5, 0).setStroke('#0a1d2e', 5);
 
     this.add.text(
       GAME_WIDTH / 2,
-      90,
+      88,
       'EVERY SHOT LEAVES A TRACE',
       {
-        fontFamily: FONT_TECH,
-        fontSize: '14px',
-        color: '#5eead4',
+        fontFamily: FONT_HUD,
+        fontSize: '13px',
+        color: '#00f0ff',
         letterSpacing: 4,
       },
     ).setOrigin(0.5, 0);
 
     this.add.text(
       GAME_WIDTH / 2,
-      112,
-      'FASE 01: CINTURÃO DE FERRUGEM  //  SISTEMA ESTÁVEL',
+      107,
+      'SETOR 01: CINTURÃO DE FERRUGEM  //  AUTONOMOUS OPERATIONAL UNIT',
       {
         fontFamily: FONT_HUD,
-        fontSize: '11px',
+        fontSize: '10px',
         color: '#94a3b8',
+        letterSpacing: 1,
       },
     ).setOrigin(0.5, 0);
 
-    // Itens de Menu principais
+    // Itens de Menu (com ação principal em destaque absoluto)
     this.menuItems = [
       {
-        text: 'JOGAR FASE 1: CINTURÃO DE FERRUGEM',
-        badge: '[ENTER]',
+        text: 'INICIAR MISSÃO: CINTURÃO DE FERRUGEM',
+        badge: '[ESPAÇO / ENTER]',
+        isPrimary: true,
         action: () => this.startStage1(),
       },
       {
-        text: 'ESCOLHA DE PILOTO & CAÇA',
+        text: 'SELEÇÃO DE PILOTOS DE COMBATE',
         badge: '[P]',
         action: () => this.openPilotSelect(),
       },
       {
-        text: 'SELEÇÃO DE FASES (1 - 5)',
+        text: 'COORDENADAS DE FASES & CAMPANHA',
         badge: '[S]',
         action: () => this.openStageSelect(),
       },
       {
-        text: 'CONFIGURAÇÕES & FPS',
+        text: 'CONFIGURAÇÕES DE ÁUDIO & TAXA DE QUADROS',
         badge: '[C]',
         action: () => this.openSettingsModal(),
       },
       {
-        text: 'CONTROLES & GUIA',
+        text: 'CONTROLES DE VOO & MANUAL TÁTICO',
         badge: '[H]',
         action: () => this.openControlsModal(),
       },
     ];
 
-    const startY = 175;
-    const itemHeight = 39;
+    const startY = 168;
 
     this.menuItems.forEach((item, index) => {
-      const y = startY + index * itemHeight;
+      const isPrimary = Boolean(item.isPrimary);
+      const y = isPrimary ? startY : startY + 44 + (index - 1) * 34;
+      const width = isPrimary ? 480 : 440;
+      const height = isPrimary ? 38 : 28;
+
+      if (isPrimary) {
+        this.primaryGlow = this.add
+          .rectangle(GAME_WIDTH / 2, y, width + 6, height + 6, 0x00f0ff, 0.15)
+          .setStrokeStyle(1.5, 0x00f0ff, 0.6);
+      }
 
       const bg = this.add
-        .rectangle(GAME_WIDTH / 2, y, 420, 32, 0x0c1b2a, 0.92)
-        .setStrokeStyle(1, 0x244a5e)
+        .rectangle(GAME_WIDTH / 2, y, width, height, isPrimary ? 0x0d2838 : 0x081320, 0.94)
+        .setStrokeStyle(isPrimary ? 2 : 1, isPrimary ? 0x00f0ff : 0x1f3c4d)
         .setInteractive({ useHandCursor: true });
 
       const border = this.add
-        .rectangle(GAME_WIDTH / 2 - 206, y, 3, 26, 0x5eead4)
+        .rectangle(GAME_WIDTH / 2 - width / 2 + 3, y, 3.5, height - 6, isPrimary ? 0x00f0ff : 0x38bdf8)
         .setVisible(index === 0);
 
-      const label = this.add.text(GAME_WIDTH / 2 - 180, y - 8, item.text, {
-        fontFamily: FONT_HUD,
-        fontSize: '13px',
-        color: '#d1e6f5',
-      });
+      const label = this.add.text(
+        GAME_WIDTH / 2 - width / 2 + 18,
+        y - (isPrimary ? 8 : 7),
+        item.text,
+        {
+          fontFamily: isPrimary ? FONT_TITLE : FONT_HUD,
+          fontSize: isPrimary ? '13px' : '12px',
+          color: isPrimary ? '#ffffff' : '#94a3b8',
+          letterSpacing: 1,
+        },
+      ).setResolution(2);
 
       if (item.badge) {
-        this.add.text(GAME_WIDTH / 2 + 185, y - 8, item.badge, {
-          fontFamily: FONT_TECH,
-          fontSize: '11px',
-          color: '#67e8f9',
-        }).setOrigin(1, 0);
+        this.add.text(
+          GAME_WIDTH / 2 + width / 2 - 16,
+          y - (isPrimary ? 8 : 7),
+          item.badge,
+          {
+            fontFamily: FONT_HUD,
+            fontSize: isPrimary ? '12px' : '11px',
+            color: isPrimary ? '#ffd166' : '#38bdf8',
+            fontStyle: 'bold',
+          },
+        ).setOrigin(1, 0).setResolution(2);
       }
 
       bg.on('pointerover', () => this.selectItem(index));
       bg.on('pointerdown', () => this.activateItem(index));
 
-      this.menuButtons.push({ bg, label, border });
+      this.menuButtons.push({ bg, label, border, isPrimary });
     });
 
-    // Rodapé de navegação e créditos
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 18, GAME_WIDTH, 36, 0x050c16, 0.94);
+    // Rodapé de navegação e ajuda
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 16, GAME_WIDTH, 32, 0x050e18, 0.96);
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 32, GAME_WIDTH, 1.5, 0x1f3c4d);
     this.add.text(
       GAME_WIDTH / 2,
-      GAME_HEIGHT - 25,
-      'W/S / SETAS: NAVEGAR   |   ENTER / ESPAÇO: INICIAR   |   DISPARO: ESPAÇO   |   ESPECIAL: X',
+      GAME_HEIGHT - 22,
+      'W / S / SETAS: NAVEGAR   |   ENTER / ESPAÇO: CONFIRMAR   |   P: PILOTOS   |   C: CONFIGURAÇÕES',
       {
-        fontFamily: FONT_TECH,
+        fontFamily: FONT_HUD,
         fontSize: '11px',
         color: '#64748b',
       },
-    ).setOrigin(0.5, 0);
+    ).setOrigin(0.5, 0).setResolution(2);
 
     this.selectItem(0);
 
@@ -180,10 +231,13 @@ export class TitleScene extends Phaser.Scene {
     this.previewDistance += Math.min(delta, 50) * 0.024;
     this.backdrop.update(this.previewDistance);
 
-    // Pulso neon suave no título
+    // Pulso neon suave no título e no botão primário
     this.glowTimer += delta * 0.003;
     if (this.titleGlow) {
       this.titleGlow.setAlpha(0.25 + Math.sin(this.glowTimer) * 0.15);
+    }
+    if (this.primaryGlow) {
+      this.primaryGlow.setAlpha(0.12 + Math.sin(this.glowTimer * 1.5) * 0.08);
     }
   }
 
@@ -206,9 +260,15 @@ export class TitleScene extends Phaser.Scene {
     this.selectedIndex = index;
     this.menuButtons.forEach((btn, idx) => {
       const isSelected = idx === index;
-      btn.bg.setStrokeStyle(isSelected ? 1.5 : 1, isSelected ? 0x5eead4 : 0x244a5e);
-      btn.bg.setFillStyle(isSelected ? 0x17364b : 0x0c1b2a, 0.95);
-      btn.label.setColor(isSelected ? '#ffffff' : '#94a3b8');
+      if (btn.isPrimary) {
+        btn.bg.setStrokeStyle(isSelected ? 2 : 1.5, isSelected ? 0x00f0ff : 0x0284c7);
+        btn.bg.setFillStyle(isSelected ? 0x14405a : 0x0d2838, 0.96);
+        btn.label.setColor('#ffffff');
+      } else {
+        btn.bg.setStrokeStyle(isSelected ? 1.5 : 1, isSelected ? 0x00f0ff : 0x1f3c4d);
+        btn.bg.setFillStyle(isSelected ? 0x122438 : 0x081320, 0.94);
+        btn.label.setColor(isSelected ? '#ffffff' : '#94a3b8');
+      }
       btn.border.setVisible(isSelected);
     });
   }
@@ -236,22 +296,23 @@ export class TitleScene extends Phaser.Scene {
     const currentBgm = data.settings.musicVolume > 0;
 
     const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040a12, 0.88);
-    const box = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 500, 280, 0x0a1928)
-      .setStrokeStyle(1.5, 0x5eead4);
+    const box = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 500, 280, 0x081320)
+      .setStrokeStyle(1.5, 0x00f0ff);
 
     const title = this.add.text(GAME_WIDTH / 2, 95, 'CONFIGURAÇÕES & TAXA DE QUADROS', {
       fontFamily: FONT_TITLE,
       fontSize: '18px',
-      color: '#5eead4',
-    }).setOrigin(0.5, 0);
+      color: '#00f0ff',
+      letterSpacing: 2,
+    }).setOrigin(0.5, 0).setResolution(2);
 
-    const sfxBtn = this.add.rectangle(GAME_WIDTH / 2, 155, 360, 34, 0x152c3e)
-      .setStrokeStyle(1, 0x3b728a).setInteractive({ useHandCursor: true });
-    const sfxLabel = this.add.text(GAME_WIDTH / 2, 147, `EFEITOS SONOROS (SFX): ${currentSfx ? 'ATIVADO' : 'MUTADO'}`, {
+    const sfxBtn = this.add.rectangle(GAME_WIDTH / 2, 155, 380, 34, 0x122438)
+      .setStrokeStyle(1, 0x1f3c4d).setInteractive({ useHandCursor: true });
+    const sfxLabel = this.add.text(GAME_WIDTH / 2, 155, `EFEITOS SONOROS (SFX): ${currentSfx ? 'ATIVADO' : 'MUTADO'}`, {
       fontFamily: FONT_HUD,
       fontSize: '13px',
       color: '#ffffff',
-    }).setOrigin(0.5, 0);
+    }).setOrigin(0.5).setResolution(2);
 
     sfxBtn.on('pointerdown', () => {
       const next = !saveSystem.getSaveData().settings.sfxVolume;
@@ -259,13 +320,13 @@ export class TitleScene extends Phaser.Scene {
       sfxLabel.setText(`EFEITOS SONOROS (SFX): ${next ? 'ATIVADO' : 'MUTADO'}`);
     });
 
-    const bgmBtn = this.add.rectangle(GAME_WIDTH / 2, 200, 360, 34, 0x152c3e)
-      .setStrokeStyle(1, 0x3b728a).setInteractive({ useHandCursor: true });
-    const bgmLabel = this.add.text(GAME_WIDTH / 2, 192, `MÚSICA RETRO-SYNTH: ${currentBgm ? 'ATIVADO' : 'MUTADO'}`, {
+    const bgmBtn = this.add.rectangle(GAME_WIDTH / 2, 200, 380, 34, 0x122438)
+      .setStrokeStyle(1, 0x1f3c4d).setInteractive({ useHandCursor: true });
+    const bgmLabel = this.add.text(GAME_WIDTH / 2, 200, `MÚSICA RETRO-SYNTH: ${currentBgm ? 'ATIVADO' : 'MUTADO'}`, {
       fontFamily: FONT_HUD,
       fontSize: '13px',
       color: '#ffffff',
-    }).setOrigin(0.5, 0);
+    }).setOrigin(0.5).setResolution(2);
 
     bgmBtn.on('pointerdown', () => {
       const next = !saveSystem.getSaveData().settings.musicVolume;
@@ -277,21 +338,22 @@ export class TitleScene extends Phaser.Scene {
     const fpsHint = this.add.text(
       GAME_WIDTH / 2,
       242,
-      'TARGET FPS: ATÉ 240 FPS (SUPORTE NATIVO A 120Hz / 144Hz / 240Hz)',
+      'SUPORTE A TAXAS DE QUADROS DESBLOQUEADAS: 60Hz / 120Hz / 144Hz / 240Hz',
       {
-        fontFamily: FONT_TECH,
+        fontFamily: FONT_HUD,
         fontSize: '11px',
-        color: '#67e8f9',
+        color: '#38bdf8',
       },
-    ).setOrigin(0.5, 0);
+    ).setOrigin(0.5, 0).setResolution(2);
 
-    const closeBtn = this.add.rectangle(GAME_WIDTH / 2, 285, 140, 28, 0x22485a)
-      .setStrokeStyle(1, 0x5eead4).setInteractive({ useHandCursor: true });
-    const closeLabel = this.add.text(GAME_WIDTH / 2, 278, 'FECHAR [ESC]', {
+    const closeBtn = this.add.rectangle(GAME_WIDTH / 2, 285, 140, 28, 0x0e7490)
+      .setStrokeStyle(1, 0x00f0ff).setInteractive({ useHandCursor: true });
+    const closeLabel = this.add.text(GAME_WIDTH / 2, 285, 'FECHAR [ESC]', {
       fontFamily: FONT_HUD,
       fontSize: '12px',
       color: '#ffffff',
-    }).setOrigin(0.5, 0);
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setResolution(2);
     closeBtn.on('pointerdown', () => this.closeModal());
 
     this.modalContainer = this.add.container(0, 0, [
@@ -301,40 +363,42 @@ export class TitleScene extends Phaser.Scene {
 
   private openControlsModal(): void {
     const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040a12, 0.88);
-    const box = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 540, 310, 0x0a1928)
-      .setStrokeStyle(1.5, 0x5eead4);
+    const box = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 560, 310, 0x081320)
+      .setStrokeStyle(1.5, 0x00f0ff);
 
     const title = this.add.text(GAME_WIDTH / 2, 75, 'CONTROLES DE VOO & COMBATE', {
       fontFamily: FONT_TITLE,
       fontSize: '18px',
-      color: '#5eead4',
-    }).setOrigin(0.5, 0);
+      color: '#00f0ff',
+      letterSpacing: 2,
+    }).setOrigin(0.5, 0).setResolution(2);
 
     const controls = this.add.text(
       GAME_WIDTH / 2,
-      115,
+      112,
       '• MOVIMENTAÇÃO: W/A/S/D ou TECLAS DIRECIONAIS\n' +
-      '  (Alcance total da tela com inclinação de voo)\n\n' +
+      '  (Voo livre de perfil lateral com inclinação aerodinâmica)\n\n' +
       '• DISPARO PRINCIPAL: BARRA DE ESPAÇO ou TOQUE\n\n' +
       '• ARMA SECUNDÁRIA / MÍSSEIS: TECLA M\n\n' +
-      '• HABILIDADE ESPECIAL: TECLA X ou SHIFT (100% de Ressonância)\n\n' +
-      '• BOMBA DEVASTADORA: TECLA B ou L (Limpa balas e causa dano de tela)\n\n' +
-      '• REINICIAR FASE: TECLA R    |    MENU / PAUSA: ESC',
+      '• HABILIDADE ESPECIAL: TECLA X ou SHIFT (Requer 100% de Ressonância)\n\n' +
+      '• BOMBA DEVASTADORA: TECLA B ou L (Anula balas hostis e detona a tela)\n\n' +
+      '• REINICIAR: TECLA R    |    MENU / PAUSA: TECLA ESC',
       {
         fontFamily: FONT_HUD,
         fontSize: '12px',
-        color: '#d1e6f5',
+        color: '#e2e8f0',
         lineSpacing: 4,
       },
-    ).setOrigin(0.5, 0);
+    ).setOrigin(0.5, 0).setResolution(2);
 
-    const closeBtn = this.add.rectangle(GAME_WIDTH / 2, 312, 140, 28, 0x22485a)
-      .setStrokeStyle(1, 0x5eead4).setInteractive({ useHandCursor: true });
-    const closeLabel = this.add.text(GAME_WIDTH / 2, 305, 'FECHAR [ESC]', {
+    const closeBtn = this.add.rectangle(GAME_WIDTH / 2, 312, 140, 28, 0x0e7490)
+      .setStrokeStyle(1, 0x00f0ff).setInteractive({ useHandCursor: true });
+    const closeLabel = this.add.text(GAME_WIDTH / 2, 312, 'FECHAR [ESC]', {
       fontFamily: FONT_HUD,
       fontSize: '12px',
       color: '#ffffff',
-    }).setOrigin(0.5, 0);
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setResolution(2);
     closeBtn.on('pointerdown', () => this.closeModal());
 
     this.modalContainer = this.add.container(0, 0, [

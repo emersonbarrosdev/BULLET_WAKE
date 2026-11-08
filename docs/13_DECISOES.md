@@ -8,6 +8,11 @@
 - 3 vidas, 3 pontos de HP, três níveis por tipo de arma, power-ups, score, combos, continues limitados, checkpoints, Normal/Difícil, saves entre fases.
 - Cinco biomas/etapas: Cinturão de Ferrugem, Mar de Vidro, Catedrais Vivas, Nuvem de Íons e Coração da MALHA.
 - Defesa de colônia inicialmente seguida de viagem entre mundos pelo rastro. Fases manuais e chefes originais, sem roguelite.
+- **[PRIORIDADE MÁXIMA] Diretriz Oficial de UI, HUD em 3 Zonas e Seleção de Pilotos (docs/24_DIRETRIZ_UI_HUD_MENUS.md):**
+  - HUD dividido em Zona A (Topo), Zona B (Gameplay 100% limpo) e Zona C (Base).
+  - Inimigos comuns sem barras de HP individuais; Chefes com barra principal na Zona A.
+  - Seleção de personagens centrada no piloto (espírito *Sonic Wings*) com portrait, callsign tático, especial e nave subordinada em perfil lateral.
+  - Tipografia de 2 famílias: `Orbitron` (Display/Títulos) e `Chakra Petch` (Interface/HUD).
 
 ## Decisão de engenharia da pré-produção
 **Phaser 4 + TypeScript + Vite + Canvas/WebGL**. Angular fora do gameplay inicial; opcional para ferramenta externa futura. Primeiro web desktop, depois Android via empacotamento candidato (Capacitor a validar). Phaser versão exata a travar no lockfile durante implementação.

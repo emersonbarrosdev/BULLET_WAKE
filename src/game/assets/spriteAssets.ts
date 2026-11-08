@@ -68,6 +68,9 @@ export const SPRITE_SHEETS = [
   { key: 'boss-interceptor-wing', url: 'assets/bosses/interceptor/wing.png', frameWidth: 48, frameHeight: 32 },
   { key: 'boss-mesh_core-monolith', url: 'assets/bosses/mesh_core/monolith.png', frameWidth: 112, frameHeight: 112 },
   { key: 'boss-mesh_core-heart', url: 'assets/bosses/mesh_core/heart.png', frameWidth: 48, frameHeight: 48 },
+  { key: 'portrait-nolan', url: 'assets/pilots/nolan.png', frameWidth: 64, frameHeight: 64 },
+  { key: 'portrait-cora', url: 'assets/pilots/cora.png', frameWidth: 64, frameHeight: 64 },
+  { key: 'portrait-harlan', url: 'assets/pilots/harlan.png', frameWidth: 64, frameHeight: 64 },
 ] as const;
 
 export function loadGameSprites(scene: Phaser.Scene): void {
