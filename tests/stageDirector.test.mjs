@@ -17,7 +17,7 @@ function advance(director, durationMs, x = 135, y = 216) {
 test('progression advances continuously by distance and does not label waves', () => {
   const director = new StageDirector(768);
   const tick = director.update(50, 135, 216);
-  assert.equal(director.scrollPx, SCROLL_SPEED * 0.05);
+  assert.ok(Math.abs(director.scrollPx - SCROLL_SPEED * 0.05) < 1e-6);
   assert.ok(tick.progress > 0);
   assert.equal('wave' in tick, false);
 });
