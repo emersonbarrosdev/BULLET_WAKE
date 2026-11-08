@@ -8,9 +8,11 @@ import {
   EnemyDirector, type EnemyModel, type EnemyShotEvent,
 } from '../systems/enemyDirector';
 import { CombatHud } from '../ui/CombatHud';
+import { getPilot, shotIntervalMs, type PilotDefinition } from '../data/pilots';
+import { createPrototypeShip } from '../ui/PrototypeShip';
 import { GameOverOverlay } from '../ui/GameOverOverlay';
 
-type Keys = Record<'W' | 'A' | 'S' | 'D' | 'SPACE' | 'R', Phaser.Input.Keyboard.Key>;
+type Keys = Record<'W' | 'A' | 'S' | 'D' | 'SPACE' | 'R' | 'ESC', Phaser.Input.Keyboard.Key>;
 interface Projectile {
   node: Phaser.GameObjects.Rectangle;
   velocityX: number;
@@ -28,6 +30,7 @@ interface EnemyVisual {
  */
 export class PrototypeScene extends Phaser.Scene {
   private ship!: Phaser.GameObjects.Container;
+  private pilot: PilotDefinition = getPilot('nolan');
   private hud!: CombatHud;
   private keyboardControls?: Keys;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -43,6 +46,10 @@ export class PrototypeScene extends Phaser.Scene {
     super({ key: 'PrototypeScene' });
   }
 
+  init(data: { pilotId?: string } = {}): void {
+    this.pilot = getPilot(data?.pilotId);
+  }
+
   create(): void {
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
     // Scene.restart reusa instância; esvaziar absolutamente todo estado de gameplay.
@@ -54,31 +61,29 @@ export class PrototypeScene extends Phaser.Scene {
     this.score = 0;
     this.health = initialPlayerHealth();
 
-    this.keyboardControls = this.input.keyboard?.addKeys('W,A,S,D,SPACE,R') as Keys | undefined;
+    this.keyboardControls = this.input.keyboard?.addKeys('W,A,S,D,SPACE,R,ESC') as Keys | undefined;
     this.cursors = this.input.keyboard?.createCursorKeys();
 
     this.hud = new CombatHud(this, () => this.restart());
     this.hud.setScore(this.score);
     this.hud.setHealth(this.health);
     this.hud.setWave(1);
+    this.hud.setPilot(this.pilot.shipName);
 
-    // Marcador provisório da nave, substituído por sprites em tarefa artística.
-    const marker = this.add.graphics();
-    marker.fillStyle(0x263447, 1);
-    marker.fillRect(-13, -4, 25, 8);
-    marker.fillRect(-8, -7, 14, 3);
-    marker.fillRect(-8, 4, 14, 3);
-    marker.fillStyle(0x61d7da, 1);
-    marker.fillRect(12, -2, 8, 4);
-    marker.fillStyle(0xeaf2f5, 1);
-    marker.fillRect(-17, -2, 4, 4);
-    this.ship = this.add.container(64, GAME_HEIGHT / 2, [marker]);
+    // Nave ainda representada por silhueta temporária de gameplay.
+    this.ship = this.add.container(
+      64, GAME_HEIGHT / 2, [createPrototypeShip(this, this.pilot)],
+    );
   }
 
   update(_time: number, delta: number): void {
     const dt = clamp(delta, 0, 50);
     if (this.keyboardControls && Phaser.Input.Keyboard.JustDown(this.keyboardControls.R)) {
       this.restart();
+      return;
+    }
+    if (this.keyboardControls && Phaser.Input.Keyboard.JustDown(this.keyboardControls.ESC)) {
+      this.choosePilot();
       return;
     }
     if (this.health.gameOver) return;
@@ -103,7 +108,7 @@ export class PrototypeScene extends Phaser.Scene {
 
     const moved = moveInBounds(
       { x: this.ship.x, y: this.ship.y },
-      dx, dy, 190, dt,
+      dx, dy, this.pilot.speed, dt,
       { minX: 23, maxX: GAME_WIDTH - 24, minY: 56, maxY: GAME_HEIGHT - 32 },
     );
     this.ship.setPosition(moved.x, moved.y);
@@ -111,7 +116,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.shootCooldown = Math.max(0, this.shootCooldown - dt);
     if ((key('SPACE') || this.cursors?.space.isDown || touchingArena) && this.shootCooldown <= 0) {
       this.fire();
-      this.shootCooldown += 125;
+      this.shootCooldown += shotIntervalMs(this.pilot);
     }
 
     const tick = this.director.update(dt, this.ship.x, this.ship.y);
@@ -129,11 +134,23 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private restart(): void {
-    this.scene.restart();
+    this.scene.restart({ pilotId: this.pilot.id });
+  }
+
+  private choosePilot(): void {
+    this.scene.start('PilotSelectScene', { selectedPilotId: this.pilot.id });
   }
 
   private fire(): void {
-    const node = this.add.rectangle(this.ship.x + 20, this.ship.y, 7, 3, 0x61d7da);
+    const heavy = this.pilot.id === 'harlan';
+    const needle = this.pilot.id === 'cora';
+    const node = this.add.rectangle(
+      this.ship.x + (heavy ? 25 : 21),
+      this.ship.y,
+      heavy ? 11 : needle ? 9 : 7,
+      heavy ? 5 : needle ? 2 : 3,
+      this.pilot.projectileColor,
+    );
     this.shots.push({ node, velocityX: 300, velocityY: 0 });
   }
 
@@ -200,7 +217,7 @@ export class PrototypeScene extends Phaser.Scene {
         const extentY = enemy.kind === 'scout' ? 8 : 10;
         if (Math.abs(shot.node.x - enemy.x) <= extentX
           && Math.abs(shot.node.y - enemy.y) <= extentY) {
-          const outcome = this.director.damage(enemy.id, 1);
+          const outcome = this.director.damage(enemy.id, this.pilot.damage);
           if (outcome.killed) {
             this.score += outcome.score;
             this.hud.setScore(this.score);
@@ -271,7 +288,7 @@ export class PrototypeScene extends Phaser.Scene {
       this.clearEnemyShots();
       this.clearPlayerShots();
       this.ship.setVisible(false);
-      new GameOverOverlay(this, this.score, () => this.restart());
+      new GameOverOverlay(this, this.score, () => this.restart(), () => this.choosePilot());
     }
     return result.event;
   }

@@ -1,39 +1,50 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../constants';
 
-/** Tela de fim de tentativa com reinício por clique/toque ou tecla R. */
+/** Fim de tentativa: repetir com piloto atual ou voltar à seleção. */
 export class GameOverOverlay extends Phaser.GameObjects.Container {
-  constructor(scene: Phaser.Scene, score: number, onRestart: () => void) {
+  constructor(
+    scene: Phaser.Scene,
+    score: number,
+    onRestart: () => void,
+    onChoosePilot: () => void,
+  ) {
     super(scene, 0, 0);
 
     const blackout = scene.add.rectangle(
-      GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x080f19, 0.84,
+      GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x080f19, 0.88,
     );
     const panel = scene.add.rectangle(
-      GAME_WIDTH / 2, GAME_HEIGHT / 2, 290, 144, 0x15263a,
+      GAME_WIDTH / 2, GAME_HEIGHT / 2, 290, 168, 0x15263a,
     ).setStrokeStyle(2, 0x77d5d1);
 
-    const header = this.label(scene, GAME_WIDTH / 2, 62, 'GAME OVER', 27, '#f4b77a')
+    const header = this.label(scene, GAME_WIDTH / 2, 47, 'GAME OVER', 27, '#f4b77a')
       .setOrigin(0.5, 0);
     const caption = this.label(
-      scene, GAME_WIDTH / 2, 100, 'PONTUACAO FINAL: ' + score.toString().padStart(6, '0'),
+      scene, GAME_WIDTH / 2, 86, 'PONTUACAO FINAL: ' + score.toString().padStart(6, '0'),
       12, '#edf5fa',
     ).setOrigin(0.5, 0);
-    const button = scene.add.rectangle(
-      GAME_WIDTH / 2, 146, 190, 29, 0x2c6472,
+
+    const again = scene.add.rectangle(
+      GAME_WIDTH / 2, 127, 190, 28, 0x2c6472,
     ).setStrokeStyle(1, 0x80e3d7).setInteractive({ useHandCursor: true });
-    const buttonText = this.label(
-      scene, GAME_WIDTH / 2, 137, 'JOGAR NOVAMENTE', 14, '#f9ffff',
-    ).setOrigin(0.5, 0);
-    const hint = this.label(
-      scene, GAME_WIDTH / 2, 171, 'APERTE R OU CLIQUE NO BOTAO', 9, '#c0d5df',
-    ).setOrigin(0.5, 0);
+    const againText = this.label(scene, GAME_WIDTH / 2, 119, 'JOGAR NOVAMENTE', 13, '#f9ffff')
+      .setOrigin(0.5, 0);
+    again.on('pointerdown', onRestart);
 
-    button.on('pointerover', () => button.setFillStyle(0x377e89));
-    button.on('pointerout', () => button.setFillStyle(0x2c6472));
-    button.on('pointerdown', onRestart);
+    const choose = scene.add.rectangle(
+      GAME_WIDTH / 2, 163, 190, 26, 0x29445b,
+    ).setStrokeStyle(1, 0x8cacc1).setInteractive({ useHandCursor: true });
+    const chooseText = this.label(scene, GAME_WIDTH / 2, 156, 'TROCAR PILOTO', 13, '#f9ffff')
+      .setOrigin(0.5, 0);
+    choose.on('pointerdown', onChoosePilot);
 
-    this.add([blackout, panel, header, caption, button, buttonText, hint]);
+    const hint = this.label(scene, GAME_WIDTH / 2, 192, 'R: REPETIR     ESC: PILOTOS', 10, '#c0d5df')
+      .setOrigin(0.5, 0);
+
+    this.add([
+      blackout, panel, header, caption, again, againText, choose, chooseText, hint,
+    ]);
     this.setDepth(100);
     scene.add.existing(this);
   }

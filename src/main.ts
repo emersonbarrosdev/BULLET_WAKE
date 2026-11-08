@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import './style.css';
 import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from './game/constants';
+import { PilotSelectScene } from './game/scenes/PilotSelectScene';
 import { PrototypeScene } from './game/scenes/PrototypeScene';
 
 const host = document.getElementById('game');
@@ -18,12 +19,12 @@ const config: Phaser.Types.Core.GameConfig = {
   render: { pixelArt: true },
   scale: {
     mode: Phaser.Scale.FIT,
-    // O CSS Flexbox centraliza o Canvas. Não centralizar também pelo Scale Manager.
+    // O CSS Flexbox centraliza o Canvas.
     autoCenter: Phaser.Scale.NO_CENTER,
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
   },
-  scene: [PrototypeScene],
+  scene: [PilotSelectScene, PrototypeScene],
 };
 
 const game = new Phaser.Game(config);

@@ -7,6 +7,7 @@ export class CombatHud {
   private readonly scoreText: Phaser.GameObjects.Text;
   private readonly livesText: Phaser.GameObjects.Text;
   private readonly waveText: Phaser.GameObjects.Text;
+  private readonly pilotText: Phaser.GameObjects.Text;
   private readonly healthSegments: Phaser.GameObjects.Rectangle[] = [];
   private readonly statusText: Phaser.GameObjects.Text;
   private statusRemainingMs = 0;
@@ -15,6 +16,7 @@ export class CombatHud {
     scene.add.rectangle(GAME_WIDTH / 2, 22, GAME_WIDTH, 44, 0x19283a).setDepth(50);
     scene.add.rectangle(GAME_WIDTH / 2, 44, GAME_WIDTH, 1, 0x426078).setDepth(50);
     this.makeText(scene, 10, 5, 'BULLET WAKE', 13, '#f1f7fc');
+    this.pilotText = this.makeText(scene, 212, 8, 'RIVET', 10, '#8ce2d9');
     this.waveText = this.makeText(scene, GAME_WIDTH - 11, 8, 'ONDA 01', 10, '#b5c9d8')
       .setOrigin(1, 0);
     this.makeText(scene, 10, 26, 'SCORE', 10, '#a9c6d6');
@@ -34,7 +36,7 @@ export class CombatHud {
       .setDepth(50);
     scene.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 24, GAME_WIDTH, 1, 0x426078)
       .setDepth(50);
-    this.makeText(scene, 8, GAME_HEIGHT - 18, 'WASD / SETAS  |  ESPACO: TIRO', 10, '#f0f5f8');
+    this.makeText(scene, 8, GAME_HEIGHT - 18, 'WASD / SETAS: MOVER   ESPACO: TIRO', 10, '#f0f5f8');
     const restartButton = scene.add.rectangle(
       GAME_WIDTH - 49, GAME_HEIGHT - 12, 91, 19, 0x2b5266,
     ).setStrokeStyle(1, 0x6bdad6).setInteractive({ useHandCursor: true }).setDepth(51);
@@ -43,6 +45,10 @@ export class CombatHud {
     restartButton.on('pointerover', () => restartButton.setFillStyle(0x37798a));
     restartButton.on('pointerout', () => restartButton.setFillStyle(0x2b5266));
     restartButton.on('pointerdown', onRestart);
+  }
+
+  setPilot(shipName: string): void {
+    this.pilotText.setText(shipName.toUpperCase());
   }
 
   setWave(wave: number): void {
