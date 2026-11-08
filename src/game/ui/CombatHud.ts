@@ -2,29 +2,23 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../constants';
 import { MAX_HP, type PlayerHealth } from '../systems/combat';
 
-/**
- * HUD funcional do protótipo.
- * Layout e legibilidade separados da simulação de combate.
- * A identidade visual final será produzida na etapa de arte.
- */
+/** Interface funcional de protótipo, separada do estado de combate. */
 export class CombatHud {
   private readonly scoreText: Phaser.GameObjects.Text;
   private readonly livesText: Phaser.GameObjects.Text;
+  private readonly waveText: Phaser.GameObjects.Text;
   private readonly healthSegments: Phaser.GameObjects.Rectangle[] = [];
   private readonly statusText: Phaser.GameObjects.Text;
   private statusRemainingMs = 0;
 
   constructor(scene: Phaser.Scene, onRestart: () => void) {
-    const topBar = scene.add.rectangle(GAME_WIDTH / 2, 22, GAME_WIDTH, 44, 0x19283a);
-    topBar.setDepth(50);
+    scene.add.rectangle(GAME_WIDTH / 2, 22, GAME_WIDTH, 44, 0x19283a).setDepth(50);
     scene.add.rectangle(GAME_WIDTH / 2, 44, GAME_WIDTH, 1, 0x426078).setDepth(50);
-
     this.makeText(scene, 10, 5, 'BULLET WAKE', 13, '#f1f7fc');
-    this.makeText(scene, GAME_WIDTH - 11, 8, 'PROTOTIPO T04', 9, '#b5c9d8').setOrigin(1, 0);
-
+    this.waveText = this.makeText(scene, GAME_WIDTH - 11, 8, 'ONDA 01', 10, '#b5c9d8')
+      .setOrigin(1, 0);
     this.makeText(scene, 10, 26, 'SCORE', 10, '#a9c6d6');
     this.scoreText = this.makeText(scene, 48, 22, '000000', 15, '#83e5df');
-
     this.makeText(scene, 168, 26, 'HP', 10, '#a9c6d6');
     for (let index = 0; index < MAX_HP; index += 1) {
       const segment = scene.add.rectangle(199 + index * 13, 31, 10, 12, 0x69d8cf);
@@ -32,33 +26,27 @@ export class CombatHud {
       segment.setDepth(51);
       this.healthSegments.push(segment);
     }
-
     this.makeText(scene, 280, 26, 'VIDAS', 10, '#a9c6d6');
     this.livesText = this.makeText(scene, 337, 22, '03', 15, '#f1f7fc');
-
     this.statusText = this.makeText(scene, GAME_WIDTH / 2, 49, '', 12, '#ffbd86')
       .setOrigin(0.5, 0);
-
     scene.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 12, GAME_WIDTH, 24, 0x19283a)
       .setDepth(50);
     scene.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 24, GAME_WIDTH, 1, 0x426078)
       .setDepth(50);
-
     this.makeText(scene, 8, GAME_HEIGHT - 18, 'WASD / SETAS  |  ESPACO: TIRO', 10, '#f0f5f8');
-
-    // É botão de gameplay mesmo no protótipo: mouse e toque.
-    const restartButton = scene.add
-      .rectangle(GAME_WIDTH - 49, GAME_HEIGHT - 12, 91, 19, 0x2b5266)
-      .setStrokeStyle(1, 0x6bdad6)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(51);
-
+    const restartButton = scene.add.rectangle(
+      GAME_WIDTH - 49, GAME_HEIGHT - 12, 91, 19, 0x2b5266,
+    ).setStrokeStyle(1, 0x6bdad6).setInteractive({ useHandCursor: true }).setDepth(51);
     this.makeText(scene, GAME_WIDTH - 49, GAME_HEIGHT - 17, 'REINICIAR [R]', 9, '#f3fafc')
       .setOrigin(0.5, 0);
-
     restartButton.on('pointerover', () => restartButton.setFillStyle(0x37798a));
     restartButton.on('pointerout', () => restartButton.setFillStyle(0x2b5266));
     restartButton.on('pointerdown', onRestart);
+  }
+
+  setWave(wave: number): void {
+    this.waveText.setText('ONDA ' + String(wave).padStart(2, '0'));
   }
 
   setScore(score: number): void {
@@ -91,9 +79,7 @@ export class CombatHud {
   ): Phaser.GameObjects.Text {
     return scene.add.text(x, y, value, {
       fontFamily: 'Arial, Helvetica, sans-serif',
-      fontSize: size + 'px',
-      fontStyle: 'bold',
-      color,
+      fontSize: size + 'px', fontStyle: 'bold', color,
     }).setResolution(3).setDepth(52);
   }
 }

@@ -7,9 +7,10 @@
 |---|---|---|
 | T01 | CONCLUÍDA | Bootstrap Phaser 4 + TS + Vite e CI de build |
 | T02 | IMPLEMENTADA — validar em navegador/mobile | Canvas FIT, safe areas e sandbox com nave controlável, tiros, alvos e score |
-| T03 | IMPLEMENTADA — QA manual pendente | Projéteis inimigos, HP, invulnerabilidade, respawn, game over; [detalhes](16_T03_COMBATE_E_DANO.md) |\n| T04 | IMPLEMENTADA — QA manual pendente | HUD, feedback de dano e overlay Game Over com botão; [detalhes](17_T04_HUD_E_GAME_OVER.md) |\n| T05–T70 | A FAZER | A seguir, priorizadas por gameplay |
+| T03 | IMPLEMENTADA — QA manual pendente | Projéteis inimigos, HP, invulnerabilidade, respawn, game over; [detalhes](16_T03_COMBATE_E_DANO.md) |\n| T04 | IMPLEMENTADA — QA manual pendente | HUD, feedback de dano e overlay Game Over com botão; [detalhes](17_T04_HUD_E_GAME_OVER.md) |\n| T05 | IMPLEMENTADA — QA visual pendente | Scout e Lancer, FSM, ondas roteirizadas, tiros anunciados; [detalhes](18_T05_INIMIGOS_E_ONDAS.md) |
+| T06–T70 | A FAZER | A seguir, priorizadas por gameplay |
 
-A avaliação de T02 inclui CI build/typecheck e teste manual de viewport e toque. Para detalhes ver [T02](15_T02_GAMEPLAY_FIRST.md). A T03 implementa dano/vidas com [registro de aceite](16_T03_COMBATE_E_DANO.md). A T04 entrega UI funcional e o fluxo de reinício em [seu documento](17_T04_HUD_E_GAME_OVER.md).
+A avaliação de T02 inclui CI build/typecheck e teste manual de viewport e toque. Para detalhes ver [T02](15_T02_GAMEPLAY_FIRST.md). A T03 implementa dano/vidas com [registro de aceite](16_T03_COMBATE_E_DANO.md). A T04 entrega UI funcional e o fluxo de reinício em [seu documento](17_T04_HUD_E_GAME_OVER.md). A T05 registra a lógica das primeiras ondas em [seu documento](18_T05_INIMIGOS_E_ONDAS.md).
 
 ## Primeiro ciclo: 1 minuto jogável (T03–T10)
 

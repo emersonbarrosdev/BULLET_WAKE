@@ -18,5 +18,7 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Validar TypeScript
         run: npm run typecheck
+      - name: Testar regras de inimigos
+        run: npm test
       - name: Gerar build
         run: npm run build
