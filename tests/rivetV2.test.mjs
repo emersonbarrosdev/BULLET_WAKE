@@ -46,5 +46,18 @@ for (const [name, count] of states) {
       distinct.add(pixels.join(','));
     }
     assert.ok(distinct.size >= 4, name + ' needs genuinely different animation frames');
+    if (name === 'dano' || name === 'destruicao') {
+      for (let f = 0; f < count; f++) {
+        let visible = 0;
+        for (let y = 0; y < H; y++) {
+          const row = y * (W * count + 1);
+          for (let x = 0; x < W; x++) {
+            if (alpha[raw[row + 1 + f * W + x]] > 64) visible++;
+          }
+        }
+        assert.ok(visible < W * H * 0.65,
+          name + ' frame ' + f + ' must preserve a transparent background');
+      }
+    }
   });
 }

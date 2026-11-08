@@ -103,18 +103,18 @@ function collision(f,t){
 }
 
 function destruction(base,t){
-  const f=new Uint8Array(WIDTH*HEIGHT).fill(96);
+  const f=new Uint8Array(WIDTH*HEIGHT).fill(96), alphaPalette=makePalette();
   if(t<2){
     const pose=rotatePose(base,(t===0?-1:2),0,0);
     f.set(pose);
-    for(let i=0;i<f.length;i++)if(f[i]!==96 && ((i+t)%5)===0)f[i]=t?103:102;
+    for(let i=0;i<f.length;i++)if(alphaPalette[f[i]*4+3]>64 && ((i+t)%5)===0)f[i]=t?103:102;
     collision(f,t);
     return f;
   }
   const degree=t-1,centerX=57,centerY=27;
   for(let y=0;y<HEIGHT;y++)for(let x=0;x<WIDTH;x++){
     const src=base[y*WIDTH+x];
-    if(src===96)continue;
+    if(alphaPalette[src*4+3]<=64)continue;
     const bx=Math.floor(x/9),by=Math.floor(y/7),seed=((bx*17+by*11)%9);
     if((bx*3+by+t)%11<degree-1)continue;
     const ox=Math.round((x-centerX)/16*(degree*.7)+(seed-4)*degree*.28);
@@ -135,7 +135,7 @@ function destruction(base,t){
 }
 
 function generateSheets() {
-  const base=unpackBase(),states=[
+  const base=unpackBase(), alphaPalette=makePalette(),states=[
     ["idle",8],["subida",8],["descida",8],["disparo",8],["dano",6],["destruicao",8]
   ],sheets={};
   for(const [name,count] of states){
@@ -149,7 +149,7 @@ function generateSheets() {
         const y=name==="subida"?-1:name==="descida"?1:0;
         f=rotatePose(base,angle,x,y);
         if(name==="dano"){
-          for(let k=0;k<f.length;k++)if(f[k]!==96 && (t===1||t===3||t===5) && (k%5!==0))f[k]=((k+t)%4===0?104:103);
+          for(let k=0;k<f.length;k++)if(alphaPalette[f[k]*4+3]>64 && (t===1||t===3||t===5) && (k%5!==0))f[k]=((k+t)%4===0?104:103);
           collision(f,t);
         } else {
           flame(f,t,name==="subida");
