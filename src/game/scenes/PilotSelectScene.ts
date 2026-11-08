@@ -2,128 +2,111 @@ import Phaser from 'phaser';
 import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from '../constants';
 import { PILOTS, type PilotDefinition } from '../data/pilots';
 import { loadGameSprites, registerGameAnimations } from '../assets/spriteAssets';
+import { StageBackdrop } from './StageBackdrop';
 
-type MenuKeys = Record<
-  'LEFT' | 'RIGHT' | 'ENTER' | 'SPACE' | 'ONE' | 'TWO' | 'THREE',
-  Phaser.Input.Keyboard.Key
->;
-
+type MenuKeys = Record<'LEFT' | 'RIGHT' | 'ENTER' | 'SPACE' | 'ONE' | 'TWO' | 'THREE',
+  Phaser.Input.Keyboard.Key>;
 interface PilotCard {
   panel: Phaser.GameObjects.Rectangle;
   label: Phaser.GameObjects.Text;
 }
 
-/** T06: seleção de piloto com teclado, mouse ou toque, antes de cada tentativa. */
+/** Escolha de piloto, dimensionada para 768x432; os outros sprites ainda são v0.1. */
 export class PilotSelectScene extends Phaser.Scene {
   private selectedIndex = 0;
   private keys?: MenuKeys;
   private cards: PilotCard[] = [];
   private specialText!: Phaser.GameObjects.Text;
+  private backdrop!: StageBackdrop;
+  private previewDistance = 0;
 
-  constructor() {
-    super({ key: 'PilotSelectScene' });
-  }
+  constructor() { super({ key: 'PilotSelectScene' }); }
 
   init(data: { selectedPilotId?: string } = {}): void {
-    const index = PILOTS.findIndex(pilot => pilot.id === data?.selectedPilotId);
-    this.selectedIndex = index >= 0 ? index : 0;
+    this.selectedIndex = Math.max(0, PILOTS.findIndex(p => p.id === data.selectedPilotId));
   }
 
-  preload(): void {
-    loadGameSprites(this);
-  }
+  preload(): void { loadGameSprites(this); }
 
   create(): void {
     registerGameAnimations(this);
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
+    this.backdrop = new StageBackdrop(this);
+    this.previewDistance = 0;
     this.cards = [];
-    this.keys = this.input.keyboard?.addKeys(
-      'LEFT,RIGHT,ENTER,SPACE,ONE,TWO,THREE',
-    ) as MenuKeys | undefined;
+    this.keys = this.input.keyboard?.addKeys('LEFT,RIGHT,ENTER,SPACE,ONE,TWO,THREE')
+      as MenuKeys | undefined;
 
-    this.text(GAME_WIDTH / 2, 8, 'BULLET WAKE', 23, '#f2f7fa')
-      .setOrigin(0.5, 0);
-    this.text(GAME_WIDTH / 2, 36, 'SELECIONE SEU PILOTO', 11, '#89d9d5')
-      .setOrigin(0.5, 0);
+    this.add.rectangle(GAME_WIDTH / 2, 46, GAME_WIDTH, 92, 0x0a1628, 0.84);
+    this.text(GAME_WIDTH / 2, 15, 'BULLET WAKE', 33, '#f5f9fd').setOrigin(0.5, 0);
+    this.text(GAME_WIDTH / 2, 57, 'SELECIONE SEU PILOTO', 18, '#8ee3dd').setOrigin(0.5, 0);
 
     PILOTS.forEach((pilot, index) => this.buildCard(pilot, index));
-    this.specialText = this.text(12, 187, '', 10, '#d5e4ed');
+    this.specialText = this.text(GAME_WIDTH / 2, 350, '', 17, '#f0d8b5').setOrigin(0.5, 0);
 
-    const startButton = this.add.rectangle(
-      313, GAME_HEIGHT - 13, 117, 25, 0x2b6974,
-    ).setStrokeStyle(1, 0x84dfd7).setInteractive({ useHandCursor: true });
-    this.text(313, GAME_HEIGHT - 19, 'INICIAR [ENTER]', 11, '#ffffff')
-      .setOrigin(0.5, 0);
-    startButton.on('pointerover', () => startButton.setFillStyle(0x387f89));
-    startButton.on('pointerout', () => startButton.setFillStyle(0x2b6974));
-    startButton.on('pointerdown', () => this.startGame());
-    this.text(12, GAME_HEIGHT - 18, '1/2/3 OU SETAS', 10, '#b7d5dc');
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 24, GAME_WIDTH, 48, 0x0d1c2b, 0.89);
+    this.text(24, GAME_HEIGHT - 34, '1 / 2 / 3 OU SETAS', 16, '#d5e9f1');
+    const start = this.add.rectangle(GAME_WIDTH - 133, GAME_HEIGHT - 24, 238, 36, 0x2a6a77)
+      .setStrokeStyle(1, 0x88e4df).setInteractive({ useHandCursor: true });
+    this.text(GAME_WIDTH - 133, GAME_HEIGHT - 35, 'INICIAR [ENTER]', 18, '#ffffff').setOrigin(0.5, 0);
+    start.on('pointerover', () => start.setFillStyle(0x348893));
+    start.on('pointerout', () => start.setFillStyle(0x2a6a77));
+    start.on('pointerdown', () => this.startGame());
 
     this.select(this.selectedIndex);
   }
 
-  update(): void {
+  update(_time: number, delta: number): void {
+    this.previewDistance += Math.min(delta, 50) * 0.026;
+    this.backdrop.update(this.previewDistance);
     if (!this.keys) return;
     if (Phaser.Input.Keyboard.JustDown(this.keys.ONE)) this.select(0);
     if (Phaser.Input.Keyboard.JustDown(this.keys.TWO)) this.select(1);
     if (Phaser.Input.Keyboard.JustDown(this.keys.THREE)) this.select(2);
-    if (Phaser.Input.Keyboard.JustDown(this.keys.LEFT)) {
+    if (Phaser.Input.Keyboard.JustDown(this.keys.LEFT))
       this.select((this.selectedIndex + PILOTS.length - 1) % PILOTS.length);
-    }
-    if (Phaser.Input.Keyboard.JustDown(this.keys.RIGHT)) {
+    if (Phaser.Input.Keyboard.JustDown(this.keys.RIGHT))
       this.select((this.selectedIndex + 1) % PILOTS.length);
-    }
     if (Phaser.Input.Keyboard.JustDown(this.keys.ENTER)
-      || Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) {
-      this.startGame();
-    }
+      || Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.startGame();
   }
 
   private buildCard(pilot: PilotDefinition, index: number): void {
-    const x = 66 + index * 126;
-    const panel = this.add.rectangle(x, 115, 116, 130, 0x1b2b3e)
-      .setStrokeStyle(1, 0x385b70)
-      .setInteractive({ useHandCursor: true });
+    const x = 146 + index * 238;
+    const panel = this.add.rectangle(x, 222, 219, 235, 0x1b2939, 0.94)
+      .setStrokeStyle(2, 0x39556a).setInteractive({ useHandCursor: true });
     panel.on('pointerdown', () => this.select(index));
-    const label = this.text(x, 54, String(index + 1) + '  ' + pilot.name, 11, '#d2e1e9')
+    const label = this.text(x, 111, String(index + 1) + '  ' + pilot.name, 19, '#e3f2fa')
       .setOrigin(0.5, 0);
-    this.text(x, 77, pilot.shipName.toUpperCase(), 15, '#f2f7fa')
-      .setOrigin(0.5, 0);
+    this.text(x, 143, pilot.shipName.toUpperCase(), 25, '#f5fafc').setOrigin(0.5, 0);
     const texture = pilot.id === 'nolan' ? 'ship-rivet-v2-idle' : 'ship-' + pilot.id;
-    const ship = this.add.sprite(x, 111, texture, 0);
-    ship.setScale(pilot.id === 'nolan' ? 0.88 : 1.25)
-      .play('ship-' + pilot.id + '-idle');
-    this.text(x, 133, pilot.role, 10, '#b5d9df').setOrigin(0.5, 0);
-    this.text(x, 148, 'VEL ' + pilot.speed + '   TIROS ' + pilot.shotsPerSecond + '/s', 9, '#e2e9ef')
+    const ship = this.add.sprite(x, 227, texture, 0);
+    ship.setScale(pilot.id === 'nolan' ? 1.18 : 2).play('ship-' + pilot.id + '-idle');
+    this.text(x, 281, pilot.role, 15, '#a5d4e0').setOrigin(0.5, 0);
+    this.text(x, 306, 'VEL ' + pilot.speed + '   TIROS ' + pilot.shotsPerSecond + '/s', 14, '#dae8ef')
       .setOrigin(0.5, 0);
-    this.text(x, 163, 'DANO ' + pilot.damage.toFixed(2), 10, '#cbdde8')
-      .setOrigin(0.5, 0);
+    this.text(x, 326, 'DANO ' + pilot.damage.toFixed(2), 14, '#f4c69d').setOrigin(0.5, 0);
     this.cards.push({ panel, label });
   }
 
   private select(index: number): void {
     this.selectedIndex = index;
-    this.cards.forEach((card, i) => {
-      card.panel.setStrokeStyle(i === index ? 2 : 1, i === index ? 0x7de5df : 0x385b70);
-      card.panel.setFillStyle(i === index ? 0x263f54 : 0x1b2b3e);
-      card.label.setColor(i === index ? '#91ebe3' : '#d2e1e9');
+    this.cards.forEach((card, idx) => {
+      card.panel.setStrokeStyle(idx === index ? 2 : 1, idx === index ? 0x85f4e4 : 0x3b5269);
+      card.panel.setFillStyle(idx === index ? 0x243c4e : 0x1b2939, 0.95);
+      card.label.setColor(idx === index ? '#9bf7e6' : '#dcecf5');
     });
-    const pilot = PILOTS[this.selectedIndex];
-    this.specialText.setText('ESPECIAL: ' + pilot.specialName);
+    this.specialText.setText('ESPECIAL: ' + PILOTS[index].specialName + '  (EM DESENVOLVIMENTO)');
   }
 
   private startGame(): void {
     this.scene.start('PrototypeScene', { pilotId: PILOTS[this.selectedIndex].id });
   }
 
-  private text(
-    x: number, y: number, value: string, size: number, color: string,
-  ): Phaser.GameObjects.Text {
-    return this.add.text(x, y, value, {
-      fontFamily: 'Arial, Helvetica, sans-serif',
-      fontSize: size + 'px',
-      fontStyle: 'bold',
-      color,
-    }).setResolution(3);
+  private text(x: number, y: number, message: string, size: number, color: string): Phaser.GameObjects.Text {
+    return this.add.text(x, y, message, {
+      fontFamily: 'Arial, Helvetica, sans-serif', fontSize: size + 'px',
+      fontStyle: 'bold', color,
+    }).setResolution(2);
   }
 }

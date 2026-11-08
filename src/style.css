@@ -27,7 +27,9 @@ body {
 #game canvas {
   display: block;
   flex: 0 0 auto;
-  image-rendering: pixelated;
+  /* Canvas lógico 768×432: escala normal suaviza somente a ampliação da tela.
+     As texturas continuam em pixel art e Phaser render.pixelArt permanece ativo. */
+  image-rendering: auto;
   touch-action: none;
 }
 #rotate-hint { display: none; }

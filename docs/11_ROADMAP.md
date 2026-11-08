@@ -1,6 +1,6 @@
 # 11 — Roadmap de produção (prioridade: GAMEPLAY)
 
-**Decisão de priorização:** gameplay antes de acabamento visual. Primeiro construir o ciclo de movimentação → disparo → reação do inimigo → dano → derrota/vitória, e **depois substituir os elementos diagnósticos por sprites animados autorais**. Nenhum marcador do protótipo serve como arte final.
+**Direção atual:** shoot 'em up horizontal com fase avançando continuamente, sem rounds/ondas de arena. Gameplay e pixel art moderna evoluem em conjunto; uma nave é refinada por vez. Nenhum marcador de debug é arte final.
 
 ## Estado
 | Tarefa | Estado | Entrega |
@@ -13,10 +13,11 @@
 | T06 | IMPLEMENTADA — QA manual pendente | Cena de seleção e atributos dos três pilotos; [detalhes](19_T06_ESCOLHA_DE_PILOTOS.md) |
 | T07 | BASE V1 — não aprovada visualmente | Sprites preliminares integrados, mas exigem revisão individual; [base técnica](20_T07_SPRITES_COMBATE.md) |
 | T07.1 | RIVET V2 IMPLEMENTADA — QA visual pendente | Uma nave por vez: nova Rivet 112×54, animações de voo, tiro, dano e morte; [detalhes](21_RIVET_V2_MODERN_PIXEL_ART.md) |
-| Próximo | FOCO | Polir e validar a Rivet V2 no navegador antes de iniciar outras naves e efeitos |
-| T08–T70 | REPLANEJAR APÓS GATE RIVET | Especiais com sprites, combate completo e próxima vertical slice |
+| T08 | IMPLEMENTADA — QA visual pendente | Resolução 768×432, parallax e StageDirector sem ondas; [detalhes](22_T08_SCROLL_CONTINUO_E_QUALIDADE.md) |
+| Próximo | FOCO | Validar a progressão em navegador e corrigir texturas verdes se ainda surgirem |
+| T09–T70 | REPLANEJAR APÓS GATE RIVET | Especiais com sprites, combate completo, fases e boss mais adiante |
 
-A avaliação de T02 inclui CI build/typecheck e teste manual de viewport e toque. Para detalhes ver [T02](15_T02_GAMEPLAY_FIRST.md). A T03 implementa dano/vidas com [registro de aceite](16_T03_COMBATE_E_DANO.md). A T04 entrega UI funcional e o fluxo de reinício em [seu documento](17_T04_HUD_E_GAME_OVER.md). A T05 registra a lógica das primeiras ondas em [seu documento](18_T05_INIMIGOS_E_ONDAS.md). A T06 registra a escolha real de pilotos em [seu documento](19_T06_ESCOLHA_DE_PILOTOS.md).
+A avaliação de T02 inclui CI build/typecheck e teste manual de viewport e toque. Para detalhes ver [T02](15_T02_GAMEPLAY_FIRST.md). A T03 implementa dano/vidas com [registro de aceite](16_T03_COMBATE_E_DANO.md). A T04 entrega UI funcional e o fluxo de reinício em [seu documento](17_T04_HUD_E_GAME_OVER.md). A T05 descreve a primeira IA de inimigos no [registro histórico](18_T05_INIMIGOS_E_ONDAS.md), cujo modelo de ondas foi retirado em T08. A T06 registra a escolha real de pilotos em [seu documento](19_T06_ESCOLHA_DE_PILOTOS.md).
 
 ## Primeiro ciclo: 1 minuto jogável (T03–T10)
 
@@ -24,11 +25,11 @@ A avaliação de T02 inclui CI build/typecheck e teste manual de viewport e toqu
 |---|---|---|---|
 | T03 | Alta | Adicionar dano à nave e projéteis inimigos | Integridade 3, i-frames, morte, respawn e colisões honestas |
 | T04 | Alta | HUD vivo e reinício de tentativa | Vidas, HP, score, botão reiniciar e Game Over funcionais |
-| T05 | Alta | Primeiro inimigo real e ondas roteirizadas | Scout + Lancer com telegraph, tiros e spawns reproduzíveis |
+| T05 | Alta | Primeiro inimigo real (protótipo original de ondas) | História: Scout + Lancer, substituído pelo StageDirector em T08 |
 | T06 | Alta | Seleção dos três pilotos com atributos reais | Nolan, Cora e Harlan mudam controle/cadência/dano |
 | T07 | Alta | Pipeline visual de combate com spritesheets | Naves, projéteis, inimigos, impactos e explosões animados via PNG |
-| T08 | Alta | Revisão visual da Rivet e polimento de animações | Rivet aceita em gameplay no navegador antes da arte das outras naves |
-| T09 | Alta | Preparar próximos spritesheets um por vez | Moth/Knuckle e efeitos avaliados individualmente após a Rivet |
+| T08 | Alta | Fase auto-scroll e resolução de pixel art mais densa | 768×432, 3 camadas de parallax, eventos por distância, sem ondas |
+| T09 | Alta | Refinar Rivet e verificar inimigos/FX em jogo | Corrigir texturas ausentes, animações e legibilidade sem criar novas naves |
 | T10 | Alta | Fechar 1 minuto + bateria de regressão | 3 pilotos, teste mobile inicial, controles, colisões, FPS medido |
 
 **Gate QA após T10**: testes de movimentação, hitbox, tiro, IA, animação (frames diferentes), viewport, arte, performance; só então ampliar conteúdo.
@@ -46,7 +47,7 @@ A avaliação de T02 inclui CI build/typecheck e teste manual de viewport e toqu
 T21 upgrades de todas as armas; T22 pickups reparo/escudo/bomba; T23 Tempestade Prismática final; T24 Salto Fantasma final; T25 Ruptura Nova final; T26 ressonância e bombas; T27 salvamento de checkpoint; T28 miniboss modular completo; T29 trecho de 5min; T30 QA e balanceamento.
 
 ## Primeira fase completa (T31–T40)
-T31 cenário Cinturão de Ferrugem; T32 boss KRM-17 arte modular; T33 boss 3 estados e ataques; T34 Pause/Continue/Game Over refinados; T35 score/combos/rank; T36 save de campanha; T37 Android controles e safe areas finalizados; T38 menus pixel art; T39 trilha, áudio e mix fase 1; T40 finalizar ~8–10 minutos e QA PC/Android.
+T31 cenário definitivo Cinturão de Ferrugem; T32 boss KRM-17 arte modular; T33 boss 3 estados e ataques; T34 Pause/Continue/Game Over refinados; T35 score/combos/rank; T36 save de campanha; T37 Android controles e safe areas finalizados; T38 menus pixel art; T39 trilha, áudio e mix fase 1; T40 finalizar ~8–10 minutos e QA PC/Android.
 
 ## Campanha (T41–T70)
 T41–T45 fase 2; T46–T50 fase 3; T51–T55 fase 4; T56–T60 fase 5. T61–T70 ajustes, release, acessibilidade, builds Android, licenças, testes e otimização. Gates de regressão a cada 10 tarefas continuam obrigatórios.

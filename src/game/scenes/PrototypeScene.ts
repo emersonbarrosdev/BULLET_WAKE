@@ -1,23 +1,17 @@
 import Phaser from 'phaser';
-import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from '../constants';
+import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH, HUD_BOTTOM, HUD_TOP, PLAYER_SPEED_FACTOR } from '../constants';
 import { clamp, moveInBounds } from '../systems/movement';
-import {
-  advanceHealth, applyPlayerHit, initialPlayerHealth, type HitEvent, type PlayerHealth,
-} from '../systems/combat';
-import {
-  EnemyDirector, type EnemyModel, type EnemyShotEvent,
-} from '../systems/enemyDirector';
+import { advanceHealth, applyPlayerHit, initialPlayerHealth, type HitEvent, type PlayerHealth } from '../systems/combat';
+import { StageDirector, type EnemyModel, type EnemyShotEvent } from '../systems/stageDirector';
 import { CombatHud } from '../ui/CombatHud';
 import { getPilot, shotIntervalMs, type PilotDefinition } from '../data/pilots';
 import { registerGameAnimations } from '../assets/spriteAssets';
 import { GameOverOverlay } from '../ui/GameOverOverlay';
+import { StageCompleteOverlay } from '../ui/StageCompleteOverlay';
+import { StageBackdrop } from './StageBackdrop';
 
 type Keys = Record<'W' | 'A' | 'S' | 'D' | 'SPACE' | 'R' | 'ESC', Phaser.Input.Keyboard.Key>;
-interface Projectile {
-  node: Phaser.GameObjects.Sprite;
-  velocityX: number;
-  velocityY: number;
-}
+interface Projectile { node: Phaser.GameObjects.Sprite; velocityX: number; velocityY: number }
 interface EnemyVisual {
   container: Phaser.GameObjects.Container;
   body: Phaser.GameObjects.Sprite;
@@ -25,69 +19,64 @@ interface EnemyVisual {
   animationKey: string;
 }
 
-/**
- * T05: ondas de Scouts e Lancers com FSM e telegraph.
- * Marcadores geométricos ainda são DEBUG, nunca sprites de arte final.
- */
+/** Primeiro trecho de fase com auto-scroll lateral — sem ondas ou arena. */
 export class PrototypeScene extends Phaser.Scene {
   private ship!: Phaser.GameObjects.Container;
   private shipSprite!: Phaser.GameObjects.Sprite;
   private shipAnimation = '';
-  private shipFirePoseMs = 0;
-  private shipHitPoseMs = 0;
+  private firePoseMs = 0;
+  private hitPoseMs = 0;
   private pilot: PilotDefinition = getPilot('nolan');
   private hud!: CombatHud;
+  private backdrop!: StageBackdrop;
   private keyboardControls?: Keys;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private shots: Projectile[] = [];
   private enemyShots: Projectile[] = [];
   private enemyVisuals = new Map<number, EnemyVisual>();
-  private director = new EnemyDirector();
+  private director = new StageDirector(GAME_WIDTH);
   private shootCooldown = 0;
   private score = 0;
+  private completed = false;
   private health: PlayerHealth = initialPlayerHealth();
 
-  constructor() {
-    super({ key: 'PrototypeScene' });
-  }
+  constructor() { super({ key: 'PrototypeScene' }); }
 
   init(data: { pilotId?: string } = {}): void {
-    this.pilot = getPilot(data?.pilotId);
+    this.pilot = getPilot(data.pilotId);
   }
 
   create(): void {
     registerGameAnimations(this);
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
-    // Scene.restart reusa instância; esvaziar absolutamente todo estado de gameplay.
     this.shipAnimation = '';
-    this.shipFirePoseMs = 0;
-    this.shipHitPoseMs = 0;
+    this.firePoseMs = 0;
+    this.hitPoseMs = 0;
     this.shots = [];
     this.enemyShots = [];
     this.enemyVisuals.clear();
-    this.director = new EnemyDirector();
+    this.director = new StageDirector(GAME_WIDTH);
     this.shootCooldown = 0;
     this.score = 0;
+    this.completed = false;
     this.health = initialPlayerHealth();
 
+    this.backdrop = new StageBackdrop(this);
     this.keyboardControls = this.input.keyboard?.addKeys('W,A,S,D,SPACE,R,ESC') as Keys | undefined;
     this.cursors = this.input.keyboard?.createCursorKeys();
 
     this.hud = new CombatHud(this, () => this.restart());
-    this.hud.setScore(this.score);
-    this.hud.setHealth(this.health);
-    this.hud.setWave(1);
     this.hud.setPilot(this.pilot.shipName);
+    this.hud.setScore(0);
+    this.hud.setHealth(this.health);
+    this.hud.setProgress(0);
+    this.hud.flash('FASE 01  -  CINTURAO DE FERRUGEM', '#a6e3e2', 2100);
 
-    // Sprite PNG animado em perfil; hurtbox continua independente do desenho.
-    const shipTexture = this.pilot.id === 'nolan'
-      ? 'ship-rivet-v2-idle'
-      : 'ship-' + this.pilot.id;
-    this.shipSprite = this.add.sprite(0, 0, shipTexture, 0);
-    // Rivet V2 tem 112x54 px de detalhe; a escala é visual,
-    // enquanto a colisão permanece definida pela lógica, não pelo PNG.
-    this.shipSprite.setScale(this.pilot.id === 'nolan' ? 0.68 : 1);
-    this.ship = this.add.container(64, GAME_HEIGHT / 2, [this.shipSprite]).setDepth(7);
+    const key = this.pilot.id === 'nolan' ? 'ship-rivet-v2-idle' : 'ship-' + this.pilot.id;
+    this.shipSprite = this.add.sprite(0, 0, key, 0);
+    // Aumenta a densidade do canvas sem ampliar exageradamente os pixels da Rivet.
+    this.shipSprite.setScale(this.pilot.id === 'nolan' ? 1.08 : 1.95);
+    this.ship = this.add.container(135, GAME_HEIGHT / 2, [this.shipSprite]).setDepth(7);
     this.changeShipAnimation('idle');
   }
 
@@ -101,76 +90,77 @@ export class PrototypeScene extends Phaser.Scene {
       this.choosePilot();
       return;
     }
-    if (this.health.gameOver) return;
+    if (this.health.gameOver || this.completed) return;
 
     this.health = advanceHealth(this.health, dt);
-    this.shipFirePoseMs = Math.max(0, this.shipFirePoseMs - dt);
-    this.shipHitPoseMs = Math.max(0, this.shipHitPoseMs - dt);
+    this.firePoseMs = Math.max(0, this.firePoseMs - dt);
+    this.hitPoseMs = Math.max(0, this.hitPoseMs - dt);
     this.hud.update(dt);
     this.ship.setAlpha(
       this.health.invulnerableMs > 0 && Math.floor(this.health.invulnerableMs / 110) % 2 === 0
-        ? 0.30 : 1,
+        ? 0.3 : 1,
     );
 
     const key = (name: keyof Keys): boolean => Boolean(this.keyboardControls?.[name].isDown);
     let dx = Number(key('D') || this.cursors?.right.isDown) - Number(key('A') || this.cursors?.left.isDown);
     let dy = Number(key('S') || this.cursors?.down.isDown) - Number(key('W') || this.cursors?.up.isDown);
     const pointer = this.input.activePointer;
-    const touchingArena = pointer.isDown && pointer.y > 45 && pointer.y < GAME_HEIGHT - 25;
+    const finger = pointer.isDown && pointer.y > HUD_TOP + 6 && pointer.y < GAME_HEIGHT - HUD_BOTTOM - 5;
 
-    if (touchingArena) {
-      dx = Math.abs(pointer.x - this.ship.x) > 8 ? Math.sign(pointer.x - this.ship.x) : 0;
-      dy = Math.abs(pointer.y - this.ship.y) > 8 ? Math.sign(pointer.y - this.ship.y) : 0;
+    if (finger) {
+      dx = Math.abs(pointer.x - this.ship.x) > 12 ? Math.sign(pointer.x - this.ship.x) : 0;
+      dy = Math.abs(pointer.y - this.ship.y) > 12 ? Math.sign(pointer.y - this.ship.y) : 0;
     }
 
-    // Limites permitem a nave maior caber sem invadir as barras do HUD.
-    const isRivet = this.pilot.id === 'nolan';
+    const shipHalfWidth = this.pilot.id === 'nolan' ? 61 : 47;
+    const shipHalfHeight = this.pilot.id === 'nolan' ? 30 : 28;
     const moved = moveInBounds(
       { x: this.ship.x, y: this.ship.y },
-      dx, dy, this.pilot.speed, dt,
-      isRivet
-        ? { minX: 40, maxX: GAME_WIDTH - 41, minY: 65, maxY: GAME_HEIGHT - 43 }
-        : { minX: 23, maxX: GAME_WIDTH - 24, minY: 56, maxY: GAME_HEIGHT - 32 },
+      dx, dy, this.pilot.speed * PLAYER_SPEED_FACTOR, dt,
+      {
+        minX: shipHalfWidth,
+        maxX: GAME_WIDTH - shipHalfWidth,
+        minY: HUD_TOP + shipHalfHeight + 8,
+        maxY: GAME_HEIGHT - HUD_BOTTOM - shipHalfHeight - 8,
+      },
     );
     this.ship.setPosition(moved.x, moved.y);
-    const pose = isRivet && this.shipHitPoseMs > 0 ? 'hit'
-      : dy < 0 ? 'up'
-      : dy > 0 ? 'down'
-      : isRivet && this.shipFirePoseMs > 0 ? 'fire'
-      : 'idle';
-    this.changeShipAnimation(pose);
+    const state = this.pilot.id === 'nolan' && this.hitPoseMs > 0 ? 'hit'
+      : dy < 0 ? 'up' : dy > 0 ? 'down'
+      : this.pilot.id === 'nolan' && this.firePoseMs > 0 ? 'fire' : 'idle';
+    this.changeShipAnimation(state);
 
     this.shootCooldown = Math.max(0, this.shootCooldown - dt);
-    if ((key('SPACE') || this.cursors?.space.isDown || touchingArena) && this.shootCooldown <= 0) {
+    if ((key('SPACE') || this.cursors?.space.isDown || finger) && this.shootCooldown <= 0) {
       this.fire();
       this.shootCooldown += shotIntervalMs(this.pilot);
     }
 
     const tick = this.director.update(dt, this.ship.x, this.ship.y);
-    for (const spawned of tick.spawned) this.makeEnemyVisual(spawned);
-    if (tick.waveChanged) {
-      this.hud.setWave(tick.wave);
-      this.hud.flash('ONDA ' + String(tick.wave).padStart(2, '0'), '#d5b8f1', 1100);
-    }
-    for (const enemyShot of tick.shots) this.spawnEnemyShot(enemyShot);
+    this.backdrop.update(tick.scrollPx);
+    this.hud.setProgress(tick.progress);
+    if (tick.sectorChanged) this.hud.setSector(tick.sector);
+    for (const enemy of tick.spawned) this.makeEnemyVisual(enemy);
+    for (const event of tick.shots) this.spawnEnemyShot(event);
     this.syncEnemyVisuals();
     this.advancePlayerShots(dt);
     this.checkEnemyContacts();
     if (this.health.gameOver) return;
     this.advanceEnemyShots(dt);
+    if (tick.completed) {
+      this.completed = true;
+      this.clearEnemyShots();
+      this.clearPlayerShots();
+      new StageCompleteOverlay(this, this.score, () => this.restart(), () => this.choosePilot());
+    }
   }
 
-  private restart(): void {
-    this.scene.restart({ pilotId: this.pilot.id });
-  }
-
+  private restart(): void { this.scene.restart({ pilotId: this.pilot.id }); }
   private choosePilot(): void {
     this.scene.start('PilotSelectScene', { selectedPilotId: this.pilot.id });
   }
 
   private changeShipAnimation(state: 'idle' | 'up' | 'down' | 'fire' | 'hit'): void {
-    // Moth e Knuckle mantêm temporariamente suas animações V1,
-    // sem fabricar versões definitivas antes da revisão da Rivet.
     if (this.pilot.id !== 'nolan' && (state === 'fire' || state === 'hit')) state = 'idle';
     if (this.shipAnimation === state) return;
     this.shipAnimation = state;
@@ -178,58 +168,52 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private playEffect(kind: 'muzzle' | 'hit' | 'explosion', x: number, y: number): void {
-    const fx = this.add.sprite(x, y, 'fx-' + kind, 0).setDepth(15);
-    fx.once('animationcomplete', () => fx.destroy());
-    fx.play('fx-' + kind + '-play');
+    const sprite = this.add.sprite(x, y, 'fx-' + kind, 0).setScale(1.5).setDepth(15);
+    sprite.once('animationcomplete', () => sprite.destroy());
+    sprite.play('fx-' + kind + '-play');
   }
 
   private fire(): void {
-    const offset = this.pilot.id === 'nolan' ? 33
-      : this.pilot.id === 'harlan' ? 24 : 21;
-    if (this.pilot.id === 'nolan' && this.shipHitPoseMs === 0) {
-      this.shipFirePoseMs = 170;
-    }
-    const x = this.ship.x + offset;
-    const node = this.add.sprite(x, this.ship.y, 'shot-' + this.pilot.id, 0)
-      .setDepth(8);
-    node.play('shot-' + this.pilot.id + '-loop');
-    this.shots.push({ node, velocityX: 300, velocityY: 0 });
-    this.playEffect('muzzle', x - 5, this.ship.y);
+    const x = this.ship.x + (this.pilot.id === 'nolan' ? 65 : 42);
+    if (this.pilot.id === 'nolan' && this.hitPoseMs === 0) this.firePoseMs = 150;
+    const shot = this.add.sprite(x, this.ship.y, 'shot-' + this.pilot.id, 0)
+      .setScale(1.7).setDepth(9);
+    shot.play('shot-' + this.pilot.id + '-loop');
+    this.shots.push({ node: shot, velocityX: 535, velocityY: 0 });
+    this.playEffect('muzzle', x - 10, this.ship.y);
   }
 
   private makeEnemyVisual(enemy: EnemyModel): void {
-    const key = 'enemy-' + enemy.kind;
-    const body = this.add.sprite(0, 0, key, 0);
-    body.play(key + '-fly');
-    const warning = this.add.sprite(enemy.kind === 'scout' ? -13 : -20, 0, 'fx-warning', 0)
-      .setVisible(false).setScale(0.65);
+    const texture = 'enemy-' + enemy.kind;
+    const body = this.add.sprite(0, 0, texture, 0)
+      .setScale(enemy.kind === 'scout' ? 2.15 : 1.85);
+    body.play(texture + '-fly');
+    const warning = this.add.sprite(enemy.kind === 'scout' ? -28 : -40, 0, 'fx-warning', 0)
+      .setScale(1.15).setVisible(false);
     const container = this.add.container(enemy.x, enemy.y, [body, warning]).setDepth(5);
-    this.enemyVisuals.set(enemy.id, {
-      container, body, warning, animationKey: key + '-fly',
-    });
+    this.enemyVisuals.set(enemy.id, { container, body, warning, animationKey: texture + '-fly' });
   }
 
   private syncEnemyVisuals(): void {
-    const active = new Set(this.director.enemies.map(enemy => enemy.id));
+    const active = new Set(this.director.enemies.map(e => e.id));
     for (const [id, visual] of this.enemyVisuals) {
-      if (!active.has(id)) {
-        visual.container.destroy();
-        this.enemyVisuals.delete(id);
-      }
+      if (active.has(id)) continue;
+      visual.container.destroy();
+      this.enemyVisuals.delete(id);
     }
     for (const enemy of this.director.enemies) {
       const visual = this.enemyVisuals.get(enemy.id);
       if (!visual) continue;
       visual.container.setPosition(enemy.x, enemy.y);
-      const warning = enemy.phase === 'telegraph';
-      const nextKey = 'enemy-' + enemy.kind + (warning ? '-warning' : '-fly');
-      if (nextKey !== visual.animationKey) {
-        visual.body.play(nextKey, true);
-        visual.animationKey = nextKey;
+      const preparing = enemy.phase === 'telegraph';
+      const desired = 'enemy-' + enemy.kind + (preparing ? '-warning' : '-fly');
+      if (desired !== visual.animationKey) {
+        visual.body.play(desired, true);
+        visual.animationKey = desired;
       }
-      if (warning && !visual.warning.visible) {
+      if (preparing && !visual.warning.visible) {
         visual.warning.setVisible(true).play('fx-warning-loop');
-      } else if (!warning && visual.warning.visible) {
+      } else if (!preparing && visual.warning.visible) {
         visual.warning.setVisible(false).stop();
       }
       if (enemy.hp < enemy.maxHp) visual.body.setTint(0xffb1a7);
@@ -238,31 +222,32 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private spawnEnemyShot(event: EnemyShotEvent): void {
-    if (this.enemyShots.length >= 45) return;
-    const bullet = this.add.sprite(event.x, event.y, 'shot-enemy', 0).setDepth(9);
+    if (this.enemyShots.length >= 64) return;
+    const bullet = this.add.sprite(event.x, event.y, 'shot-enemy', 0)
+      .setScale(1.55).setDepth(10);
     bullet.play('shot-enemy-loop');
-    this.playEffect('muzzle', event.x + 7, event.y);
     this.enemyShots.push({
-      node: bullet,
-      velocityX: event.velocityX,
-      velocityY: event.velocityY,
+      node: bullet, velocityX: event.velocityX, velocityY: event.velocityY,
     });
+    this.playEffect('muzzle', event.x + 11, event.y);
   }
 
   private advancePlayerShots(dt: number): void {
-    for (let i = this.shots.length - 1; i >= 0; i -= 1) {
+    for (let i = this.shots.length - 1; i >= 0; i--) {
       const shot = this.shots[i];
+      const prevX = shot.node.x;
       shot.node.x += shot.velocityX * dt / 1000;
       let collided = false;
       for (const enemy of this.director.enemies) {
-        const extentX = enemy.kind === 'scout' ? 10 : 16;
-        const extentY = enemy.kind === 'scout' ? 8 : 10;
-        if (Math.abs(shot.node.x - enemy.x) <= extentX
-          && Math.abs(shot.node.y - enemy.y) <= extentY) {
-          const outcome = this.director.damage(enemy.id, this.pilot.damage);
-          this.playEffect(outcome.killed ? 'explosion' : 'hit', enemy.x, enemy.y);
-          if (outcome.killed) {
-            this.score += outcome.score;
+        const hx = enemy.kind === 'scout' ? 19 : 29;
+        const hy = enemy.kind === 'scout' ? 15 : 21;
+        // Teste varrido no eixo X para não atravessar inimigos entre frames.
+        if (shot.node.x + 6 >= enemy.x - hx && prevX - 6 <= enemy.x + hx
+          && Math.abs(shot.node.y - enemy.y) <= hy) {
+          const hit = this.director.damage(enemy.id, this.pilot.damage);
+          this.playEffect(hit.killed ? 'explosion' : 'hit', enemy.x, enemy.y);
+          if (hit.killed) {
+            this.score += hit.score;
             this.hud.setScore(this.score);
             this.syncEnemyVisuals();
           }
@@ -270,7 +255,7 @@ export class PrototypeScene extends Phaser.Scene {
           break;
         }
       }
-      if (collided || shot.node.x > GAME_WIDTH + 8) {
+      if (collided || shot.node.x > GAME_WIDTH + 20) {
         shot.node.destroy();
         this.shots.splice(i, 1);
       }
@@ -279,65 +264,67 @@ export class PrototypeScene extends Phaser.Scene {
 
   private checkEnemyContacts(): void {
     for (const enemy of this.director.enemies) {
-      const extentX = enemy.kind === 'scout' ? 15 : 20;
-      const extentY = enemy.kind === 'scout' ? 11 : 13;
-      if (Math.abs(this.ship.x - enemy.x) <= extentX
-        && Math.abs(this.ship.y - enemy.y) <= extentY) {
-        const result = this.damageShip();
-        // Evita um inimigo colado repetir contato quando a proteção acaba.
+      const hx = enemy.kind === 'scout' ? 29 : 42;
+      const hy = enemy.kind === 'scout' ? 21 : 29;
+      if (Math.abs(this.ship.x - enemy.x) < hx + 15
+        && Math.abs(this.ship.y - enemy.y) < hy + 12) {
+        const response = this.damageShip();
         this.director.remove(enemy.id);
         this.playEffect('explosion', enemy.x, enemy.y);
         this.syncEnemyVisuals();
-        if (result === 'game-over') return;
+        if (response === 'game-over') return;
         break;
       }
     }
   }
 
   private advanceEnemyShots(dt: number): void {
-    for (let i = this.enemyShots.length - 1; i >= 0; i -= 1) {
+    for (let i = this.enemyShots.length - 1; i >= 0; i--) {
       const shot = this.enemyShots[i];
+      const previousX = shot.node.x;
+      const previousY = shot.node.y;
       shot.node.x += shot.velocityX * dt / 1000;
       shot.node.y += shot.velocityY * dt / 1000;
-      const hit = Math.abs(shot.node.x - this.ship.x) <= 8
-        && Math.abs(shot.node.y - this.ship.y) <= 6;
-      const outside = shot.node.x < -8 || shot.node.x > GAME_WIDTH + 8
-        || shot.node.y < -8 || shot.node.y > GAME_HEIGHT + 8;
+      const hit = Math.min(previousX, shot.node.x) - 8 <= this.ship.x + 16
+        && Math.max(previousX, shot.node.x) + 8 >= this.ship.x - 16
+        && Math.min(previousY, shot.node.y) - 8 <= this.ship.y + 11
+        && Math.max(previousY, shot.node.y) + 8 >= this.ship.y - 11;
+      const outside = shot.node.x < -15 || shot.node.x > GAME_WIDTH + 15
+        || shot.node.y < HUD_TOP - 20 || shot.node.y > GAME_HEIGHT - HUD_BOTTOM + 20;
       if (hit || outside) {
         shot.node.destroy();
         this.enemyShots.splice(i, 1);
       }
       if (hit) {
-        const event = this.damageShip();
-        if (event === 'respawn' || event === 'game-over') return;
+        const result = this.damageShip();
+        if (result === 'respawn' || result === 'game-over') return;
       }
     }
   }
 
   private damageShip(): HitEvent {
-    const result = applyPlayerHit(this.health);
-    this.health = result.state;
-    if (result.event === 'ignored') return result.event;
+    const outcome = applyPlayerHit(this.health);
+    this.health = outcome.state;
+    if (outcome.event === 'ignored') return outcome.event;
     this.hud.setHealth(this.health);
-    if (result.event === 'damaged') {
-      this.hud.flash('ACERTO!  -1 HP', '#ffb77b', 1000);
+    if (outcome.event === 'damaged') {
+      this.hud.flash('ACERTO! -1 HP', '#ffd099', 950);
       if (this.pilot.id === 'nolan') {
-        this.shipHitPoseMs = 280;
+        this.hitPoseMs = 280;
         this.changeShipAnimation('hit');
       }
       this.playEffect('hit', this.ship.x, this.ship.y);
-    }
-    if (result.event === 'respawn') {
-      this.shipFirePoseMs = 0;
-      this.shipHitPoseMs = 0;
-      this.shipAnimation = '';
+    } else if (outcome.event === 'respawn') {
+      const oldX = this.ship.x, oldY = this.ship.y;
+      this.playEffect('explosion', oldX, oldY);
       this.clearEnemyShots();
-      this.ship.setPosition(64, GAME_HEIGHT / 2);
-      this.ship.setAlpha(1);
-      this.playEffect('explosion', this.ship.x, this.ship.y);
-      this.hud.flash('VIDA PERDIDA  /  PROTEGIDO', '#f4c480', 1500);
-    }
-    if (result.event === 'game-over') {
+      this.firePoseMs = 0;
+      this.hitPoseMs = 0;
+      this.shipAnimation = '';
+      this.ship.setPosition(135, GAME_HEIGHT / 2).setAlpha(1);
+      this.changeShipAnimation('idle');
+      this.hud.flash('VIDA PERDIDA  /  PROTECAO TEMPORARIA', '#ffcf9e', 1700);
+    } else if (outcome.event === 'game-over') {
       this.clearEnemyShots();
       this.clearPlayerShots();
       this.shipSprite.play('ship-' + this.pilot.id + '-death');
@@ -347,7 +334,7 @@ export class PrototypeScene extends Phaser.Scene {
         new GameOverOverlay(this, this.score, () => this.restart(), () => this.choosePilot());
       });
     }
-    return result.event;
+    return outcome.event;
   }
 
   private clearEnemyShots(): void {

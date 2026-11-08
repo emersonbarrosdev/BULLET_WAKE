@@ -1,62 +1,39 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../constants';
 
-/** Fim de tentativa: repetir com piloto atual ou voltar à seleção. */
+/** Overlay centralizado na nova resolução; mantém escolhas de reinício/piloto. */
 export class GameOverOverlay extends Phaser.GameObjects.Container {
-  constructor(
-    scene: Phaser.Scene,
-    score: number,
-    onRestart: () => void,
-    onChoosePilot: () => void,
-  ) {
+  constructor(scene: Phaser.Scene, score: number, onRestart: () => void, onChoosePilot: () => void) {
     super(scene, 0, 0);
+    const backdrop = scene.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x060e1b, 0.87);
+    const panel = scene.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 420, 268, 0x172739)
+      .setStrokeStyle(2, 0x7bd3d0);
 
-    const blackout = scene.add.rectangle(
-      GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x080f19, 0.88,
-    );
-    const panel = scene.add.rectangle(
-      GAME_WIDTH / 2, GAME_HEIGHT / 2, 290, 168, 0x15263a,
-    ).setStrokeStyle(2, 0x77d5d1);
-
-    const header = this.label(scene, GAME_WIDTH / 2, 47, 'GAME OVER', 27, '#f4b77a')
+    const title = this.label(scene, GAME_WIDTH / 2, 111, 'GAME OVER', 37, '#ffb780').setOrigin(0.5, 0);
+    const points = this.label(scene, GAME_WIDTH / 2, 165, 'SCORE FINAL: ' + score.toString().padStart(6, '0'),
+      19, '#e4f2fa').setOrigin(0.5, 0);
+    const replay = scene.add.rectangle(GAME_WIDTH / 2, 230, 268, 40, 0x2d6877)
+      .setStrokeStyle(1, 0x9cfcf0).setInteractive({ useHandCursor: true });
+    const replayText = this.label(scene, GAME_WIDTH / 2, 218, 'JOGAR NOVAMENTE [R]', 18, '#ffffff')
       .setOrigin(0.5, 0);
-    const caption = this.label(
-      scene, GAME_WIDTH / 2, 86, 'PONTUACAO FINAL: ' + score.toString().padStart(6, '0'),
-      12, '#edf5fa',
-    ).setOrigin(0.5, 0);
-
-    const again = scene.add.rectangle(
-      GAME_WIDTH / 2, 127, 190, 28, 0x2c6472,
-    ).setStrokeStyle(1, 0x80e3d7).setInteractive({ useHandCursor: true });
-    const againText = this.label(scene, GAME_WIDTH / 2, 119, 'JOGAR NOVAMENTE', 13, '#f9ffff')
+    replay.on('pointerdown', onRestart);
+    const change = scene.add.rectangle(GAME_WIDTH / 2, 286, 268, 40, 0x29465b)
+      .setStrokeStyle(1, 0x8cacc1).setInteractive({ useHandCursor: true });
+    const changeText = this.label(scene, GAME_WIDTH / 2, 274, 'TROCAR PILOTO [ESC]', 18, '#ffffff')
       .setOrigin(0.5, 0);
-    again.on('pointerdown', onRestart);
+    change.on('pointerdown', onChoosePilot);
 
-    const choose = scene.add.rectangle(
-      GAME_WIDTH / 2, 163, 190, 26, 0x29445b,
-    ).setStrokeStyle(1, 0x8cacc1).setInteractive({ useHandCursor: true });
-    const chooseText = this.label(scene, GAME_WIDTH / 2, 156, 'TROCAR PILOTO', 13, '#f9ffff')
-      .setOrigin(0.5, 0);
-    choose.on('pointerdown', onChoosePilot);
-
-    const hint = this.label(scene, GAME_WIDTH / 2, 192, 'R: REPETIR     ESC: PILOTOS', 10, '#c0d5df')
-      .setOrigin(0.5, 0);
-
-    this.add([
-      blackout, panel, header, caption, again, againText, choose, chooseText, hint,
-    ]);
+    this.add([backdrop, panel, title, points, replay, replayText, change, changeText]);
     this.setDepth(100);
     scene.add.existing(this);
   }
 
   private label(
-    scene: Phaser.Scene, x: number, y: number, text: string, size: number, color: string,
+    scene: Phaser.Scene, x: number, y: number, value: string, size: number, color: string,
   ): Phaser.GameObjects.Text {
-    return scene.add.text(x, y, text, {
+    return scene.add.text(x, y, value, {
       fontFamily: 'Arial, Helvetica, sans-serif',
-      fontSize: size + 'px',
-      color,
-      fontStyle: 'bold',
-    }).setResolution(3);
+      fontSize: size + 'px', color, fontStyle: 'bold',
+    }).setResolution(2);
   }
 }
