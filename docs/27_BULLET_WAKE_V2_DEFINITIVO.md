@@ -147,3 +147,4 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
 ### Tipografia
 - **Família Display / Títulos:** `Oxanium` (Google Fonts: 600, 700, 800).
 - **Família Interface / Menus / HUD:** `Rajdhani` (Google Fonts: 500, 600, 700).
+
