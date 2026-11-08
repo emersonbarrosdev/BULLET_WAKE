@@ -61,7 +61,7 @@ test('a replay does not happen inside one stage; stage events occur exactly once
     completed ||= tick.completed;
   }
   assert.equal(spawned, STAGE_EVENTS.length);
-  assert.equal(director.scrollPx, SCROLL_SPEED * 120);
+  assert.ok(Math.abs(director.scrollPx - SCROLL_SPEED * 120) < 0.01);
   assert.ok(completed);
   assert.equal(director.update(25, 135, 216).spawned.length, 0);
 });

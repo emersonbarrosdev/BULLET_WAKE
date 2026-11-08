@@ -34,8 +34,7 @@ export class PilotSelectScene extends Phaser.Scene {
     this.backdrop = new StageBackdrop(this);
     this.previewDistance = 0;
     this.cards = [];
-    this.keys = this.input.keyboard?.addKeys('LEFT,RIGHT,ENTER,SPACE,ONE,TWO,THREE')
-      as MenuKeys | undefined;
+    this.keys = this.input.keyboard?.addKeys('LEFT,RIGHT,ENTER,SPACE,ONE,TWO,THREE') as MenuKeys | undefined;
 
     this.add.rectangle(GAME_WIDTH / 2, 46, GAME_WIDTH, 92, 0x0a1628, 0.84);
     this.text(GAME_WIDTH / 2, 15, 'BULLET WAKE', 33, '#f5f9fd').setOrigin(0.5, 0);
