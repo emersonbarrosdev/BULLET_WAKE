@@ -31,6 +31,7 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 const game = new Phaser.Game(config);
+(window as unknown as { __GAME__: Phaser.Game }).__GAME__ = game;
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => game.destroy(true));
