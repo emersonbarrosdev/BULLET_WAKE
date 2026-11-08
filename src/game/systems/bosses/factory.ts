@@ -1,5 +1,5 @@
 import type { StageBoss } from './types.ts';
-import { BossKrm17 } from '../bossKrm17.ts';
+import { BossTalassarca } from './bossTalassarca.ts';
 import { BossSerpent } from './bossSerpent.ts';
 import { BossFortress } from './bossFortress.ts';
 import { BossInterceptor } from './bossInterceptor.ts';
@@ -17,7 +17,7 @@ export function createStageBoss(stageNumber: number): StageBoss {
       return new BossMeshCore();
     case 1:
     default:
-      return new BossKrm17();
+      return new BossTalassarca();
   }
 }
 

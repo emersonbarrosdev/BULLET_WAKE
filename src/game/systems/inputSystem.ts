@@ -1,14 +1,17 @@
 /**
- * BULLET WAKE — Camada de Entrada Unificada (InputSystem)
+ * BULLET WAKE V2 — Camada de Entrada Unificada (InputSystem)
  * 
  * Desacopla hardware físico (teclado, mouse, touch, gamepad) em comandos semânticos de gameplay.
- * Regras estritas:
- * 1. No Desktop PC, o clique do mouse (esquerdo ou direito) NUNCA altera moveX, moveY, velocidade ou posição da nave.
- * 2. WASD / Setas são os únicos controles de movimentação no PC.
- * 3. Barra de Espaço e Botão Esquerdo do Mouse acionam o mesmo disparo principal.
- * 4. Pressionar Espaço e Mouse simultaneamente NÃO duplica disparos (ação tratada como única).
- * 5. Botão Direito do Mouse ou tecla SHIFT acionam o disparo carregado (Wave Cannon).
- * 6. Suporte a touch apenas quando o evento for originado por toque em tela móvel (wasTouch).
+ * Diretrizes Canônicas V2:
+ * 1. MOUSE NÃO ATIRA NO PC. Cliques esquerdo/direito e cursor do mouse são 100% ignorados no gameplay.
+ * 2. WASD / Setas são os únicos comandos de movimentação no PC (diagonais normalizadas).
+ * 3. ESPAÇO: Disparo principal (contínuo segurando, manual tapando).
+ * 4. SHIFT Esquerdo: Dash / Propulsão de emergência (exatamente 3 por fase).
+ * 5. C: Carregar arma (quando aplicável).
+ * 6. X: Bomba defensiva.
+ * 7. V: Especial de ressonância do piloto.
+ * 8. ESC: Pausa / Menu.
+ * 9. O mouse é permitido EXCLUSIVAMENTE para navegação em menus e interfaces.
  */
 
 export interface RawInputFrame {
@@ -27,36 +30,29 @@ export interface RawInputFrame {
   keySpaceJustDown: boolean;
   keyShift: boolean;
   keyShiftJustDown: boolean;
-  keyShiftJustUp: boolean;
-  keyM: boolean;
-  keyMJustDown: boolean;
+  keyC: boolean;
+  keyCJustDown: boolean;
+  keyCJustUp: boolean;
   keyX: boolean;
   keyXJustDown: boolean;
-  keyK: boolean;
-  keyKJustDown: boolean;
+  keyV: boolean;
+  keyVJustDown: boolean;
+  keyM: boolean;
+  keyMJustDown: boolean;
   keyB: boolean;
   keyBJustDown: boolean;
-  keyL: boolean;
-  keyLJustDown: boolean;
   keyR: boolean;
   keyRJustDown: boolean;
   keyEsc: boolean;
   keyEscJustDown: boolean;
 
-  // Ponteiro / Mouse / Touch
-  pointerActive: boolean;
-  pointerDown: boolean;
-  pointerLeftDown: boolean;
-  pointerLeftJustDown: boolean;
-  pointerLeftJustUp: boolean;
-  pointerRightDown: boolean;
-  pointerRightJustDown: boolean;
-  pointerRightJustUp: boolean;
+  // Touch móvel (wasTouch estritamente verdadeiro no mobile)
   isTouch: boolean;
-  pointerX: number;
-  pointerY: number;
+  touchPointerDown: boolean;
+  touchX: number;
+  touchY: number;
 
-  // Coordenadas da nave (usadas exclusivamente em drag no mobile touch)
+  // Coordenadas da nave
   shipX: number;
   shipY: number;
 }
@@ -66,68 +62,82 @@ export interface PlayerActionCommands {
   moveX: number;
   /** Movimento vertical normalizado (-1 = cima, 0 = neutro, 1 = baixo) */
   moveY: number;
-  /** Intenção de disparo contínuo (Espaço ou Botão Esquerdo mantido pressionado) */
+  /** Disparo contínuo (Espaço mantido pressionado) */
   firePrimary: boolean;
-  /** Intenção de disparo manual por toque rápido (JustDown de Espaço ou Clique Esquerdo) */
+  /** Toque de disparo manual (Espaço JustDown) */
   firePrimaryTap: boolean;
-  /** Intenção de carga secundária mantida (Shift ou Botão Direito mantido pressionado) */
+  /** Acionamento de Dash / Propulsão de Emergência (Shift JustDown) */
+  dashTrigger: boolean;
+  /** Carga de arma mantida (C mantido) */
   chargeHeld: boolean;
-  /** Momento exato em que a carga secundária é solta para disparar */
+  /** Momento em que a carga é liberada (C solto) */
   chargeReleased: boolean;
-  /** Disparo de mísseis / arma secundária (M) */
-  missile: boolean;
-  /** Ativação de habilidade especial de ressonância (X, K) */
-  special: boolean;
-  /** Lançamento de bomba defensiva (B, L) */
+  /** Lançamento de bomba (X) */
   bomb: boolean;
+  /** Ativação do especial de ressonância do piloto (V) */
+  special: boolean;
+  /** Disparo de mísseis secundários (M) */
+  missile: boolean;
   /** Reinício da fase (R) */
   restart: boolean;
-  /** Pausa ou menu (ESC) */
+  /** Pausa ou retorno ao menu (ESC) */
   menuOrBack: boolean;
 }
 
 /**
  * Função pura e determinística que processa entradas brutas e retorna comandos semânticos.
- * Totalmente testável sem depender de instâncias reais do navegador ou Phaser.
+ * Totalmente testável e livre de dependências de DOM/Phaser.
  */
 export function processInputFrame(input: RawInputFrame): PlayerActionCommands {
   // 1. Movimentação via Teclado (WASD / Setas)
-  let moveX = Number(input.keyD || input.arrowRight) - Number(input.keyA || input.arrowLeft);
-  let moveY = Number(input.keyS || input.arrowDown) - Number(input.keyW || input.arrowUp);
+  let rawMoveX = Number(input.keyD || input.arrowRight) - Number(input.keyA || input.arrowLeft);
+  let rawMoveY = Number(input.keyS || input.arrowDown) - Number(input.keyW || input.arrowUp);
 
-  // 2. Movimentação Mobile Touch Drag
-  // Apenas se o dispositivo/evento for estritamente Touch
-  if (input.isTouch && input.pointerDown) {
-    const minHudY = 32;
-    const maxHudY = 400;
-    if (input.pointerY > minHudY && input.pointerY < maxHudY) {
-      moveX = Math.abs(input.pointerX - input.shipX) > 12 ? Math.sign(input.pointerX - input.shipX) : 0;
-      moveY = Math.abs(input.pointerY - input.shipY) > 12 ? Math.sign(input.pointerY - input.shipY) : 0;
+  // 2. Normalização estrita de diagonal para velocidade constante
+  let moveX = rawMoveX;
+  let moveY = rawMoveY;
+  if (rawMoveX !== 0 && rawMoveY !== 0) {
+    const factor = Math.SQRT1_2; // 1 / sqrt(2) ≈ 0.7071
+    moveX = rawMoveX * factor;
+    moveY = rawMoveY * factor;
+  }
+
+  // 3. Suporte Touch no Mobile (apenas se for estritamente evento Touch)
+  if (input.isTouch && input.touchPointerDown) {
+    const minArenaY = 16;
+    const maxArenaY = 416;
+    if (input.touchY > minArenaY && input.touchY < maxArenaY) {
+      const dx = input.touchX - input.shipX;
+      const dy = input.touchY - input.shipY;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 8) {
+        moveX = dx / dist;
+        moveY = dy / dist;
+      }
     }
   }
 
-  // REGRA MESTRE PC: Se NÃO for touch, o ponteiro do mouse JAMAIS altera moveX ou moveY.
-  // moveX e moveY permanecem 100% controlados pelo teclado.
+  // REGRA MESTRE: No Desktop PC, o mouse NUNCA gera moveX, moveY, nem dispara armas.
 
-  // 3. Disparo Principal (Espaço ou Clique Esquerdo)
-  // Tratado como intenção única: se ambos estiverem pressionados, o resultado é firePrimary=true (sem duplicação).
-  const mouseFireHeld = !input.isTouch && (input.pointerLeftDown || (input.pointerDown && !input.pointerRightDown));
-  const mouseFireTap = !input.isTouch && input.pointerLeftJustDown;
+  // 4. Disparo Principal: estritamente ESPAÇO no PC
+  const firePrimary = Boolean(input.keySpace || (input.isTouch && input.touchPointerDown));
+  const firePrimaryTap = Boolean(input.keySpaceJustDown);
 
-  const firePrimary = Boolean(input.keySpace || mouseFireHeld);
-  const firePrimaryTap = Boolean(input.keySpaceJustDown || mouseFireTap);
+  // 5. Dash / Propulsão de Emergência: SHIFT
+  const dashTrigger = Boolean(input.keyShiftJustDown);
 
-  // 4. Disparo Carregado (Shift ou Botão Direito)
-  const mouseChargeHeld = !input.isTouch && input.pointerRightDown;
-  const mouseChargeReleased = !input.isTouch && input.pointerRightJustUp;
+  // 6. Carga de Arma: Tecla C
+  const chargeHeld = Boolean(input.keyC);
+  const chargeReleased = Boolean(input.keyCJustUp);
 
-  const chargeHeld = Boolean(input.keyShift || mouseChargeHeld);
-  const chargeReleased = Boolean(input.keyShiftJustUp || mouseChargeReleased);
+  // 7. Bomba (X ou B) e Especial (V)
+  const bomb = Boolean(input.keyXJustDown || input.keyBJustDown);
+  const special = Boolean(input.keyVJustDown);
 
-  // 5. Habilidades e Utilitários
+  // 8. Secundário / Mísseis (M)
   const missile = Boolean(input.keyMJustDown);
-  const special = Boolean(input.keyXJustDown || input.keyKJustDown);
-  const bomb = Boolean(input.keyBJustDown || input.keyLJustDown);
+
+  // 9. Reinício (R) e Pausa (ESC)
   const restart = Boolean(input.keyRJustDown);
   const menuOrBack = Boolean(input.keyEscJustDown);
 
@@ -136,11 +146,12 @@ export function processInputFrame(input: RawInputFrame): PlayerActionCommands {
     moveY,
     firePrimary,
     firePrimaryTap,
+    dashTrigger,
     chargeHeld,
     chargeReleased,
-    missile,
-    special,
     bomb,
+    special,
+    missile,
     restart,
     menuOrBack,
   };
@@ -151,12 +162,10 @@ export function processInputFrame(input: RawInputFrame): PlayerActionCommands {
  */
 export class InputManager {
   private readonly scene: Phaser.Scene;
-  private prevPointerLeftDown = false;
-  private prevPointerRightDown = false;
-  private prevShiftDown = false;
+  private prevCDown = false;
 
   private keys?: Record<
-    'W' | 'A' | 'S' | 'D' | 'SPACE' | 'R' | 'ESC' | 'M' | 'X' | 'K' | 'B' | 'L' | 'SHIFT',
+    'W' | 'A' | 'S' | 'D' | 'SPACE' | 'SHIFT' | 'C' | 'X' | 'V' | 'M' | 'B' | 'R' | 'ESC',
     Phaser.Input.Keyboard.Key
   >;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -165,15 +174,14 @@ export class InputManager {
     this.scene = scene;
     if (scene.input && scene.input.keyboard) {
       this.keys = scene.input.keyboard.addKeys(
-        'W,A,S,D,SPACE,R,ESC,M,X,K,B,L,SHIFT',
+        'W,A,S,D,SPACE,SHIFT,C,X,V,M,B,R,ESC',
       ) as Record<string, Phaser.Input.Keyboard.Key> as Record<
-        'W' | 'A' | 'S' | 'D' | 'SPACE' | 'R' | 'ESC' | 'M' | 'X' | 'K' | 'B' | 'L' | 'SHIFT',
+        'W' | 'A' | 'S' | 'D' | 'SPACE' | 'SHIFT' | 'C' | 'X' | 'V' | 'M' | 'B' | 'R' | 'ESC',
         Phaser.Input.Keyboard.Key
       >;
       this.cursors = scene.input.keyboard.createCursorKeys();
     }
 
-    // Desativa menu de contexto do navegador para permitir botão direito como comando de carga
     if (scene.input && scene.input.mouse) {
       scene.input.mouse.disableContextMenu();
     }
@@ -182,23 +190,11 @@ export class InputManager {
   sample(shipX: number, shipY: number): PlayerActionCommands {
     const pointer = this.scene.input.activePointer;
     const isDesktop = this.scene.game.device.os.desktop;
-    const isTouch = !isDesktop || Boolean(pointer.wasTouch);
+    const isTouch = !isDesktop && Boolean(pointer.wasTouch);
 
-    const pointerLeftDown = pointer.isDown && (pointer.leftButtonDown() || pointer.button === 0);
-    const pointerRightDown = pointer.isDown && (pointer.rightButtonDown() || pointer.button === 2);
-
-    const pointerLeftJustDown = pointerLeftDown && !this.prevPointerLeftDown;
-    const pointerLeftJustUp = !pointerLeftDown && this.prevPointerLeftDown;
-
-    const pointerRightJustDown = pointerRightDown && !this.prevPointerRightDown;
-    const pointerRightJustUp = !pointerRightDown && this.prevPointerRightDown;
-
-    this.prevPointerLeftDown = pointerLeftDown;
-    this.prevPointerRightDown = pointerRightDown;
-
-    const shiftDown = Boolean(this.keys?.SHIFT.isDown);
-    const shiftJustUp = !shiftDown && this.prevShiftDown;
-    this.prevShiftDown = shiftDown;
+    const cDown = Boolean(this.keys?.C.isDown);
+    const cJustUp = !cDown && this.prevCDown;
+    this.prevCDown = cDown;
 
     const frame: RawInputFrame = {
       keyW: Boolean(this.keys?.W.isDown),
@@ -216,24 +212,24 @@ export class InputManager {
         (this.cursors?.space && Phaser.Input.Keyboard.JustDown(this.cursors.space)),
       ),
 
-      keyShift: shiftDown,
+      keyShift: Boolean(this.keys?.SHIFT.isDown),
       keyShiftJustDown: Boolean(this.keys?.SHIFT && Phaser.Input.Keyboard.JustDown(this.keys.SHIFT)),
-      keyShiftJustUp: shiftJustUp,
 
-      keyM: Boolean(this.keys?.M.isDown),
-      keyMJustDown: Boolean(this.keys?.M && Phaser.Input.Keyboard.JustDown(this.keys.M)),
+      keyC: cDown,
+      keyCJustDown: Boolean(this.keys?.C && Phaser.Input.Keyboard.JustDown(this.keys.C)),
+      keyCJustUp: cJustUp,
 
       keyX: Boolean(this.keys?.X.isDown),
       keyXJustDown: Boolean(this.keys?.X && Phaser.Input.Keyboard.JustDown(this.keys.X)),
 
-      keyK: Boolean(this.keys?.K.isDown),
-      keyKJustDown: Boolean(this.keys?.K && Phaser.Input.Keyboard.JustDown(this.keys.K)),
+      keyV: Boolean(this.keys?.V.isDown),
+      keyVJustDown: Boolean(this.keys?.V && Phaser.Input.Keyboard.JustDown(this.keys.V)),
+
+      keyM: Boolean(this.keys?.M.isDown),
+      keyMJustDown: Boolean(this.keys?.M && Phaser.Input.Keyboard.JustDown(this.keys.M)),
 
       keyB: Boolean(this.keys?.B.isDown),
       keyBJustDown: Boolean(this.keys?.B && Phaser.Input.Keyboard.JustDown(this.keys.B)),
-
-      keyL: Boolean(this.keys?.L.isDown),
-      keyLJustDown: Boolean(this.keys?.L && Phaser.Input.Keyboard.JustDown(this.keys.L)),
 
       keyR: Boolean(this.keys?.R.isDown),
       keyRJustDown: Boolean(this.keys?.R && Phaser.Input.Keyboard.JustDown(this.keys.R)),
@@ -241,17 +237,10 @@ export class InputManager {
       keyEsc: Boolean(this.keys?.ESC.isDown),
       keyEscJustDown: Boolean(this.keys?.ESC && Phaser.Input.Keyboard.JustDown(this.keys.ESC)),
 
-      pointerActive: pointer.active,
-      pointerDown: pointer.isDown,
-      pointerLeftDown,
-      pointerLeftJustDown,
-      pointerLeftJustUp,
-      pointerRightDown,
-      pointerRightJustDown,
-      pointerRightJustUp,
       isTouch,
-      pointerX: pointer.x,
-      pointerY: pointer.y,
+      touchPointerDown: pointer.isDown && isTouch,
+      touchX: pointer.x,
+      touchY: pointer.y,
       shipX,
       shipY,
     };

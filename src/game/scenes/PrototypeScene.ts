@@ -1,5 +1,14 @@
 import Phaser from 'phaser';
-import { FONT_TECH, GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH, HUD_BOTTOM, HUD_TOP, PLAYER_SPEED_FACTOR } from '../constants';
+import {
+  FONT_TECH,
+  GAME_BACKGROUND,
+  GAME_HEIGHT,
+  GAME_WIDTH,
+  PLAYER_SPEED_FACTOR,
+  PLAYFIELD_X,
+  PLAYFIELD_WIDTH,
+  PLAYFIELD_RIGHT,
+} from '../constants';
 import { clamp, moveInBounds } from '../systems/movement';
 import { advanceHealth, applyPlayerHit, initialPlayerHealth, type HitEvent, type PlayerHealth } from '../systems/combat';
 import { StageDirector, type EnemyModel, type EnemyShotEvent } from '../systems/stageDirector';
@@ -13,8 +22,17 @@ import { STAGES } from '../data/stages';
 import { saveSystem } from '../systems/saveSystem.ts';
 import { VectorShip } from '../render/VectorShip';
 import {
+  createInitialDashState,
+  triggerDash,
+  advanceDash,
+  isDashActive,
+  isDashInvulnerable,
+  type DashState,
+} from '../systems/dashSystem.ts';
+import {
   createPlayerWeapons,
   upgradeWeapon,
+  switchWeaponFamily,
   addResonance,
   activateSpecial,
   useBomb,
@@ -28,7 +46,7 @@ import {
   recordPrimaryShot,
   updateWeaponCharge,
   releaseWeaponCharge,
-  PILOT_WEAPON_SPECS,
+  WEAPON_FAMILY_SPECS,
   MAX_CHARGE_MS,
   type PlayerWeaponsState,
   type ProjectileSpawnDef,
@@ -62,6 +80,7 @@ interface EnemyVisual {
 }
 
 interface BossVisual {
+  name: string;
   container: Phaser.GameObjects.Container;
   main: Phaser.GameObjects.Sprite;
   sub1?: Phaser.GameObjects.Sprite;
@@ -70,7 +89,12 @@ interface BossVisual {
   core?: Phaser.GameObjects.Sprite;
 }
 
-/** Cena principal de combate do BULLET WAKE com progressão contínua e chefe final. */
+/**
+ * Cena principal de combate do BULLET WAKE V2.
+ * Shmup vertical top-down em corredor central protegido (384px),
+ * 3 dashes fixos por fase, armas Fire Shark evoluindo LV1-4,
+ * coletáveis físicos e chefes da Fenda Pelágica.
+ */
 export class PrototypeScene extends Phaser.Scene {
   private vectorShip!: VectorShip;
   get ship(): VectorShip {
@@ -87,6 +111,7 @@ export class PrototypeScene extends Phaser.Scene {
   private weapons: PlayerWeaponsState = createPlayerWeapons('nolan');
   private scoreCombo: ScoreComboState = initialScoreCombo();
   private health: PlayerHealth = initialPlayerHealth();
+  private dashState: DashState = createInitialDashState();
 
   private hud!: CombatHud;
   private backdrop!: StageBackdrop;
@@ -130,6 +155,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.weapons = createPlayerWeapons(this.pilot.id);
     this.scoreCombo = initialScoreCombo();
     this.health = initialPlayerHealth();
+    this.dashState = createInitialDashState();
     this.totalKills = 0;
     this.completed = false;
 
@@ -148,19 +174,23 @@ export class PrototypeScene extends Phaser.Scene {
     this.inputManager = new InputManager(this);
 
     this.hud = new CombatHud(this, () => this.restart());
-    this.hud.setPilot(this.pilot.shipName);
+    this.hud.setPilot(this.pilot.shipName, this.pilot.callsign);
     this.hud.setScore(0);
     this.hud.setHealth(this.health, false);
+    this.hud.setDash(this.dashState.remainingDashes);
     this.hud.setProgress(0);
-    this.hud.setWeapon(this.pilot.shipName === 'Rivet' ? 'Pulso' : this.pilot.shipName === 'Moth' ? 'Laser' : 'Canhao', 1);
+    this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel);
     this.hud.setBombs(this.weapons.bombs);
     this.hud.setResonance(0);
+
     const stageDef = STAGES[this.stageNumber - 1] || STAGES[0];
     const diffTag = difficulty === 'arcade' ? ' [ARCADE]' : difficulty === 'hard' ? ' [HARD]' : '';
     this.hud.flash(`FASE 0${this.stageNumber}  -  ${stageDef.title.toUpperCase()}${diffTag}`, '#a6e3e2', 2600);
 
-    // Nave do jogador: caça espacial vetorial ágil, nítido e responsivo com micro-hitbox
-    this.vectorShip = new VectorShip(this, 135, GAME_HEIGHT / 2, this.pilot.id);
+    // Nave do jogador centralizada no corredor vertical, apontando para o Norte (-Y)
+    const initialShipX = PLAYFIELD_X + PLAYFIELD_WIDTH / 2;
+    const initialShipY = 350;
+    this.vectorShip = new VectorShip(this, initialShipX, initialShipY, this.pilot.id);
 
     globalAudio.startStageMusic();
   }
@@ -180,19 +210,34 @@ export class PrototypeScene extends Phaser.Scene {
     }
     if (this.health.gameOver || this.completed) return;
 
-    // Atualiza timers do combate
+    // Atualiza timers do combate e dash
     this.health = advanceHealth(this.health, dt);
     this.weapons = advanceWeapons(this.weapons, dt);
     this.scoreCombo = advanceCombo(this.scoreCombo, dt);
+    this.dashState = advanceDash(this.dashState, dt);
 
     this.hitPoseMs = Math.max(0, this.hitPoseMs - dt);
     this.missilePoseMs = Math.max(0, this.missilePoseMs - dt);
     this.prismPoseMs = Math.max(0, this.prismPoseMs - dt);
     this.phantomDashTimerMs = Math.max(0, this.phantomDashTimerMs - dt);
 
+    // 0. Acionamento do Dash de Emergência (LEFT SHIFT no PC)
+    if (commands.dashTrigger) {
+      const dashResult = triggerDash(this.dashState);
+      if (dashResult.triggered) {
+        this.dashState = dashResult.state;
+        this.hud.setDash(this.dashState.remainingDashes);
+        this.hud.flash('DASH DE EMERGÊNCIA!', '#38bdf8', 400);
+        this.spawnPhantomAfterimage();
+        globalAudio.playSpecial('phantom');
+      }
+    }
+
     // Atualiza o HUD
     this.hud.update(dt);
     this.hud.setHealth(this.health, this.weapons.hasShield);
+    this.hud.setDash(this.dashState.remainingDashes);
+    this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel);
     this.hud.setBombs(this.weapons.bombs);
     this.hud.setResonance(this.weapons.resonance, this.weapons.specialActiveMs > 0);
     this.hud.setScore(this.scoreCombo.score, this.scoreCombo.comboCount, getComboMultiplier(this.scoreCombo.comboCount));
@@ -200,19 +245,22 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.setCharge(this.weapons.chargeMs, MAX_CHARGE_MS, this.weapons.isCharging);
 
     // Efeito de invulnerabilidade (piscar transparente)
+    const isInvuln = this.health.invulnerableMs > 0 || isDashInvulnerable(this.dashState);
     this.vectorShip.setAlpha(
-      this.health.invulnerableMs > 0 && Math.floor(this.health.invulnerableMs / 110) % 2 === 0
-        ? 0.35 : 1,
+      isInvuln && Math.floor(Date.now() / 80) % 2 === 0 ? 0.35 : 1,
     );
 
-    // Movimentação da nave (no PC, mouse NUNCA afeta dx ou dy!)
+    // Movimentação da nave estritamente no corredor vertical
     let dx = commands.moveX;
     let dy = commands.moveY;
 
-    // Se estiver executando o Salto Fantasma (Cora), move em dash de alta velocidade
     let speed = this.pilot.speed * PLAYER_SPEED_FACTOR;
-    if (this.phantomDashTimerMs > 0) {
-      dx = 1.6; // Dash para frente
+    const dashing = isDashActive(this.dashState);
+    if (dashing) {
+      speed *= 2.8;
+      this.spawnPhantomAfterimage();
+    } else if (this.phantomDashTimerMs > 0) {
+      dy = -1.6; // Dash frontal para o Norte
       speed = 650;
       this.spawnPhantomAfterimage();
     }
@@ -223,16 +271,16 @@ export class PrototypeScene extends Phaser.Scene {
       { x: this.vectorShip.x, y: this.vectorShip.y },
       dx, dy, speed, dt,
       {
-        minX: halfW + 6,
-        maxX: GAME_WIDTH - halfW - 6,
-        minY: halfH + 4,
-        maxY: GAME_HEIGHT - halfH - 4,
+        minX: PLAYFIELD_X + halfW + 6,
+        maxX: PLAYFIELD_RIGHT - halfW - 6,
+        minY: halfH + 12,
+        maxY: GAME_HEIGHT - halfH - 12,
       },
     );
     this.vectorShip.setPosition(moved.x, moved.y);
-    this.vectorShip.updateShip(dt, dy, dx > 0, this.hitPoseMs, this.weapons.hasShield);
+    this.vectorShip.updateShip(dt, dx, dy, this.hitPoseMs, this.weapons.hasShield, dashing);
 
-    // 1. Atualização e Liberação de Disparo Carregado (Wave Cannon)
+    // 1. Atualização e Liberação de Disparo Carregado (Wave Cannon - tecla C)
     this.weapons = updateWeaponCharge(this.weapons, dt, commands.chargeHeld);
     if (this.weapons.isCharging && this.weapons.chargeMs > 250) {
       const chargeRatio = this.weapons.chargeMs / MAX_CHARGE_MS;
@@ -250,17 +298,15 @@ export class PrototypeScene extends Phaser.Scene {
       }
     }
 
-    // 2. Disparos Primários: Tapping Rápido (Burst) vs Auto-Fire Contínuo
-    const specs = PILOT_WEAPON_SPECS[this.pilot.id] || PILOT_WEAPON_SPECS.nolan;
+    // 2. Disparos Primários: Tapping Rápido (Burst) vs Auto-Fire Contínuo (ESPAÇO no PC)
+    const specs = WEAPON_FAMILY_SPECS[this.weapons.weaponFamily] || WEAPON_FAMILY_SPECS.green;
     this.shootCooldown = Math.max(0, this.shootCooldown - dt);
 
     if (!this.weapons.isCharging && !this.weapons.isOverheated) {
       if (commands.firePrimaryTap && this.shootCooldown <= 0) {
-        // Modalidade 2: Disparo Manual Controlado (Tapping / Burst acelerado)
         this.firePrimary();
         this.shootCooldown = specs.burstIntervalMs;
       } else if (commands.firePrimary && this.shootCooldown <= 0) {
-        // Modalidade 1: Disparo Automático Contínuo (Auto-fire base)
         this.firePrimary();
         this.shootCooldown = specs.autoIntervalMs;
       }
@@ -275,12 +321,12 @@ export class PrototypeScene extends Phaser.Scene {
       this.fireSecondary();
     }
 
-    // 4. Ativação do Especial (tecla X ou K)
+    // 4. Ativação do Especial de Ressonância (tecla V)
     if (commands.special) {
       this.triggerSpecial();
     }
 
-    // 5. Bomba Defensiva (tecla B ou L)
+    // 5. Bomba Defensiva de Emergência (tecla X ou B)
     if (commands.bomb) {
       this.detonateBomb();
     }
@@ -302,12 +348,12 @@ export class PrototypeScene extends Phaser.Scene {
     for (const event of tick.shots) this.spawnEnemyShot(event);
     this.syncEnemyVisuals();
 
-    // Atualiza pickups
+    // Atualiza pickups físicos
     this.pickups.update(dt, this.ship.x, this.ship.y);
     this.syncPickupVisuals();
     this.checkPickupCollisions();
 
-    // Atualiza chefe se ativo
+    // Atualiza chefe ou miniboss se ativo
     if (tick.bossActive && this.director.boss) {
       this.syncBossVisual(this.director.boss);
       this.hud.showBossBar(this.director.boss.name, this.director.boss.hp, this.director.boss.maxHp);
@@ -341,7 +387,7 @@ export class PrototypeScene extends Phaser.Scene {
 
       saveSystem.recordStageClear(this.stageNumber, this.pilot.id, this.scoreCombo.score);
 
-      if (this.stageNumber >= 5) {
+      if (this.stageNumber >= 15) {
         this.scene.start('EndingScene', {
           pilotId: this.pilot.id,
           score: this.scoreCombo.score,
@@ -391,11 +437,11 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private firePrimary(): void {
-    const originX = this.vectorShip.x + this.vectorShip.halfWidth + 2;
-    const originY = this.vectorShip.y;
+    const originX = this.vectorShip.x;
+    const originY = this.vectorShip.y - this.vectorShip.halfHeight - 2;
     this.vectorShip.triggerMuzzleFlash();
 
-    const defs = getPrimaryProjectiles(this.pilot.id, this.weapons.weaponLevel, originX, originY);
+    const defs = getPrimaryProjectiles(this.weapons.weaponFamily, this.weapons.weaponLevel, originX, originY);
     for (const def of defs) {
       this.createPlayerProjectile(def);
     }
@@ -413,8 +459,8 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private fireChargedShot(chargeLevel: 1 | 2): void {
-    const originX = this.vectorShip.x + this.vectorShip.halfWidth + 4;
-    const originY = this.vectorShip.y;
+    const originX = this.vectorShip.x;
+    const originY = this.vectorShip.y - this.vectorShip.halfHeight - 4;
     this.vectorShip.triggerMuzzleFlash();
 
     const defs = getChargedProjectiles(this.pilot.id, chargeLevel, originX, originY);
@@ -427,10 +473,10 @@ export class PrototypeScene extends Phaser.Scene {
     this.cameras.main.shake(180, chargeLevel === 2 ? 0.009 : 0.004);
 
     const shotName = this.pilot.id === 'nolan'
-      ? (chargeLevel === 2 ? 'FEIXE PRISMATICO MAXIMO!' : 'FEIXE PENETRANTE')
+      ? (chargeLevel === 2 ? 'FEIXE PRISMÁTICO MÁXIMO!' : 'FEIXE PENETRANTE')
       : this.pilot.id === 'cora'
       ? (chargeLevel === 2 ? 'OVERDRIVE AGULHAS (VENTILADO)!' : 'RAJADA AGULHAS')
-      : (chargeLevel === 2 ? 'MEGA-CANHAO CINETICO!' : 'IMPACTO PESADO');
+      : (chargeLevel === 2 ? 'MEGA-CANHÃO CINÉTICO!' : 'IMPACTO PESADO');
 
     this.hud.flash(shotName, chargeLevel === 2 ? '#00f0ff' : '#ffd166', 800);
   }
@@ -452,7 +498,7 @@ export class PrototypeScene extends Phaser.Scene {
     const result = activateSpecial(this.weapons);
     if (!result.activated) {
       if (this.weapons.resonance < 100) {
-        this.hud.flash('RESSONANCIA INSUFICIENTE', '#ff9e9e', 700);
+        this.hud.flash('RESSONÂNCIA INSUFICIENTE', '#ff9e9e', 700);
       }
       return;
     }
@@ -462,7 +508,7 @@ export class PrototypeScene extends Phaser.Scene {
 
     if (this.weapons.specialType === 'prism') {
       this.prismPoseMs = 600;
-      this.hud.flash('TEMPESTADE PRISMATICA ATIVADA!', '#d6b2ff', 1600);
+      this.hud.flash('TEMPESTADE PRISMÁTICA ATIVADA!', '#d6b2ff', 1600);
       this.emitPrismBurst();
     } else if (this.weapons.specialType === 'phantom') {
       this.phantomDashTimerMs = 650;
@@ -474,14 +520,14 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private emitPrismBurst(): void {
-    for (const tilt of [-0.36, 0, 0.36]) {
+    for (const tilt of [-160, 0, 160]) {
       this.createPlayerProjectile({
         texture: 'rivet-v3-prism',
         animation: 'rivet-v3-prism-anim',
-        x: this.vectorShip.x + 22,
-        y: this.vectorShip.y,
-        velocityX: 480,
-        velocityY: 480 * tilt,
+        x: this.vectorShip.x,
+        y: this.vectorShip.y - 20,
+        velocityX: tilt,
+        velocityY: -520,
         damage: 1.8,
         hitRadius: 16,
         scale: 0.65,
@@ -492,17 +538,17 @@ export class PrototypeScene extends Phaser.Scene {
 
   private spawnPhantomAfterimage(): void {
     const ghost = this.add.graphics();
-    ghost.fillStyle(0x7df9ff, 0.45);
+    ghost.fillStyle(0x38bdf8, 0.45);
     ghost.fillTriangle(
-      this.vectorShip.x + 19, this.vectorShip.y,
-      this.vectorShip.x - 17, this.vectorShip.y - 11,
-      this.vectorShip.x - 17, this.vectorShip.y + 11,
+      this.vectorShip.x, this.vectorShip.y - 18,
+      this.vectorShip.x - 14, this.vectorShip.y + 14,
+      this.vectorShip.x + 14, this.vectorShip.y + 14,
     );
     ghost.setDepth(6);
     this.tweens.add({
       targets: ghost,
       alpha: 0,
-      duration: 320,
+      duration: 260,
       onComplete: () => ghost.destroy(),
     });
   }
@@ -547,7 +593,7 @@ export class PrototypeScene extends Phaser.Scene {
     globalAudio.playBomb();
 
     // Onda de choque massiva de tela
-    const bombSprite = this.add.sprite(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'fx-bomb-wave', 0)
+    const bombSprite = this.add.sprite(PLAYFIELD_X + PLAYFIELD_WIDTH / 2, GAME_HEIGHT / 2, 'fx-bomb-wave', 0)
       .setScale(4.2).setDepth(30);
     bombSprite.once('animationcomplete', () => bombSprite.destroy());
     bombSprite.play('fx-bomb-wave-play');
@@ -574,8 +620,10 @@ export class PrototypeScene extends Phaser.Scene {
     const isSmall = enemy.kind === 'scout' || enemy.kind === 'dart';
     const body = this.add.sprite(0, 0, texture, 0)
       .setScale(isSmall ? 2.15 : 1.85);
+    // Aponta para o Sul (+Y) em direção ao jogador
+    body.setAngle(90);
     body.play(texture + '-fly');
-    const warning = this.add.sprite(isSmall ? -28 : -40, 0, 'fx-warning', 0)
+    const warning = this.add.sprite(0, 24, 'fx-warning', 0)
       .setScale(1.15).setVisible(false);
     const container = this.add.container(enemy.x, enemy.y, [body, warning]).setDepth(5);
     this.enemyVisuals.set(enemy.id, { container, body, warning, animationKey: texture + '-fly' });
@@ -618,7 +666,16 @@ export class PrototypeScene extends Phaser.Scene {
     for (const p of this.pickups.pickups) {
       let sprite = this.pickupVisuals.get(p.id);
       if (!sprite) {
-        const key = 'pickup-' + p.type;
+        // Mapeia sprites para os tipos canônicos Fire Shark
+        let key = 'pickup-upgrade';
+        if (p.type === 'power' || p.type === 'weapon_green') key = 'pickup-upgrade';
+        else if (p.type === 'weapon_ion') key = 'pickup-shield';
+        else if (p.type === 'weapon_red') key = 'pickup-bomb';
+        else if (p.type === 'health') key = 'pickup-repair';
+        else if (p.type === 'bomb') key = 'pickup-bomb';
+        else if (p.type === 'special') key = 'pickup-resonance';
+        else if (p.type === 'score') key = 'pickup-score';
+
         sprite = this.add.sprite(p.x, p.y, key, 0).setScale(1.2).setDepth(6);
         sprite.play(key + '-loop');
         this.pickupVisuals.set(p.id, sprite);
@@ -633,36 +690,47 @@ export class PrototypeScene extends Phaser.Scene {
     for (const item of collected) {
       globalAudio.playPickup(item.type);
 
-      if (item.type === 'upgrade') {
+      if (item.type === 'power') {
         const res = upgradeWeapon(this.weapons);
         this.weapons = res.state;
-        this.hud.setWeapon(this.pilot.shipName === 'Rivet' ? 'Pulso' : this.pilot.shipName === 'Moth' ? 'Laser' : 'Canhao', this.weapons.weaponLevel);
-        this.hud.flash(`UPGRADE! ARMA LV.${this.weapons.weaponLevel}`, '#ffe27a', 1100);
-      } else if (item.type === 'repair') {
+        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel);
+        this.hud.flash(`PODER DE ARMA +1! (LV.${this.weapons.weaponLevel})`, '#22c55e', 1100);
+      } else if (item.type === 'weapon_green') {
+        this.weapons = switchWeaponFamily(this.weapons, 'green');
+        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel);
+        this.hud.flash('ARMA: PULSO VERDE ATIVADO!', '#22c55e', 1200);
+      } else if (item.type === 'weapon_ion') {
+        this.weapons = switchWeaponFamily(this.weapons, 'ion');
+        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel);
+        this.hud.flash('ARMA: LASER DE ÍONS ATIVADO!', '#06b6d4', 1200);
+      } else if (item.type === 'weapon_red') {
+        this.weapons = switchWeaponFamily(this.weapons, 'red');
+        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel);
+        this.hud.flash('ARMA: PLASMA VERMELHO ATIVADO!', '#ef4444', 1200);
+      } else if (item.type === 'health') {
         if (this.health.hp < 3) {
           this.health = { ...this.health, hp: this.health.hp + 1 };
           this.hud.setHealth(this.health, this.weapons.hasShield);
           this.hud.flash('REPARO! +1 HP', '#88ffaa', 1000);
         } else {
           this.scoreCombo = addRawScore(this.scoreCombo, 300);
-          this.hud.flash('INTEGRIDADE MAXIMA (+300 PTS)', '#aaffee', 900);
+          this.hud.flash('INTEGRIDADE MÁXIMA (+300 PTS)', '#aaffee', 900);
         }
       } else if (item.type === 'bomb') {
         this.weapons = addBomb(this.weapons);
         this.hud.setBombs(this.weapons.bombs);
         this.hud.flash('+1 BOMBA ADQUIRIDA!', '#ff9988', 1100);
-      } else if (item.type === 'resonance') {
+      } else if (item.type === 'missile') {
+        this.weapons.missileCooldownMs = 0;
+        this.hud.flash('MÍSSEIS RECARREGADOS!', '#ffd19f', 1000);
+      } else if (item.type === 'special') {
         this.weapons = addResonance(this.weapons, 25);
         this.hud.setResonance(this.weapons.resonance);
-        this.hud.flash('+25% RESSONANCIA!', '#d299ff', 1000);
-      } else if (item.type === 'shield') {
-        this.weapons = setShield(this.weapons, true);
-        this.hud.setHealth(this.health, true);
-        this.hud.flash('ESCUDO DEFENSIVO ATIVADO!', '#7df9ff', 1200);
+        this.hud.flash('+25% RESSONÂNCIA!', '#d299ff', 1000);
       } else if (item.type === 'score') {
         this.scoreCombo = addRawScore(this.scoreCombo, 500);
         this.hud.setScore(this.scoreCombo.score, this.scoreCombo.comboCount, getComboMultiplier(this.scoreCombo.comboCount));
-        this.hud.flash('+500 PONTOS DE DADOS', '#ffea88', 850);
+        this.hud.flash('+500 PONTOS', '#ffea88', 850);
         this.spawnScorePopup(500, this.vectorShip.x, this.vectorShip.y, '#ffd700');
       }
     }
@@ -686,6 +754,11 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private syncBossVisual(boss: NonNullable<StageDirector['boss']>): void {
+    if (this.bossVisual && this.bossVisual.name !== boss.name) {
+      this.bossVisual.container.destroy();
+      this.bossVisual = undefined;
+    }
+
     if (!this.bossVisual) {
       const parts: Phaser.GameObjects.GameObject[] = [];
       let main: Phaser.GameObjects.Sprite;
@@ -694,27 +767,21 @@ export class PrototypeScene extends Phaser.Scene {
       let sub3: Phaser.GameObjects.Sprite | undefined;
       let core: Phaser.GameObjects.Sprite | undefined;
 
-      if (this.stageNumber === 2) {
-        sub2 = this.add.sprite(50, 0, 'boss-serpent-body', 0).setScale(1.4).play('boss-serpent-body-loop');
-        sub1 = this.add.sprite(10, 0, 'boss-serpent-body', 0).setScale(1.45).play('boss-serpent-body-loop');
-        main = this.add.sprite(-40, 0, 'boss-serpent-head', 0).setScale(1.5).play('boss-serpent-head-loop');
-        parts.push(sub2, sub1, main);
-      } else if (this.stageNumber === 3) {
-        main = this.add.sprite(0, 0, 'boss-fortress-chassis', 0).setScale(1.3).play('boss-fortress-chassis-loop');
-        sub1 = this.add.sprite(-20, -55, 'boss-fortress-core', 0).setScale(1.2).play('boss-fortress-core-pulse');
-        sub2 = this.add.sprite(-20, 55, 'boss-fortress-core', 0).setScale(1.2).play('boss-fortress-core-pulse');
-        parts.push(main, sub1, sub2);
-      } else if (this.stageNumber === 4) {
-        sub1 = this.add.sprite(10, -35, 'boss-interceptor-wing', 0).setScale(1.4).play('boss-interceptor-wing-spark');
-        sub2 = this.add.sprite(10, 35, 'boss-interceptor-wing', 0).setScale(1.4).play('boss-interceptor-wing-spark');
-        main = this.add.sprite(0, 0, 'boss-interceptor-chassis', 0).setScale(1.5).play('boss-interceptor-chassis-flight');
+      if (boss.name === 'RAIA-DENTE') {
+        // Miniboss da Fase 1: Raia-Dente
+        main = this.add.sprite(0, 0, 'boss-interceptor-chassis', 0).setScale(1.6).play('boss-interceptor-chassis-flight');
+        sub1 = this.add.sprite(-40, 5, 'boss-interceptor-wing', 0).setScale(1.5).play('boss-interceptor-wing-spark');
+        sub2 = this.add.sprite(40, 5, 'boss-interceptor-wing', 0).setScale(1.5).play('boss-interceptor-wing-spark');
         parts.push(sub1, sub2, main);
-      } else if (this.stageNumber === 5) {
-        main = this.add.sprite(0, 0, 'boss-mesh_core-monolith', 0).setScale(1.4).play('boss-mesh_core-monolith-loop');
-        core = this.add.sprite(0, 0, 'boss-mesh_core-heart', 0).setScale(1.3).play('boss-mesh_core-heart-pulse');
-        parts.push(main, core);
+      } else if (boss.name === 'TALASSARCA') {
+        // Chefe Colossal da Fase 1: Talassarca
+        main = this.add.sprite(0, 0, 'boss-fortress-chassis', 0).setScale(1.8).play('boss-fortress-chassis-loop');
+        sub1 = this.add.sprite(-85, 10, 'boss-interceptor-wing', 0).setScale(1.6).play('boss-interceptor-wing-spark');
+        sub2 = this.add.sprite(85, 10, 'boss-interceptor-wing', 0).setScale(1.6).play('boss-interceptor-wing-spark');
+        core = this.add.sprite(0, 15, 'boss-mesh_core-heart', 0).setScale(1.5).play('boss-mesh_core-heart-pulse');
+        parts.push(main, sub1, sub2, core);
       } else {
-        // Fase 1: KRM-17
+        // Chefe genérico para outras fases
         main = this.add.sprite(0, 0, 'boss-krm17-hull', 0).setScale(1.5).play('boss-krm17-hull-idle');
         sub1 = this.add.sprite(-78, 0, 'boss-krm17-drill', 0).setScale(1.5).play('boss-krm17-drill-spin');
         sub2 = this.add.sprite(22, -45, 'boss-krm17-turret', 0).setScale(1.4).play('boss-krm17-turret-aim');
@@ -724,16 +791,15 @@ export class PrototypeScene extends Phaser.Scene {
       }
 
       const container = this.add.container(boss.x, boss.y, parts).setDepth(6);
-      this.bossVisual = { container, main, sub1, sub2, sub3, core };
+      this.bossVisual = { name: boss.name, container, main, sub1, sub2, sub3, core };
     }
 
     this.bossVisual.container.setPosition(boss.x, boss.y);
 
-    if (this.stageNumber === 1 && boss.modules) {
-      if (this.bossVisual.sub2) this.bossVisual.sub2.setVisible(!boss.modules[0]?.destroyed);
-      if (this.bossVisual.sub3) this.bossVisual.sub3.setVisible(!boss.modules[1]?.destroyed);
-      if (this.bossVisual.sub1) this.bossVisual.sub1.setVisible(!boss.modules[2]?.destroyed);
-      if (this.bossVisual.core) this.bossVisual.core.setVisible(boss.phase === 'phase3_core');
+    if (boss.name === 'TALASSARCA' && boss.modules) {
+      if (this.bossVisual.sub1) this.bossVisual.sub1.setVisible(!boss.modules[0]?.destroyed);
+      if (this.bossVisual.sub2) this.bossVisual.sub2.setVisible(!boss.modules[1]?.destroyed);
+      if (this.bossVisual.core) this.bossVisual.core.setVisible(boss.phase === 'core' || boss.phase === 'tentacles');
     }
 
     if (boss.isTelegraphing) {
@@ -746,7 +812,7 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private spawnEnemyShot(event: EnemyShotEvent): void {
-    if (this.enemyShots.length >= 72) return;
+    if (this.enemyShots.length >= 84) return;
     const bullet = this.add.sprite(event.x, event.y, 'shot-enemy', 0)
       .setScale(1.55).setDepth(10);
     bullet.play('shot-enemy-loop');
@@ -757,15 +823,15 @@ export class PrototypeScene extends Phaser.Scene {
       damage: 1,
       hitRadius: 8,
     });
-    this.playEffect('muzzle', event.x + 11, event.y);
+    this.playEffect('muzzle', event.x, event.y + 8);
     globalAudio.playEnemyShot();
   }
 
   private applyDamageToEnemy(enemyId: number, amount: number): void {
     const hit = this.director.damage(enemyId, amount);
     const enemy = this.director.enemies.find(e => e.id === enemyId);
-    const x = enemy ? enemy.x : this.ship.x + 150;
-    const y = enemy ? enemy.y : this.ship.y;
+    const x = enemy ? enemy.x : this.ship.x;
+    const y = enemy ? enemy.y : this.ship.y - 120;
 
     if (hit.killed) {
       this.totalKills++;
@@ -777,12 +843,12 @@ export class PrototypeScene extends Phaser.Scene {
       this.hud.setScore(this.scoreCombo.score, this.scoreCombo.comboCount, getComboMultiplier(this.scoreCombo.comboCount));
       this.spawnScorePopup(hit.score, x, y);
 
-      // Ganha ressonância equilibrada: 4% para drones leves, 8% para interceptadores
+      // Ganho de ressonância: 4% para drones leves, 8% para bio-médios
       const resGain = (hit.score >= 250) ? 8 : 4;
       this.weapons = addResonance(this.weapons, resGain);
       this.hud.setResonance(this.weapons.resonance);
 
-      // Drop de itens
+      // Drop de itens físicos
       const dropKind = (hit.score >= 300) ? 'lancer' : (hit.score >= 250) ? 'cutter' : (hit.score >= 150) ? 'dart' : 'scout';
       const dropType = determineEnemyDrop(dropKind, this.totalKills);
       if (dropType) {
@@ -798,20 +864,18 @@ export class PrototypeScene extends Phaser.Scene {
   private advancePlayerShots(dt: number): void {
     for (let i = this.shots.length - 1; i >= 0; i--) {
       const shot = this.shots[i];
-      const prevX = shot.node.x;
       shot.node.x += (shot.velocityX * dt) / 1000;
       shot.node.y += (shot.velocityY * dt) / 1000;
       let collided = false;
 
-      // Colisão com inimigos normais
+      // Colisão com inimigos alienígenas no corredor
       for (const enemy of this.director.enemies) {
         const isSmall = enemy.kind === 'scout' || enemy.kind === 'dart';
-        const hx = isSmall ? 19 : 29;
-        const hy = isSmall ? 15 : 21;
+        const hx = isSmall ? 18 : 26;
+        const hy = isSmall ? 18 : 26;
         if (
-          shot.node.x + shot.hitRadius >= enemy.x - hx &&
-          prevX - shot.hitRadius <= enemy.x + hx &&
-          Math.abs(shot.node.y - enemy.y) <= hy + shot.hitRadius * 0.4
+          Math.abs(shot.node.x - enemy.x) <= hx + shot.hitRadius &&
+          Math.abs(shot.node.y - enemy.y) <= hy + shot.hitRadius
         ) {
           this.applyDamageToEnemy(enemy.id, shot.damage);
           collided = !shot.piercing;
@@ -819,12 +883,12 @@ export class PrototypeScene extends Phaser.Scene {
         }
       }
 
-      // Colisão com Chefe KRM-17 se ativo
+      // Colisão com Miniboss ou Chefe se ativo
       if (!collided && this.director.boss && this.director.boss.phase !== 'intro' && this.director.boss.phase !== 'defeated') {
         const boss = this.director.boss;
         if (
-          Math.abs(shot.node.x - boss.x) <= 100 &&
-          Math.abs(shot.node.y - boss.y) <= 65
+          Math.abs(shot.node.x - boss.x) <= 110 &&
+          Math.abs(shot.node.y - boss.y) <= 80
         ) {
           const bossHit = this.director.damageBoss(shot.damage, shot.node.x, shot.node.y);
           if (bossHit.bossDamage > 0) {
@@ -835,7 +899,7 @@ export class PrototypeScene extends Phaser.Scene {
               this.playEffect('explosion', shot.node.x, shot.node.y);
               globalAudio.playExplosion(true);
               this.cameras.main.shake(260, 0.012);
-              this.hud.flash(`MODULO DESTRUIDO: ${bossHit.moduleDestroyed.toUpperCase()}`, '#ffd488', 1200);
+              this.hud.flash(`PARTE DESTRUÍDA: ${bossHit.moduleDestroyed.toUpperCase()}`, '#ffd488', 1200);
             }
             if (bossHit.killed) {
               this.playEffect('explosion', boss.x, boss.y);
@@ -848,7 +912,13 @@ export class PrototypeScene extends Phaser.Scene {
         }
       }
 
-      if (collided || shot.node.x > GAME_WIDTH + 30 || shot.node.x < -30) {
+      if (
+        collided ||
+        shot.node.y < -30 ||
+        shot.node.y > GAME_HEIGHT + 30 ||
+        shot.node.x < PLAYFIELD_X - 30 ||
+        shot.node.x > PLAYFIELD_RIGHT + 30
+      ) {
         shot.node.destroy();
         this.shots.splice(i, 1);
       }
@@ -856,11 +926,11 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private checkEnemyContacts(): void {
-    // Salto Fantasma ativo causa dano de contato aos inimigos
-    if (this.phantomDashTimerMs > 0) {
+    // Dash de emergência ou Salto Fantasma ativo causa dano de abalroamento sem sofrer dano
+    if (isDashActive(this.dashState) || this.phantomDashTimerMs > 0) {
       for (const enemy of [...this.director.enemies]) {
         if (Math.hypot(enemy.x - this.vectorShip.x, enemy.y - this.vectorShip.y) <= 55) {
-          this.applyDamageToEnemy(enemy.id, 12);
+          this.applyDamageToEnemy(enemy.id, 10);
         }
       }
       return;
@@ -893,16 +963,21 @@ export class PrototypeScene extends Phaser.Scene {
       const hit = dist <= (shot.hitRadius + this.vectorShip.hitRadius);
 
       const outside =
-        shot.node.x < -20 ||
-        shot.node.x > GAME_WIDTH + 20 ||
-        shot.node.y < HUD_TOP - 20 ||
-        shot.node.y > GAME_HEIGHT - HUD_BOTTOM + 20;
+        shot.node.x < PLAYFIELD_X - 20 ||
+        shot.node.x > PLAYFIELD_RIGHT + 20 ||
+        shot.node.y < -20 ||
+        shot.node.y > GAME_HEIGHT + 20;
 
       if (hit || outside) {
         shot.node.destroy();
         this.enemyShots.splice(i, 1);
       }
       if (hit) {
+        // Se estiver em janela de invulnerabilidade do dash, ignora o dano
+        if (isDashInvulnerable(this.dashState)) {
+          this.playEffect('hit', this.vectorShip.x, this.vectorShip.y);
+          continue;
+        }
         const result = this.damageShip();
         if (result === 'respawn' || result === 'game-over') return;
       }
@@ -937,7 +1012,7 @@ export class PrototypeScene extends Phaser.Scene {
       globalAudio.playExplosion(true);
       this.cameras.main.shake(380, 0.02);
       this.weapons = resetWeaponsOnRespawn(this.weapons);
-      this.hud.setWeapon(this.pilot.shipName === 'Rivet' ? 'Pulso' : this.pilot.shipName === 'Moth' ? 'Laser' : 'Canhao', 1);
+      this.hud.setWeapon(this.weapons.weaponFamily, 1);
       this.hud.setResonance(this.weapons.resonance);
 
       this.missilePoseMs = 0;
@@ -946,7 +1021,8 @@ export class PrototypeScene extends Phaser.Scene {
       this.playEffect('explosion', oldX, oldY);
       this.clearEnemyShots();
       this.hitPoseMs = 0;
-      this.vectorShip.setPosition(135, GAME_HEIGHT / 2).setAlpha(1);
+      // Reposiciona na base do corredor
+      this.vectorShip.setPosition(PLAYFIELD_X + PLAYFIELD_WIDTH / 2, 350).setAlpha(1);
       this.hud.flash('VIDA PERDIDA / REINICIANDO SISTEMAS', '#ffcf9e', 1800);
     } else if (outcome.event === 'game-over') {
       globalAudio.playExplosion(true);

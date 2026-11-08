@@ -119,13 +119,15 @@ test('Weapon Upgrades: Scaling increases volume of fire without trivializing bos
   const lv1 = getPrimaryProjectiles('nolan', 1, 100, 200);
   const lv2 = getPrimaryProjectiles('nolan', 2, 100, 200);
   const lv3 = getPrimaryProjectiles('nolan', 3, 100, 200);
+  const lv4 = getPrimaryProjectiles('nolan', 4, 100, 200);
 
-  assert.equal(lv1.length, 1, 'LV1 tem 1 projétil focado');
-  assert.equal(lv2.length, 2, 'LV2 tem 2 projéteis paralelos');
-  assert.equal(lv3.length, 3, 'LV3 tem 3 projéteis em leque');
+  assert.equal(lv1.length, 2, 'LV1 tem 2 projéteis paralelos');
+  assert.equal(lv2.length, 3, 'LV2 tem 3 projéteis em leque');
+  assert.equal(lv3.length, 5, 'LV3 tem 5 projéteis em leque');
+  assert.equal(lv4.length, 7, 'LV4 tem 7 projéteis de ampla cobertura');
 
   const totalDmgLv3 = lv3.reduce((sum, p) => sum + p.damage, 0);
-  assert.ok(totalDmgLv3 >= 2.5 && totalDmgLv3 <= 3.5, 'Dano LV3 dobra/triplica cobertura sem quebrar a escala');
+  assert.ok(totalDmgLv3 >= 5.0 && totalDmgLv3 <= 7.0, 'Dano LV3 amplia cobertura sem quebrar a escala');
 });
 
 test('Difficulty Modes: Arcade mode scales bullet velocity and expands Lancer spread to 5-way', () => {

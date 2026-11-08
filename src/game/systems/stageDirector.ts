@@ -7,6 +7,8 @@
  */
 import type { BossTick, StageBoss } from './bosses/types.ts';
 import { createStageBoss } from './bosses/factory.ts';
+import { MinibossRaiaDente } from './bosses/minibossRaiaDente.ts';
+import { PLAYFIELD_X, PLAYFIELD_WIDTH, PLAYFIELD_RIGHT } from '../constants.ts';
 
 export type EnemyKind = 'scout' | 'dart' | 'lancer' | 'cutter';
 export type EnemyPhase = 'approach' | 'telegraph' | 'attack' | 'recover' | 'exit';
@@ -19,6 +21,7 @@ export interface EnemyModel {
   phase: EnemyPhase;
   x: number;
   y: number;
+  baseX: number;
   baseY: number;
   ageMs: number;
   phaseMs: number;
@@ -48,7 +51,6 @@ export interface StageTick {
 
 export const SCROLL_SPEED = 68; // pixels lógicos/s (cenário permanece avançando)
 export const DEMO_DISTANCE = 4250; // distância total até a arena do chefe
-const SPAWN_X_PADDING = 42;
 
 // Roteiro por posição percorrida. Combinações táticas de passagem contínua.
 // Nenhum evento reaparece como round de arena.
@@ -132,16 +134,16 @@ export class StageDirector {
   readonly enemies: EnemyModel[] = [];
   boss: StageBoss | null = null;
   scrollPx = 0;
+  minibossSpawned = false;
+  minibossActive = false;
   private eventIndex = 0;
   private nextId = 1;
   private currentSector: SectorId = 'evacuacao';
-  private readonly viewportWidth: number;
   private readonly enableBoss: boolean;
   readonly stageNumber: number;
   readonly difficulty: DifficultyMode;
 
-  constructor(viewportWidth = 768, enableBoss = false, stageNumber = 1, difficulty: DifficultyMode = 'normal') {
-    this.viewportWidth = viewportWidth;
+  constructor(_viewportWidth = 768, enableBoss = false, stageNumber = 1, difficulty: DifficultyMode = 'normal') {
     this.enableBoss = enableBoss;
     this.stageNumber = stageNumber;
     this.difficulty = difficulty;
@@ -161,8 +163,21 @@ export class StageDirector {
     const spawned: EnemyModel[] = [];
     const shots: EnemyShotEvent[] = [];
 
-    // Spawna chefe correspondente à fase se habilitado e ao atingir a distância final
-    if (this.enableBoss && this.scrollPx >= DEMO_DISTANCE && !this.boss && this.enemies.length === 0) {
+    // 1. Spawna Miniboss Raia-Dente na metade da fase 1 (~1800m)
+    if (this.enableBoss && this.stageNumber === 1 && this.scrollPx >= 1800 && !this.minibossSpawned && !this.boss) {
+      this.boss = new MinibossRaiaDente();
+      this.minibossSpawned = true;
+      this.minibossActive = true;
+    }
+
+    // Se o miniboss foi derrotado, limpa-o e permite que a fase avance até o chefe colossal
+    if (this.boss && this.minibossActive && this.boss.phase === 'defeated') {
+      this.minibossActive = false;
+      this.boss = null;
+    }
+
+    // 2. Spawna chefe final da fase ao atingir a distância final
+    if (this.enableBoss && this.scrollPx >= DEMO_DISTANCE && !this.boss && !this.minibossActive && this.enemies.length === 0) {
       this.boss = createStageBoss(this.stageNumber);
     }
 
@@ -184,6 +199,7 @@ export class StageDirector {
           phase: 'approach',
           x: sp.x,
           y: sp.y,
+          baseX: sp.x,
           baseY: sp.y,
           ageMs: 0,
           phaseMs: 0,
@@ -202,12 +218,15 @@ export class StageDirector {
     ) {
       const event = STAGE_EVENTS[this.eventIndex++];
       const hp = event.kind === 'lancer' ? 3 : event.kind === 'cutter' ? 2 : 1;
+      // Distribui a coordenada X ao longo do corredor central (PLAYFIELD_X até PLAYFIELD_RIGHT)
+      const eventX = PLAYFIELD_X + 28 + ((event.y - 80) / 235) * (PLAYFIELD_WIDTH - 56);
       const enemy: EnemyModel = {
         id: this.nextId++,
         kind: event.kind,
         phase: 'approach',
-        x: this.viewportWidth + SPAWN_X_PADDING,
-        y: event.y,
+        x: eventX,
+        y: -35,
+        baseX: eventX,
         baseY: event.y,
         ageMs: 0,
         phaseMs: 0,
@@ -230,15 +249,15 @@ export class StageDirector {
         case 'scout': {
           switch (enemy.phase) {
             case 'approach':
-              enemy.x -= (speed * dt) / 1000;
-              enemy.y = clamp(enemy.baseY + Math.sin(enemy.ageMs / 220) * 28, 48, 380);
-              if (enemy.x <= this.viewportWidth * 0.75) {
+              enemy.y += (speed * dt) / 1000;
+              enemy.x = clamp(enemy.baseX + Math.sin(enemy.ageMs / 220) * 28, PLAYFIELD_X + 24, PLAYFIELD_RIGHT - 24);
+              if (enemy.y >= 90) {
                 enemy.phase = 'telegraph';
                 enemy.phaseMs = Math.round(CHARGE_MS.scout * chargeMult);
               }
               break;
             case 'telegraph':
-              enemy.x -= (speed * 0.35 * dt) / 1000;
+              enemy.y += (speed * 0.35 * dt) / 1000;
               enemy.phaseMs -= dt;
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'attack';
@@ -247,7 +266,7 @@ export class StageDirector {
               }
               break;
             case 'attack':
-              enemy.x -= (speed * 0.5 * dt) / 1000;
+              enemy.y += (speed * 0.5 * dt) / 1000;
               enemy.phaseMs -= dt;
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'recover';
@@ -255,42 +274,42 @@ export class StageDirector {
               }
               break;
             case 'recover':
-              enemy.x -= (speed * dt) / 1000;
+              enemy.y += (speed * dt) / 1000;
               enemy.phaseMs -= dt;
               if (enemy.phaseMs <= 0) enemy.phase = 'exit';
               break;
             case 'exit':
-              enemy.x -= (speed * 1.6 * dt) / 1000;
-              enemy.y += ((enemy.baseY < 216 ? 40 : -40) * dt) / 1000;
+              enemy.y += (speed * 1.6 * dt) / 1000;
+              enemy.x += ((enemy.baseX < (PLAYFIELD_X + PLAYFIELD_WIDTH / 2) ? -40 : 40) * dt) / 1000;
               break;
           }
           break;
         }
 
         case 'dart': {
-          const dirY = enemy.baseY < 216 ? 1 : -1;
+          const dirX = enemy.baseX < (PLAYFIELD_X + PLAYFIELD_WIDTH / 2) ? 1 : -1;
           switch (enemy.phase) {
             case 'approach':
-              enemy.x -= (speed * dt) / 1000;
-              enemy.y = clamp(enemy.y + (dirY * 115 * dt) / 1000, 48, 380);
-              if (enemy.x <= this.viewportWidth * 0.72) {
+              enemy.y += (speed * dt) / 1000;
+              enemy.x = clamp(enemy.x + (dirX * 60 * dt) / 1000, PLAYFIELD_X + 20, PLAYFIELD_RIGHT - 20);
+              if (enemy.y >= 85) {
                 enemy.phase = 'telegraph';
                 enemy.phaseMs = Math.round(CHARGE_MS.dart * chargeMult);
               }
               break;
             case 'telegraph':
-              enemy.x -= (speed * 0.6 * dt) / 1000;
-              enemy.y = clamp(enemy.y + (dirY * 60 * dt) / 1000, 48, 380);
+              enemy.y += (speed * 0.5 * dt) / 1000;
               enemy.phaseMs -= dt;
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'attack';
                 enemy.phaseMs = 200;
-                shots.push(this.aim(enemy, playerX, playerY, 235 * bulletSpeedMult));
+                shots.push(this.aim(enemy, playerX, playerY, 235 * bulletSpeedMult, -0.16));
+                shots.push(this.aim(enemy, playerX, playerY, 235 * bulletSpeedMult, 0.16));
               }
               break;
             case 'attack':
-              enemy.x -= (speed * 1.1 * dt) / 1000;
-              enemy.y += (dirY * 80 * dt) / 1000;
+              enemy.y += (speed * 1.1 * dt) / 1000;
+              enemy.x += (dirX * 45 * dt) / 1000;
               enemy.phaseMs -= dt;
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'recover';
@@ -298,13 +317,13 @@ export class StageDirector {
               }
               break;
             case 'recover':
-              enemy.x -= (speed * 1.3 * dt) / 1000;
+              enemy.y += (speed * 1.3 * dt) / 1000;
               enemy.phaseMs -= dt;
               if (enemy.phaseMs <= 0) enemy.phase = 'exit';
               break;
             case 'exit':
-              enemy.x -= (speed * 1.8 * dt) / 1000;
-              enemy.y += (dirY * 80 * dt) / 1000;
+              enemy.y += (speed * 1.8 * dt) / 1000;
+              enemy.x += (dirX * 50 * dt) / 1000;
               break;
           }
           break;
@@ -313,16 +332,16 @@ export class StageDirector {
         case 'lancer': {
           switch (enemy.phase) {
             case 'approach':
-              enemy.x -= (speed * dt) / 1000;
-              enemy.y += clamp(playerY - enemy.y, (-65 * dt) / 1000, (65 * dt) / 1000);
-              enemy.y = clamp(enemy.y, 48, 380);
-              if (enemy.x <= this.viewportWidth * 0.80) {
+              enemy.y += (speed * dt) / 1000;
+              enemy.x += clamp(playerX - enemy.x, (-65 * dt) / 1000, (65 * dt) / 1000);
+              enemy.x = clamp(enemy.x, PLAYFIELD_X + 24, PLAYFIELD_RIGHT - 24);
+              if (enemy.y >= 95) {
                 enemy.phase = 'telegraph';
                 enemy.phaseMs = Math.round(CHARGE_MS.lancer * chargeMult);
               }
               break;
             case 'telegraph':
-              enemy.x -= (speed * 0.3 * dt) / 1000;
+              enemy.y += (speed * 0.3 * dt) / 1000;
               enemy.phaseMs -= dt;
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'attack';
@@ -335,13 +354,13 @@ export class StageDirector {
                 } else {
                   // Leque triplo de contenção
                   shots.push(this.aim(enemy, playerX, playerY, 215 * bulletSpeedMult, 0));
-                  shots.push(this.aim(enemy, playerX, playerY, 215 * bulletSpeedMult, -0.31));
-                  shots.push(this.aim(enemy, playerX, playerY, 215 * bulletSpeedMult, +0.31));
+                  shots.push(this.aim(enemy, playerX, playerY, 215 * bulletSpeedMult, -0.28));
+                  shots.push(this.aim(enemy, playerX, playerY, 215 * bulletSpeedMult, 0.28));
                 }
               }
               break;
             case 'attack':
-              enemy.x -= (speed * 0.4 * dt) / 1000;
+              enemy.y += (speed * 0.4 * dt) / 1000;
               enemy.phaseMs -= dt;
               if (!enemy.secondShotFired && enemy.phaseMs <= 200) {
                 enemy.secondShotFired = true;
@@ -353,12 +372,12 @@ export class StageDirector {
               }
               break;
             case 'recover':
-              enemy.x -= (speed * dt) / 1000;
+              enemy.y += (speed * dt) / 1000;
               enemy.phaseMs -= dt;
               if (enemy.phaseMs <= 0) enemy.phase = 'exit';
               break;
             case 'exit':
-              enemy.x -= (speed * 1.5 * dt) / 1000;
+              enemy.y += (speed * 1.5 * dt) / 1000;
               break;
           }
           break;
@@ -367,29 +386,29 @@ export class StageDirector {
         case 'cutter': {
           switch (enemy.phase) {
             case 'approach':
-              enemy.x -= (speed * dt) / 1000;
-              enemy.y += clamp(playerY - enemy.y, (-80 * dt) / 1000, (80 * dt) / 1000);
-              enemy.y = clamp(enemy.y, 48, 380);
-              if (enemy.x <= this.viewportWidth * 0.74) {
+              enemy.y += (speed * dt) / 1000;
+              enemy.x += clamp(playerX - enemy.x, (-80 * dt) / 1000, (80 * dt) / 1000);
+              enemy.x = clamp(enemy.y, PLAYFIELD_X + 28, PLAYFIELD_RIGHT - 28);
+              if (enemy.y >= 105) {
                 enemy.phase = 'telegraph';
                 enemy.phaseMs = Math.round(CHARGE_MS.cutter * chargeMult);
               }
               break;
             case 'telegraph':
-              enemy.x -= (speed * 0.2 * dt) / 1000;
+              enemy.y += (speed * 0.2 * dt) / 1000;
               enemy.phaseMs -= dt;
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'attack';
                 enemy.phaseMs = 550;
                 // Disparo de fagulhas laterais no início da investida
-                shots.push({ x: enemy.x - 16, y: enemy.y - 12, velocityX: -180 * bulletSpeedMult, velocityY: -65 * bulletSpeedMult });
-                shots.push({ x: enemy.x - 16, y: enemy.y + 12, velocityX: -180 * bulletSpeedMult, velocityY: 65 * bulletSpeedMult });
+                shots.push({ x: enemy.x - 16, y: enemy.y + 12, velocityX: -60 * bulletSpeedMult, velocityY: 180 * bulletSpeedMult });
+                shots.push({ x: enemy.x + 16, y: enemy.y + 12, velocityX: 60 * bulletSpeedMult, velocityY: 180 * bulletSpeedMult });
               }
               break;
             case 'attack':
-              // Investida veloz para frente cortando a rota horizontal
+              // Investida veloz para frente cortando a rota vertical
               const chargeSpeed = this.difficulty === 'arcade' ? 340 : this.difficulty === 'hard' ? 325 : 310;
-              enemy.x -= (chargeSpeed * dt) / 1000;
+              enemy.y += (chargeSpeed * dt) / 1000;
               enemy.phaseMs -= dt;
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'recover';
@@ -397,13 +416,12 @@ export class StageDirector {
               }
               break;
             case 'recover':
-              enemy.x -= (speed * 0.6 * dt) / 1000;
+              enemy.y += (speed * 0.6 * dt) / 1000;
               enemy.phaseMs -= dt;
               if (enemy.phaseMs <= 0) enemy.phase = 'exit';
               break;
             case 'exit':
-              enemy.x -= (speed * 1.6 * dt) / 1000;
-              enemy.y += ((enemy.baseY < 216 ? -50 : 50) * dt) / 1000;
+              enemy.y += (speed * 1.6 * dt) / 1000;
               break;
           }
           break;
@@ -412,11 +430,11 @@ export class StageDirector {
     }
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
-      if (this.enemies[i].x < -60) this.enemies.splice(i, 1);
+      if (this.enemies[i].y > 480 || this.enemies[i].y < -90) this.enemies.splice(i, 1);
     }
 
     const isCompleted = this.enableBoss
-      ? Boolean(this.boss !== null && this.boss.phase === 'defeated')
+      ? Boolean(this.boss !== null && !this.minibossActive && this.boss.phase === 'defeated')
       : Boolean(this.scrollPx >= DEMO_DISTANCE && this.enemies.length === 0);
 
     return {
@@ -464,8 +482,8 @@ export class StageDirector {
     const baseAngle = Math.atan2(dy, dx);
     const finalAngle = baseAngle + angleOffsetRad;
     return {
-      x: enemy.x - 16,
-      y: enemy.y,
+      x: enemy.x,
+      y: enemy.y + 16,
       velocityX: speed * Math.cos(finalAngle),
       velocityY: speed * Math.sin(finalAngle),
     };

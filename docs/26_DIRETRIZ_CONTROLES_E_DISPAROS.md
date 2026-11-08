@@ -93,3 +93,4 @@ Arquivo de testes dedicado: `tests/controls_firing.test.mjs`
 - **Teste E:** Cadência, Tapping manual acelerado e acumulação/dissipação térmica.
 - **Teste F:** Armas carregáveis, limiares de ativação e especificidades dos 3 pilotos.
 - **Teste G:** Estabilidade sob alta frequência (10.000 iterações em < 10ms, sem vazamento).
+

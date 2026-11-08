@@ -138,7 +138,7 @@ export class PilotSelectScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     this.previewDistance += Math.min(delta, 50) * 0.026;
     this.backdrop.update(this.previewDistance);
-    this.shipVisuals.forEach(s => s.updateShip(delta, 0, false, 0, false));
+    this.shipVisuals.forEach(s => s.updateShip(delta, 0, 0, 0, false, false));
 
     if (!this.keys) return;
     if (Phaser.Input.Keyboard.JustDown(this.keys.ONE)) this.select(0);

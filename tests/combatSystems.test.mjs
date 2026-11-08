@@ -39,7 +39,7 @@ test('weapons start at LV1 with 2 bombs and 0 resonance', () => {
   assert.equal(w.specialType, 'prism');
 });
 
-test('weapons upgrade up to LV3 and no further', () => {
+test('weapons upgrade up to LV4 and no further', () => {
   let w = createPlayerWeapons('nolan');
   const u1 = upgradeWeapon(w);
   assert.equal(u1.upgraded, true);
@@ -50,8 +50,12 @@ test('weapons upgrade up to LV3 and no further', () => {
   assert.equal(u2.state.weaponLevel, 3);
 
   const u3 = upgradeWeapon(u2.state);
-  assert.equal(u3.upgraded, false);
-  assert.equal(u3.state.weaponLevel, MAX_WEAPON_LEVEL);
+  assert.equal(u3.upgraded, true);
+  assert.equal(u3.state.weaponLevel, 4);
+
+  const u4 = upgradeWeapon(u3.state);
+  assert.equal(u4.upgraded, false);
+  assert.equal(u4.state.weaponLevel, MAX_WEAPON_LEVEL);
 });
 
 test('resonance accumulates up to 100 and enables special', () => {
@@ -138,24 +142,23 @@ test('reset on respawn restores weapon to LV1 and removes shield', () => {
 
 test('pickup system spawns, attracts, and collects power-ups', () => {
   const sys = new PickupSystem();
-  sys.spawn('upgrade', 300, 200);
-  sys.spawn('repair', 500, 200);
+  sys.spawn('power', 300, 200);
+  sys.spawn('health', 300, 100);
   assert.equal(sys.pickups.length, 2);
 
-  // Player far away - pickup moves left naturally
+  // Player far away - pickup moves down naturally in vertical top-down
   sys.update(100, 50, 50);
-  assert.ok(sys.pickups[0].x < 300);
+  assert.ok(sys.pickups[0].y > 200);
 
   // Player approaches pickup - magnetic attraction activates
-  const beforeX = sys.pickups[0].x;
-  sys.update(100, beforeX + 30, sys.pickups[0].y);
-  // Pickups should be pulled towards player
-  assert.ok(sys.pickups[0].x > beforeX - 4); // Magnetic pull counteracts float left
+  const beforeY = sys.pickups[0].y;
+  sys.update(100, sys.pickups[0].x, beforeY - 40);
+  assert.ok(sys.pickups[0].y < beforeY + 10);
 
   // Collection
   const collected = sys.checkCollection(sys.pickups[0].x, sys.pickups[0].y, 30);
   assert.equal(collected.length, 1);
-  assert.equal(collected[0].type, 'upgrade');
+  assert.equal(collected[0].type, 'power');
   assert.equal(collected[0].collected, true);
 
   // Next update removes collected pickups
@@ -164,10 +167,11 @@ test('pickup system spawns, attracts, and collects power-ups', () => {
 });
 
 test('determineEnemyDrop produces expected rewards', () => {
-  assert.equal(determineEnemyDrop('lancer', 1), 'upgrade');
-  assert.equal(determineEnemyDrop('lancer', 2), 'resonance');
-  assert.equal(determineEnemyDrop('lancer', 3), 'score');
-  assert.equal(determineEnemyDrop('miniboss', 1), 'bomb');
+  assert.equal(determineEnemyDrop('lancer', 1), 'power');
+  assert.equal(determineEnemyDrop('lancer', 2), 'special');
+  assert.equal(determineEnemyDrop('lancer', 3), 'bomb');
+  assert.equal(determineEnemyDrop('carrier', 0), 'power');
+  assert.equal(determineEnemyDrop('carrier', 1), 'weapon_ion');
 });
 
 test('score combo system multiplies consecutive kills and decays after window', () => {

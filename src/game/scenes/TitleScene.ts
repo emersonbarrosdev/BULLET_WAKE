@@ -100,7 +100,7 @@ export class TitleScene extends Phaser.Scene {
     this.add.text(
       GAME_WIDTH / 2,
       107,
-      'SETOR 01: CINTURÃO DE FERRUGEM  //  AUTONOMOUS OPERATIONAL UNIT',
+      'FASE 01: FENDA PELÁGICA  //  INVASÃO ALIENÍGENA ABISSAL',
       {
         fontFamily: FONT_HUD,
         fontSize: '10px',
@@ -112,7 +112,7 @@ export class TitleScene extends Phaser.Scene {
     // Itens de Menu (com ação principal em destaque absoluto)
     this.menuItems = [
       {
-        text: 'INICIAR MISSÃO: CINTURÃO DE FERRUGEM',
+        text: 'INICIAR MISSÃO: FENDA PELÁGICA',
         badge: '[ESPAÇO / ENTER]',
         isPrimary: true,
         action: () => this.startStage1(),
@@ -400,19 +400,21 @@ export class TitleScene extends Phaser.Scene {
 
     const controls = this.add.text(
       GAME_WIDTH / 2,
-      112,
-      '• MOVIMENTAÇÃO: W/A/S/D ou TECLAS DIRECIONAIS\n' +
-      '  (Voo livre de perfil lateral com inclinação aerodinâmica)\n\n' +
-      '• DISPARO PRINCIPAL: BARRA DE ESPAÇO ou TOQUE\n\n' +
-      '• ARMA SECUNDÁRIA / MÍSSEIS: TECLA M\n\n' +
-      '• HABILIDADE ESPECIAL: TECLA X ou SHIFT (Requer 100% de Ressonância)\n\n' +
-      '• BOMBA DEVASTADORA: TECLA B ou L (Anula balas hostis e detona a tela)\n\n' +
-      '• REINICIAR: TECLA R    |    MENU / PAUSA: TECLA ESC',
+      105,
+      '• MOVIMENTAÇÃO: W/A/S/D ou SETAS (Voo vertical top-down, diagonais normalizadas)\n' +
+      '• DISPARO PRINCIPAL: BARRA DE ESPAÇO (Contínuo mantendo ou burst com tapping)\n' +
+      '• DASH DE EMERGÊNCIA: SHIFT ESQUERDO (Exatamente 3 por fase, invulnerabilidade curta)\n' +
+      '• DISPARO CARREGADO (WAVE CANNON): TECLA C (Segurar e soltar feixe penetrante)\n' +
+      '• ARMA SECUNDÁRIA / MÍSSEIS: TECLA M\n' +
+      '• HABILIDADE ESPECIAL: TECLA V (Requer 100% de Ressonância)\n' +
+      '• BOMBA DEFENSIVA: TECLA X ou B (Limpa balas da tela e causa dano massivo)\n' +
+      '• REINICIAR: TECLA R    |    MENU / PAUSA: TECLA ESC\n\n' +
+      '※ NO PC: MOUSE ATIVO EXCLUSIVAMENTE NOS MENUS DE INTERFACE',
       {
         fontFamily: FONT_HUD,
-        fontSize: '12px',
+        fontSize: '11px',
         color: '#e2e8f0',
-        lineSpacing: 4,
+        lineSpacing: 3,
       },
     ).setOrigin(0.5, 0).setResolution(2);
 

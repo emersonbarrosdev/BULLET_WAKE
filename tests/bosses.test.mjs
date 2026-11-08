@@ -69,7 +69,7 @@ test('createStageBoss creates correct boss instances for all 5 stages', () => {
   const b4 = createStageBoss(4);
   const b5 = createStageBoss(5);
 
-  assert.equal(b1.name, 'KRM-17 Excavator');
+  assert.equal(b1.name, 'TALASSARCA');
   assert.equal(b2.name, 'Serpente de Extração');
   assert.equal(b3.name, 'Fortaleza de Núcleos');
   assert.equal(b4.name, 'Interceptador de Tempestade');

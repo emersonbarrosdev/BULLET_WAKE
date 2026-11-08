@@ -1,10 +1,15 @@
 /**
- * Sistema de armas e habilidades dos três pilotos do BULLET WAKE.
- * Implementação pura sem dependência do Phaser ou DOM.
+ * BULLET WAKE V2 — Sistema Canônico de Armamentos (Estilo Fire Shark)
+ * 
+ * Três famílias distintas com identidade visual e evolução real (Níveis 1 a 4):
+ * - Pulso Verde: Ampla cobertura em leque de energia esmeralda.
+ * - Laser de Íons: Feixe ciano concentrado de alta penetração em blindagens pesadas.
+ * - Plasma Vermelho: Dano pesado de impacto térmico concussivo e controle de área.
  */
 import { getPilot, type PilotId } from '../data/pilots.ts';
 
-export type WeaponLevel = 1 | 2 | 3;
+export type WeaponFamily = 'green' | 'ion' | 'red';
+export type WeaponLevel = 1 | 2 | 3 | 4;
 export type SpecialType = 'prism' | 'phantom' | 'nova';
 
 export interface ProjectileSpawnDef {
@@ -22,6 +27,7 @@ export interface ProjectileSpawnDef {
 
 export interface PlayerWeaponsState {
   pilotId: PilotId;
+  weaponFamily: WeaponFamily;
   weaponLevel: WeaponLevel;
   bombs: number;
   hasShield: boolean;
@@ -32,21 +38,21 @@ export interface PlayerWeaponsState {
   missileCooldownMs: number;
   fireCooldownMs: number;
 
-  // Sistema de Calor e Sobreaquecimento (Diretriz 26)
+  // Sistema de Calor e Sobreaquecimento
   heat: number;                 // 0 a 100
   isOverheated: boolean;        // Bloqueio temporário por sobreaquecimento
   overheatCooldownMs: number;   // Tempo restante de cooldown de sobreaquecimento
 
-  // Sistema de Armas Carregáveis (Wave Cannon)
+  // Sistema de Armas Carregáveis (Wave Cannon - C)
   chargeMs: number;             // Milissegundos acumulados de carga
-  isCharging: boolean;          // Verdadeiro enquanto o jogador segura o comando de carga
+  isCharging: boolean;          // Verdadeiro enquanto o jogador segura C
 }
 
-export const MAX_WEAPON_LEVEL: WeaponLevel = 3;
+export const MAX_WEAPON_LEVEL: WeaponLevel = 4;
 export const MAX_BOMBS = 4;
 export const START_BOMBS = 2;
 export const MAX_RESONANCE = 100;
-export const MISSILE_COOLDOWN_MS = 1600;
+export const MISSILE_COOLDOWN_MS = 1500;
 
 export const MAX_HEAT = 100;
 export const OVERHEAT_COOLDOWN_MS = 650;
@@ -54,47 +60,65 @@ export const MIN_CHARGE_MS = 400;
 export const MAX_CHARGE_MS = 1400;
 export const FULL_CHARGE_THRESHOLD_MS = 1100;
 
-export interface PilotWeaponSpecs {
+export interface WeaponSpecs {
   autoIntervalMs: number;
   burstIntervalMs: number;
   heatPerShot: number;
   coolingRatePerSec: number;
+  displayName: string;
 }
 
-export const PILOT_WEAPON_SPECS: Record<PilotId, PilotWeaponSpecs> = {
-  nolan: {
+export const WEAPON_FAMILY_SPECS: Record<WeaponFamily, WeaponSpecs> = {
+  green: {
     autoIntervalMs: 125,
     burstIntervalMs: 90,
+    heatPerShot: 7,
+    coolingRatePerSec: 45,
+    displayName: 'PULSO VERDE',
+  },
+  ion: {
+    autoIntervalMs: 140,
+    burstIntervalMs: 100,
     heatPerShot: 8,
-    coolingRatePerSec: 42,
+    coolingRatePerSec: 50,
+    displayName: 'LASER DE ÍONS',
   },
-  cora: {
-    autoIntervalMs: 147,
-    burstIntervalMs: 105,
-    heatPerShot: 6,
-    coolingRatePerSec: 52,
+  red: {
+    autoIntervalMs: 185,
+    burstIntervalMs: 135,
+    heatPerShot: 13,
+    coolingRatePerSec: 38,
+    displayName: 'PLASMA VERMELHO',
   },
-  harlan: {
-    autoIntervalMs: 200,
-    burstIntervalMs: 145,
-    heatPerShot: 14,
-    coolingRatePerSec: 36,
-  },
+};
+
+export const PILOT_WEAPON_SPECS: Record<string, WeaponSpecs> = {
+  nolan: WEAPON_FAMILY_SPECS.green,
+  cora: WEAPON_FAMILY_SPECS.ion,
+  harlan: WEAPON_FAMILY_SPECS.red,
+  green: WEAPON_FAMILY_SPECS.green,
+  ion: WEAPON_FAMILY_SPECS.ion,
+  red: WEAPON_FAMILY_SPECS.red,
 };
 
 export const SPECIAL_DURATIONS: Record<SpecialType, number> = {
-  prism: 3800,  // Nolan: Tempestade Prismática (~4 segundos)
-  phantom: 650, // Cora: Salto Fantasma (~0.65 segundo dash rápido)
-  nova: 900,    // Harlan: Ruptura Nova (~0.9 segundo pulso expansivo)
+  prism: 3800,  // Nolan: Tempestade Prismática
+  phantom: 650, // Cora: Salto Fantasma
+  nova: 900,    // Harlan: Ruptura Nova
 };
 
-export function createPlayerWeapons(pilotId: PilotId = 'nolan'): PlayerWeaponsState {
+export function createPlayerWeapons(pilotId: PilotId = 'nolan', initialFamily: WeaponFamily = 'green'): PlayerWeaponsState {
   const pilot = getPilot(pilotId);
   const specialType: SpecialType =
     pilot.id === 'cora' ? 'phantom' : pilot.id === 'harlan' ? 'nova' : 'prism';
 
+  // Arma inicial associada ao piloto
+  const family: WeaponFamily =
+    pilot.id === 'cora' ? 'ion' : pilot.id === 'harlan' ? 'red' : initialFamily;
+
   return {
     pilotId: pilot.id,
+    weaponFamily: family,
     weaponLevel: 1,
     bombs: START_BOMBS,
     hasShield: false,
@@ -112,6 +136,15 @@ export function createPlayerWeapons(pilotId: PilotId = 'nolan'): PlayerWeaponsSt
   };
 }
 
+/** Troca a família de arma (Verde, Íon, Vermelho) mantendo o nível atual */
+export function switchWeaponFamily(state: PlayerWeaponsState, newFamily: WeaponFamily): PlayerWeaponsState {
+  return {
+    ...state,
+    weaponFamily: newFamily,
+  };
+}
+
+/** Evolui o nível da arma equipada (1 a 4) */
 export function upgradeWeapon(state: PlayerWeaponsState): {
   state: PlayerWeaponsState;
   upgraded: boolean;
@@ -179,7 +212,7 @@ export function setShield(state: PlayerWeaponsState, active: boolean): PlayerWea
 
 export function advanceWeapons(state: PlayerWeaponsState, deltaMs: number): PlayerWeaponsState {
   const dt = Math.max(0, deltaMs);
-  const specs = PILOT_WEAPON_SPECS[state.pilotId] || PILOT_WEAPON_SPECS.nolan;
+  const specs = WEAPON_FAMILY_SPECS[state.weaponFamily] || WEAPON_FAMILY_SPECS.green;
 
   let overheatCooldownMs = Math.max(0, state.overheatCooldownMs - dt);
   let isOverheated = state.isOverheated;
@@ -215,16 +248,16 @@ export function resetWeaponsOnRespawn(state: PlayerWeaponsState): PlayerWeaponsS
     overheatCooldownMs: 0,
     chargeMs: 0,
     isCharging: false,
-    resonance: Math.floor(state.resonance * 0.5), // preserva metade da ressonância
+    resonance: Math.floor(state.resonance * 0.5),
   };
 }
 
-/** Registra um disparo primário e computa calor gerado */
+/** Registra disparo primário e computa calor gerado */
 export function recordPrimaryShot(state: PlayerWeaponsState): {
   state: PlayerWeaponsState;
   overheatedNow: boolean;
 } {
-  const specs = PILOT_WEAPON_SPECS[state.pilotId] || PILOT_WEAPON_SPECS.nolan;
+  const specs = WEAPON_FAMILY_SPECS[state.weaponFamily] || WEAPON_FAMILY_SPECS.green;
   const nextHeat = Math.min(MAX_HEAT, state.heat + specs.heatPerShot);
   const overheated = nextHeat >= MAX_HEAT;
 
@@ -239,7 +272,7 @@ export function recordPrimaryShot(state: PlayerWeaponsState): {
   };
 }
 
-/** Atualiza tempo de carga acumulado enquanto o jogador segura comando de carga */
+/** Atualiza tempo de carga enquanto segura C */
 export function updateWeaponCharge(
   state: PlayerWeaponsState,
   deltaMs: number,
@@ -268,7 +301,7 @@ export function updateWeaponCharge(
   };
 }
 
-/** Libera a carga acumulada e retorna o nível de disparo gerado */
+/** Libera carga acumulada */
 export function releaseWeaponCharge(state: PlayerWeaponsState): {
   state: PlayerWeaponsState;
   chargeMs: number;
@@ -282,7 +315,7 @@ export function releaseWeaponCharge(state: PlayerWeaponsState): {
     chargeLevel = 1;
   }
 
-  // Cora: sob carga máxima (Overdrive), ventila instantaneamente 100% do calor acumulado!
+  // Cora sob carga máxima ventila 100% do calor
   const heat = state.pilotId === 'cora' && chargeLevel === 2 ? 0 : state.heat;
 
   return {
@@ -297,108 +330,143 @@ export function releaseWeaponCharge(state: PlayerWeaponsState): {
   };
 }
 
-/** Retorna definições de projéteis principais de acordo com piloto e nível (LV1-3). */
+/**
+ * Retorna definições de projéteis principais em visão superior (top-down vertical, subindo para -Y).
+ * Suporta as 3 famílias canônicas (Pulso Verde, Laser de Íons e Plasma Vermelho) nos 4 níveis.
+ */
 export function getPrimaryProjectiles(
-  pilotId: PilotId,
+  familyOrPilot: WeaponFamily | PilotId,
   level: WeaponLevel,
   originX: number,
   originY: number,
+  overrideFamily?: WeaponFamily,
 ): ProjectileSpawnDef[] {
-  const pilot = getPilot(pilotId);
-  const baseDmg = pilot.damage;
+  // Resolução da família
+  let family: WeaponFamily = 'green';
+  if (overrideFamily) {
+    family = overrideFamily;
+  } else if (familyOrPilot === 'green' || familyOrPilot === 'ion' || familyOrPilot === 'red') {
+    family = familyOrPilot;
+  } else if (familyOrPilot === 'cora') {
+    family = 'ion';
+  } else if (familyOrPilot === 'harlan') {
+    family = 'red';
+  }
 
-  if (pilotId === 'nolan') {
-    // RIVET: Canhão de pulso rápido
-    const key = 'rivet-v3-pulse-' + level;
+  // 1. ARMA A: PULSO VERDE (Green Pulse — Cobertura em leque crescente LV1-4)
+  if (family === 'green') {
+    const tex = 'shot-rivet';
+    const anim = 'shot-rivet-loop';
+
     if (level === 1) {
-      return [{
-        texture: key,
-        animation: key + '-anim',
-        x: originX,
-        y: originY + 2,
-        velocityX: 560,
-        velocityY: 0,
-        damage: baseDmg,
-        hitRadius: 10,
-        scale: 0.7,
-      }];
-    }
-    if (level === 2) {
+      // Disparo duplo frontal paralelo
       return [
         {
-          texture: key,
-          animation: key + '-anim',
-          x: originX,
-          y: originY - 6,
-          velocityX: 575,
-          velocityY: 0,
-          damage: baseDmg * 0.85,
-          hitRadius: 11,
-          scale: 0.72,
+          texture: tex,
+          animation: anim,
+          x: originX - 5,
+          y: originY,
+          velocityX: 0,
+          velocityY: -620,
+          damage: 1.1,
+          hitRadius: 8,
+          scale: 1.4,
         },
         {
-          texture: key,
-          animation: key + '-anim',
-          x: originX,
-          y: originY + 8,
-          velocityX: 575,
-          velocityY: 0,
-          damage: baseDmg * 0.85,
-          hitRadius: 11,
-          scale: 0.72,
+          texture: tex,
+          animation: anim,
+          x: originX + 5,
+          y: originY,
+          velocityX: 0,
+          velocityY: -620,
+          damage: 1.1,
+          hitRadius: 8,
+          scale: 1.4,
         },
       ];
     }
-    // Level 3: 3 fluxos paralelos e penetrantes
-    return [
-      {
-        texture: key,
-        animation: key + '-anim',
-        x: originX,
-        y: originY - 12,
-        velocityX: 590,
-        velocityY: -30,
-        damage: baseDmg * 0.8,
-        hitRadius: 12,
-        scale: 0.75,
-      },
-      {
-        texture: key,
-        animation: key + '-anim',
-        x: originX + 6,
-        y: originY + 2,
-        velocityX: 610,
-        velocityY: 0,
-        damage: baseDmg * 1.1,
-        hitRadius: 13,
-        scale: 0.8,
-        piercing: true,
-      },
-      {
-        texture: key,
-        animation: key + '-anim',
-        x: originX,
-        y: originY + 14,
-        velocityX: 590,
-        velocityY: 30,
-        damage: baseDmg * 0.8,
-        hitRadius: 12,
-        scale: 0.75,
-      },
-    ];
+    if (level === 2) {
+      // 3 vias: centro reto e 2 diagonais suaves
+      return [
+        {
+          texture: tex,
+          animation: anim,
+          x: originX,
+          y: originY - 2,
+          velocityX: 0,
+          velocityY: -630,
+          damage: 1.15,
+          hitRadius: 8,
+          scale: 1.45,
+        },
+        {
+          texture: tex,
+          animation: anim,
+          x: originX - 8,
+          y: originY,
+          velocityX: -100,
+          velocityY: -620,
+          damage: 1.1,
+          hitRadius: 8,
+          scale: 1.4,
+        },
+        {
+          texture: tex,
+          animation: anim,
+          x: originX + 8,
+          y: originY,
+          velocityX: 100,
+          velocityY: -620,
+          damage: 1.1,
+          hitRadius: 8,
+          scale: 1.4,
+        },
+      ];
+    }
+    if (level === 3) {
+      // 5 vias em leque amplo
+      const angles = [-200, -100, 0, 100, 200];
+      return angles.map((vx, i) => ({
+        texture: tex,
+        animation: anim,
+        x: originX + (i - 2) * 5,
+        y: originY - (i === 2 ? 3 : 0),
+        velocityX: vx,
+        velocityY: -640,
+        damage: i === 2 ? 1.25 : 1.15,
+        hitRadius: 8,
+        scale: 1.5,
+      }));
+    }
+    // Nível 4: 7 vias para cobertura total do campo
+    const anglesLv4 = [-280, -190, -95, 0, 95, 190, 280];
+    return anglesLv4.map((vx, i) => ({
+      texture: tex,
+      animation: anim,
+      x: originX + (i - 3) * 4,
+      y: originY - (i === 3 ? 4 : 0),
+      velocityX: vx,
+      velocityY: -650,
+      damage: i === 3 ? 1.35 : 1.2,
+      hitRadius: 9,
+      scale: 1.6,
+    }));
   }
 
-  if (pilotId === 'cora') {
-    // MOTH: Agulha laser concentrada de alta velocidade e perfuração
+  // 2. ARMA B: LASER DE ÍONS (Ion Laser — Feixe ciano concentrado perfurante)
+  if (family === 'ion') {
+    const tex = 'shot-moth';
+    const anim = 'shot-moth-loop';
+
     if (level === 1) {
       return [{
-        texture: 'shot-moth',
-        animation: 'shot-moth-loop',
+        texture: tex,
+        animation: anim,
         x: originX,
         y: originY,
-        velocityX: 680,
-        velocityY: 0,
-        damage: baseDmg * 1.05,
+        velocityX: 0,
+        velocityY: -760,
+        damage: 2.0,
         hitRadius: 8,
         scale: 1.7,
         piercing: true,
@@ -407,210 +475,321 @@ export function getPrimaryProjectiles(
     if (level === 2) {
       return [
         {
-          texture: 'shot-moth',
-          animation: 'shot-moth-loop',
-          x: originX,
-          y: originY - 5,
-          velocityX: 700,
-          velocityY: -15,
-          damage: baseDmg * 0.9,
+          texture: tex,
+          animation: anim,
+          x: originX - 6,
+          y: originY,
+          velocityX: 0,
+          velocityY: -780,
+          damage: 1.8,
           hitRadius: 9,
-          scale: 1.75,
+          scale: 1.8,
           piercing: true,
         },
         {
-          texture: 'shot-moth',
-          animation: 'shot-moth-loop',
-          x: originX,
-          y: originY + 5,
-          velocityX: 700,
-          velocityY: 15,
-          damage: baseDmg * 0.9,
+          texture: tex,
+          animation: anim,
+          x: originX + 6,
+          y: originY,
+          velocityX: 0,
+          velocityY: -780,
+          damage: 1.8,
           hitRadius: 9,
-          scale: 1.75,
+          scale: 1.8,
           piercing: true,
         },
       ];
     }
-    // Level 3: feixe duplo perfurante frontal + leque de dispersão
+    if (level === 3) {
+      return [
+        {
+          texture: tex,
+          animation: anim,
+          x: originX,
+          y: originY - 4,
+          velocityX: 0,
+          velocityY: -810,
+          damage: 2.6,
+          hitRadius: 10,
+          scale: 2.0,
+          piercing: true,
+        },
+        {
+          texture: tex,
+          animation: anim,
+          x: originX - 10,
+          y: originY,
+          velocityX: -40,
+          velocityY: -790,
+          damage: 1.4,
+          hitRadius: 8,
+          scale: 1.6,
+          piercing: true,
+        },
+        {
+          texture: tex,
+          animation: anim,
+          x: originX + 10,
+          y: originY,
+          velocityX: 40,
+          velocityY: -790,
+          damage: 1.4,
+          hitRadius: 8,
+          scale: 1.6,
+          piercing: true,
+        },
+      ];
+    }
+    // Nível 4: Coluna Iônica Devastadora (5 feixes de penetração massiva)
     return [
       {
-        texture: 'shot-moth',
-        animation: 'shot-moth-loop',
-        x: originX + 8,
-        y: originY - 4,
-        velocityX: 730,
-        velocityY: 0,
-        damage: baseDmg * 1.15,
-        hitRadius: 10,
-        scale: 1.9,
+        texture: tex,
+        animation: anim,
+        x: originX,
+        y: originY - 6,
+        velocityX: 0,
+        velocityY: -840,
+        damage: 3.5,
+        hitRadius: 12,
+        scale: 2.4,
         piercing: true,
       },
       {
-        texture: 'shot-moth',
-        animation: 'shot-moth-loop',
-        x: originX + 8,
-        y: originY + 4,
-        velocityX: 730,
-        velocityY: 0,
-        damage: baseDmg * 1.15,
-        hitRadius: 10,
-        scale: 1.9,
+        texture: tex,
+        animation: anim,
+        x: originX - 8,
+        y: originY - 2,
+        velocityX: -25,
+        velocityY: -820,
+        damage: 1.8,
+        hitRadius: 9,
+        scale: 1.8,
         piercing: true,
       },
       {
-        texture: 'shot-moth',
-        animation: 'shot-moth-loop',
-        x: originX,
-        y: originY - 14,
-        velocityX: 660,
-        velocityY: -60,
-        damage: baseDmg * 0.7,
-        hitRadius: 8,
-        scale: 1.5,
+        texture: tex,
+        animation: anim,
+        x: originX + 8,
+        y: originY - 2,
+        velocityX: 25,
+        velocityY: -820,
+        damage: 1.8,
+        hitRadius: 9,
+        scale: 1.8,
+        piercing: true,
       },
       {
-        texture: 'shot-moth',
-        animation: 'shot-moth-loop',
-        x: originX,
-        y: originY + 14,
-        velocityX: 660,
-        velocityY: 60,
-        damage: baseDmg * 0.7,
+        texture: tex,
+        animation: anim,
+        x: originX - 16,
+        y: originY,
+        velocityX: -60,
+        velocityY: -800,
+        damage: 1.5,
         hitRadius: 8,
-        scale: 1.5,
+        scale: 1.6,
+        piercing: true,
+      },
+      {
+        texture: tex,
+        animation: anim,
+        x: originX + 16,
+        y: originY,
+        velocityX: 60,
+        velocityY: -800,
+        damage: 1.5,
+        hitRadius: 8,
+        scale: 1.6,
+        piercing: true,
       },
     ];
   }
 
-  // HARLAN (KNUCKLE): Canhão cinético pesado
+  // 3. ARMA C: PLASMA VERMELHO (Red Plasma — Disparo pesado concussivo com impacto térmico)
+  const texRed = 'shot-knuckle';
+  const animRed = 'shot-knuckle-loop';
+
   if (level === 1) {
     return [{
-      texture: 'shot-knuckle',
-      animation: 'shot-knuckle-loop',
+      texture: texRed,
+      animation: animRed,
       x: originX,
       y: originY,
-      velocityX: 490,
-      velocityY: 0,
-      damage: baseDmg,
-      hitRadius: 12,
-      scale: 1.8,
+      velocityX: 0,
+      velocityY: -520,
+      damage: 3.2,
+      hitRadius: 16,
+      scale: 1.7,
     }];
   }
   if (level === 2) {
     return [
       {
-        texture: 'shot-knuckle',
-        animation: 'shot-knuckle-loop',
-        x: originX,
-        y: originY - 8,
-        velocityX: 505,
-        velocityY: 0,
-        damage: baseDmg * 0.95,
-        hitRadius: 13,
-        scale: 1.9,
+        texture: texRed,
+        animation: animRed,
+        x: originX - 9,
+        y: originY,
+        velocityX: -20,
+        velocityY: -530,
+        damage: 2.8,
+        hitRadius: 17,
+        scale: 1.8,
       },
       {
-        texture: 'shot-knuckle',
-        animation: 'shot-knuckle-loop',
-        x: originX,
-        y: originY + 8,
-        velocityX: 505,
-        velocityY: 0,
-        damage: baseDmg * 0.95,
-        hitRadius: 13,
-        scale: 1.9,
+        texture: texRed,
+        animation: animRed,
+        x: originX + 9,
+        y: originY,
+        velocityX: 20,
+        velocityY: -530,
+        damage: 2.8,
+        hitRadius: 17,
+        scale: 1.8,
       },
     ];
   }
-  // Level 3: Disparo triplo maciço de concussão
+  if (level === 3) {
+    return [
+      {
+        texture: texRed,
+        animation: animRed,
+        x: originX,
+        y: originY - 4,
+        velocityX: 0,
+        velocityY: -550,
+        damage: 3.8,
+        hitRadius: 20,
+        scale: 2.0,
+      },
+      {
+        texture: texRed,
+        animation: animRed,
+        x: originX - 12,
+        y: originY,
+        velocityX: -60,
+        velocityY: -530,
+        damage: 2.5,
+        hitRadius: 16,
+        scale: 1.7,
+      },
+      {
+        texture: texRed,
+        animation: animRed,
+        x: originX + 12,
+        y: originY,
+        velocityX: 60,
+        velocityY: -530,
+        damage: 2.5,
+        hitRadius: 16,
+        scale: 1.7,
+      },
+    ];
+  }
+  // Nível 4: Quádruplo Devastador de Plasma Concussivo
   return [
     {
-      texture: 'shot-knuckle',
-      animation: 'shot-knuckle-loop',
-      x: originX,
-      y: originY - 14,
-      velocityX: 480,
-      velocityY: -40,
-      damage: baseDmg * 0.85,
-      hitRadius: 14,
+      texture: texRed,
+      animation: animRed,
+      x: originX - 6,
+      y: originY - 4,
+      velocityX: -20,
+      velocityY: -570,
+      damage: 3.5,
+      hitRadius: 22,
+      scale: 2.1,
+    },
+    {
+      texture: texRed,
+      animation: animRed,
+      x: originX + 6,
+      y: originY - 4,
+      velocityX: 20,
+      velocityY: -570,
+      damage: 3.5,
+      hitRadius: 22,
+      scale: 2.1,
+    },
+    {
+      texture: texRed,
+      animation: animRed,
+      x: originX - 16,
+      y: originY,
+      velocityX: -80,
+      velocityY: -540,
+      damage: 2.8,
+      hitRadius: 18,
       scale: 1.9,
     },
     {
-      texture: 'shot-knuckle',
-      animation: 'shot-knuckle-loop',
-      x: originX + 10,
+      texture: texRed,
+      animation: animRed,
+      x: originX + 16,
       y: originY,
-      velocityX: 530,
-      velocityY: 0,
-      damage: baseDmg * 1.35,
-      hitRadius: 17,
-      scale: 2.2,
-      piercing: true,
-    },
-    {
-      texture: 'shot-knuckle',
-      animation: 'shot-knuckle-loop',
-      x: originX,
-      y: originY + 14,
-      velocityX: 480,
-      velocityY: 40,
-      damage: baseDmg * 0.85,
-      hitRadius: 14,
+      velocityX: 80,
+      velocityY: -540,
+      damage: 2.8,
+      hitRadius: 18,
       scale: 1.9,
     },
   ];
 }
 
-/** Retorna definições de disparos carregados (Wave Cannon) de acordo com o nível de carga */
+/** Retorna definições de armas carregáveis (Wave Cannon - tecla C) disparando para o norte (-Y) */
 export function getChargedProjectiles(
-  pilotId: PilotId,
+  familyOrPilot: WeaponFamily | PilotId,
   chargeLevel: 1 | 2,
   originX: number,
   originY: number,
 ): ProjectileSpawnDef[] {
-  if (pilotId === 'nolan') {
-    // Nolan: Carga de Feixe Penetrante (Rivet V3)
+  let family: WeaponFamily = 'green';
+  if (familyOrPilot === 'green' || familyOrPilot === 'ion' || familyOrPilot === 'red') {
+    family = familyOrPilot;
+  } else if (familyOrPilot === 'cora') {
+    family = 'ion';
+  } else if (familyOrPilot === 'harlan') {
+    family = 'red';
+  }
+
+  if (family === 'green' || familyOrPilot === 'nolan') {
     if (chargeLevel === 1) {
       return [{
-        texture: 'rivet-v3-pulse-3',
-        animation: 'rivet-v3-pulse-3-anim',
-        x: originX + 12,
-        y: originY,
-        velocityX: 720,
-        velocityY: 0,
+        texture: 'shot-rivet',
+        animation: 'shot-rivet-loop',
+        x: originX,
+        y: originY - 6,
+        velocityX: 0,
+        velocityY: -740,
         damage: 4.8,
-        hitRadius: 15,
-        scale: 0.9,
+        hitRadius: 16,
+        scale: 2.2,
         piercing: true,
       }];
     }
-    // Carga Máxima (Level 2): Mega Feixe Penetrante Prismático
+    // Carga Máxima: Mega Feixe Prismático
     return [{
       texture: 'rivet-v3-prism',
       animation: 'rivet-v3-prism-anim',
-      x: originX + 24,
-      y: originY,
-      velocityX: 880,
-      velocityY: 0,
+      x: originX,
+      y: originY - 12,
+      velocityX: 0,
+      velocityY: -900,
       damage: 8.5,
-      hitRadius: 22,
-      scale: 1.05,
+      hitRadius: 24,
+      scale: 1.2,
       piercing: true,
     }];
   }
 
-  if (pilotId === 'cora') {
-    // Cora: Sobrecarga de Agulhas Perfurantes e ventilação de calor
+  if (family === 'ion' || familyOrPilot === 'cora') {
     if (chargeLevel === 1) {
       return [
         {
           texture: 'shot-moth',
           animation: 'shot-moth-loop',
-          x: originX + 8,
-          y: originY - 8,
-          velocityX: 750,
-          velocityY: -90,
+          x: originX - 8,
+          y: originY,
+          velocityX: -80,
+          velocityY: -770,
           damage: 3.2,
           hitRadius: 10,
           scale: 1.8,
@@ -619,12 +798,12 @@ export function getChargedProjectiles(
         {
           texture: 'shot-moth',
           animation: 'shot-moth-loop',
-          x: originX + 12,
-          y: originY,
-          velocityX: 770,
-          velocityY: 0,
+          x: originX,
+          y: originY - 4,
+          velocityX: 0,
+          velocityY: -800,
           damage: 3.6,
-          hitRadius: 10,
+          hitRadius: 11,
           scale: 1.9,
           piercing: true,
         },
@@ -632,9 +811,9 @@ export function getChargedProjectiles(
           texture: 'shot-moth',
           animation: 'shot-moth-loop',
           x: originX + 8,
-          y: originY + 8,
-          velocityX: 750,
-          velocityY: 90,
+          y: originY,
+          velocityX: 80,
+          velocityY: -770,
           damage: 3.2,
           hitRadius: 10,
           scale: 1.8,
@@ -642,158 +821,104 @@ export function getChargedProjectiles(
         },
       ];
     }
-    // Carga Máxima (Level 2): Leque de 5 agulhas hiper-velozes perfurantes
-    return [
-      {
-        texture: 'shot-moth',
-        animation: 'shot-moth-loop',
-        x: originX,
-        y: originY - 14,
-        velocityX: 800,
-        velocityY: -180,
-        damage: 4.2,
-        hitRadius: 11,
-        scale: 2.0,
-        piercing: true,
-      },
-      {
-        texture: 'shot-moth',
-        animation: 'shot-moth-loop',
-        x: originX + 8,
-        y: originY - 7,
-        velocityX: 820,
-        velocityY: -90,
-        damage: 4.2,
-        hitRadius: 11,
-        scale: 2.0,
-        piercing: true,
-      },
-      {
-        texture: 'shot-moth',
-        animation: 'shot-moth-loop',
-        x: originX + 16,
-        y: originY,
-        velocityX: 850,
-        velocityY: 0,
-        damage: 5.2,
-        hitRadius: 12,
-        scale: 2.2,
-        piercing: true,
-      },
-      {
-        texture: 'shot-moth',
-        animation: 'shot-moth-loop',
-        x: originX + 8,
-        y: originY + 7,
-        velocityX: 820,
-        velocityY: 90,
-        damage: 4.2,
-        hitRadius: 11,
-        scale: 2.0,
-        piercing: true,
-      },
-      {
-        texture: 'shot-moth',
-        animation: 'shot-moth-loop',
-        x: originX,
-        y: originY + 14,
-        velocityX: 800,
-        velocityY: 180,
-        damage: 4.2,
-        hitRadius: 11,
-        scale: 2.0,
-        piercing: true,
-      },
-    ];
+    // Carga Máxima: Leque de 5 agulhas hiper-velozes
+    return [-160, -80, 0, 80, 160].map((vx, i) => ({
+      texture: 'shot-moth',
+      animation: 'shot-moth-loop',
+      x: originX + (i - 2) * 8,
+      y: originY - (i === 2 ? 8 : 0),
+      velocityX: vx,
+      velocityY: -860,
+      damage: i === 2 ? 5.2 : 4.2,
+      hitRadius: 12,
+      scale: 2.2,
+      piercing: true,
+    }));
   }
 
-  // Harlan: Mega-Canhão Cinético de Sobrecarga (Knuckle V2)
+  // Plasma Vermelho / Harlan
   if (chargeLevel === 1) {
     return [{
       texture: 'shot-knuckle',
       animation: 'shot-knuckle-loop',
-      x: originX + 10,
-      y: originY,
-      velocityX: 480,
-      velocityY: 0,
+      x: originX,
+      y: originY - 6,
+      velocityX: 0,
+      velocityY: -500,
       damage: 6.5,
-      hitRadius: 20,
-      scale: 2.2,
+      hitRadius: 22,
+      scale: 2.4,
       piercing: true,
     }];
   }
-  // Carga Máxima (Level 2): Projétil colossal de concussão
   return [{
     texture: 'shot-knuckle',
     animation: 'shot-knuckle-loop',
-    x: originX + 16,
-    y: originY,
-    velocityX: 520,
-    velocityY: 0,
+    x: originX,
+    y: originY - 10,
+    velocityX: 0,
+    velocityY: -530,
     damage: 12.0,
-    hitRadius: 30,
-    scale: 3.0,
+    hitRadius: 32,
+    scale: 3.2,
     piercing: true,
   }];
 }
 
-/** Retorna definições de armas secundárias / mísseis da nave. */
+/** Retorna munição de mísseis secundários subindo para o norte */
 export function getSecondaryProjectiles(
   pilotId: PilotId,
   originX: number,
   originY: number,
 ): ProjectileSpawnDef[] {
   if (pilotId === 'nolan') {
-    // Míssil perfurante guiado da Rivet
     return [{
       texture: 'rivet-v3-missile',
       animation: 'rivet-v3-missile-anim',
-      x: originX + 25,
-      y: originY - 18,
-      velocityX: 420,
-      velocityY: -25,
-      damage: 3.2,
+      x: originX,
+      y: originY - 12,
+      velocityX: 0,
+      velocityY: -460,
+      damage: 3.5,
       hitRadius: 18,
-      scale: 0.72,
+      scale: 0.8,
     }];
   }
   if (pilotId === 'cora') {
-    // Feixes auxiliares da Moth
     return [
       {
         texture: 'shot-moth',
         animation: 'shot-moth-loop',
-        x: originX + 10,
-        y: originY - 18,
-        velocityX: 560,
-        velocityY: -75,
-        damage: 1.5,
+        x: originX - 12,
+        y: originY,
+        velocityX: -70,
+        velocityY: -560,
+        damage: 1.6,
         hitRadius: 9,
-        scale: 1.4,
+        scale: 1.5,
       },
       {
         texture: 'shot-moth',
         animation: 'shot-moth-loop',
-        x: originX + 10,
-        y: originY + 18,
-        velocityX: 560,
-        velocityY: 75,
-        damage: 1.5,
+        x: originX + 12,
+        y: originY,
+        velocityX: 70,
+        velocityY: -560,
+        damage: 1.6,
         hitRadius: 9,
-        scale: 1.4,
+        scale: 1.5,
       },
     ];
   }
-  // Harlan (Knuckle): Foguete pesado de impacto
   return [{
     texture: 'shot-knuckle',
     animation: 'shot-knuckle-loop',
-    x: originX + 20,
-    y: originY,
-    velocityX: 380,
-    velocityY: 0,
-    damage: 4.8,
+    x: originX,
+    y: originY - 12,
+    velocityX: 0,
+    velocityY: -420,
+    damage: 5.0,
     hitRadius: 22,
-    scale: 2.3,
+    scale: 2.4,
   }];
 }

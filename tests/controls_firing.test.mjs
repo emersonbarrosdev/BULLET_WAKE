@@ -90,10 +90,10 @@ test('TESTE A: Disparo com Espaço no PC dispara sem alterar coordenadas da nave
 });
 
 // ============================================================================
-// TESTE B: Disparo com Clique Esquerdo do Mouse no PC (Bug Anterior Corrigido)
+// TESTE B: Regra Fundamental do Mouse no PC (V2 Canonical)
 // ============================================================================
-test('TESTE B: Clique Esquerdo no PC dispara e NUNCA move a nave para a frente nem altera coordenadas', () => {
-  // Ponteiro do mouse localizado à frente da nave (X=600, Y=200)
+test('TESTE B: Cliques do Mouse no PC NÃO disparam arma e NUNCA alteram velocidade ou coordenadas da nave', () => {
+  // Ponteiro do mouse localizado à frente da nave (X=600, Y=200) com clique ativo
   const frame = createBlankFrame({
     pointerDown: true,
     pointerLeftDown: true,
@@ -106,25 +106,26 @@ test('TESTE B: Clique Esquerdo no PC dispara e NUNCA move a nave para a frente n
   });
 
   const cmd = processInputFrame(frame);
-  assert.equal(cmd.firePrimary, true, 'Clique esquerdo no PC deve ativar disparo principal');
-  assert.equal(cmd.firePrimaryTap, true, 'JustDown do clique deve registrar tap');
-  assert.equal(cmd.moveX, 0, 'Clique do mouse no PC JAMAIS pode gerar moveX (bug do avanço corrigido!)');
+  assert.equal(cmd.firePrimary, false, 'Mouse no PC NÃO dispara arma principal (Regra Canônica V2)');
+  assert.equal(cmd.firePrimaryTap, false, 'Mouse no PC NÃO gera tap de disparo');
+  assert.equal(cmd.moveX, 0, 'Clique do mouse no PC JAMAIS pode gerar moveX');
   assert.equal(cmd.moveY, 0, 'Clique do mouse no PC JAMAIS pode gerar moveY');
 
-  // Simulação física: a nave não pode se aproximar do mouse
+  // Simulação física: a nave permanece rigorosamente imóvel
   const moved = moveInBounds({ x: frame.shipX, y: frame.shipY }, cmd.moveX, cmd.moveY, 300, 50, defaultBounds);
   assert.equal(moved.x, 135, 'Coordenada X não se moveu');
   assert.equal(moved.y, 216, 'Coordenada Y não se moveu');
 });
 
 // ============================================================================
-// TESTE C: Disparo com Mouse durante Movimentação pelo Teclado
+// TESTE C: Disparo exclusivamente pelo Teclado durante Movimentação
 // ============================================================================
-test('TESTE C: Disparo com Mouse durante Movimentação respeita estritamente o teclado', () => {
-  // Jogador pressiona D (mover para a frente) e W (subir), e clica com o mouse em ponto oposto (X=50, Y=350)
+test('TESTE C: Movimentação respeita estritamente o teclado e cliques de mouse são ignorados', () => {
+  // Jogador pressiona D (mover para a direita) e W (mover para cima), e clica com o mouse em ponto oposto
   const frame = createBlankFrame({
     keyD: true,
     keyW: true,
+    keySpace: true,
     pointerDown: true,
     pointerLeftDown: true,
     pointerX: 50,
@@ -135,31 +136,28 @@ test('TESTE C: Disparo com Mouse durante Movimentação respeita estritamente o 
   });
 
   const cmd = processInputFrame(frame);
-  assert.equal(cmd.moveX, 1, 'moveX deve ser 1 exclusivamente pelo teclado (D)');
-  assert.equal(cmd.moveY, -1, 'moveY deve ser -1 exclusivamente pelo teclado (W)');
-  assert.equal(cmd.firePrimary, true, 'Disparo ocorre em paralelo sem distorcer o vetor');
+  assert.ok(Math.abs(cmd.moveX - Math.SQRT1_2) < 1e-4, 'moveX normalizado pelo teclado (D)');
+  assert.ok(Math.abs(cmd.moveY - (-Math.SQRT1_2)) < 1e-4, 'moveY normalizado pelo teclado (W)');
+  assert.equal(cmd.firePrimary, true, 'Disparo ocorre ativado pela barra de Espaço');
 
   // Simulação: a nave deve se deslocar para frente (+X) e para cima (-Y)
   const moved = moveInBounds({ x: frame.shipX, y: frame.shipY }, cmd.moveX, cmd.moveY, 300, 16.6, defaultBounds);
-  assert.ok(moved.x > 135, 'Nave avançou para a frente');
+  assert.ok(moved.x > 135, 'Nave avançou para a direita');
   assert.ok(moved.y < 216, 'Nave subiu no eixo Y');
 });
 
 // ============================================================================
-// TESTE D: Entradas Simultâneas (Espaço + Mouse)
+// TESTE D: Dash de Emergência via Shift Esquerdo
 // ============================================================================
-test('TESTE D: Entradas simultâneas de Espaço e Clique Esquerdo não duplicam disparos nem taxa', () => {
-  const frameBoth = createBlankFrame({
-    keySpace: true,
-    pointerDown: true,
-    pointerLeftDown: true,
+test('TESTE D: Tecla Shift Esquerdo aciona dashTrigger com precisão instantânea', () => {
+  const frameShift = createBlankFrame({
+    keyShift: true,
+    keyShiftJustDown: true,
     isTouch: false,
   });
 
-  const cmd = processInputFrame(frameBoth);
-  // Deve ser tratado como comando binário único
-  assert.equal(cmd.firePrimary, true);
-  assert.equal(typeof cmd.firePrimary, 'boolean', 'firePrimary é unificado');
+  const cmd = processInputFrame(frameShift);
+  assert.equal(cmd.dashTrigger, true, 'Left Shift deve acionar dashTrigger');
 });
 
 // ============================================================================
@@ -249,7 +247,7 @@ test('TESTE F: Disparo Carregado acumula energia, respeita limiares e aplica ide
   const shotsHarlan = getChargedProjectiles('harlan', 2, 100, 200);
   assert.equal(shotsHarlan.length, 1);
   assert.equal(shotsHarlan[0].damage, 12.0, 'Canhão do Harlan tem o dano mais devastador');
-  assert.equal(shotsHarlan[0].hitRadius, 30);
+  assert.equal(shotsHarlan[0].hitRadius, 32);
 });
 
 // ============================================================================

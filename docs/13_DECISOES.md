@@ -18,15 +18,17 @@
   - Inimigos com múltiplos comportamentos: Scouts (esquadrões ágeis), Darts (mergulho rasante), Lancers (disparo em leque triplo de contenção), Cutters (investida horizontal veloz) e Swarms (salvas sincronizadas).
   - Progressão contínua sem vácuos de combate, anti-camping e telegrafia justa.
   - Duelos contra chefes balanceados e estratégicos com transições de fases e vulnerabilidade em pontos fracos críticos.
-- **[PRIORIDADE MÁXIMA] Diretriz Oficial de Controles, Disparos e Armas Carregáveis (docs/26_DIRETRIZ_CONTROLES_E_DISPAROS.md):**
-  - Correção definitiva do bug do mouse no PC: clique do mouse nunca afeta posição, velocidade ou vetor da nave.
-  - Camada de entrada unificada (`InputManager` / `processInputFrame`): mapeamento semântico desacoplado do hardware físico.
-  - Três modalidades de disparo integradas:
-    1. *Auto-Fire:* Pressionamento sustentado de Espaço ou Clique Esquerdo na cadência base da nave.
-    2. *Tapping / Burst Manual:* Cliques manuais rápidos aumentam a cadência em ~28%, gerando calor acumulado e risco de sobreaquecimento temporário (`MAX_HEAT = 100`, bloqueio de 650ms).
-    3. *Armas Carregáveis (Wave Cannon):* Segurar Shift ou Botão Direito carrega energia até Carga Máxima (>=1100ms), liberando disparos de alto impacto com identidades de classe: Nolan (Feixe Penetrante), Cora (Leque de Agulhas + Ventilação de Calor 100%), Harlan (Mega-Canhão Cinético de 12.0 de dano).
-  - Desativação do menu de contexto nativo no canvas do jogo para viabilizar clique direito fluido.
-  - Bateria de testes automatizados dedicados cobrindo os cenários A a G (`tests/controls_firing.test.mjs`).
+- **[PRIORIDADE MÁXIMA] BULLET WAKE V2 — IDENTIDADE, CAMPANHA E GAMEPLAY DEFINITIVOS (docs/27_BULLET_WAKE_V2_DEFINITIVO.md):**
+  - **Orientação Top-Down Vertical:** Substituição definitiva da visão lateral por shoot 'em up vertical com rolagem contínua.
+  - **Invasão Alienígena Estrita:** Inimigos exclusivamente extraterrestres (organismos biomecânicos, enxames e monstros espaciais).
+  - **Controles Oficiais no PC:** WASD/Setas (movimento), Espaço (tiro principal), Shift Esquerdo (dash de emergência), C (carregar arma), X (bomba), V (especial), ESC (pausa). MOUSE NÃO ATIRA NO PC.
+  - **Novo Dash:** Exatamente 3 ativações por fase (`DASH: ◆ ◆ ◆`), sem recarga por tempo ou abates.
+  - **3 Famílias de Armas Evolutivas (Fire Shark):** Pulso Verde (cobertura ampla), Laser de Íons (feixe concentrado perfurante) e Plasma Vermelho (dano pesado de área), evoluindo de LV1 a LV4.
+  - **Coletáveis Físicos no Campo:** Portadores alienígenas liberam cápsulas flutuantes P, W, H, B, M, S, E no cenário.
+  - **Fase 1 Oficial (Escopo Atual):** Fenda Pelágica (oceano profundo, 4 classes de inimigos alienígenas, Miniboss Raia-Dente e Boss Colossal Talassarca em 3 fases).
+  - **Campanha Completa Documentada:** 15 fases planetárias + 2 finais secretos (Fase 16: Abismo Subterrâneo, Fase 17: Lua - Matriz Primordial) e 3 chefes para a fase 15 (Thalor, Morhiza e Prisma Órfão).
+  - **HUD Widescreen TATE:** Campo de combate vertical central (384px) com painéis laterais de telemetria (192px cada).
+  - **Tipografia:** `Oxanium` (títulos) e `Rajdhani` (interface/HUD).
 
 ## Decisão de engenharia da pré-produção
 **Phaser 4 + TypeScript + Vite + Canvas/WebGL**. Angular fora do gameplay inicial; opcional para ferramenta externa futura. Primeiro web desktop, depois Android via empacotamento candidato (Capacitor a validar). Phaser versão exata a travar no lockfile durante implementação.

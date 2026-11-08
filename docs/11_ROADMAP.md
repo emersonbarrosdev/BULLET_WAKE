@@ -69,12 +69,13 @@ Medição em combate automatizado via Headless Chrome:
 - **Diversidade de Classes:** Scouts, Darts, Swarms, Lancers e Cutters em formações coordenadas.
 - **Chefes com Múltiplas Fases e Ponto Fraco:** Duelos de ~35-45s com telegrafia justa e aberturas de esquiva calculadas.
 
-### 7. Diretriz de Controles, Disparos Avançados e Armas Carregáveis (docs/26_DIRETRIZ_CONTROLES_E_DISPAROS.md)
-- **Correção Urgente do Bug do Mouse:** No Desktop PC, o clique esquerdo ou direito NUNCA altera o vetor, a velocidade ou a posição da nave.
-- **Camada Unificada de Entrada (`InputManager`):** Desacopla hardware físico (teclado, mouse, touch) em intenções de gameplay puras (`processInputFrame`).
-- **Três Modalidades de Disparo:**
-  1. *Auto-Fire:* Pressionamento sustentado de Espaço ou Clique Esquerdo na cadência base da nave.
-  2. *Tapping / Burst Manual:* Cliques manuais aumentam a taxa de disparo em ~28%, gerando calor acumulado e risco de sobreaquecimento temporário (`MAX_HEAT = 100`, bloqueio de 650ms).
-  3. *Armas Carregáveis (Wave Cannon):* Segurar Shift ou Botão Direito carrega energia até Carga Máxima (>=1100ms), liberando disparos de alto impacto com identidades de classe: Nolan (Feixe Penetrante), Cora (Leque de Agulhas + Ventilação de Calor 100%), Harlan (Mega-Canhão Cinético de 12.0 de dano).
-- **Desativação de Context Menu:** Suporte total a botão direito para disparos carregados sem acionar menus nativos do navegador.
-- **Bateria de Testes Automatizados (Testes A a G):** Validação completa em `tests/controls_firing.test.mjs` com 7 testes dedicados e 100% de aprovação.
+### 8. BULLET WAKE V2 — Reformulação Definitiva (docs/27_BULLET_WAKE_V2_DEFINITIVO.md)
+- **Orientação:** Shmup vertical top-down 2D HD em widescreen TATE (campo 384px + laterais 192px).
+- **Tema:** Invasão alienígena exclusiva à Terra.
+- **Controles Oficiais:** WASD/Setas, Espaço (tiro), Shift (dash 3x por fase), C (carga), X (bomba), V (especial), ESC (pausa). Mouse não atira no PC.
+- **Dash Tático:** Exatamente 3 cargas por fase (`DASH: ◆ ◆ ◆`), sem recarga automática.
+- **3 Armas Arcade (LV1-4):** Pulso Verde, Laser de Íons e Plasma Vermelho.
+- **Power-ups Físicos:** Portadores soltam cápsulas físicas no campo (P, W, H, B, M, S, E).
+- **Fase 1 Oficial:** Fenda Pelágica (oceano profundo, 4 inimigos alienígenas, Miniboss Raia-Dente e Boss Colossal Talassarca em 3 fases).
+- **Tipografia Oficial:** `Oxanium` (títulos) e `Rajdhani` (interface/HUD).
+- **Campanha:** 15 fases planetárias + 2 finais secretos documentados.

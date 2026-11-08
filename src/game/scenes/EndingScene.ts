@@ -171,7 +171,7 @@ export class EndingScene extends Phaser.Scene {
     this.previewDistance += Math.min(delta, 50) * 0.035;
     this.backdrop.update(this.previewDistance);
     if (this.victoryShip) {
-      this.victoryShip.updateShip(delta, 0, true, 0, false);
+      this.victoryShip.updateShip(delta, 0, 0, 0, false);
     }
   }
 
