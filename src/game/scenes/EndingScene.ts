@@ -4,6 +4,7 @@ import { getPilot, type PilotDefinition } from '../data/pilots';
 import { StageBackdrop } from './StageBackdrop';
 import { saveSystem } from '../systems/saveSystem.ts';
 import { globalAudio } from '../audio/audioSystem.ts';
+import { VectorShip } from '../render/VectorShip';
 
 interface EndingData {
   pilotId: string;
@@ -15,6 +16,7 @@ export class EndingScene extends Phaser.Scene {
   private finalScore = 0;
   private backdrop!: StageBackdrop;
   private previewDistance = 0;
+  private victoryShip?: VectorShip;
 
   constructor() {
     super({ key: 'EndingScene' });
@@ -62,21 +64,9 @@ export class EndingScene extends Phaser.Scene {
       },
     ).setOrigin(0.5, 0).setResolution(2);
 
-    // Nave voando triunfante no centro
-    let shipTexture = 'rivet-v3-idle';
-    let shipAnim = 'rivet-v3-idle-anim';
-    let shipScale = 1.2;
-    if (this.pilot.id === 'cora') {
-      shipTexture = 'ship-moth-v2-idle';
-      shipAnim = 'moth-v2-idle-anim';
-      shipScale = 1.35;
-    } else if (this.pilot.id === 'harlan') {
-      shipTexture = 'ship-knuckle-v2-idle';
-      shipAnim = 'knuckle-v2-idle-anim';
-      shipScale = 1.3;
-    }
-    this.add.sprite(GAME_WIDTH / 2, 160, shipTexture, 0)
-      .setScale(shipScale).play(shipAnim);
+    // Nave de caça voando triunfante de perfil no centro
+    this.victoryShip = new VectorShip(this, GAME_WIDTH / 2, 160, this.pilot.id);
+    this.victoryShip.setScale(1.75);
 
     // Painel de Epílogo Narrativo do Piloto (fiel à Bíblia docs/01_HISTORIA.md)
     this.add.rectangle(GAME_WIDTH / 2, 260, 640, 115, 0x071320, 0.95)
@@ -180,6 +170,9 @@ export class EndingScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     this.previewDistance += Math.min(delta, 50) * 0.035;
     this.backdrop.update(this.previewDistance);
+    if (this.victoryShip) {
+      this.victoryShip.updateShip(delta, 0, true, 0, false);
+    }
   }
 
   private backToMenu(): void {

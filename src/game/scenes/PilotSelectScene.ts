@@ -3,6 +3,7 @@ import { FONT_HUD, FONT_TECH, FONT_TITLE, GAME_BACKGROUND, GAME_HEIGHT, GAME_WID
 import { PILOTS, type PilotDefinition } from '../data/pilots';
 import { loadGameSprites, registerGameAnimations } from '../assets/spriteAssets';
 import { StageBackdrop } from './StageBackdrop';
+import { VectorShip } from '../render/VectorShip';
 
 type MenuKeys = Record<
   'LEFT' | 'RIGHT' | 'ENTER' | 'SPACE' | 'ONE' | 'TWO' | 'THREE' | 'ESC',
@@ -20,6 +21,7 @@ export class PilotSelectScene extends Phaser.Scene {
   private stageNumber = 1;
   private keys?: MenuKeys;
   private cards: PilotCard[] = [];
+  private shipVisuals: VectorShip[] = [];
   private specialText!: Phaser.GameObjects.Text;
   private backdrop!: StageBackdrop;
   private previewDistance = 0;
@@ -43,6 +45,7 @@ export class PilotSelectScene extends Phaser.Scene {
     this.backdrop = new StageBackdrop(this, this.stageNumber);
     this.previewDistance = 0;
     this.cards = [];
+    this.shipVisuals = [];
     this.keys = this.input.keyboard?.addKeys('LEFT,RIGHT,ENTER,SPACE,ONE,TWO,THREE,ESC') as MenuKeys | undefined;
 
     // Cabeçalho
@@ -98,6 +101,7 @@ export class PilotSelectScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     this.previewDistance += Math.min(delta, 50) * 0.026;
     this.backdrop.update(this.previewDistance);
+    this.shipVisuals.forEach(s => s.updateShip(delta, 0, false, 0, false));
     if (!this.keys) return;
     if (Phaser.Input.Keyboard.JustDown(this.keys.ONE)) this.select(0);
     if (Phaser.Input.Keyboard.JustDown(this.keys.TWO)) this.select(1);
@@ -137,20 +141,9 @@ export class PilotSelectScene extends Phaser.Scene {
       letterSpacing: 2,
     }).setOrigin(0.5, 0).setResolution(2);
 
-    let texture = 'rivet-v3-idle';
-    let anim = 'rivet-v3-idle-anim';
-    let scale = 0.95;
-    if (pilot.id === 'cora') {
-      texture = 'ship-moth-v2-idle';
-      anim = 'moth-v2-idle-anim';
-      scale = 1.05;
-    } else if (pilot.id === 'harlan') {
-      texture = 'ship-knuckle-v2-idle';
-      anim = 'knuckle-v2-idle-anim';
-      scale = 1.0;
-    }
-    const ship = this.add.sprite(x, 224, texture, 0);
-    ship.setScale(scale).play(anim);
+    const ship = new VectorShip(this, x, 224, pilot.id);
+    ship.setScale(1.55);
+    this.shipVisuals.push(ship);
 
     this.add.text(x, 278, pilot.role.toUpperCase(), {
       fontFamily: FONT_TECH,

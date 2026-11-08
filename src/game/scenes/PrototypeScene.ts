@@ -231,8 +231,8 @@ export class PrototypeScene extends Phaser.Scene {
       {
         minX: halfW + 6,
         maxX: GAME_WIDTH - halfW - 6,
-        minY: HUD_TOP + halfH + 2,
-        maxY: GAME_HEIGHT - HUD_BOTTOM - halfH - 2,
+        minY: halfH + 4,
+        maxY: GAME_HEIGHT - halfH - 4,
       },
     );
     this.vectorShip.setPosition(moved.x, moved.y);
