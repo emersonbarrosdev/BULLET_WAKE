@@ -20,5 +20,9 @@ jobs:
         run: npm run typecheck
       - name: Testar regras de inimigos
         run: npm test
+      - name: Verificar reprodutibilidade dos PNGs Rivet V2
+        run: |
+          npm run assets:rivet
+          git diff --exit-code -- public/assets/ships/rivet/v2/
       - name: Gerar build
         run: npm run build
