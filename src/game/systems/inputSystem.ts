@@ -158,6 +158,20 @@ export function processInputFrame(input: RawInputFrame): PlayerActionCommands {
 }
 
 /**
+ * Helper seguro para verificar ativação instantânea de tecla (JustDown)
+ * compatível com Phaser no browser e testável em ambiente Node.js.
+ */
+function isKeyJustDown(key?: unknown): boolean {
+  if (!key || typeof key !== 'object') return false;
+  const anyKey = key as { _justDown?: boolean };
+  if (anyKey._justDown) {
+    anyKey._justDown = false;
+    return true;
+  }
+  return false;
+}
+
+/**
  * Adaptador de runtime para integração direta com a cena do Phaser.
  */
 export class InputManager {
@@ -208,34 +222,34 @@ export class InputManager {
 
       keySpace: Boolean(this.keys?.SPACE.isDown || this.cursors?.space.isDown),
       keySpaceJustDown: Boolean(
-        (this.keys?.SPACE && Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) ||
-        (this.cursors?.space && Phaser.Input.Keyboard.JustDown(this.cursors.space)),
+        isKeyJustDown(this.keys?.SPACE) ||
+        isKeyJustDown(this.cursors?.space),
       ),
 
       keyShift: Boolean(this.keys?.SHIFT.isDown),
-      keyShiftJustDown: Boolean(this.keys?.SHIFT && Phaser.Input.Keyboard.JustDown(this.keys.SHIFT)),
+      keyShiftJustDown: isKeyJustDown(this.keys?.SHIFT),
 
       keyC: cDown,
-      keyCJustDown: Boolean(this.keys?.C && Phaser.Input.Keyboard.JustDown(this.keys.C)),
+      keyCJustDown: isKeyJustDown(this.keys?.C),
       keyCJustUp: cJustUp,
 
       keyX: Boolean(this.keys?.X.isDown),
-      keyXJustDown: Boolean(this.keys?.X && Phaser.Input.Keyboard.JustDown(this.keys.X)),
+      keyXJustDown: isKeyJustDown(this.keys?.X),
 
       keyV: Boolean(this.keys?.V.isDown),
-      keyVJustDown: Boolean(this.keys?.V && Phaser.Input.Keyboard.JustDown(this.keys.V)),
+      keyVJustDown: isKeyJustDown(this.keys?.V),
 
       keyM: Boolean(this.keys?.M.isDown),
-      keyMJustDown: Boolean(this.keys?.M && Phaser.Input.Keyboard.JustDown(this.keys.M)),
+      keyMJustDown: isKeyJustDown(this.keys?.M),
 
       keyB: Boolean(this.keys?.B.isDown),
-      keyBJustDown: Boolean(this.keys?.B && Phaser.Input.Keyboard.JustDown(this.keys.B)),
+      keyBJustDown: isKeyJustDown(this.keys?.B),
 
       keyR: Boolean(this.keys?.R.isDown),
-      keyRJustDown: Boolean(this.keys?.R && Phaser.Input.Keyboard.JustDown(this.keys.R)),
+      keyRJustDown: isKeyJustDown(this.keys?.R),
 
       keyEsc: Boolean(this.keys?.ESC.isDown),
-      keyEscJustDown: Boolean(this.keys?.ESC && Phaser.Input.Keyboard.JustDown(this.keys.ESC)),
+      keyEscJustDown: isKeyJustDown(this.keys?.ESC),
 
       isTouch,
       touchPointerDown: pointer.isDown && isTouch,

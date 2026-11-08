@@ -7,6 +7,9 @@ import { PilotSelectScene } from './game/scenes/PilotSelectScene';
 import { PrototypeScene } from './game/scenes/PrototypeScene';
 import { EndingScene } from './game/scenes/EndingScene';
 
+// Disponibiliza o Phaser globalmente no escopo do navegador para debug e extensibilidade
+(window as unknown as { Phaser: typeof Phaser }).Phaser = Phaser;
+
 const host = document.getElementById('game');
 
 if (!host) {

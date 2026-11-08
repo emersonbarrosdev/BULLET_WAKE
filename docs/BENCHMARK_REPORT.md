@@ -1,15 +1,15 @@
 # Relatório de Desempenho e Estabilidade — BULLET WAKE
 
-Data de Execução: 2026-11-08T21:18:54.260Z
+Data de Execução: 2026-11-08T21:34:06.293Z
 Ambiente de Execução: Headless Chromium / WebGL Canvas
 
 ## Métricas Coletadas em Combate Intenso
 - **Quadros Analisados:** 361 frames contínuos
-- **FPS Médio:** **60 FPS** (Meta estável: 60 FPS)
-- **Tempo Médio de Quadro:** **16.67 ms** (Ideal: ~16.6 ms)
-- **Frame Time 95% (p95):** 16.8 ms
+- **FPS Médio:** **60.1 FPS** (Meta estável: 60 FPS)
+- **Tempo Médio de Quadro:** **16.64 ms** (Ideal: ~16.6 ms)
+- **Frame Time 95% (p95):** 16.7 ms
 - **Frame Time 99% (p99):** 16.8 ms
-- **Uso de Memória JS Heap:** 19 MB (estável)
+- **Uso de Memória JS Heap:** 21 MB (estável)
 - **Erros de Textura / Assets Faltantes:** 0 (zero texturas ausentes)
 
 ## Conclusão de Engenharia
