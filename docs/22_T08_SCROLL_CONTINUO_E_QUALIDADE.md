@@ -34,3 +34,6 @@
 
 ## Próximas etapas
 Aprimorar sprites da Rivet, corrigir qualquer placeholder verde/ausência de textura observado e continuar a fase de cenário por trechos e encontros. **Sem voltar a criar rounds/ondas recorrentes.** Fazer arte das outras naves somente quando a Rivet estiver visualmente aceita.
+
+## Proteção adicional para textura ausente
+O Phaser desenha um quadrado verde com diagonal quando alguma textura não foi encontrada. O carregamento foi reforçado com URLs absolutas baseadas no Vite, nova tentativa ao iniciar a cena de combate e logs de falha por chave. A correção completa depende de confirmar no navegador se o arquivo falha por URL, cache ou decodificação. Se ainda houver quadrados verdes, abrir DevTools → Console/Network e verificar a chave/URL informada; não considerar aprovado só por CI.

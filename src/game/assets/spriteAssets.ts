@@ -23,9 +23,16 @@ export const SPRITE_SHEETS = [
 ] as const;
 
 export function loadGameSprites(scene: Phaser.Scene): void {
+  // Registra o erro por arquivo em vez de renderizar apenas o ícone
+  // verde de textura faltante sem contexto para depuração.
+  scene.load.on('loaderror', (file: Phaser.Loader.File) => {
+    console.error('[BULLET WAKE] Falha ao carregar sprite:', file.key);
+  });
+  const base = import.meta.env.BASE_URL.replace(/\\/$/, '');
   for (const sheet of SPRITE_SHEETS) {
     if (scene.textures.exists(sheet.key)) continue;
-    scene.load.spritesheet(sheet.key, sheet.url, {
+    // Caminho absoluto relativo ao base do Vite funciona em dev e deploy.
+    scene.load.spritesheet(sheet.key, base + '/' + sheet.url, {
       frameWidth: sheet.frameWidth,
       frameHeight: sheet.frameHeight,
     });
@@ -80,6 +87,9 @@ animations.push(
 
 export function registerGameAnimations(scene: Phaser.Scene): void {
   for (const animation of animations) {
+    // Não registrar animação apontando para __MISSING: quando o combate
+    // pré-carregar o arquivo novamente, a animação poderá ser registrada.
+    if (!scene.textures.exists(animation.sheet)) continue;
     if (scene.anims.exists(animation.id)) continue;
     scene.anims.create({
       key: animation.id,

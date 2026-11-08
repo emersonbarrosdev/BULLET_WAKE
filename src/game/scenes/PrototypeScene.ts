@@ -5,7 +5,7 @@ import { advanceHealth, applyPlayerHit, initialPlayerHealth, type HitEvent, type
 import { StageDirector, type EnemyModel, type EnemyShotEvent } from '../systems/stageDirector';
 import { CombatHud } from '../ui/CombatHud';
 import { getPilot, shotIntervalMs, type PilotDefinition } from '../data/pilots';
-import { registerGameAnimations } from '../assets/spriteAssets';
+import { loadGameSprites, registerGameAnimations } from '../assets/spriteAssets';
 import { GameOverOverlay } from '../ui/GameOverOverlay';
 import { StageCompleteOverlay } from '../ui/StageCompleteOverlay';
 import { StageBackdrop } from './StageBackdrop';
@@ -44,6 +44,12 @@ export class PrototypeScene extends Phaser.Scene {
 
   init(data: { pilotId?: string } = {}): void {
     this.pilot = getPilot(data.pilotId);
+  }
+
+  preload(): void {
+    // Segunda chance de carregamento se a seleção não tiver baixado
+    // algum spritesheet (ex.: erro transitório ou cache incompleto).
+    loadGameSprites(this);
   }
 
   create(): void {
