@@ -33,6 +33,8 @@ export class PrototypeScene extends Phaser.Scene {
   private ship!: Phaser.GameObjects.Container;
   private shipSprite!: Phaser.GameObjects.Sprite;
   private shipAnimation = '';
+  private shipFirePoseMs = 0;
+  private shipHitPoseMs = 0;
   private pilot: PilotDefinition = getPilot('nolan');
   private hud!: CombatHud;
   private keyboardControls?: Keys;
@@ -58,6 +60,8 @@ export class PrototypeScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
     // Scene.restart reusa instância; esvaziar absolutamente todo estado de gameplay.
     this.shipAnimation = '';
+    this.shipFirePoseMs = 0;
+    this.shipHitPoseMs = 0;
     this.shots = [];
     this.enemyShots = [];
     this.enemyVisuals.clear();
@@ -76,8 +80,14 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.setPilot(this.pilot.shipName);
 
     // Sprite PNG animado em perfil; hurtbox continua independente do desenho.
-    this.shipSprite = this.add.sprite(0, 0, 'ship-' + this.pilot.id, 0);
-    this.ship = this.add.container(64, GAME_HEIGHT / 2, [this.shipSprite]);
+    const shipTexture = this.pilot.id === 'nolan'
+      ? 'ship-rivet-v2-idle'
+      : 'ship-' + this.pilot.id;
+    this.shipSprite = this.add.sprite(0, 0, shipTexture, 0);
+    // Rivet V2 tem 112x54 px de detalhe; a escala é visual,
+    // enquanto a colisão permanece definida pela lógica, não pelo PNG.
+    this.shipSprite.setScale(this.pilot.id === 'nolan' ? 0.68 : 1);
+    this.ship = this.add.container(64, GAME_HEIGHT / 2, [this.shipSprite]).setDepth(7);
     this.changeShipAnimation('idle');
   }
 
@@ -94,6 +104,8 @@ export class PrototypeScene extends Phaser.Scene {
     if (this.health.gameOver) return;
 
     this.health = advanceHealth(this.health, dt);
+    this.shipFirePoseMs = Math.max(0, this.shipFirePoseMs - dt);
+    this.shipHitPoseMs = Math.max(0, this.shipHitPoseMs - dt);
     this.hud.update(dt);
     this.ship.setAlpha(
       this.health.invulnerableMs > 0 && Math.floor(this.health.invulnerableMs / 110) % 2 === 0
@@ -111,13 +123,22 @@ export class PrototypeScene extends Phaser.Scene {
       dy = Math.abs(pointer.y - this.ship.y) > 8 ? Math.sign(pointer.y - this.ship.y) : 0;
     }
 
+    // Limites permitem a nave maior caber sem invadir as barras do HUD.
+    const isRivet = this.pilot.id === 'nolan';
     const moved = moveInBounds(
       { x: this.ship.x, y: this.ship.y },
       dx, dy, this.pilot.speed, dt,
-      { minX: 23, maxX: GAME_WIDTH - 24, minY: 56, maxY: GAME_HEIGHT - 32 },
+      isRivet
+        ? { minX: 40, maxX: GAME_WIDTH - 41, minY: 65, maxY: GAME_HEIGHT - 43 }
+        : { minX: 23, maxX: GAME_WIDTH - 24, minY: 56, maxY: GAME_HEIGHT - 32 },
     );
     this.ship.setPosition(moved.x, moved.y);
-    this.changeShipAnimation(dy < 0 ? 'up' : dy > 0 ? 'down' : 'idle');
+    const pose = isRivet && this.shipHitPoseMs > 0 ? 'hit'
+      : dy < 0 ? 'up'
+      : dy > 0 ? 'down'
+      : isRivet && this.shipFirePoseMs > 0 ? 'fire'
+      : 'idle';
+    this.changeShipAnimation(pose);
 
     this.shootCooldown = Math.max(0, this.shootCooldown - dt);
     if ((key('SPACE') || this.cursors?.space.isDown || touchingArena) && this.shootCooldown <= 0) {
@@ -147,7 +168,10 @@ export class PrototypeScene extends Phaser.Scene {
     this.scene.start('PilotSelectScene', { selectedPilotId: this.pilot.id });
   }
 
-  private changeShipAnimation(state: 'idle' | 'up' | 'down'): void {
+  private changeShipAnimation(state: 'idle' | 'up' | 'down' | 'fire' | 'hit'): void {
+    // Moth e Knuckle mantêm temporariamente suas animações V1,
+    // sem fabricar versões definitivas antes da revisão da Rivet.
+    if (this.pilot.id !== 'nolan' && (state === 'fire' || state === 'hit')) state = 'idle';
     if (this.shipAnimation === state) return;
     this.shipAnimation = state;
     this.shipSprite.play('ship-' + this.pilot.id + '-' + state, true);
@@ -160,7 +184,11 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private fire(): void {
-    const offset = this.pilot.id === 'harlan' ? 24 : 21;
+    const offset = this.pilot.id === 'nolan' ? 33
+      : this.pilot.id === 'harlan' ? 24 : 21;
+    if (this.pilot.id === 'nolan' && this.shipHitPoseMs === 0) {
+      this.shipFirePoseMs = 170;
+    }
     const x = this.ship.x + offset;
     const node = this.add.sprite(x, this.ship.y, 'shot-' + this.pilot.id, 0)
       .setDepth(8);
@@ -293,9 +321,16 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.setHealth(this.health);
     if (result.event === 'damaged') {
       this.hud.flash('ACERTO!  -1 HP', '#ffb77b', 1000);
+      if (this.pilot.id === 'nolan') {
+        this.shipHitPoseMs = 280;
+        this.changeShipAnimation('hit');
+      }
       this.playEffect('hit', this.ship.x, this.ship.y);
     }
     if (result.event === 'respawn') {
+      this.shipFirePoseMs = 0;
+      this.shipHitPoseMs = 0;
+      this.shipAnimation = '';
       this.clearEnemyShots();
       this.ship.setPosition(64, GAME_HEIGHT / 2);
       this.ship.setAlpha(1);

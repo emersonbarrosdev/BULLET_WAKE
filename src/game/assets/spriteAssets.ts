@@ -1,8 +1,13 @@
 import Phaser from 'phaser';
 
-/** Contratos do pacote PNG de sprites v0.1; todos quadros têm alfa transparente. */
+/** Contratos de sprites PNG: Rivet V2 validada para integração; demais unidades continuam com arte v0.1 provisória. */
 export const SPRITE_SHEETS = [
-  { key: 'ship-rivet', url: 'assets/ships/rivet/flight.png', frameWidth: 48, frameHeight: 24 },
+  { key: 'ship-rivet-v2-idle', url: 'assets/ships/rivet/v2/idle.png', frameWidth: 112, frameHeight: 54 },
+  { key: 'ship-rivet-v2-up', url: 'assets/ships/rivet/v2/subida.png', frameWidth: 112, frameHeight: 54 },
+  { key: 'ship-rivet-v2-down', url: 'assets/ships/rivet/v2/descida.png', frameWidth: 112, frameHeight: 54 },
+  { key: 'ship-rivet-v2-fire', url: 'assets/ships/rivet/v2/disparo.png', frameWidth: 112, frameHeight: 54 },
+  { key: 'ship-rivet-v2-hit', url: 'assets/ships/rivet/v2/dano.png', frameWidth: 112, frameHeight: 54 },
+  { key: 'ship-rivet-v2-death', url: 'assets/ships/rivet/v2/destruicao.png', frameWidth: 112, frameHeight: 54 },
   { key: 'ship-moth', url: 'assets/ships/moth/flight.png', frameWidth: 48, frameHeight: 24 },
   { key: 'ship-knuckle', url: 'assets/ships/knuckle/flight.png', frameWidth: 48, frameHeight: 24 },
   { key: 'enemy-scout', url: 'assets/enemies/scout.png', frameWidth: 24, frameHeight: 16 },
@@ -38,7 +43,7 @@ interface AnimationDefinition {
 
 const animations: AnimationDefinition[] = [];
 
-for (const ship of ['rivet', 'moth', 'knuckle']) {
+for (const ship of ['moth', 'knuckle']) {
   const sheet = 'ship-' + ship;
   animations.push(
     { id: sheet + '-idle', sheet, first: 0, last: 3, frameRate: 8, repeat: -1 },
@@ -48,6 +53,12 @@ for (const ship of ['rivet', 'moth', 'knuckle']) {
     { id: sheet + '-death', sheet, first: 12, last: 19, frameRate: 13 },
   );
 }
+animations.push({ id: 'ship-rivet-idle', sheet: 'ship-rivet-v2-idle', first: 0, last: 7, frameRate: 11, repeat: -1 });
+animations.push({ id: 'ship-rivet-up', sheet: 'ship-rivet-v2-up', first: 0, last: 7, frameRate: 12, repeat: -1 });
+animations.push({ id: 'ship-rivet-down', sheet: 'ship-rivet-v2-down', first: 0, last: 7, frameRate: 12, repeat: -1 });
+animations.push({ id: 'ship-rivet-fire', sheet: 'ship-rivet-v2-fire', first: 0, last: 7, frameRate: 16, repeat: -1 });
+animations.push({ id: 'ship-rivet-hit', sheet: 'ship-rivet-v2-hit', first: 0, last: 5, frameRate: 20, repeat: 0 });
+animations.push({ id: 'ship-rivet-death', sheet: 'ship-rivet-v2-death', first: 0, last: 7, frameRate: 15, repeat: 0 });
 for (const [kind, deathEnd] of [['scout', 14], ['lancer', 16]] as const) {
   const sheet = 'enemy-' + kind;
   animations.push(

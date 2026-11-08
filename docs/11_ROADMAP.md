@@ -11,8 +11,10 @@
 | T04 | IMPLEMENTADA — QA manual pendente | HUD, feedback de dano e overlay Game Over com botão; [detalhes](17_T04_HUD_E_GAME_OVER.md) |
 | T05 | IMPLEMENTADA — QA visual pendente | Scout e Lancer, FSM, ondas roteirizadas, tiros anunciados; [detalhes](18_T05_INIMIGOS_E_ONDAS.md) |
 | T06 | IMPLEMENTADA — QA manual pendente | Cena de seleção e atributos dos três pilotos; [detalhes](19_T06_ESCOLHA_DE_PILOTOS.md) |
-| T07 | IMPLEMENTADA — QA visual pendente | Sprites PNG de nave/tiros/inimigos/hit/explosões, animação integrada; [detalhes](20_T07_SPRITES_COMBATE.md) |
-| T08–T70 | A FAZER | Especiais com efeitos e próxima vertical slice |
+| T07 | BASE V1 — não aprovada visualmente | Sprites preliminares integrados, mas exigem revisão individual; [base técnica](20_T07_SPRITES_COMBATE.md) |
+| T07.1 | RIVET V2 IMPLEMENTADA — QA visual pendente | Uma nave por vez: nova Rivet 112×54, animações de voo, tiro, dano e morte; [detalhes](21_RIVET_V2_MODERN_PIXEL_ART.md) |
+| Próximo | FOCO | Polir e validar a Rivet V2 no navegador antes de iniciar outras naves e efeitos |
+| T08–T70 | REPLANEJAR APÓS GATE RIVET | Especiais com sprites, combate completo e próxima vertical slice |
 
 A avaliação de T02 inclui CI build/typecheck e teste manual de viewport e toque. Para detalhes ver [T02](15_T02_GAMEPLAY_FIRST.md). A T03 implementa dano/vidas com [registro de aceite](16_T03_COMBATE_E_DANO.md). A T04 entrega UI funcional e o fluxo de reinício em [seu documento](17_T04_HUD_E_GAME_OVER.md). A T05 registra a lógica das primeiras ondas em [seu documento](18_T05_INIMIGOS_E_ONDAS.md). A T06 registra a escolha real de pilotos em [seu documento](19_T06_ESCOLHA_DE_PILOTOS.md).
 
@@ -25,8 +27,8 @@ A avaliação de T02 inclui CI build/typecheck e teste manual de viewport e toqu
 | T05 | Alta | Primeiro inimigo real e ondas roteirizadas | Scout + Lancer com telegraph, tiros e spawns reproduzíveis |
 | T06 | Alta | Seleção dos três pilotos com atributos reais | Nolan, Cora e Harlan mudam controle/cadência/dano |
 | T07 | Alta | Pipeline visual de combate com spritesheets | Naves, projéteis, inimigos, impactos e explosões animados via PNG |
-| T08 | Alta | Implementar os três especiais com sprites e animações | Tempestade Prismática, Salto Fantasma e Ruptura Nova funcionais |
-| T09 | Alta | Refinar sprites e feedback de combate, introduzir pickups | Arte, hit, death e melhorias de legibilidade e som testadas |
+| T08 | Alta | Revisão visual da Rivet e polimento de animações | Rivet aceita em gameplay no navegador antes da arte das outras naves |
+| T09 | Alta | Preparar próximos spritesheets um por vez | Moth/Knuckle e efeitos avaliados individualmente após a Rivet |
 | T10 | Alta | Fechar 1 minuto + bateria de regressão | 3 pilotos, teste mobile inicial, controles, colisões, FPS medido |
 
 **Gate QA após T10**: testes de movimentação, hitbox, tiro, IA, animação (frames diferentes), viewport, arte, performance; só então ampliar conteúdo.

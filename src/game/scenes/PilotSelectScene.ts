@@ -89,8 +89,10 @@ export class PilotSelectScene extends Phaser.Scene {
       .setOrigin(0.5, 0);
     this.text(x, 77, pilot.shipName.toUpperCase(), 15, '#f2f7fa')
       .setOrigin(0.5, 0);
-    const ship = this.add.sprite(x, 111, 'ship-' + pilot.id, 0);
-    ship.setScale(1.25).play('ship-' + pilot.id + '-idle');
+    const texture = pilot.id === 'nolan' ? 'ship-rivet-v2-idle' : 'ship-' + pilot.id;
+    const ship = this.add.sprite(x, 111, texture, 0);
+    ship.setScale(pilot.id === 'nolan' ? 0.88 : 1.25)
+      .play('ship-' + pilot.id + '-idle');
     this.text(x, 133, pilot.role, 10, '#b5d9df').setOrigin(0.5, 0);
     this.text(x, 148, 'VEL ' + pilot.speed + '   TIROS ' + pilot.shotsPerSecond + '/s', 9, '#e2e9ef')
       .setOrigin(0.5, 0);
