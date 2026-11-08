@@ -60,6 +60,14 @@ export const SPRITE_SHEETS = [
   { key: 'boss-krm17-drill', url: 'assets/bosses/krm17/drill.png', frameWidth: 48, frameHeight: 48 },
   { key: 'boss-krm17-turret', url: 'assets/bosses/krm17/turret.png', frameWidth: 32, frameHeight: 24 },
   { key: 'boss-krm17-core', url: 'assets/bosses/krm17/core.png', frameWidth: 32, frameHeight: 32 },
+  { key: 'boss-serpent-head', url: 'assets/bosses/serpent/head.png', frameWidth: 64, frameHeight: 64 },
+  { key: 'boss-serpent-body', url: 'assets/bosses/serpent/body.png', frameWidth: 48, frameHeight: 48 },
+  { key: 'boss-fortress-chassis', url: 'assets/bosses/fortress/chassis.png', frameWidth: 128, frameHeight: 128 },
+  { key: 'boss-fortress-core', url: 'assets/bosses/fortress/core.png', frameWidth: 40, frameHeight: 40 },
+  { key: 'boss-interceptor-chassis', url: 'assets/bosses/interceptor/chassis.png', frameWidth: 96, frameHeight: 48 },
+  { key: 'boss-interceptor-wing', url: 'assets/bosses/interceptor/wing.png', frameWidth: 48, frameHeight: 32 },
+  { key: 'boss-mesh_core-monolith', url: 'assets/bosses/mesh_core/monolith.png', frameWidth: 112, frameHeight: 112 },
+  { key: 'boss-mesh_core-heart', url: 'assets/bosses/mesh_core/heart.png', frameWidth: 48, frameHeight: 48 },
 ] as const;
 
 export function loadGameSprites(scene: Phaser.Scene): void {
@@ -167,6 +175,14 @@ animations.push(
   { id: 'boss-krm17-drill-spin', sheet: 'boss-krm17-drill', first: 0, last: 3, frameRate: 16, repeat: -1 },
   { id: 'boss-krm17-turret-aim', sheet: 'boss-krm17-turret', first: 0, last: 3, frameRate: 10, repeat: -1 },
   { id: 'boss-krm17-core-pulse', sheet: 'boss-krm17-core', first: 0, last: 3, frameRate: 12, repeat: -1 },
+  { id: 'boss-serpent-head-loop', sheet: 'boss-serpent-head', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'boss-serpent-body-loop', sheet: 'boss-serpent-body', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'boss-fortress-chassis-loop', sheet: 'boss-fortress-chassis', first: 0, last: 3, frameRate: 6, repeat: -1 },
+  { id: 'boss-fortress-core-pulse', sheet: 'boss-fortress-core', first: 0, last: 3, frameRate: 10, repeat: -1 },
+  { id: 'boss-interceptor-chassis-flight', sheet: 'boss-interceptor-chassis', first: 0, last: 3, frameRate: 12, repeat: -1 },
+  { id: 'boss-interceptor-wing-spark', sheet: 'boss-interceptor-wing', first: 0, last: 3, frameRate: 14, repeat: -1 },
+  { id: 'boss-mesh_core-monolith-loop', sheet: 'boss-mesh_core-monolith', first: 0, last: 3, frameRate: 6, repeat: -1 },
+  { id: 'boss-mesh_core-heart-pulse', sheet: 'boss-mesh_core-heart', first: 0, last: 3, frameRate: 12, repeat: -1 },
 );
 
 export function registerGameAnimations(scene: Phaser.Scene): void {

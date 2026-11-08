@@ -5,9 +5,12 @@
 
 export interface StageDefinition {
   number: number;
+  stageNumber: number;
   id: string;
   name: string;
+  title: string;
   subtitle: string;
+  biome: string;
   location: string;
   objective: string;
   bossName: string;
@@ -25,9 +28,12 @@ export interface StageDefinition {
 export const STAGES: readonly StageDefinition[] = [
   {
     number: 1,
+    stageNumber: 1,
     id: 'cinturao',
     name: 'CINTURAO DE FERRUGEM',
+    title: 'Cinturão de Ferrugem',
     subtitle: 'ESTACAO ORBITAL DEGRADADA',
+    biome: 'Estação Orbital Degradada',
     location: 'Setor 01 // Estaleiro Orbital',
     objective: 'Defender rota de evacuação e abater o KRM-17',
     bossName: 'KRM-17 Excavator',
@@ -47,12 +53,15 @@ export const STAGES: readonly StageDefinition[] = [
   },
   {
     number: 2,
+    stageNumber: 2,
     id: 'mar_de_vidro',
     name: 'MAR DE VIDRO',
+    title: 'Mar de Vidro',
     subtitle: 'PLANETA VITRIFICADO',
+    biome: 'Planeta Vitrificado',
     location: 'Setor 02 // Dunas de Cristal',
     objective: 'Seguir o rastro do Wake e conter a Serpente de Extração',
-    bossName: 'Serpente de Extracao',
+    bossName: 'Serpente de Extração',
     palette: {
       background: '#181226',
       farColor: 0x241838,
@@ -69,12 +78,15 @@ export const STAGES: readonly StageDefinition[] = [
   },
   {
     number: 3,
+    stageNumber: 3,
     id: 'catedrais_vivas',
     name: 'CATEDRAIS VIVAS',
+    title: 'Catedrais Vivas',
     subtitle: 'COMPLEXO BIOMECANICO',
+    biome: 'Complexo Biomecânico',
     location: 'Setor 03 // Fábrica de Suporte Vital',
     objective: 'Penetrar na arquitetura articulada e derrubar a Fortaleza de Núcleos',
-    bossName: 'Fortaleza de Nucleos',
+    bossName: 'Fortaleza de Núcleos',
     palette: {
       background: '#1a1016',
       farColor: 0x2e1823,
@@ -91,9 +103,12 @@ export const STAGES: readonly StageDefinition[] = [
   },
   {
     number: 4,
+    stageNumber: 4,
     id: 'nuvem_de_ions',
     name: 'NUVEM DE IONS',
+    title: 'Nuvem de Íons',
     subtitle: 'PLATAFORMAS NA ALTA ATMOSFERA',
+    biome: 'Plataformas na Alta Atmosfera',
     location: 'Setor 04 // Tempestade Atmosférica',
     objective: 'Interceptar a retransmissora e derrotar o Caça Climático',
     bossName: 'Interceptador de Tempestade',
@@ -113,12 +128,15 @@ export const STAGES: readonly StageDefinition[] = [
   },
   {
     number: 5,
+    stageNumber: 5,
     id: 'coracao_da_malha',
     name: 'CORACAO DA MALHA',
+    title: 'Coração da MALHA',
     subtitle: 'CENTRAL DE PROCESSAMENTO',
+    biome: 'Central de Processamento',
     location: 'Setor 05 // Megaestrutura da MALHA',
     objective: 'Isolar a instrução destrutiva no Núcleo de Contenção',
-    bossName: 'Nucleo de Contencao',
+    bossName: 'Coração da MALHA',
     palette: {
       background: '#0a0d17',
       farColor: 0x161e33,

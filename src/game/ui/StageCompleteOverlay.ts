@@ -1,15 +1,20 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../constants';
+import { STAGES } from '../data/stages';
 
 /** Tela de vitória de fase com pontuação, bônus e transição de missão. */
 export class StageCompleteOverlay extends Phaser.GameObjects.Container {
   constructor(
     scene: Phaser.Scene,
+    stageNumber: number,
     score: number,
+    onNextStage: () => void,
     onReplay: () => void,
-    onChoosePilot: () => void,
+    onStageSelect: () => void,
   ) {
     super(scene, 0, 0);
+
+    const stageDef = STAGES[stageNumber - 1] || STAGES[0];
 
     const backdrop = scene.add.rectangle(
       GAME_WIDTH / 2,
@@ -23,16 +28,16 @@ export class StageCompleteOverlay extends Phaser.GameObjects.Container {
     const panel = scene.add.rectangle(
       GAME_WIDTH / 2,
       GAME_HEIGHT / 2,
-      540,
-      290,
+      560,
+      300,
       0x132435,
     ).setStrokeStyle(2, 0x64ded4);
 
     const title = this.text(
       scene,
       GAME_WIDTH / 2,
-      100,
-      'MISSAO CUMPRIDA!',
+      95,
+      'MISSÃO CUMPRIDA!',
       30,
       '#7bf7ea',
     ).setOrigin(0.5, 0);
@@ -40,72 +45,93 @@ export class StageCompleteOverlay extends Phaser.GameObjects.Container {
     const caption = this.text(
       scene,
       GAME_WIDTH / 2,
-      142,
-      'FASE 01: CINTURAO DE FERRUGEM  /  KRM-17 DESTRUÍDO',
-      15,
+      138,
+      `FASE 0${stageNumber}: ${stageDef.title.toUpperCase()}  /  ${stageDef.bossName.toUpperCase()} CONTIDO`,
+      14,
       '#dbebf5',
     ).setOrigin(0.5, 0);
 
     const scoreText = this.text(
       scene,
       GAME_WIDTH / 2,
-      176,
-      'PONTUACAO TOTAL: ' + score.toString().padStart(6, '0'),
-      21,
+      172,
+      'PONTUAÇÃO TOTAL: ' + score.toString().padStart(6, '0'),
+      20,
       '#ffd494',
     ).setOrigin(0.5, 0);
 
     const promptText = this.text(
       scene,
       GAME_WIDTH / 2,
-      214,
-      'ROTA DE EVACUACAO PROTEGIDA. COORDENADAS DO WAKE LOCALIZADAS.',
+      206,
+      'ROTA DE CONTENÇÃO ESTABILIZADA. PRÓXIMAS COORDENADAS DESBLOQUEADAS.',
       12,
       '#a2c7dc',
     ).setOrigin(0.5, 0);
 
     // Botões
-    const replayButton = scene.add.rectangle(
-      GAME_WIDTH / 2 - 130,
-      268,
-      210,
-      40,
-      0x275a68,
-    ).setStrokeStyle(1, 0x76eae0).setInteractive({ useHandCursor: true });
+    const nextBtn = scene.add.rectangle(
+      GAME_WIDTH / 2 - 165,
+      262,
+      160,
+      38,
+      0x276a77,
+    ).setStrokeStyle(2, 0x8df5ea).setInteractive({ useHandCursor: true });
+
+    const nextText = this.text(
+      scene,
+      GAME_WIDTH / 2 - 165,
+      252,
+      'AVANÇAR [ENTER]',
+      14,
+      '#ffffff',
+    ).setOrigin(0.5, 0);
+
+    nextBtn.on('pointerover', () => nextBtn.setFillStyle(0x328a9b));
+    nextBtn.on('pointerout', () => nextBtn.setFillStyle(0x276a77));
+    nextBtn.on('pointerdown', onNextStage);
+
+    const replayBtn = scene.add.rectangle(
+      GAME_WIDTH / 2,
+      262,
+      150,
+      38,
+      0x1e3f52,
+    ).setStrokeStyle(1, 0x60a0b8).setInteractive({ useHandCursor: true });
 
     const replayText = this.text(
       scene,
-      GAME_WIDTH / 2 - 130,
-      258,
-      'REJOGAR FASE [R]',
-      16,
+      GAME_WIDTH / 2,
+      252,
+      'REJOGAR [R]',
+      14,
       '#ffffff',
     ).setOrigin(0.5, 0);
 
-    replayButton.on('pointerover', () => replayButton.setFillStyle(0x347c8f));
-    replayButton.on('pointerout', () => replayButton.setFillStyle(0x275a68));
-    replayButton.on('pointerdown', onReplay);
+    replayBtn.on('pointerover', () => replayBtn.setFillStyle(0x285670));
+    replayBtn.on('pointerout', () => replayBtn.setFillStyle(0x1e3f52));
+    replayBtn.on('pointerdown', onReplay);
 
-    const pilotButton = scene.add.rectangle(
-      GAME_WIDTH / 2 + 130,
-      268,
-      210,
-      40,
-      0x243e54,
-    ).setStrokeStyle(1, 0x8baec9).setInteractive({ useHandCursor: true });
+    const selectBtn = scene.add.rectangle(
+      GAME_WIDTH / 2 + 165,
+      262,
+      160,
+      38,
+      0x192e40,
+    ).setStrokeStyle(1, 0x487994).setInteractive({ useHandCursor: true });
 
-    const pilotText = this.text(
+    const selectText = this.text(
       scene,
-      GAME_WIDTH / 2 + 130,
-      258,
-      'TROCAR PILOTO [ESC]',
-      16,
+      GAME_WIDTH / 2 + 165,
+      252,
+      'FASES [ESC]',
+      14,
       '#ffffff',
     ).setOrigin(0.5, 0);
 
-    pilotButton.on('pointerover', () => pilotButton.setFillStyle(0x335773));
-    pilotButton.on('pointerout', () => pilotButton.setFillStyle(0x243e54));
-    pilotButton.on('pointerdown', onChoosePilot);
+    selectBtn.on('pointerover', () => selectBtn.setFillStyle(0x24425b));
+    selectBtn.on('pointerout', () => selectBtn.setFillStyle(0x192e40));
+    selectBtn.on('pointerdown', onStageSelect);
 
     this.add([
       backdrop,
@@ -114,13 +140,24 @@ export class StageCompleteOverlay extends Phaser.GameObjects.Container {
       caption,
       scoreText,
       promptText,
-      replayButton,
+      nextBtn,
+      nextText,
+      replayBtn,
       replayText,
-      pilotButton,
-      pilotText,
+      selectBtn,
+      selectText,
     ]);
     this.setDepth(100);
     scene.add.existing(this);
+
+    // Teclado
+    const kb = scene.input.keyboard;
+    if (kb) {
+      kb.once('keydown-ENTER', onNextStage);
+      kb.once('keydown-SPACE', onNextStage);
+      kb.once('keydown-R', onReplay);
+      kb.once('keydown-ESC', onStageSelect);
+    }
   }
 
   private text(

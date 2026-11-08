@@ -9,6 +9,8 @@ import { loadGameSprites, registerGameAnimations } from '../assets/spriteAssets'
 import { GameOverOverlay } from '../ui/GameOverOverlay';
 import { StageCompleteOverlay } from '../ui/StageCompleteOverlay';
 import { StageBackdrop } from './StageBackdrop';
+import { STAGES } from '../data/stages';
+import { saveSystem } from '../systems/saveSystem.ts';
 import {
   createPlayerWeapons,
   upgradeWeapon,
@@ -58,11 +60,11 @@ interface EnemyVisual {
 
 interface BossVisual {
   container: Phaser.GameObjects.Container;
-  hull: Phaser.GameObjects.Sprite;
-  drill: Phaser.GameObjects.Sprite;
-  turretTop: Phaser.GameObjects.Sprite;
-  turretBottom: Phaser.GameObjects.Sprite;
-  core: Phaser.GameObjects.Sprite;
+  main: Phaser.GameObjects.Sprite;
+  sub1?: Phaser.GameObjects.Sprite;
+  sub2?: Phaser.GameObjects.Sprite;
+  sub3?: Phaser.GameObjects.Sprite;
+  core?: Phaser.GameObjects.Sprite;
 }
 
 /** Cena principal de combate do BULLET WAKE com progressão contínua e chefe final. */
@@ -80,6 +82,7 @@ export class PrototypeScene extends Phaser.Scene {
   private phantomDashTimerMs = 0;
 
   private pilot: PilotDefinition = getPilot('nolan');
+  private stageNumber = 1;
   private weapons: PlayerWeaponsState = createPlayerWeapons('nolan');
   private scoreCombo: ScoreComboState = initialScoreCombo();
   private health: PlayerHealth = initialPlayerHealth();
@@ -95,7 +98,7 @@ export class PrototypeScene extends Phaser.Scene {
   private pickupVisuals = new Map<number, Phaser.GameObjects.Sprite>();
 
   private pickups = new PickupSystem();
-  private director = new StageDirector(GAME_WIDTH, true);
+  private director = new StageDirector(GAME_WIDTH, true, 1);
   private bossVisual?: BossVisual;
 
   private shootCooldown = 0;
@@ -106,8 +109,9 @@ export class PrototypeScene extends Phaser.Scene {
     super({ key: 'PrototypeScene' });
   }
 
-  init(data: { pilotId?: string } = {}): void {
+  init(data: { pilotId?: string; stageNumber?: number } = {}): void {
     this.pilot = getPilot(data.pilotId);
+    this.stageNumber = data.stageNumber || 1;
   }
 
   preload(): void {
@@ -138,10 +142,10 @@ export class PrototypeScene extends Phaser.Scene {
     this.pickups.clear();
     this.bossVisual = undefined;
 
-    this.director = new StageDirector(GAME_WIDTH, true);
+    this.director = new StageDirector(GAME_WIDTH, true, this.stageNumber);
     this.shootCooldown = 0;
 
-    this.backdrop = new StageBackdrop(this);
+    this.backdrop = new StageBackdrop(this, this.stageNumber);
     this.keyboardControls = this.input.keyboard?.addKeys(
       'W,A,S,D,SPACE,R,ESC,M,X,K,B,L,SHIFT,ENTER,ONE,TWO,THREE',
     ) as Keys | undefined;
@@ -155,7 +159,8 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.setWeapon(this.pilot.shipName === 'Rivet' ? 'Pulso' : this.pilot.shipName === 'Moth' ? 'Laser' : 'Canhao', 1);
     this.hud.setBombs(this.weapons.bombs);
     this.hud.setResonance(0);
-    this.hud.flash('FASE 01  -  CINTURAO DE FERRUGEM', '#a6e3e2', 2400);
+    const stageDef = STAGES[this.stageNumber - 1] || STAGES[0];
+    this.hud.flash(`FASE 0${this.stageNumber}  -  ${stageDef.title.toUpperCase()}`, '#a6e3e2', 2600);
 
     // Nave do jogador
     let texture = 'rivet-v3-idle';
@@ -321,10 +326,10 @@ export class PrototypeScene extends Phaser.Scene {
     this.syncPickupVisuals();
     this.checkPickupCollisions();
 
-    // Atualiza chefe KRM-17 se ativo
+    // Atualiza chefe se ativo
     if (tick.bossActive && this.director.boss) {
       this.syncBossVisual(this.director.boss);
-      this.hud.showBossBar('KRM-17 Excavator', this.director.boss.hp, this.director.boss.maxHp);
+      this.hud.showBossBar(this.director.boss.name, this.director.boss.hp, this.director.boss.maxHp);
       globalAudio.startBossMusic();
     } else {
       if (this.bossVisual) {
@@ -353,23 +358,34 @@ export class PrototypeScene extends Phaser.Scene {
       this.scoreCombo = addRawScore(this.scoreCombo, bonusPoints);
       this.hud.setScore(this.scoreCombo.score);
 
-      new StageCompleteOverlay(
-        this,
-        this.scoreCombo.score,
-        () => this.restart(),
-        () => this.choosePilot(),
-      );
+      saveSystem.recordStageClear(this.stageNumber, this.pilot.id, this.scoreCombo.score);
+
+      if (this.stageNumber >= 5) {
+        this.scene.start('EndingScene', {
+          pilotId: this.pilot.id,
+          score: this.scoreCombo.score,
+        });
+      } else {
+        new StageCompleteOverlay(
+          this,
+          this.stageNumber,
+          this.scoreCombo.score,
+          () => this.scene.start('PrototypeScene', { pilotId: this.pilot.id, stageNumber: this.stageNumber + 1 }),
+          () => this.restart(),
+          () => this.scene.start('StageSelectScene'),
+        );
+      }
     }
   }
 
   private restart(): void {
     globalAudio.stopMusic();
-    this.scene.restart({ pilotId: this.pilot.id });
+    this.scene.restart({ pilotId: this.pilot.id, stageNumber: this.stageNumber });
   }
 
   private choosePilot(): void {
     globalAudio.stopMusic();
-    this.scene.start('PilotSelectScene', { selectedPilotId: this.pilot.id });
+    this.scene.start('PilotSelectScene', { selectedPilotId: this.pilot.id, stageNumber: this.stageNumber });
   }
 
   private changeShipAnimation(
@@ -667,34 +683,61 @@ export class PrototypeScene extends Phaser.Scene {
 
   private syncBossVisual(boss: NonNullable<StageDirector['boss']>): void {
     if (!this.bossVisual) {
-      const hull = this.add.sprite(0, 0, 'boss-krm17-hull', 0).setScale(1.5);
-      hull.play('boss-krm17-hull-idle');
-      const drill = this.add.sprite(-78, 0, 'boss-krm17-drill', 0).setScale(1.5);
-      drill.play('boss-krm17-drill-spin');
-      const turretTop = this.add.sprite(22, -45, 'boss-krm17-turret', 0).setScale(1.4);
-      turretTop.play('boss-krm17-turret-aim');
-      const turretBottom = this.add.sprite(22, 45, 'boss-krm17-turret', 0).setScale(1.4);
-      turretBottom.play('boss-krm17-turret-aim');
-      const core = this.add.sprite(-10, 0, 'boss-krm17-core', 0).setScale(1.3).setVisible(false);
-      core.play('boss-krm17-core-pulse');
+      const parts: Phaser.GameObjects.GameObject[] = [];
+      let main: Phaser.GameObjects.Sprite;
+      let sub1: Phaser.GameObjects.Sprite | undefined;
+      let sub2: Phaser.GameObjects.Sprite | undefined;
+      let sub3: Phaser.GameObjects.Sprite | undefined;
+      let core: Phaser.GameObjects.Sprite | undefined;
 
-      const container = this.add.container(boss.x, boss.y, [
-        hull, drill, turretTop, turretBottom, core,
-      ]).setDepth(6);
+      if (this.stageNumber === 2) {
+        sub2 = this.add.sprite(50, 0, 'boss-serpent-body', 0).setScale(1.4).play('boss-serpent-body-loop');
+        sub1 = this.add.sprite(10, 0, 'boss-serpent-body', 0).setScale(1.45).play('boss-serpent-body-loop');
+        main = this.add.sprite(-40, 0, 'boss-serpent-head', 0).setScale(1.5).play('boss-serpent-head-loop');
+        parts.push(sub2, sub1, main);
+      } else if (this.stageNumber === 3) {
+        main = this.add.sprite(0, 0, 'boss-fortress-chassis', 0).setScale(1.3).play('boss-fortress-chassis-loop');
+        sub1 = this.add.sprite(-20, -55, 'boss-fortress-core', 0).setScale(1.2).play('boss-fortress-core-pulse');
+        sub2 = this.add.sprite(-20, 55, 'boss-fortress-core', 0).setScale(1.2).play('boss-fortress-core-pulse');
+        parts.push(main, sub1, sub2);
+      } else if (this.stageNumber === 4) {
+        sub1 = this.add.sprite(10, -35, 'boss-interceptor-wing', 0).setScale(1.4).play('boss-interceptor-wing-spark');
+        sub2 = this.add.sprite(10, 35, 'boss-interceptor-wing', 0).setScale(1.4).play('boss-interceptor-wing-spark');
+        main = this.add.sprite(0, 0, 'boss-interceptor-chassis', 0).setScale(1.5).play('boss-interceptor-chassis-flight');
+        parts.push(sub1, sub2, main);
+      } else if (this.stageNumber === 5) {
+        main = this.add.sprite(0, 0, 'boss-mesh_core-monolith', 0).setScale(1.4).play('boss-mesh_core-monolith-loop');
+        core = this.add.sprite(0, 0, 'boss-mesh_core-heart', 0).setScale(1.3).play('boss-mesh_core-heart-pulse');
+        parts.push(main, core);
+      } else {
+        // Fase 1: KRM-17
+        main = this.add.sprite(0, 0, 'boss-krm17-hull', 0).setScale(1.5).play('boss-krm17-hull-idle');
+        sub1 = this.add.sprite(-78, 0, 'boss-krm17-drill', 0).setScale(1.5).play('boss-krm17-drill-spin');
+        sub2 = this.add.sprite(22, -45, 'boss-krm17-turret', 0).setScale(1.4).play('boss-krm17-turret-aim');
+        sub3 = this.add.sprite(22, 45, 'boss-krm17-turret', 0).setScale(1.4).play('boss-krm17-turret-aim');
+        core = this.add.sprite(-10, 0, 'boss-krm17-core', 0).setScale(1.3).setVisible(false).play('boss-krm17-core-pulse');
+        parts.push(main, sub1, sub2, sub3, core);
+      }
 
-      this.bossVisual = { container, hull, drill, turretTop, turretBottom, core };
+      const container = this.add.container(boss.x, boss.y, parts).setDepth(6);
+      this.bossVisual = { container, main, sub1, sub2, sub3, core };
     }
 
     this.bossVisual.container.setPosition(boss.x, boss.y);
-    this.bossVisual.turretTop.setVisible(!boss.modules[0].destroyed);
-    this.bossVisual.turretBottom.setVisible(!boss.modules[1].destroyed);
-    this.bossVisual.drill.setVisible(!boss.modules[2].destroyed);
-    this.bossVisual.core.setVisible(boss.phase === 'phase3_core');
+
+    if (this.stageNumber === 1 && boss.modules) {
+      if (this.bossVisual.sub2) this.bossVisual.sub2.setVisible(!boss.modules[0]?.destroyed);
+      if (this.bossVisual.sub3) this.bossVisual.sub3.setVisible(!boss.modules[1]?.destroyed);
+      if (this.bossVisual.sub1) this.bossVisual.sub1.setVisible(!boss.modules[2]?.destroyed);
+      if (this.bossVisual.core) this.bossVisual.core.setVisible(boss.phase === 'phase3_core');
+    }
 
     if (boss.isTelegraphing) {
-      this.bossVisual.drill.setTint(0xff6644);
+      this.bossVisual.main.setTint(0xff6644);
+      if (this.bossVisual.sub1) this.bossVisual.sub1.setTint(0xff6644);
     } else {
-      this.bossVisual.drill.clearTint();
+      this.bossVisual.main.clearTint();
+      if (this.bossVisual.sub1) this.bossVisual.sub1.clearTint();
     }
   }
 

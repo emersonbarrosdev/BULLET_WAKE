@@ -4,7 +4,7 @@
  * Lógica pura, modular e desacoplada do Phaser.
  */
 
-import type { StageBoss, BossHitResult } from './bosses/types.ts';
+import type { StageBoss } from './bosses/types.ts';
 
 export type BossPhase = 'intro' | 'phase1_turrets' | 'phase2_drill' | 'phase3_core' | 'defeated';
 

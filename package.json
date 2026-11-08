@@ -19,7 +19,7 @@
     "assets:moth": "node scripts/generate-moth.mjs",
     "assets:knuckle": "node scripts/generate-knuckle.mjs",
     "assets:pickups": "node scripts/generate-pickups-fx.mjs",
-    "assets:bosses": "node scripts/generate-boss-krm17.mjs",
+    "assets:bosses": "node scripts/generate-boss-krm17.mjs && node scripts/generate-bosses-2-5.mjs",
     "predev": "npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses",
     "prebuild": "npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses",
     "pretest": "npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses"

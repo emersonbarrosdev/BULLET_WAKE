@@ -93,6 +93,10 @@ export class SaveSystem {
     return this.data;
   }
 
+  getSaveData(): Readonly<SaveData> {
+    return this.data;
+  }
+
   unlockNextStage(currentStage: number): void {
     const next = currentStage + 1;
     if (next <= 5 && !this.data.unlockedStages.includes(next)) {
@@ -135,3 +139,4 @@ export class SaveSystem {
 }
 
 export const globalSave = new SaveSystem();
+export const saveSystem = globalSave;

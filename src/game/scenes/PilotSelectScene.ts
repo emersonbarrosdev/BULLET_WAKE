@@ -4,16 +4,17 @@ import { PILOTS, type PilotDefinition } from '../data/pilots';
 import { loadGameSprites, registerGameAnimations } from '../assets/spriteAssets';
 import { StageBackdrop } from './StageBackdrop';
 
-type MenuKeys = Record<'LEFT' | 'RIGHT' | 'ENTER' | 'SPACE' | 'ONE' | 'TWO' | 'THREE',
+type MenuKeys = Record<'LEFT' | 'RIGHT' | 'ENTER' | 'SPACE' | 'ONE' | 'TWO' | 'THREE' | 'ESC',
   Phaser.Input.Keyboard.Key>;
 interface PilotCard {
   panel: Phaser.GameObjects.Rectangle;
   label: Phaser.GameObjects.Text;
 }
 
-/** Escolha de piloto, dimensionada para 768x432; os outros sprites ainda são v0.1. */
+/** Escolha de piloto para a missão ativa do BULLET WAKE. */
 export class PilotSelectScene extends Phaser.Scene {
   private selectedIndex = 0;
+  private stageNumber = 1;
   private keys?: MenuKeys;
   private cards: PilotCard[] = [];
   private specialText!: Phaser.GameObjects.Text;
@@ -22,8 +23,9 @@ export class PilotSelectScene extends Phaser.Scene {
 
   constructor() { super({ key: 'PilotSelectScene' }); }
 
-  init(data: { selectedPilotId?: string } = {}): void {
+  init(data: { selectedPilotId?: string; stageNumber?: number } = {}): void {
     this.selectedIndex = Math.max(0, PILOTS.findIndex(p => p.id === data.selectedPilotId));
+    this.stageNumber = data.stageNumber || 1;
   }
 
   preload(): void { loadGameSprites(this); }
@@ -31,10 +33,10 @@ export class PilotSelectScene extends Phaser.Scene {
   create(): void {
     registerGameAnimations(this);
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
-    this.backdrop = new StageBackdrop(this);
+    this.backdrop = new StageBackdrop(this, this.stageNumber);
     this.previewDistance = 0;
     this.cards = [];
-    this.keys = this.input.keyboard?.addKeys('LEFT,RIGHT,ENTER,SPACE,ONE,TWO,THREE') as MenuKeys | undefined;
+    this.keys = this.input.keyboard?.addKeys('LEFT,RIGHT,ENTER,SPACE,ONE,TWO,THREE,ESC') as MenuKeys | undefined;
 
     this.add.rectangle(GAME_WIDTH / 2, 46, GAME_WIDTH, 92, 0x0a1628, 0.84);
     this.text(GAME_WIDTH / 2, 15, 'BULLET WAKE', 33, '#f5f9fd').setOrigin(0.5, 0);
@@ -68,6 +70,9 @@ export class PilotSelectScene extends Phaser.Scene {
       this.select((this.selectedIndex + 1) % PILOTS.length);
     if (Phaser.Input.Keyboard.JustDown(this.keys.ENTER)
       || Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.startGame();
+    if (Phaser.Input.Keyboard.JustDown(this.keys.ESC)) {
+      this.scene.start('StageSelectScene');
+    }
   }
 
   private buildCard(pilot: PilotDefinition, index: number): void {
@@ -106,11 +111,14 @@ export class PilotSelectScene extends Phaser.Scene {
       card.panel.setFillStyle(idx === index ? 0x243c4e : 0x1b2939, 0.95);
       card.label.setColor(idx === index ? '#9bf7e6' : '#dcecf5');
     });
-    this.specialText.setText('ESPECIAL: ' + PILOTS[index].specialName + '  (EM DESENVOLVIMENTO)');
+    this.specialText.setText('ESPECIAL: ' + PILOTS[index].specialName.toUpperCase() + ' (CARGA 100% RESSONÂNCIA)');
   }
 
   private startGame(): void {
-    this.scene.start('PrototypeScene', { pilotId: PILOTS[this.selectedIndex].id });
+    this.scene.start('PrototypeScene', {
+      pilotId: PILOTS[this.selectedIndex].id,
+      stageNumber: this.stageNumber,
+    });
   }
 
   private text(x: number, y: number, message: string, size: number, color: string): Phaser.GameObjects.Text {

@@ -1,8 +1,11 @@
 import Phaser from 'phaser';
 import './style.css';
 import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from './game/constants';
+import { TitleScene } from './game/scenes/TitleScene';
+import { StageSelectScene } from './game/scenes/StageSelectScene';
 import { PilotSelectScene } from './game/scenes/PilotSelectScene';
 import { PrototypeScene } from './game/scenes/PrototypeScene';
+import { EndingScene } from './game/scenes/EndingScene';
 
 const host = document.getElementById('game');
 
@@ -24,7 +27,7 @@ const config: Phaser.Types.Core.GameConfig = {
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
   },
-  scene: [PilotSelectScene, PrototypeScene],
+  scene: [TitleScene, StageSelectScene, PilotSelectScene, PrototypeScene, EndingScene],
 };
 
 const game = new Phaser.Game(config);
