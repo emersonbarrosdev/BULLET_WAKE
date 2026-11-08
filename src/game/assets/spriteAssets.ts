@@ -25,6 +25,18 @@ export const SPRITE_SHEETS = [
   { key: 'ship-rivet-v2-death', url: 'assets/ships/rivet/v2/destruicao.png', frameWidth: 112, frameHeight: 54 },
   { key: 'ship-moth', url: 'assets/ships/moth/flight.png', frameWidth: 48, frameHeight: 24 },
   { key: 'ship-knuckle', url: 'assets/ships/knuckle/flight.png', frameWidth: 48, frameHeight: 24 },
+  { key: 'ship-moth-v2-idle', url: 'assets/ships/moth/v2/idle.png', frameWidth: 136, frameHeight: 72 },
+  { key: 'ship-moth-v2-climb', url: 'assets/ships/moth/v2/climb.png', frameWidth: 136, frameHeight: 72 },
+  { key: 'ship-moth-v2-dive', url: 'assets/ships/moth/v2/dive.png', frameWidth: 136, frameHeight: 72 },
+  { key: 'ship-moth-v2-fire', url: 'assets/ships/moth/v2/fire.png', frameWidth: 136, frameHeight: 72 },
+  { key: 'ship-moth-v2-hit', url: 'assets/ships/moth/v2/hit.png', frameWidth: 136, frameHeight: 72 },
+  { key: 'ship-moth-v2-death', url: 'assets/ships/moth/v2/destruction.png', frameWidth: 136, frameHeight: 72 },
+  { key: 'ship-knuckle-v2-idle', url: 'assets/ships/knuckle/v2/idle.png', frameWidth: 144, frameHeight: 88 },
+  { key: 'ship-knuckle-v2-climb', url: 'assets/ships/knuckle/v2/climb.png', frameWidth: 144, frameHeight: 88 },
+  { key: 'ship-knuckle-v2-dive', url: 'assets/ships/knuckle/v2/dive.png', frameWidth: 144, frameHeight: 88 },
+  { key: 'ship-knuckle-v2-fire', url: 'assets/ships/knuckle/v2/fire.png', frameWidth: 144, frameHeight: 88 },
+  { key: 'ship-knuckle-v2-hit', url: 'assets/ships/knuckle/v2/hit.png', frameWidth: 144, frameHeight: 88 },
+  { key: 'ship-knuckle-v2-death', url: 'assets/ships/knuckle/v2/destruction.png', frameWidth: 144, frameHeight: 88 },
   { key: 'enemy-scout', url: 'assets/enemies/scout.png', frameWidth: 24, frameHeight: 16 },
   { key: 'enemy-lancer', url: 'assets/enemies/lancer.png', frameWidth: 40, frameHeight: 24 },
   { key: 'shot-rivet', url: 'assets/projectiles/rivet.png', frameWidth: 12, frameHeight: 8 },
@@ -104,6 +116,20 @@ animations.push({ id: 'rivet-v3-missile_launch-anim', sheet: 'rivet-v3-missile_l
 animations.push({ id: 'rivet-v3-prism_charge-anim', sheet: 'rivet-v3-prism_charge', first: 0, last: 3, frameRate: 12, repeat: -1 });
 animations.push({ id: 'rivet-v3-hit-anim', sheet: 'rivet-v3-hit', first: 0, last: 3, frameRate: 12, repeat: 0 });
 animations.push({ id: 'rivet-v3-destruction-anim', sheet: 'rivet-v3-destruction', first: 0, last: 7, frameRate: 12, repeat: 0 });
+
+animations.push({ id: 'moth-v2-idle-anim', sheet: 'ship-moth-v2-idle', first: 0, last: 3, frameRate: 10, repeat: -1 });
+animations.push({ id: 'moth-v2-climb-anim', sheet: 'ship-moth-v2-climb', first: 0, last: 3, frameRate: 12, repeat: -1 });
+animations.push({ id: 'moth-v2-dive-anim', sheet: 'ship-moth-v2-dive', first: 0, last: 3, frameRate: 12, repeat: -1 });
+animations.push({ id: 'moth-v2-fire-anim', sheet: 'ship-moth-v2-fire', first: 0, last: 3, frameRate: 16, repeat: -1 });
+animations.push({ id: 'moth-v2-hit-anim', sheet: 'ship-moth-v2-hit', first: 0, last: 3, frameRate: 18, repeat: 0 });
+animations.push({ id: 'moth-v2-destruction-anim', sheet: 'ship-moth-v2-destruction', first: 0, last: 7, frameRate: 15, repeat: 0 });
+
+animations.push({ id: 'knuckle-v2-idle-anim', sheet: 'ship-knuckle-v2-idle', first: 0, last: 3, frameRate: 9, repeat: -1 });
+animations.push({ id: 'knuckle-v2-climb-anim', sheet: 'ship-knuckle-v2-climb', first: 0, last: 3, frameRate: 10, repeat: -1 });
+animations.push({ id: 'knuckle-v2-dive-anim', sheet: 'ship-knuckle-v2-dive', first: 0, last: 3, frameRate: 10, repeat: -1 });
+animations.push({ id: 'knuckle-v2-fire-anim', sheet: 'ship-knuckle-v2-fire', first: 0, last: 3, frameRate: 14, repeat: -1 });
+animations.push({ id: 'knuckle-v2-hit-anim', sheet: 'ship-knuckle-v2-hit', first: 0, last: 3, frameRate: 16, repeat: 0 });
+animations.push({ id: 'knuckle-v2-destruction-anim', sheet: 'ship-knuckle-v2-destruction', first: 0, last: 7, frameRate: 14, repeat: 0 });
 animations.push({ id: 'rivet-v3-engine-anim', sheet: 'rivet-v3-engine', first: 0, last: 7, frameRate: 14, repeat: -1 });
 animations.push({ id: 'rivet-v3-muzzle-anim', sheet: 'rivet-v3-muzzle', first: 0, last: 3, frameRate: 14, repeat: 0 });
 animations.push({ id: 'rivet-v3-pulse-1-anim', sheet: 'rivet-v3-pulse-1', first: 0, last: 3, frameRate: 14, repeat: -1 });

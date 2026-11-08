@@ -158,13 +158,20 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.flash('FASE 01  -  CINTURAO DE FERRUGEM', '#a6e3e2', 2400);
 
     // Nave do jogador
-    const rivet = this.pilot.id === 'nolan';
-    const texture = rivet ? 'rivet-v3-idle' : 'ship-' + this.pilot.id;
+    let texture = 'rivet-v3-idle';
+    let scale = 0.98;
+    if (this.pilot.id === 'cora') {
+      texture = 'ship-moth-v2-idle';
+      scale = 1.05;
+    } else if (this.pilot.id === 'harlan') {
+      texture = 'ship-knuckle-v2-idle';
+      scale = 1.0;
+    }
     this.shipSprite = this.add.sprite(0, 0, texture, 0);
-    this.shipSprite.setScale(rivet ? 0.98 : 1.95);
+    this.shipSprite.setScale(scale);
 
     const children: Phaser.GameObjects.GameObject[] = [];
-    if (rivet) {
+    if (this.pilot.id === 'nolan') {
       this.shipEngine = this.add.sprite(-71, 0, 'rivet-v3-engine', 0)
         .setScale(0.9).play('rivet-v3-engine-anim');
       children.push(this.shipEngine);
@@ -373,11 +380,16 @@ export class PrototypeScene extends Phaser.Scene {
       if (this.shipAnimation === v3state) return;
       this.shipAnimation = v3state;
       this.shipSprite.play('rivet-v3-' + v3state + '-anim', true);
-    } else {
-      if (state === 'fire' || state === 'hit' || state === 'missile_launch' || state === 'prism_charge') state = 'idle';
-      if (this.shipAnimation === state) return;
-      this.shipAnimation = state;
-      this.shipSprite.play('ship-' + this.pilot.id + '-' + state, true);
+    } else if (this.pilot.id === 'cora') {
+      const mothState = state === 'up' ? 'climb' : state === 'down' ? 'dive' : (state === 'missile_launch' || state === 'prism_charge' ? 'idle' : state);
+      if (this.shipAnimation === mothState) return;
+      this.shipAnimation = mothState;
+      this.shipSprite.play('moth-v2-' + mothState + '-anim', true);
+    } else if (this.pilot.id === 'harlan') {
+      const knuckleState = state === 'up' ? 'climb' : state === 'down' ? 'dive' : (state === 'missile_launch' || state === 'prism_charge' ? 'idle' : state);
+      if (this.shipAnimation === knuckleState) return;
+      this.shipAnimation = knuckleState;
+      this.shipSprite.play('knuckle-v2-' + knuckleState + '-anim', true);
     }
   }
 
@@ -869,10 +881,8 @@ export class PrototypeScene extends Phaser.Scene {
     if (outcome.event === 'damaged') {
       this.hud.flash('ACERTO! -1 HP', '#ffd099', 950);
       globalAudio.playHit();
-      if (this.pilot.id === 'nolan') {
-        this.hitPoseMs = 280;
-        this.changeShipAnimation('hit');
-      }
+      this.hitPoseMs = 280;
+      this.changeShipAnimation('hit');
       this.playEffect('hit', this.ship.x, this.ship.y);
     } else if (outcome.event === 'respawn') {
       globalAudio.playExplosion(true);
@@ -898,11 +908,12 @@ export class PrototypeScene extends Phaser.Scene {
       this.clearPlayerShots();
       this.hud.hideBossBar();
 
-      this.shipSprite.play(
-        this.pilot.id === 'nolan'
-          ? 'rivet-v3-destruction-anim'
-          : 'ship-' + this.pilot.id + '-death',
-      );
+      const deathAnim = this.pilot.id === 'nolan'
+        ? 'rivet-v3-destruction-anim'
+        : this.pilot.id === 'cora'
+        ? 'moth-v2-destruction-anim'
+        : 'knuckle-v2-destruction-anim';
+      this.shipSprite.play(deathAnim);
       this.playEffect('explosion', this.ship.x, this.ship.y);
       this.shipSprite.once('animationcomplete', () => {
         this.ship.setVisible(false);
