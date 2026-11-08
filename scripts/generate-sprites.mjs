@@ -174,6 +174,7 @@ function projectileFrame(c,kind,f){
   ellipse(c,5,5,3+(f%2),3+(f%2),17);
   ellipse(c,5,5,2,2,f%2?27:19);rect(c,4,4,2,2,28);
   if(f%2===0){pix(c,1,5,18);pix(c,9,5,18)}
+  pix(c,2+f,1,f%2?28:26);
   return;
  }
  const heavy=kind==="knuckle",moth=kind==="moth";
@@ -182,6 +183,7 @@ function projectileFrame(c,kind,f){
   poly(c,[[0,3],[8,2],[15,5],[9,8],[0,7]],14);
   rect(c,2,3,10,4,shadow);rect(c,7,4,7,2,core);rect(c,12,4,3,2,28);
   rect(c,0,4,2+(f%2),2,26);
+  pix(c,1+f,2,f%2?28:15);
  }else if(moth){
   poly(c,[[0,cy],[4,cy-2],[10,cy-1],[11,cy],[10,cy+1],[4,cy+2]],31);
   line(c,1,cy,11,cy,moth?7:6);
