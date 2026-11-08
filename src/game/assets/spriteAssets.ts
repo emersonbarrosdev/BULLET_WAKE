@@ -25,6 +25,18 @@ export const SPRITE_SHEETS = [
   { key: 'ship-rivet-v2-death', url: 'assets/ships/rivet/v2/destruicao.png', frameWidth: 112, frameHeight: 54 },
   { key: 'ship-moth', url: 'assets/ships/moth/flight.png', frameWidth: 48, frameHeight: 24 },
   { key: 'ship-knuckle', url: 'assets/ships/knuckle/flight.png', frameWidth: 48, frameHeight: 24 },
+  { key: 'ship-moth-v2-idle', url: 'assets/ships/moth/v2/idle.png', frameWidth: 136, frameHeight: 72 },
+  { key: 'ship-moth-v2-climb', url: 'assets/ships/moth/v2/climb.png', frameWidth: 136, frameHeight: 72 },
+  { key: 'ship-moth-v2-dive', url: 'assets/ships/moth/v2/dive.png', frameWidth: 136, frameHeight: 72 },
+  { key: 'ship-moth-v2-fire', url: 'assets/ships/moth/v2/fire.png', frameWidth: 136, frameHeight: 72 },
+  { key: 'ship-moth-v2-hit', url: 'assets/ships/moth/v2/hit.png', frameWidth: 136, frameHeight: 72 },
+  { key: 'ship-moth-v2-death', url: 'assets/ships/moth/v2/destruction.png', frameWidth: 136, frameHeight: 72 },
+  { key: 'ship-knuckle-v2-idle', url: 'assets/ships/knuckle/v2/idle.png', frameWidth: 144, frameHeight: 88 },
+  { key: 'ship-knuckle-v2-climb', url: 'assets/ships/knuckle/v2/climb.png', frameWidth: 144, frameHeight: 88 },
+  { key: 'ship-knuckle-v2-dive', url: 'assets/ships/knuckle/v2/dive.png', frameWidth: 144, frameHeight: 88 },
+  { key: 'ship-knuckle-v2-fire', url: 'assets/ships/knuckle/v2/fire.png', frameWidth: 144, frameHeight: 88 },
+  { key: 'ship-knuckle-v2-hit', url: 'assets/ships/knuckle/v2/hit.png', frameWidth: 144, frameHeight: 88 },
+  { key: 'ship-knuckle-v2-death', url: 'assets/ships/knuckle/v2/destruction.png', frameWidth: 144, frameHeight: 88 },
   { key: 'enemy-scout', url: 'assets/enemies/scout.png', frameWidth: 24, frameHeight: 16 },
   { key: 'enemy-lancer', url: 'assets/enemies/lancer.png', frameWidth: 40, frameHeight: 24 },
   { key: 'shot-rivet', url: 'assets/projectiles/rivet.png', frameWidth: 12, frameHeight: 8 },
@@ -35,6 +47,27 @@ export const SPRITE_SHEETS = [
   { key: 'fx-hit', url: 'assets/fx/hit.png', frameWidth: 16, frameHeight: 16 },
   { key: 'fx-explosion', url: 'assets/fx/explosion.png', frameWidth: 24, frameHeight: 24 },
   { key: 'fx-warning', url: 'assets/fx/warning.png', frameWidth: 16, frameHeight: 16 },
+  { key: 'pickup-upgrade', url: 'assets/pickups/upgrade.png', frameWidth: 24, frameHeight: 24 },
+  { key: 'pickup-repair', url: 'assets/pickups/repair.png', frameWidth: 24, frameHeight: 24 },
+  { key: 'pickup-bomb', url: 'assets/pickups/bomb.png', frameWidth: 24, frameHeight: 24 },
+  { key: 'pickup-resonance', url: 'assets/pickups/resonance.png', frameWidth: 24, frameHeight: 24 },
+  { key: 'pickup-shield', url: 'assets/pickups/shield.png', frameWidth: 24, frameHeight: 24 },
+  { key: 'pickup-score', url: 'assets/pickups/score.png', frameWidth: 24, frameHeight: 24 },
+  { key: 'fx-shield', url: 'assets/fx/shield.png', frameWidth: 48, frameHeight: 48 },
+  { key: 'fx-bomb-wave', url: 'assets/fx/bomb_wave.png', frameWidth: 96, frameHeight: 96 },
+  { key: 'fx-nova-wave', url: 'assets/fx/nova_wave.png', frameWidth: 128, frameHeight: 128 },
+  { key: 'boss-krm17-hull', url: 'assets/bosses/krm17/hull.png', frameWidth: 144, frameHeight: 96 },
+  { key: 'boss-krm17-drill', url: 'assets/bosses/krm17/drill.png', frameWidth: 48, frameHeight: 48 },
+  { key: 'boss-krm17-turret', url: 'assets/bosses/krm17/turret.png', frameWidth: 32, frameHeight: 24 },
+  { key: 'boss-krm17-core', url: 'assets/bosses/krm17/core.png', frameWidth: 32, frameHeight: 32 },
+  { key: 'boss-serpent-head', url: 'assets/bosses/serpent/head.png', frameWidth: 64, frameHeight: 64 },
+  { key: 'boss-serpent-body', url: 'assets/bosses/serpent/body.png', frameWidth: 48, frameHeight: 48 },
+  { key: 'boss-fortress-chassis', url: 'assets/bosses/fortress/chassis.png', frameWidth: 128, frameHeight: 128 },
+  { key: 'boss-fortress-core', url: 'assets/bosses/fortress/core.png', frameWidth: 40, frameHeight: 40 },
+  { key: 'boss-interceptor-chassis', url: 'assets/bosses/interceptor/chassis.png', frameWidth: 96, frameHeight: 48 },
+  { key: 'boss-interceptor-wing', url: 'assets/bosses/interceptor/wing.png', frameWidth: 48, frameHeight: 32 },
+  { key: 'boss-mesh_core-monolith', url: 'assets/bosses/mesh_core/monolith.png', frameWidth: 112, frameHeight: 112 },
+  { key: 'boss-mesh_core-heart', url: 'assets/bosses/mesh_core/heart.png', frameWidth: 48, frameHeight: 48 },
 ] as const;
 
 export function loadGameSprites(scene: Phaser.Scene): void {
@@ -91,6 +124,20 @@ animations.push({ id: 'rivet-v3-missile_launch-anim', sheet: 'rivet-v3-missile_l
 animations.push({ id: 'rivet-v3-prism_charge-anim', sheet: 'rivet-v3-prism_charge', first: 0, last: 3, frameRate: 12, repeat: -1 });
 animations.push({ id: 'rivet-v3-hit-anim', sheet: 'rivet-v3-hit', first: 0, last: 3, frameRate: 12, repeat: 0 });
 animations.push({ id: 'rivet-v3-destruction-anim', sheet: 'rivet-v3-destruction', first: 0, last: 7, frameRate: 12, repeat: 0 });
+
+animations.push({ id: 'moth-v2-idle-anim', sheet: 'ship-moth-v2-idle', first: 0, last: 3, frameRate: 10, repeat: -1 });
+animations.push({ id: 'moth-v2-climb-anim', sheet: 'ship-moth-v2-climb', first: 0, last: 3, frameRate: 12, repeat: -1 });
+animations.push({ id: 'moth-v2-dive-anim', sheet: 'ship-moth-v2-dive', first: 0, last: 3, frameRate: 12, repeat: -1 });
+animations.push({ id: 'moth-v2-fire-anim', sheet: 'ship-moth-v2-fire', first: 0, last: 3, frameRate: 16, repeat: -1 });
+animations.push({ id: 'moth-v2-hit-anim', sheet: 'ship-moth-v2-hit', first: 0, last: 3, frameRate: 18, repeat: 0 });
+animations.push({ id: 'moth-v2-destruction-anim', sheet: 'ship-moth-v2-destruction', first: 0, last: 7, frameRate: 15, repeat: 0 });
+
+animations.push({ id: 'knuckle-v2-idle-anim', sheet: 'ship-knuckle-v2-idle', first: 0, last: 3, frameRate: 9, repeat: -1 });
+animations.push({ id: 'knuckle-v2-climb-anim', sheet: 'ship-knuckle-v2-climb', first: 0, last: 3, frameRate: 10, repeat: -1 });
+animations.push({ id: 'knuckle-v2-dive-anim', sheet: 'ship-knuckle-v2-dive', first: 0, last: 3, frameRate: 10, repeat: -1 });
+animations.push({ id: 'knuckle-v2-fire-anim', sheet: 'ship-knuckle-v2-fire', first: 0, last: 3, frameRate: 14, repeat: -1 });
+animations.push({ id: 'knuckle-v2-hit-anim', sheet: 'ship-knuckle-v2-hit', first: 0, last: 3, frameRate: 16, repeat: 0 });
+animations.push({ id: 'knuckle-v2-destruction-anim', sheet: 'ship-knuckle-v2-destruction', first: 0, last: 7, frameRate: 14, repeat: 0 });
 animations.push({ id: 'rivet-v3-engine-anim', sheet: 'rivet-v3-engine', first: 0, last: 7, frameRate: 14, repeat: -1 });
 animations.push({ id: 'rivet-v3-muzzle-anim', sheet: 'rivet-v3-muzzle', first: 0, last: 3, frameRate: 14, repeat: 0 });
 animations.push({ id: 'rivet-v3-pulse-1-anim', sheet: 'rivet-v3-pulse-1', first: 0, last: 3, frameRate: 14, repeat: -1 });
@@ -115,6 +162,27 @@ animations.push(
   { id: 'fx-hit-play', sheet: 'fx-hit', first: 0, last: 5, frameRate: 20 },
   { id: 'fx-explosion-play', sheet: 'fx-explosion', first: 0, last: 7, frameRate: 17 },
   { id: 'fx-warning-loop', sheet: 'fx-warning', first: 0, last: 3, frameRate: 10, repeat: -1 },
+  { id: 'pickup-upgrade-loop', sheet: 'pickup-upgrade', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'pickup-repair-loop', sheet: 'pickup-repair', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'pickup-bomb-loop', sheet: 'pickup-bomb', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'pickup-resonance-loop', sheet: 'pickup-resonance', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'pickup-shield-loop', sheet: 'pickup-shield', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'pickup-score-loop', sheet: 'pickup-score', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'fx-shield-loop', sheet: 'fx-shield', first: 0, last: 3, frameRate: 12, repeat: -1 },
+  { id: 'fx-bomb-wave-play', sheet: 'fx-bomb-wave', first: 0, last: 7, frameRate: 18, repeat: 0 },
+  { id: 'fx-nova-wave-play', sheet: 'fx-nova-wave', first: 0, last: 7, frameRate: 16, repeat: 0 },
+  { id: 'boss-krm17-hull-idle', sheet: 'boss-krm17-hull', first: 0, last: 3, frameRate: 6, repeat: -1 },
+  { id: 'boss-krm17-drill-spin', sheet: 'boss-krm17-drill', first: 0, last: 3, frameRate: 16, repeat: -1 },
+  { id: 'boss-krm17-turret-aim', sheet: 'boss-krm17-turret', first: 0, last: 3, frameRate: 10, repeat: -1 },
+  { id: 'boss-krm17-core-pulse', sheet: 'boss-krm17-core', first: 0, last: 3, frameRate: 12, repeat: -1 },
+  { id: 'boss-serpent-head-loop', sheet: 'boss-serpent-head', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'boss-serpent-body-loop', sheet: 'boss-serpent-body', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'boss-fortress-chassis-loop', sheet: 'boss-fortress-chassis', first: 0, last: 3, frameRate: 6, repeat: -1 },
+  { id: 'boss-fortress-core-pulse', sheet: 'boss-fortress-core', first: 0, last: 3, frameRate: 10, repeat: -1 },
+  { id: 'boss-interceptor-chassis-flight', sheet: 'boss-interceptor-chassis', first: 0, last: 3, frameRate: 12, repeat: -1 },
+  { id: 'boss-interceptor-wing-spark', sheet: 'boss-interceptor-wing', first: 0, last: 3, frameRate: 14, repeat: -1 },
+  { id: 'boss-mesh_core-monolith-loop', sheet: 'boss-mesh_core-monolith', first: 0, last: 3, frameRate: 6, repeat: -1 },
+  { id: 'boss-mesh_core-heart-pulse', sheet: 'boss-mesh_core-heart', first: 0, last: 3, frameRate: 12, repeat: -1 },
 );
 
 export function registerGameAnimations(scene: Phaser.Scene): void {

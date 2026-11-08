@@ -16,9 +16,13 @@
     "assets:generate": "node scripts/generate-sprites.mjs",
     "assets:rivet": "node scripts/generate-rivet-v2.mjs",
     "assets:rivet:v3": "node scripts/generate-rivet-v3.mjs",
-    "predev": "npm run assets:rivet:v3",
-    "prebuild": "npm run assets:rivet:v3",
-    "pretest": "npm run assets:rivet:v3"
+    "assets:moth": "node scripts/generate-moth.mjs",
+    "assets:knuckle": "node scripts/generate-knuckle.mjs",
+    "assets:pickups": "node scripts/generate-pickups-fx.mjs",
+    "assets:bosses": "node scripts/generate-boss-krm17.mjs && node scripts/generate-bosses-2-5.mjs",
+    "predev": "npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses",
+    "prebuild": "npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses",
+    "pretest": "npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses"
   },
   "dependencies": {
     "phaser": "4.2.1"
