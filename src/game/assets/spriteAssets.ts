@@ -2,6 +2,21 @@ import Phaser from 'phaser';
 
 /** Contratos de sprites PNG: Rivet V2 validada para integração; demais unidades continuam com arte v0.1 provisória. */
 export const SPRITE_SHEETS = [
+  { key: 'rivet-v3-idle', url: 'assets/ships/rivet/v3/ship/idle.png', frameWidth: 160, frameHeight: 110 },
+  { key: 'rivet-v3-climb', url: 'assets/ships/rivet/v3/ship/climb.png', frameWidth: 160, frameHeight: 110 },
+  { key: 'rivet-v3-dive', url: 'assets/ships/rivet/v3/ship/dive.png', frameWidth: 160, frameHeight: 110 },
+  { key: 'rivet-v3-fire', url: 'assets/ships/rivet/v3/ship/fire.png', frameWidth: 160, frameHeight: 110 },
+  { key: 'rivet-v3-missile_launch', url: 'assets/ships/rivet/v3/ship/missile_launch.png', frameWidth: 160, frameHeight: 110 },
+  { key: 'rivet-v3-prism_charge', url: 'assets/ships/rivet/v3/ship/prism_charge.png', frameWidth: 160, frameHeight: 110 },
+  { key: 'rivet-v3-hit', url: 'assets/ships/rivet/v3/ship/hit.png', frameWidth: 160, frameHeight: 110 },
+  { key: 'rivet-v3-destruction', url: 'assets/ships/rivet/v3/ship/destruction.png', frameWidth: 160, frameHeight: 110 },
+  { key: 'rivet-v3-engine', url: 'assets/ships/rivet/v3/fx/engine.png', frameWidth: 48, frameHeight: 54 },
+  { key: 'rivet-v3-muzzle', url: 'assets/ships/rivet/v3/fx/muzzle.png', frameWidth: 38, frameHeight: 28 },
+  { key: 'rivet-v3-pulse-1', url: 'assets/ships/rivet/v3/weapons/pulse_lv1.png', frameWidth: 64, frameHeight: 24 },
+  { key: 'rivet-v3-pulse-2', url: 'assets/ships/rivet/v3/weapons/pulse_lv2.png', frameWidth: 64, frameHeight: 24 },
+  { key: 'rivet-v3-pulse-3', url: 'assets/ships/rivet/v3/weapons/pulse_lv3.png', frameWidth: 64, frameHeight: 24 },
+  { key: 'rivet-v3-missile', url: 'assets/ships/rivet/v3/weapons/missile.png', frameWidth: 72, frameHeight: 32 },
+  { key: 'rivet-v3-prism', url: 'assets/ships/rivet/v3/weapons/tempestade_prismatica.png', frameWidth: 96, frameHeight: 52 },
   { key: 'ship-rivet-v2-idle', url: 'assets/ships/rivet/v2/idle.png', frameWidth: 112, frameHeight: 54 },
   { key: 'ship-rivet-v2-up', url: 'assets/ships/rivet/v2/subida.png', frameWidth: 112, frameHeight: 54 },
   { key: 'ship-rivet-v2-down', url: 'assets/ships/rivet/v2/descida.png', frameWidth: 112, frameHeight: 54 },
@@ -68,6 +83,21 @@ animations.push({ id: 'ship-rivet-down', sheet: 'ship-rivet-v2-down', first: 0, 
 animations.push({ id: 'ship-rivet-fire', sheet: 'ship-rivet-v2-fire', first: 0, last: 7, frameRate: 16, repeat: -1 });
 animations.push({ id: 'ship-rivet-hit', sheet: 'ship-rivet-v2-hit', first: 0, last: 5, frameRate: 20, repeat: 0 });
 animations.push({ id: 'ship-rivet-death', sheet: 'ship-rivet-v2-death', first: 0, last: 7, frameRate: 15, repeat: 0 });
+animations.push({ id: 'rivet-v3-idle-anim', sheet: 'rivet-v3-idle', first: 0, last: 3, frameRate: 12, repeat: -1 });
+animations.push({ id: 'rivet-v3-climb-anim', sheet: 'rivet-v3-climb', first: 0, last: 3, frameRate: 12, repeat: -1 });
+animations.push({ id: 'rivet-v3-dive-anim', sheet: 'rivet-v3-dive', first: 0, last: 3, frameRate: 12, repeat: -1 });
+animations.push({ id: 'rivet-v3-fire-anim', sheet: 'rivet-v3-fire', first: 0, last: 3, frameRate: 12, repeat: -1 });
+animations.push({ id: 'rivet-v3-missile_launch-anim', sheet: 'rivet-v3-missile_launch', first: 0, last: 3, frameRate: 12, repeat: -1 });
+animations.push({ id: 'rivet-v3-prism_charge-anim', sheet: 'rivet-v3-prism_charge', first: 0, last: 3, frameRate: 12, repeat: -1 });
+animations.push({ id: 'rivet-v3-hit-anim', sheet: 'rivet-v3-hit', first: 0, last: 3, frameRate: 12, repeat: 0 });
+animations.push({ id: 'rivet-v3-destruction-anim', sheet: 'rivet-v3-destruction', first: 0, last: 7, frameRate: 12, repeat: 0 });
+animations.push({ id: 'rivet-v3-engine-anim', sheet: 'rivet-v3-engine', first: 0, last: 7, frameRate: 14, repeat: -1 });
+animations.push({ id: 'rivet-v3-muzzle-anim', sheet: 'rivet-v3-muzzle', first: 0, last: 3, frameRate: 14, repeat: 0 });
+animations.push({ id: 'rivet-v3-pulse-1-anim', sheet: 'rivet-v3-pulse-1', first: 0, last: 3, frameRate: 14, repeat: -1 });
+animations.push({ id: 'rivet-v3-pulse-2-anim', sheet: 'rivet-v3-pulse-2', first: 0, last: 3, frameRate: 14, repeat: -1 });
+animations.push({ id: 'rivet-v3-pulse-3-anim', sheet: 'rivet-v3-pulse-3', first: 0, last: 3, frameRate: 14, repeat: -1 });
+animations.push({ id: 'rivet-v3-missile-anim', sheet: 'rivet-v3-missile', first: 0, last: 3, frameRate: 14, repeat: -1 });
+animations.push({ id: 'rivet-v3-prism-anim', sheet: 'rivet-v3-prism', first: 0, last: 3, frameRate: 14, repeat: -1 });
 for (const [kind, deathEnd] of [['scout', 14], ['lancer', 16]] as const) {
   const sheet = 'enemy-' + kind;
   animations.push(

@@ -14,7 +14,11 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "assets:generate": "node scripts/generate-sprites.mjs",
-    "assets:rivet": "node scripts/generate-rivet-v2.mjs"
+    "assets:rivet": "node scripts/generate-rivet-v2.mjs",
+    "assets:rivet:v3": "node scripts/generate-rivet-v3.mjs",
+    "predev": "npm run assets:rivet:v3",
+    "prebuild": "npm run assets:rivet:v3",
+    "pretest": "npm run assets:rivet:v3"
   },
   "dependencies": {
     "phaser": "4.2.1"
