@@ -23,7 +23,7 @@ export interface DashState {
 export const MAX_STAGE_DASHES = 3;
 export const DASH_DURATION_MS = 160;
 export const DASH_INVULNERABLE_MS = 130;
-export const DASH_SPEED_MULTIPLIER = 2.8;
+export const DASH_SPEED_MULTIPLIER = 1.85;
 
 export function createInitialDashState(): DashState {
   return {

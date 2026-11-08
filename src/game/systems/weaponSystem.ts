@@ -112,9 +112,9 @@ export function createPlayerWeapons(pilotId: PilotId = 'nolan', initialFamily: W
   const specialType: SpecialType =
     pilot.id === 'cora' ? 'phantom' : pilot.id === 'harlan' ? 'nova' : 'prism';
 
-  // Arma inicial associada ao piloto
-  const family: WeaponFamily =
-    pilot.id === 'cora' ? 'ion' : pilot.id === 'harlan' ? 'red' : initialFamily;
+  // Arma inicial canônica da Fase 1: TODOS os pilotos iniciam estritamente com Pulso Verde Nível 1.
+  // Laser de Íons e Plasma Vermelho devem ser conquistados através de coleta de cápsulas W.
+  const family: WeaponFamily = initialFamily;
 
   return {
     pilotId: pilot.id,

@@ -107,8 +107,8 @@ export function determineEnemyDrop(
   enemyKind: 'scout' | 'dart' | 'lancer' | 'cutter' | 'carrier' | 'miniboss' | 'boss',
   killCount: number,
 ): PickupType | null {
-  if (enemyKind === 'carrier') {
-    // Casulos Marinhos portadores garantem power-up ou arma
+  if (enemyKind === 'carrier' || enemyKind === 'cutter') {
+    // Casulos Marinhos portadores garantem power-up ou alternância de armas (Fire Shark)
     const r = killCount % 4;
     if (r === 0) return 'power';
     if (r === 1) return 'weapon_ion';
@@ -116,7 +116,7 @@ export function determineEnemyDrop(
     return 'weapon_green';
   }
 
-  if (enemyKind === 'lancer' || enemyKind === 'cutter') {
+  if (enemyKind === 'lancer') {
     if (killCount % 4 === 1) return 'power';
     if (killCount % 4 === 2) return 'special';
     if (killCount % 4 === 3) return 'bomb';

@@ -107,17 +107,17 @@ export const STAGE_EVENTS: readonly { distance: number; kind: EnemyKind; y: numb
 ];
 
 const SPEED: Readonly<Record<EnemyKind, number>> = {
-  scout: 165,
-  dart: 235,
-  lancer: 115,
-  cutter: 135,
+  scout: 105,   // Agulha Pelágica: mergulho controlado e suave
+  dart: 120,   // Raia de Fenda: curva lateral sinuosa graciosa
+  lancer: 85,   // Parasita Abissal: rastreamento tático estável
+  cutter: 70,   // Casulo Marinho: portador biológico pesado e lento
 };
 
 const CHARGE_MS: Readonly<Record<EnemyKind, number>> = {
-  scout: 420,
-  dart: 260,
-  lancer: 620,
-  cutter: 450,
+  scout: 500,   // 0.50s de preparação com aviso visual nítido
+  dart: 550,    // 0.55s de arco
+  lancer: 750,  // 0.75s para telegrafar o leque de tiros
+  cutter: 700,  // 0.70s antes da investida
 };
 
 const clamp = (value: number, min: number, max: number): number =>
@@ -262,7 +262,7 @@ export class StageDirector {
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'attack';
                 enemy.phaseMs = 220;
-                shots.push(this.aim(enemy, playerX, playerY, 225 * bulletSpeedMult));
+                shots.push(this.aim(enemy, playerX, playerY, 150 * bulletSpeedMult));
               }
               break;
             case 'attack':
@@ -303,8 +303,8 @@ export class StageDirector {
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'attack';
                 enemy.phaseMs = 200;
-                shots.push(this.aim(enemy, playerX, playerY, 235 * bulletSpeedMult, -0.16));
-                shots.push(this.aim(enemy, playerX, playerY, 235 * bulletSpeedMult, 0.16));
+                shots.push(this.aim(enemy, playerX, playerY, 135 * bulletSpeedMult, -0.16));
+                shots.push(this.aim(enemy, playerX, playerY, 135 * bulletSpeedMult, 0.16));
               }
               break;
             case 'attack':
@@ -349,13 +349,13 @@ export class StageDirector {
                 if (this.difficulty === 'arcade') {
                   // Leque quíntuplo no modo Arcade
                   for (const ang of [-0.38, -0.19, 0, 0.19, 0.38]) {
-                    shots.push(this.aim(enemy, playerX, playerY, 215 * bulletSpeedMult, ang));
+                    shots.push(this.aim(enemy, playerX, playerY, 125 * bulletSpeedMult, ang));
                   }
                 } else {
                   // Leque triplo de contenção
-                  shots.push(this.aim(enemy, playerX, playerY, 215 * bulletSpeedMult, 0));
-                  shots.push(this.aim(enemy, playerX, playerY, 215 * bulletSpeedMult, -0.28));
-                  shots.push(this.aim(enemy, playerX, playerY, 215 * bulletSpeedMult, 0.28));
+                  shots.push(this.aim(enemy, playerX, playerY, 125 * bulletSpeedMult, 0));
+                  shots.push(this.aim(enemy, playerX, playerY, 125 * bulletSpeedMult, -0.28));
+                  shots.push(this.aim(enemy, playerX, playerY, 125 * bulletSpeedMult, 0.28));
                 }
               }
               break;
@@ -364,7 +364,7 @@ export class StageDirector {
               enemy.phaseMs -= dt;
               if (!enemy.secondShotFired && enemy.phaseMs <= 200) {
                 enemy.secondShotFired = true;
-                shots.push(this.aim(enemy, playerX, playerY, 225 * bulletSpeedMult, 0));
+                shots.push(this.aim(enemy, playerX, playerY, 130 * bulletSpeedMult, 0));
               }
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'recover';
@@ -401,13 +401,13 @@ export class StageDirector {
                 enemy.phase = 'attack';
                 enemy.phaseMs = 550;
                 // Disparo de fagulhas laterais no início da investida
-                shots.push({ x: enemy.x - 16, y: enemy.y + 12, velocityX: -60 * bulletSpeedMult, velocityY: 180 * bulletSpeedMult });
-                shots.push({ x: enemy.x + 16, y: enemy.y + 12, velocityX: 60 * bulletSpeedMult, velocityY: 180 * bulletSpeedMult });
+                shots.push({ x: enemy.x - 16, y: enemy.y + 12, velocityX: -45 * bulletSpeedMult, velocityY: 120 * bulletSpeedMult });
+                shots.push({ x: enemy.x + 16, y: enemy.y + 12, velocityX: 45 * bulletSpeedMult, velocityY: 120 * bulletSpeedMult });
               }
               break;
             case 'attack':
-              // Investida veloz para frente cortando a rota vertical
-              const chargeSpeed = this.difficulty === 'arcade' ? 340 : this.difficulty === 'hard' ? 325 : 310;
+              // Investida para frente cortando a rota vertical
+              const chargeSpeed = this.difficulty === 'arcade' ? 240 : this.difficulty === 'hard' ? 220 : 200;
               enemy.y += (chargeSpeed * dt) / 1000;
               enemy.phaseMs -= dt;
               if (enemy.phaseMs <= 0) {

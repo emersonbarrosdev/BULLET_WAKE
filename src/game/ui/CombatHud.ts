@@ -12,10 +12,10 @@ import type { WeaponLevel, WeaponFamily } from '../systems/weaponSystem';
 import { formatDashIndicator } from '../systems/dashSystem';
 
 const sectorTitles: Record<SectorId, string> = {
-  evacuacao: 'EVACUAÇÃO',
-  destrocos: 'DESTROÇOS',
-  industria: 'ANEL INDUSTRIAL',
-  aproximacao: 'RADAR ABISSAL',
+  evacuacao: 'ÁGUAS COSTEIRAS',
+  destrocos: 'RECIFE DOS CASULOS',
+  industria: 'FOSSA ABISSAL',
+  aproximacao: 'DOMÍNIO DE TALASSARCA',
 };
 
 /**

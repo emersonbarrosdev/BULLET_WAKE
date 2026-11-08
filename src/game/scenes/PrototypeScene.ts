@@ -620,8 +620,8 @@ export class PrototypeScene extends Phaser.Scene {
     const isSmall = enemy.kind === 'scout' || enemy.kind === 'dart';
     const body = this.add.sprite(0, 0, texture, 0)
       .setScale(isSmall ? 2.15 : 1.85);
-    // Aponta para o Sul (+Y) em direção ao jogador
-    body.setAngle(90);
+    // Aponta para o Sul (+Y) em direção ao jogador (sprite original desenhado apontando para o oeste -X)
+    body.setAngle(-90);
     body.play(texture + '-fly');
     const warning = this.add.sprite(0, 24, 'fx-warning', 0)
       .setScale(1.15).setVisible(false);
@@ -936,12 +936,15 @@ export class PrototypeScene extends Phaser.Scene {
       return;
     }
 
+    // Se a nave estiver em invulnerabilidade pós-acerto ou durante o Dash, ignora colisão
+    const isProtected = this.health.invulnerableMs > 0 || isDashInvulnerable(this.dashState);
+    if (isProtected) return;
+
     for (const enemy of this.director.enemies) {
       const isSmall = enemy.kind === 'scout' || enemy.kind === 'dart';
-      const hx = isSmall ? 18 : 28;
-      const hy = isSmall ? 14 : 20;
+      const enemyRadius = isSmall ? 10 : 16;
       const dist = Math.hypot(this.vectorShip.x - enemy.x, this.vectorShip.y - enemy.y);
-      if (dist < Math.hypot(hx, hy) * 0.75 + this.vectorShip.hitRadius + 3) {
+      if (dist <= enemyRadius + this.vectorShip.hitRadius) {
         const response = this.damageShip();
         this.director.remove(enemy.id);
         this.playEffect('explosion', enemy.x, enemy.y);
@@ -973,8 +976,8 @@ export class PrototypeScene extends Phaser.Scene {
         this.enemyShots.splice(i, 1);
       }
       if (hit) {
-        // Se estiver em janela de invulnerabilidade do dash, ignora o dano
-        if (isDashInvulnerable(this.dashState)) {
+        // Se estiver em janela de invulnerabilidade do dash ou pós-acerto, ignora o dano
+        if (this.health.invulnerableMs > 0 || isDashInvulnerable(this.dashState)) {
           this.playEffect('hit', this.vectorShip.x, this.vectorShip.y);
           continue;
         }
@@ -985,9 +988,15 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private damageShip(): HitEvent {
-    // Se o escudo de energia estiver ativo, absorve o golpe completamente
+    // Se o jogador estiver em invulnerabilidade ativa, descarta qualquer dano
+    if (this.health.invulnerableMs > 0 || isDashInvulnerable(this.dashState)) {
+      return 'ignored';
+    }
+
+    // Se o escudo de energia estiver ativo, absorve o golpe completamente e concede buffer de 1.2s
     if (this.weapons.hasShield) {
       this.weapons = setShield(this.weapons, false);
+      this.health = { ...this.health, invulnerableMs: 1200 };
       this.hud.setHealth(this.health, false);
       this.hud.flash('ESCUDO DISSIPADO!', '#7df9ff', 900);
       this.playEffect('hit', this.vectorShip.x, this.vectorShip.y);
@@ -1003,17 +1012,18 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.setHealth(this.health, false);
 
     if (outcome.event === 'damaged') {
-      this.hud.flash('ACERTO! -1 HP', '#ffd099', 950);
+      this.hud.flash('BLINDAGEM COMPROMETIDA! -1 HP', '#f87171', 1100);
       globalAudio.playHit();
-      this.hitPoseMs = 280;
+      this.hitPoseMs = 320;
       this.playEffect('hit', this.vectorShip.x, this.vectorShip.y);
-      this.cameras.main.shake(180, 0.009);
+      this.cameras.main.shake(150, 0.007);
     } else if (outcome.event === 'respawn') {
       globalAudio.playExplosion(true);
-      this.cameras.main.shake(380, 0.02);
+      this.cameras.main.shake(320, 0.015);
       this.weapons = resetWeaponsOnRespawn(this.weapons);
       this.hud.setWeapon(this.weapons.weaponFamily, 1);
       this.hud.setResonance(this.weapons.resonance);
+      this.hud.flash('REINICIANDO CAÇA...', '#38bdf8', 1400);
 
       this.missilePoseMs = 0;
       this.prismPoseMs = 0;

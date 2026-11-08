@@ -154,7 +154,17 @@ async function capture() {
       window.__GAME__.scene.start('PrototypeScene', { pilotId: 'nolan', stageNumber: 1 });
     `,
   });
-  await new Promise((r) => setTimeout(r, 1500));
+  // Aguarda spawn dos primeiros esquadrões alienígenas e dispara armas
+  await new Promise((r) => setTimeout(r, 2800));
+  await client.send('Runtime.evaluate', {
+    expression: `
+      const scene = window.__GAME__.scene.getScene('PrototypeScene');
+      if (scene && scene.inputManager) {
+        scene.inputManager.fireHeld = true;
+      }
+    `,
+  });
+  await new Promise((r) => setTimeout(r, 800));
 
   const shot3 = await client.send('Page.captureScreenshot');
   writeFileSync(join(SCREENSHOT_DIR, '03_gameplay_fenda_pelagica.png'), Buffer.from(shot3.data, 'base64'));

@@ -19,7 +19,8 @@ export const PANEL_RIGHT_WIDTH = 192;
 
 export const HUD_TOP = 28;
 export const HUD_BOTTOM = 28;
-export const PLAYER_SPEED_FACTOR = 1.75;
+// Fator de velocidade balanceado para controle preciso no corredor vertical (1.0 = velocidade base do piloto)
+export const PLAYER_SPEED_FACTOR = 1.0;
 
 // Tipografia Canônica V2 (Máximo 2 famílias: Oxanium e Rajdhani)
 export const FONT_TITLE = '"Oxanium", sans-serif';

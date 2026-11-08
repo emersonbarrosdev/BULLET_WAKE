@@ -148,3 +148,39 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
 - **Família Display / Títulos:** `Oxanium` (Google Fonts: 600, 700, 800).
 - **Família Interface / Menus / HUD:** `Rajdhani` (Google Fonts: 500, 600, 700).
 
+---
+
+## 4. DIRETRIZ DE CALIBRAÇÃO CRÍTICA DE GAMEPLAY E CENÁRIO (V2.1 — FENDA PELÁGICA)
+
+### 4.1. Calibração de Ritmo e Controle Fino
+- **Velocidade da Aeronave:** `PLAYER_SPEED_FACTOR = 1.0` (velocidade pura do piloto entre 190 e 215 px/s, garantindo leitura tática sem deslizamentos desenfreados).
+- **Dash Tático:** Impulso controlado de `1.85x` de velocidade por 160ms (~56px de deslocamento por carga) com 130ms de invulnerabilidade. Impede que o caça atravesse o corredor de 384px instantaneamente.
+- **Buffer de Blindagem e Escudo:**
+  - A quebra do escudo de energia concede imediatamente `1200ms` de invulnerabilidade protetora, impedindo que múltiplos projéteis no mesmo frame destruam simultaneamente escudo e blindagem.
+  - O dano na blindagem concede `1500ms` de invulnerabilidade com piscar visual da nave.
+
+### 4.2. Telegrafia e Projéteis Inimigos
+- **Velocidade de Inimigos:**
+  - *Agulha Pelágica (Scout):* 105 px/s (mergulho suave e previsível). Aviso visual (telegraph): 500ms.
+  - *Raia de Fenda (Dart):* 120 px/s (curvas em arco cadenciadas). Aviso visual: 550ms.
+  - *Parasita Abissal (Lancer):* 85 px/s (posicionamento estratégico). Aviso visual do leque: 750ms.
+  - *Casulo Marinho (Cutter):* 70 px/s (avanço pesado). Aviso visual da investida: 700ms.
+- **Velocidade de Projéteis:** Calibrada entre 120 e 150 px/s (tempo de travessia do campo de ~3 segundos), permitindo esquiva deliberada e justa.
+
+### 4.3. Progressão de Armamento e Nomes Canônicos
+- **Início Obrigatório:** Todos os operadores iniciam estritamente com **Pulso Verde Nível 1**. Nenhuma nave inicia com Plasma Vermelho ou Laser de Íons.
+- **Alternância de Armas:** Cápsulas físicas `W` caem de inimigos (como o Casulo Marinho) e alternam ciclicamente para Íon e Plasma preservando o nível conquistado.
+- **Nomes Canônicos das 5 Regiões V2:**
+  - Fase 01: Fenda Pelágica (Chefe: *Talassarca — O Devorador das Marés*)
+  - Fase 02: Bosque da Névoa Viva (Chefe: *Arborion — O Coração Vegetal*)
+  - Fase 03: Metrópole do Silêncio (Chefe: *Catedral de Vidro*)
+  - Fase 04: Dunas de Silício (Chefe: *Sifão das Dunas*)
+  - Fase 05: Cânion das Sombras (Chefe: *Mandíbula do Horizonte*)
+
+### 4.4. Direção Visual do Oceano Alienígena (HD 2D)
+- **Fundo Marinho:** Fenda tectônica escura com falhas hidrotermais bioluminescentes ciano/esmeralda e silhueta em trânsito de um leviatã marinho colossal.
+- **Recifes Submersos:** Formações rochosas orgânicas com gradientes de profundidade, colônias de cianobactérias brilhantes e arcos biomecânicos ancestrais.
+- **Superfície e Wake:** Malha de reflexos e cáusticas de luz solar submarina, ondulação suave e partículas de espuma marinha.
+- **Rolagem Estável:** Sincronização direta de scroll `tilePositionY = -scrollPx * fator` que elimina qualquer aceleração descontrolada de cenário.
+
+
