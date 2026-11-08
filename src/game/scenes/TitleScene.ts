@@ -57,7 +57,7 @@ export class TitleScene extends Phaser.Scene {
     this.add.text(
       GAME_WIDTH / 2,
       4,
-      'COMANDO DE DEFESA ORBITAL  //  PROTOCOLO WAKE INICIADO  //  SISTEMA ESTÁVEL [60-240 FPS]',
+      'COMANDO DE DEFESA ORBITAL  //  PROTOCOLO WAKE INICIADO  //  SETOR 01: FENDA PELÁGICA',
       {
         fontFamily: FONT_HUD,
         fontSize: '10px',
@@ -124,11 +124,11 @@ export class TitleScene extends Phaser.Scene {
       },
       {
         text: 'COORDENADAS DE FASES & CAMPANHA',
-        badge: '[S]',
+        badge: '[M]',
         action: () => this.openStageSelect(),
       },
       {
-        text: 'CONFIGURAÇÕES DE ÁUDIO & TAXA DE QUADROS',
+        text: 'CONFIGURAÇÕES DE ÁUDIO & DIFICULDADE',
         badge: '[C]',
         action: () => this.openSettingsModal(),
       },
@@ -220,7 +220,7 @@ export class TitleScene extends Phaser.Scene {
       kb.on('keydown-ENTER', () => this.onConfirm());
       kb.on('keydown-SPACE', () => this.onConfirm());
       kb.on('keydown-P', () => { if (!this.modalContainer) this.openPilotSelect(); });
-      kb.on('keydown-S', () => { if (!this.modalContainer) this.openStageSelect(); });
+      kb.on('keydown-M', () => { if (!this.modalContainer) this.openStageSelect(); });
       kb.on('keydown-C', () => { if (!this.modalContainer) this.openSettingsModal(); });
       kb.on('keydown-H', () => { if (!this.modalContainer) this.openControlsModal(); });
       kb.on('keydown-ESC', () => { if (this.modalContainer) this.closeModal(); });
@@ -305,7 +305,7 @@ export class TitleScene extends Phaser.Scene {
     const box = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 520, 310, 0x081320)
       .setStrokeStyle(1.5, 0x00f0ff);
 
-    const title = this.add.text(GAME_WIDTH / 2, 80, 'CONFIGURAÇÕES & TAXA DE QUADROS', {
+    const title = this.add.text(GAME_WIDTH / 2, 80, 'CONFIGURAÇÕES DE ÁUDIO & DIFICULDADE', {
       fontFamily: FONT_TITLE,
       fontSize: '18px',
       color: '#00f0ff',

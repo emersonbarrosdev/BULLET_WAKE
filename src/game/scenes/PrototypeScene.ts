@@ -417,14 +417,22 @@ export class PrototypeScene extends Phaser.Scene {
 
   private playEffect(kind: 'muzzle' | 'hit' | 'explosion', x: number, y: number): void {
     const sprite = this.add.sprite(x, y, 'fx-' + kind, 0).setScale(1.5).setDepth(15);
+    if (kind === 'muzzle') {
+      sprite.setAngle(-90);
+    }
     sprite.once('animationcomplete', () => sprite.destroy());
     sprite.play('fx-' + kind + '-play');
   }
 
-  private createPlayerProjectile(def: ProjectileSpawnDef): void {
+  private createPlayerProjectile(def: ProjectileSpawnDef, tint?: number): void {
     const node = this.add.sprite(def.x, def.y, def.texture, 0)
       .setScale(def.scale)
       .setDepth(9);
+    // Orienta o sprite ao longo do vetor de disparo (Norte -Y = -90 graus)
+    node.setRotation(Math.atan2(def.velocityY, def.velocityX));
+    if (tint) {
+      node.setTint(tint);
+    }
     node.play(def.animation);
     this.shots.push({
       node,
@@ -441,9 +449,14 @@ export class PrototypeScene extends Phaser.Scene {
     const originY = this.vectorShip.y - this.vectorShip.halfHeight - 2;
     this.vectorShip.triggerMuzzleFlash();
 
+    const familyTint = this.weapons.weaponFamily === 'green'
+      ? 0x4ade80
+      : this.weapons.weaponFamily === 'ion'
+      ? 0x00f0ff
+      : 0xff4d6d;
     const defs = getPrimaryProjectiles(this.weapons.weaponFamily, this.weapons.weaponLevel, originX, originY);
     for (const def of defs) {
-      this.createPlayerProjectile(def);
+      this.createPlayerProjectile(def, familyTint);
     }
 
     const result = recordPrimaryShot(this.weapons);

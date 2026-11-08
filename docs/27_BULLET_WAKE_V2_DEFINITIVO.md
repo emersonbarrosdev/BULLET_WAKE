@@ -183,4 +183,47 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
 - **Superfície e Wake:** Malha de reflexos e cáusticas de luz solar submarina, ondulação suave e partículas de espuma marinha.
 - **Rolagem Estável:** Sincronização direta de scroll `tilePositionY = -scrollPx * fator` que elimina qualquer aceleração descontrolada de cenário.
 
+---
+
+## 5. PROTOCOLO PERMANENTE DE BLOQUEIO DE QUALIDADE E VALIDAÇÃO REAL (P0)
+
+> [!CAUTION]
+> **IMPORTANTE — NENHUMA ENTREGA PODE SER DECLARADA CONCLUÍDA SE O JOGO NÃO INICIAR E SUAS FUNCIONALIDADES PRINCIPAIS NÃO TIVEREM SIDO VALIDADAS.**
+
+### 5.1. Regra de Bloqueio de Qualidade (Quality Gate Obrigatório)
+Nenhuma alteração estrutural ou visual pode ser considerada concluída sem cumprir integralmente os 8 critérios:
+1. **TypeScript válido:** `npm run typecheck` com zero erros.
+2. **Build funcional:** `npm run build` gerando artefatos limpos em `dist/`.
+3. **Testes automatizados aplicáveis:** `npm test` com 100% de aprovação (124/124 testes).
+4. **Abertura da aplicação no navegador:** Verificação real contra o servidor ativo (`http://localhost:5173` / `http://127.0.0.1:4174`).
+5. **Ausência de erros críticos no console:** Monitoramento via Chrome DevTools Protocol (`Runtime.exceptionThrown`, `Runtime.consoleAPICalled` error, `Log.entryAdded` error) exigindo zero erros.
+6. **Teste real da funcionalidade modificada:** Simulação de navegação, seleção, movimentação e disparo em tempo de execução.
+7. **Teste de regressão das principais cenas:** Validação encadeada de `TitleScene`, `StageSelectScene`, `PilotSelectScene` e `PrototypeScene`.
+8. **Captura de tela real:** Geração e inspeção visual das capturas em `docs/screenshots/`.
+
+### 5.2. Registro de Diagnóstico e Correção P0 (`StageBackdrop` & Indicadores)
+- **Causa Raiz Identificada:**
+  - O arquivo `src/game/scenes/StageBackdrop.ts` na branch `master` já continha `export class StageBackdrop` válido, porém um processo órfão do Vite Dev Server (`PID 24060`, iniciado às 18:25 na porta `5173`) havia capturado o arquivo durante o instante de truncamento de escrita (0 bytes) e retido em memória um módulo vazio (`sourcesContent: [""]`) com o socket em estado inconsistente. Isso fazia o navegador receber um módulo vazio ao requisitar `/src/game/scenes/StageBackdrop.ts`, disparando `Uncaught SyntaxError: The requested module '/src/game/scenes/StageBackdrop.ts' does not provide an export named 'StageBackdrop'`.
+- **Regressões Secundárias Encontradas e Corrigidas:**
+  1. **Indicador Falso de FPS em `TitleScene.ts`:** Removida a string fixa `SISTEMA ESTÁVEL [60-240 FPS]` e o aviso estático de taxa de quadros no modal de configurações. No `CombatHud.ts`, removido o fallback artificial `|| 60` para exibir exclusivamente a medição real de `scene.game.loop.actualFps`.
+  2. **Conflito de Tecla `S` em `TitleScene.ts`:** A tecla `S` estava registrada duas vezes (`this.navigate(1)` e `this.openStageSelect()`), fazendo com que tentar descer no menu principal abrisse imediatamente a seleção de fases. Corrigido separando o atalho de fases para `[M]`.
+  3. **Orientação de Projéteis e Muzzle Flash em `PrototypeScene.ts`:** Os sprites de projéteis primários (`shot-rivet`) e `fx-muzzle` eram desenhados horizontalmente (+X) e subiam de lado; foram corrigidos com `node.setRotation(Math.atan2(def.velocityY, def.velocityX))` e coloração por família (`0x4ade80` Pulso Verde, `0x00f0ff` Laser de Íons, `0xff4d6d` Plasma Vermelho).
+  4. **Configuração de `StageBackdrop` em `EndingScene.ts`:** Ajustado para `{ fullWidth: true, showBezels: false }` e nave em modo `'profile'`.
+- **Arquivos Corrigidos:**
+  - `src/game/scenes/TitleScene.ts`
+  - `src/game/ui/CombatHud.ts`
+  - `src/game/scenes/PrototypeScene.ts`
+  - `src/game/scenes/EndingScene.ts`
+  - `scripts/capture-verification-screenshots.mjs`
+  - `docs/27_BULLET_WAKE_V2_DEFINITIVO.md`
+- **Testes Realizados e Resultados:**
+  - `npm run typecheck`: Aprovado (0 erros).
+  - `npm run build`: Aprovado (`dist/` compilado com sucesso).
+  - `npm test`: Aprovado (124/124 testes passando).
+  - Reinicialização limpa do Vite Dev Server na porta `5173` (`npx vite --host 0.0.0.0 --port 5173 --force`) após limpeza de `node_modules/.vite`.
+  - Validação automatizada via navegador headless (`node scripts/capture-verification-screenshots.mjs`) na porta `5173`: 0 erros de console, 0 exceções, navegação de menu funcional, 3 pilotos selecionáveis com naves em perfil, Fase 1 iniciando com Pulso Verde LV1, movimentação lateral e disparos destruindo inimigos em combate real.
+- **Tarefas Pendentes (Fora do Escopo Atual da Fase 1):**
+  - Implementação jogável das Fases 2 a 15 e das 2 rotas secretas documentadas na Bíblia (mantidas bloqueadas conforme regra estrita de escopo da Fase 1 — Fenda Pelágica).
+
+
 

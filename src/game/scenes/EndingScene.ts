@@ -29,7 +29,7 @@ export class EndingScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
-    this.backdrop = new StageBackdrop(this, 5);
+    this.backdrop = new StageBackdrop(this, 1, { fullWidth: true, showBezels: false });
     this.previewDistance = 0;
 
     // Registra vitória definitiva no sistema de salvamento
@@ -65,7 +65,7 @@ export class EndingScene extends Phaser.Scene {
     ).setOrigin(0.5, 0).setResolution(2);
 
     // Nave de caça voando triunfante de perfil no centro
-    this.victoryShip = new VectorShip(this, GAME_WIDTH / 2, 160, this.pilot.id);
+    this.victoryShip = new VectorShip(this, GAME_WIDTH / 2, 160, this.pilot.id, 'profile');
     this.victoryShip.setScale(1.75);
 
     // Painel de Epílogo Narrativo do Piloto (fiel à Bíblia docs/01_HISTORIA.md)

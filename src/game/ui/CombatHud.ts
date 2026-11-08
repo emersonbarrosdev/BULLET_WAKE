@@ -296,8 +296,8 @@ export class CombatHud {
       color: '#ffffff',
     }).setDepth(42).setResolution(2);
 
-    // FPS
-    this.fpsText = scene.add.text(GAME_WIDTH - 14, 398, '60 FPS', {
+    // FPS (Medição Real via game.loop.actualFps)
+    this.fpsText = scene.add.text(GAME_WIDTH - 14, 398, '-- FPS', {
       fontFamily: FONT_HUD,
       fontSize: '11px',
       color: '#38bdf8',
@@ -444,7 +444,7 @@ export class CombatHud {
     this.fpsUpdateTimer += deltaMs;
     if (this.fpsUpdateTimer >= 200) {
       this.fpsUpdateTimer = 0;
-      const actualFps = Math.round(this.scene.game.loop.actualFps || 60);
+      const actualFps = Math.round(this.scene.game.loop.actualFps);
       this.fpsText.setText(`${actualFps} FPS`);
       if (actualFps >= 55) {
         this.fpsText.setColor('#38bdf8');
