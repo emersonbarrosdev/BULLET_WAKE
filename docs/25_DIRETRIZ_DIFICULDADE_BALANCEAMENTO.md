@@ -97,3 +97,4 @@ Todo ajuste de balanceamento deve ser validado por:
    - Análise de cadência e cobertura dos 4 setores sem vácuos de gameplay.
    - Simulação de resiliência e fases do chefe KRM-17.
 2. Performance estável mantendo 60 FPS no Chrome headless com 0 vazamentos de memória e 0 erros de textura.
+

@@ -127,3 +127,28 @@ test('Weapon Upgrades: Scaling increases volume of fire without trivializing bos
   const totalDmgLv3 = lv3.reduce((sum, p) => sum + p.damage, 0);
   assert.ok(totalDmgLv3 >= 2.5 && totalDmgLv3 <= 3.5, 'Dano LV3 dobra/triplica cobertura sem quebrar a escala');
 });
+
+test('Difficulty Modes: Arcade mode scales bullet velocity and expands Lancer spread to 5-way', () => {
+  const normalDirector = new StageDirector(768, false, 1, 'normal');
+  const arcadeDirector = new StageDirector(768, false, 1, 'arcade');
+
+  // Spawn a Lancer in both
+  normalDirector.enemies.push({
+    id: 1, kind: 'lancer', phase: 'telegraph', x: 500, y: 200, baseY: 200, ageMs: 0, phaseMs: 10, hp: 3, maxHp: 3, secondShotFired: false,
+  });
+  arcadeDirector.enemies.push({
+    id: 1, kind: 'lancer', phase: 'telegraph', x: 500, y: 200, baseY: 200, ageMs: 0, phaseMs: 10, hp: 3, maxHp: 3, secondShotFired: false,
+  });
+
+  const normalTick = normalDirector.update(25, 100, 200);
+  const arcadeTick = arcadeDirector.update(25, 100, 200);
+
+  assert.equal(normalTick.shots.length, 3, 'Normal lancer fires 3 shots');
+  assert.equal(arcadeTick.shots.length, 5, 'Arcade lancer fires 5-way spread');
+
+  // Velocity comparison
+  const normalSpeed = Math.hypot(normalTick.shots[0].velocityX, normalTick.shots[0].velocityY);
+  const arcadeSpeed = Math.hypot(arcadeTick.shots[2].velocityX, arcadeTick.shots[2].velocityY);
+  assert.ok(arcadeSpeed > normalSpeed * 1.15, 'Arcade bullet speed is scaled higher');
+});
+

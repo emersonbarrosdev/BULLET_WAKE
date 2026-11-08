@@ -294,23 +294,29 @@ export class TitleScene extends Phaser.Scene {
     const data = saveSystem.getSaveData();
     const currentSfx = data.settings.sfxVolume > 0;
     const currentBgm = data.settings.musicVolume > 0;
+    const currentDiff = data.settings.difficulty || 'normal';
+    const diffLabels = {
+      normal: 'NORMAL (EQUILIBRADO ARCADE)',
+      hard: 'DIFÍCIL (ALTA DENSIDADE)',
+      arcade: 'ARCADE EXPERT (LEQUE QUÍNTUPLO)',
+    };
 
     const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040a12, 0.88);
-    const box = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 500, 280, 0x081320)
+    const box = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 520, 310, 0x081320)
       .setStrokeStyle(1.5, 0x00f0ff);
 
-    const title = this.add.text(GAME_WIDTH / 2, 95, 'CONFIGURAÇÕES & TAXA DE QUADROS', {
+    const title = this.add.text(GAME_WIDTH / 2, 80, 'CONFIGURAÇÕES & TAXA DE QUADROS', {
       fontFamily: FONT_TITLE,
       fontSize: '18px',
       color: '#00f0ff',
       letterSpacing: 2,
     }).setOrigin(0.5, 0).setResolution(2);
 
-    const sfxBtn = this.add.rectangle(GAME_WIDTH / 2, 155, 380, 34, 0x122438)
+    const sfxBtn = this.add.rectangle(GAME_WIDTH / 2, 130, 420, 30, 0x122438)
       .setStrokeStyle(1, 0x1f3c4d).setInteractive({ useHandCursor: true });
-    const sfxLabel = this.add.text(GAME_WIDTH / 2, 155, `EFEITOS SONOROS (SFX): ${currentSfx ? 'ATIVADO' : 'MUTADO'}`, {
+    const sfxLabel = this.add.text(GAME_WIDTH / 2, 130, `EFEITOS SONOROS (SFX): ${currentSfx ? 'ATIVADO' : 'MUTADO'}`, {
       fontFamily: FONT_HUD,
-      fontSize: '13px',
+      fontSize: '12px',
       color: '#ffffff',
     }).setOrigin(0.5).setResolution(2);
 
@@ -320,11 +326,11 @@ export class TitleScene extends Phaser.Scene {
       sfxLabel.setText(`EFEITOS SONOROS (SFX): ${next ? 'ATIVADO' : 'MUTADO'}`);
     });
 
-    const bgmBtn = this.add.rectangle(GAME_WIDTH / 2, 200, 380, 34, 0x122438)
+    const bgmBtn = this.add.rectangle(GAME_WIDTH / 2, 170, 420, 30, 0x122438)
       .setStrokeStyle(1, 0x1f3c4d).setInteractive({ useHandCursor: true });
-    const bgmLabel = this.add.text(GAME_WIDTH / 2, 200, `MÚSICA RETRO-SYNTH: ${currentBgm ? 'ATIVADO' : 'MUTADO'}`, {
+    const bgmLabel = this.add.text(GAME_WIDTH / 2, 170, `MÚSICA RETRO-SYNTH: ${currentBgm ? 'ATIVADO' : 'MUTADO'}`, {
       fontFamily: FONT_HUD,
-      fontSize: '13px',
+      fontSize: '12px',
       color: '#ffffff',
     }).setOrigin(0.5).setResolution(2);
 
@@ -335,9 +341,28 @@ export class TitleScene extends Phaser.Scene {
       if (!next) globalAudio.stopMusic();
     });
 
+    const diffBtn = this.add.rectangle(GAME_WIDTH / 2, 210, 420, 30, 0x162c45)
+      .setStrokeStyle(1, 0x38bdf8).setInteractive({ useHandCursor: true });
+    const diffLabel = this.add.text(GAME_WIDTH / 2, 210, `DIFICULDADE: ${diffLabels[currentDiff]}`, {
+      fontFamily: FONT_HUD,
+      fontSize: '12px',
+      color: '#ffd166',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setResolution(2);
+
+    diffBtn.on('pointerdown', () => {
+      const cur = saveSystem.getSaveData().settings.difficulty || 'normal';
+      const order = ['normal', 'hard', 'arcade'] as const;
+      const nextIdx = (order.indexOf(cur as any) + 1) % order.length;
+      const nextDiff = order[nextIdx];
+      saveSystem.updateSettings({ difficulty: nextDiff });
+      diffLabel.setText(`DIFICULDADE: ${diffLabels[nextDiff]}`);
+      globalAudio.playPickup('upgrade');
+    });
+
     const fpsHint = this.add.text(
       GAME_WIDTH / 2,
-      242,
+      245,
       'SUPORTE A TAXAS DE QUADROS DESBLOQUEADAS: 60Hz / 120Hz / 144Hz / 240Hz',
       {
         fontFamily: FONT_HUD,
@@ -346,18 +371,18 @@ export class TitleScene extends Phaser.Scene {
       },
     ).setOrigin(0.5, 0).setResolution(2);
 
-    const closeBtn = this.add.rectangle(GAME_WIDTH / 2, 285, 140, 28, 0x0e7490)
+    const closeBtn = this.add.rectangle(GAME_WIDTH / 2, 280, 140, 26, 0x0e7490)
       .setStrokeStyle(1, 0x00f0ff).setInteractive({ useHandCursor: true });
-    const closeLabel = this.add.text(GAME_WIDTH / 2, 285, 'FECHAR [ESC]', {
+    const closeLabel = this.add.text(GAME_WIDTH / 2, 280, 'FECHAR [ESC]', {
       fontFamily: FONT_HUD,
-      fontSize: '12px',
+      fontSize: '11px',
       color: '#ffffff',
       fontStyle: 'bold',
     }).setOrigin(0.5).setResolution(2);
     closeBtn.on('pointerdown', () => this.closeModal());
 
     this.modalContainer = this.add.container(0, 0, [
-      overlay, box, title, sfxBtn, sfxLabel, bgmBtn, bgmLabel, fpsHint, closeBtn, closeLabel,
+      overlay, box, title, sfxBtn, sfxLabel, bgmBtn, bgmLabel, diffBtn, diffLabel, fpsHint, closeBtn, closeLabel,
     ]).setDepth(50);
   }
 

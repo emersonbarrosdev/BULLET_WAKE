@@ -11,6 +11,7 @@ import { createStageBoss } from './bosses/factory.ts';
 export type EnemyKind = 'scout' | 'dart' | 'lancer' | 'cutter';
 export type EnemyPhase = 'approach' | 'telegraph' | 'attack' | 'recover' | 'exit';
 export type SectorId = 'evacuacao' | 'destrocos' | 'industria' | 'aproximacao';
+export type DifficultyMode = 'normal' | 'hard' | 'arcade';
 
 export interface EnemyModel {
   id: number;
@@ -137,11 +138,13 @@ export class StageDirector {
   private readonly viewportWidth: number;
   private readonly enableBoss: boolean;
   readonly stageNumber: number;
+  readonly difficulty: DifficultyMode;
 
-  constructor(viewportWidth = 768, enableBoss = false, stageNumber = 1) {
+  constructor(viewportWidth = 768, enableBoss = false, stageNumber = 1, difficulty: DifficultyMode = 'normal') {
     this.viewportWidth = viewportWidth;
     this.enableBoss = enableBoss;
     this.stageNumber = stageNumber;
+    this.difficulty = difficulty;
   }
 
   update(deltaMs: number, playerX: number, playerY: number): StageTick {
@@ -216,6 +219,9 @@ export class StageDirector {
       spawned.push(enemy);
     }
 
+    const bulletSpeedMult = this.difficulty === 'arcade' ? 1.22 : this.difficulty === 'hard' ? 1.12 : 1.0;
+    const chargeMult = this.difficulty === 'arcade' ? 0.78 : this.difficulty === 'hard' ? 0.88 : 1.0;
+
     for (const enemy of this.enemies) {
       enemy.ageMs += dt;
       const speed = SPEED[enemy.kind];
@@ -228,7 +234,7 @@ export class StageDirector {
               enemy.y = clamp(enemy.baseY + Math.sin(enemy.ageMs / 220) * 28, 48, 380);
               if (enemy.x <= this.viewportWidth * 0.75) {
                 enemy.phase = 'telegraph';
-                enemy.phaseMs = CHARGE_MS.scout;
+                enemy.phaseMs = Math.round(CHARGE_MS.scout * chargeMult);
               }
               break;
             case 'telegraph':
@@ -237,7 +243,7 @@ export class StageDirector {
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'attack';
                 enemy.phaseMs = 220;
-                shots.push(this.aim(enemy, playerX, playerY, 225));
+                shots.push(this.aim(enemy, playerX, playerY, 225 * bulletSpeedMult));
               }
               break;
             case 'attack':
@@ -269,7 +275,7 @@ export class StageDirector {
               enemy.y = clamp(enemy.y + (dirY * 115 * dt) / 1000, 48, 380);
               if (enemy.x <= this.viewportWidth * 0.72) {
                 enemy.phase = 'telegraph';
-                enemy.phaseMs = CHARGE_MS.dart;
+                enemy.phaseMs = Math.round(CHARGE_MS.dart * chargeMult);
               }
               break;
             case 'telegraph':
@@ -279,7 +285,7 @@ export class StageDirector {
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'attack';
                 enemy.phaseMs = 200;
-                shots.push(this.aim(enemy, playerX, playerY, 235));
+                shots.push(this.aim(enemy, playerX, playerY, 235 * bulletSpeedMult));
               }
               break;
             case 'attack':
@@ -312,7 +318,7 @@ export class StageDirector {
               enemy.y = clamp(enemy.y, 48, 380);
               if (enemy.x <= this.viewportWidth * 0.80) {
                 enemy.phase = 'telegraph';
-                enemy.phaseMs = CHARGE_MS.lancer;
+                enemy.phaseMs = Math.round(CHARGE_MS.lancer * chargeMult);
               }
               break;
             case 'telegraph':
@@ -321,10 +327,17 @@ export class StageDirector {
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'attack';
                 enemy.phaseMs = 450;
-                // Disparo em leque triplo de contenção (fan spread)
-                shots.push(this.aim(enemy, playerX, playerY, 215, 0));
-                shots.push(this.aim(enemy, playerX, playerY, 215, -0.31));
-                shots.push(this.aim(enemy, playerX, playerY, 215, +0.31));
+                if (this.difficulty === 'arcade') {
+                  // Leque quíntuplo no modo Arcade
+                  for (const ang of [-0.38, -0.19, 0, 0.19, 0.38]) {
+                    shots.push(this.aim(enemy, playerX, playerY, 215 * bulletSpeedMult, ang));
+                  }
+                } else {
+                  // Leque triplo de contenção
+                  shots.push(this.aim(enemy, playerX, playerY, 215 * bulletSpeedMult, 0));
+                  shots.push(this.aim(enemy, playerX, playerY, 215 * bulletSpeedMult, -0.31));
+                  shots.push(this.aim(enemy, playerX, playerY, 215 * bulletSpeedMult, +0.31));
+                }
               }
               break;
             case 'attack':
@@ -332,7 +345,7 @@ export class StageDirector {
               enemy.phaseMs -= dt;
               if (!enemy.secondShotFired && enemy.phaseMs <= 200) {
                 enemy.secondShotFired = true;
-                shots.push(this.aim(enemy, playerX, playerY, 225, 0));
+                shots.push(this.aim(enemy, playerX, playerY, 225 * bulletSpeedMult, 0));
               }
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'recover';
@@ -359,7 +372,7 @@ export class StageDirector {
               enemy.y = clamp(enemy.y, 48, 380);
               if (enemy.x <= this.viewportWidth * 0.74) {
                 enemy.phase = 'telegraph';
-                enemy.phaseMs = CHARGE_MS.cutter;
+                enemy.phaseMs = Math.round(CHARGE_MS.cutter * chargeMult);
               }
               break;
             case 'telegraph':
@@ -369,13 +382,14 @@ export class StageDirector {
                 enemy.phase = 'attack';
                 enemy.phaseMs = 550;
                 // Disparo de fagulhas laterais no início da investida
-                shots.push({ x: enemy.x - 16, y: enemy.y - 12, velocityX: -180, velocityY: -65 });
-                shots.push({ x: enemy.x - 16, y: enemy.y + 12, velocityX: -180, velocityY: 65 });
+                shots.push({ x: enemy.x - 16, y: enemy.y - 12, velocityX: -180 * bulletSpeedMult, velocityY: -65 * bulletSpeedMult });
+                shots.push({ x: enemy.x - 16, y: enemy.y + 12, velocityX: -180 * bulletSpeedMult, velocityY: 65 * bulletSpeedMult });
               }
               break;
             case 'attack':
               // Investida veloz para frente cortando a rota horizontal
-              enemy.x -= (310 * dt) / 1000;
+              const chargeSpeed = this.difficulty === 'arcade' ? 340 : this.difficulty === 'hard' ? 325 : 310;
+              enemy.x -= (chargeSpeed * dt) / 1000;
               enemy.phaseMs -= dt;
               if (enemy.phaseMs <= 0) {
                 enemy.phase = 'recover';

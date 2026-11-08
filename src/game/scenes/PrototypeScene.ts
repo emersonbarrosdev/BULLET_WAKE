@@ -139,7 +139,8 @@ export class PrototypeScene extends Phaser.Scene {
     this.pickups.clear();
     this.bossVisual = undefined;
 
-    this.director = new StageDirector(GAME_WIDTH, true, this.stageNumber);
+    const difficulty = saveSystem.getSettings().difficulty || 'normal';
+    this.director = new StageDirector(GAME_WIDTH, true, this.stageNumber, difficulty);
     this.shootCooldown = 0;
 
     this.backdrop = new StageBackdrop(this, this.stageNumber);
@@ -157,7 +158,8 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.setBombs(this.weapons.bombs);
     this.hud.setResonance(0);
     const stageDef = STAGES[this.stageNumber - 1] || STAGES[0];
-    this.hud.flash(`FASE 0${this.stageNumber}  -  ${stageDef.title.toUpperCase()}`, '#a6e3e2', 2600);
+    const diffTag = difficulty === 'arcade' ? ' [ARCADE]' : difficulty === 'hard' ? ' [HARD]' : '';
+    this.hud.flash(`FASE 0${this.stageNumber}  -  ${stageDef.title.toUpperCase()}${diffTag}`, '#a6e3e2', 2600);
 
     // Nave do jogador: caça espacial vetorial ágil, nítido e responsivo com micro-hitbox
     this.vectorShip = new VectorShip(this, 135, GAME_HEIGHT / 2, this.pilot.id);
@@ -774,7 +776,7 @@ export class PrototypeScene extends Phaser.Scene {
           if (bossHit.bossDamage > 0) {
             this.playEffect(bossHit.killed ? 'explosion' : 'hit', shot.node.x, shot.node.y);
             globalAudio.playHit();
-            this.hud.showBossBar('KRM-17 Excavator', boss.hp, boss.maxHp);
+            this.hud.showBossBar(boss.name, boss.hp, boss.maxHp);
             if (bossHit.moduleDestroyed) {
               this.playEffect('explosion', shot.node.x, shot.node.y);
               globalAudio.playExplosion(true);
@@ -785,7 +787,7 @@ export class PrototypeScene extends Phaser.Scene {
               this.playEffect('explosion', boss.x, boss.y);
               globalAudio.playExplosion(true);
               this.cameras.main.shake(450, 0.02);
-              this.hud.flash('KRM-17 EXCAVATOR ELIMINADO!', '#a3ffb8', 2500);
+              this.hud.flash(`${boss.name.toUpperCase()} ELIMINADO!`, '#a3ffb8', 2500);
             }
           }
           collided = !shot.piercing;

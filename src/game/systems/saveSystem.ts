@@ -7,7 +7,7 @@ export interface GameSettings {
   sfxVolume: number;
   musicVolume: number;
   isMuted: boolean;
-  difficulty: 'normal' | 'hard';
+  difficulty: 'normal' | 'hard' | 'arcade';
 }
 
 export interface StageScoreRecord {
@@ -95,6 +95,10 @@ export class SaveSystem {
 
   getSaveData(): Readonly<SaveData> {
     return this.data;
+  }
+
+  getSettings(): Readonly<GameSettings> {
+    return this.data.settings;
   }
 
   unlockNextStage(currentStage: number): void {
