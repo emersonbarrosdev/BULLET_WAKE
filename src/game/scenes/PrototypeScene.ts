@@ -10,8 +10,8 @@ import { GameOverOverlay } from '../ui/GameOverOverlay';
 import { StageCompleteOverlay } from '../ui/StageCompleteOverlay';
 import { StageBackdrop } from './StageBackdrop';
 
-type Keys = Record<'W' | 'A' | 'S' | 'D' | 'SPACE' | 'R' | 'ESC', Phaser.Input.Keyboard.Key>;
-interface Projectile { node: Phaser.GameObjects.Sprite; velocityX: number; velocityY: number }
+type Keys = Record<'W' | 'A' | 'S' | 'D' | 'SPACE' | 'R' | 'ESC' | 'M' | 'X' | 'ONE' | 'TWO' | 'THREE', Phaser.Input.Keyboard.Key>;
+interface Projectile { node: Phaser.GameObjects.Sprite; velocityX: number; velocityY: number; damage: number; hitRadius: number }
 interface EnemyVisual {
   container: Phaser.GameObjects.Container;
   body: Phaser.GameObjects.Sprite;
@@ -23,9 +23,16 @@ interface EnemyVisual {
 export class PrototypeScene extends Phaser.Scene {
   private ship!: Phaser.GameObjects.Container;
   private shipSprite!: Phaser.GameObjects.Sprite;
+  private shipEngine?: Phaser.GameObjects.Sprite;
   private shipAnimation = '';
   private firePoseMs = 0;
   private hitPoseMs = 0;
+  private missilePoseMs = 0;
+  private prismPoseMs = 0;
+  private missileCooldownMs = 0;
+  private prismCooldownMs = 0;
+  // Teclas 1–3 testam os visuais de nível. Pickups e evolução real virão depois.
+  private rivetWeaponLevel: 1 | 2 | 3 = 1;
   private pilot: PilotDefinition = getPilot('nolan');
   private hud!: CombatHud;
   private backdrop!: StageBackdrop;
@@ -58,6 +65,11 @@ export class PrototypeScene extends Phaser.Scene {
     this.shipAnimation = '';
     this.firePoseMs = 0;
     this.hitPoseMs = 0;
+    this.missilePoseMs = 0;
+    this.prismPoseMs = 0;
+    this.missileCooldownMs = 0;
+    this.prismCooldownMs = 0;
+    this.rivetWeaponLevel = 1;
     this.shots = [];
     this.enemyShots = [];
     this.enemyVisuals.clear();
@@ -68,7 +80,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.health = initialPlayerHealth();
 
     this.backdrop = new StageBackdrop(this);
-    this.keyboardControls = this.input.keyboard?.addKeys('W,A,S,D,SPACE,R,ESC') as Keys | undefined;
+    this.keyboardControls = this.input.keyboard?.addKeys('W,A,S,D,SPACE,R,ESC,M,X,ONE,TWO,THREE') as Keys | undefined;
     this.cursors = this.input.keyboard?.createCursorKeys();
 
     this.hud = new CombatHud(this, () => this.restart());
@@ -78,12 +90,23 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.setProgress(0);
     this.hud.flash('FASE 01  -  CINTURAO DE FERRUGEM', '#a6e3e2', 2100);
 
-    const key = this.pilot.id === 'nolan' ? 'ship-rivet-v2-idle' : 'ship-' + this.pilot.id;
-    this.shipSprite = this.add.sprite(0, 0, key, 0);
-    // Aumenta a densidade do canvas sem ampliar exageradamente os pixels da Rivet.
-    this.shipSprite.setScale(this.pilot.id === 'nolan' ? 1.08 : 1.95);
-    this.ship = this.add.container(135, GAME_HEIGHT / 2, [this.shipSprite]).setDepth(7);
+    const rivet = this.pilot.id === 'nolan';
+    const texture = rivet ? 'rivet-v3-idle' : 'ship-' + this.pilot.id;
+    this.shipSprite = this.add.sprite(0, 0, texture, 0);
+    this.shipSprite.setScale(rivet ? 0.98 : 1.95);
+    const children: Phaser.GameObjects.GameObject[] = [];
+    if (rivet) {
+      // Propulsão independente do casco, trocando frames em loop.
+      this.shipEngine = this.add.sprite(-71, 0, 'rivet-v3-engine', 0)
+        .setScale(0.9).play('rivet-v3-engine-anim');
+      children.push(this.shipEngine);
+    } else {
+      this.shipEngine = undefined;
+    }
+    children.push(this.shipSprite);
+    this.ship = this.add.container(135, GAME_HEIGHT / 2, children).setDepth(7);
     this.changeShipAnimation('idle');
+    if (rivet) this.hud.flash('RIVET V3  |  M MISSIL  X PRISM  1/2/3 TESTE DE NIVEL', '#9ff4e9', 2300);
   }
 
   update(_time: number, delta: number): void {
@@ -101,6 +124,10 @@ export class PrototypeScene extends Phaser.Scene {
     this.health = advanceHealth(this.health, dt);
     this.firePoseMs = Math.max(0, this.firePoseMs - dt);
     this.hitPoseMs = Math.max(0, this.hitPoseMs - dt);
+    this.missilePoseMs = Math.max(0, this.missilePoseMs - dt);
+    this.prismPoseMs = Math.max(0, this.prismPoseMs - dt);
+    this.missileCooldownMs = Math.max(0, this.missileCooldownMs - dt);
+    this.prismCooldownMs = Math.max(0, this.prismCooldownMs - dt);
     this.hud.update(dt);
     this.ship.setAlpha(
       this.health.invulnerableMs > 0 && Math.floor(this.health.invulnerableMs / 110) % 2 === 0
@@ -118,8 +145,8 @@ export class PrototypeScene extends Phaser.Scene {
       dy = Math.abs(pointer.y - this.ship.y) > 12 ? Math.sign(pointer.y - this.ship.y) : 0;
     }
 
-    const shipHalfWidth = this.pilot.id === 'nolan' ? 61 : 47;
-    const shipHalfHeight = this.pilot.id === 'nolan' ? 30 : 28;
+    const shipHalfWidth = this.pilot.id === 'nolan' ? 79 : 47;
+    const shipHalfHeight = this.pilot.id === 'nolan' ? 55 : 28;
     const moved = moveInBounds(
       { x: this.ship.x, y: this.ship.y },
       dx, dy, this.pilot.speed * PLAYER_SPEED_FACTOR, dt,
@@ -132,6 +159,8 @@ export class PrototypeScene extends Phaser.Scene {
     );
     this.ship.setPosition(moved.x, moved.y);
     const state = this.pilot.id === 'nolan' && this.hitPoseMs > 0 ? 'hit'
+      : this.pilot.id === 'nolan' && this.prismPoseMs > 0 ? 'prism_charge'
+      : this.pilot.id === 'nolan' && this.missilePoseMs > 0 ? 'missile_launch'
       : dy < 0 ? 'up' : dy > 0 ? 'down'
       : this.pilot.id === 'nolan' && this.firePoseMs > 0 ? 'fire' : 'idle';
     this.changeShipAnimation(state);
@@ -140,6 +169,15 @@ export class PrototypeScene extends Phaser.Scene {
     if ((key('SPACE') || this.cursors?.space.isDown || finger) && this.shootCooldown <= 0) {
       this.fire();
       this.shootCooldown += shotIntervalMs(this.pilot);
+    }
+    if (this.pilot.id === 'nolan') {
+      if (this.keyboardControls) {
+        if (Phaser.Input.Keyboard.JustDown(this.keyboardControls.ONE)) this.rivetWeaponLevel = 1;
+        if (Phaser.Input.Keyboard.JustDown(this.keyboardControls.TWO)) this.rivetWeaponLevel = 2;
+        if (Phaser.Input.Keyboard.JustDown(this.keyboardControls.THREE)) this.rivetWeaponLevel = 3;
+      }
+      if (key('M') && this.missileCooldownMs === 0) this.launchMissile();
+      if (key('X') && this.prismCooldownMs === 0) this.launchPrism();
     }
 
     const tick = this.director.update(dt, this.ship.x, this.ship.y);
@@ -166,11 +204,20 @@ export class PrototypeScene extends Phaser.Scene {
     this.scene.start('PilotSelectScene', { selectedPilotId: this.pilot.id });
   }
 
-  private changeShipAnimation(state: 'idle' | 'up' | 'down' | 'fire' | 'hit'): void {
-    if (this.pilot.id !== 'nolan' && (state === 'fire' || state === 'hit')) state = 'idle';
-    if (this.shipAnimation === state) return;
-    this.shipAnimation = state;
-    this.shipSprite.play('ship-' + this.pilot.id + '-' + state, true);
+  private changeShipAnimation(
+    state: 'idle' | 'up' | 'down' | 'fire' | 'hit' | 'missile_launch' | 'prism_charge',
+  ): void {
+    if (this.pilot.id === 'nolan') {
+      const v3state = state === 'up' ? 'climb' : state === 'down' ? 'dive' : state;
+      if (this.shipAnimation === v3state) return;
+      this.shipAnimation = v3state;
+      this.shipSprite.play('rivet-v3-' + v3state + '-anim', true);
+    } else {
+      if (state === 'fire' || state === 'hit' || state === 'missile_launch' || state === 'prism_charge') state = 'idle';
+      if (this.shipAnimation === state) return;
+      this.shipAnimation = state;
+      this.shipSprite.play('ship-' + this.pilot.id + '-' + state, true);
+    }
   }
 
   private playEffect(kind: 'muzzle' | 'hit' | 'explosion', x: number, y: number): void {
@@ -179,14 +226,62 @@ export class PrototypeScene extends Phaser.Scene {
     sprite.play('fx-' + kind + '-play');
   }
 
+  private createPlayerProjectile(
+    texture: string, animation: string,
+    x: number, y: number, speedX: number, speedY: number,
+    damage: number, hitRadius: number, scale: number,
+  ): void {
+    const node = this.add.sprite(x, y, texture, 0).setScale(scale).setDepth(9);
+    node.play(animation);
+    this.shots.push({ node, velocityX: speedX, velocityY: speedY, damage, hitRadius });
+  }
+
   private fire(): void {
-    const x = this.ship.x + (this.pilot.id === 'nolan' ? 65 : 42);
-    if (this.pilot.id === 'nolan' && this.hitPoseMs === 0) this.firePoseMs = 150;
-    const shot = this.add.sprite(x, this.ship.y, 'shot-' + this.pilot.id, 0)
-      .setScale(1.7).setDepth(9);
-    shot.play('shot-' + this.pilot.id + '-loop');
-    this.shots.push({ node: shot, velocityX: 535, velocityY: 0 });
-    this.playEffect('muzzle', x - 10, this.ship.y);
+    const rivet = this.pilot.id === 'nolan';
+    const x = this.ship.x + (rivet ? 69 : 42);
+    if (rivet) {
+      if (this.hitPoseMs === 0 && this.prismPoseMs === 0) this.firePoseMs = 150;
+      const key = 'rivet-v3-pulse-' + this.rivetWeaponLevel;
+      this.createPlayerProjectile(
+        key, key + '-anim', x, this.ship.y + 3, 550, 0,
+        this.pilot.damage * (1 + (this.rivetWeaponLevel - 1) * 0.3), 12, 0.68,
+      );
+      const fx = this.add.sprite(x - 8, this.ship.y + 3, 'rivet-v3-muzzle', 0)
+        .setScale(0.8).setDepth(11);
+      fx.once('animationcomplete', () => fx.destroy());
+      fx.play('rivet-v3-muzzle-anim');
+    } else {
+      this.createPlayerProjectile(
+        'shot-' + this.pilot.id, 'shot-' + this.pilot.id + '-loop',
+        x, this.ship.y, 535, 0, this.pilot.damage, 7, 1.7,
+      );
+      this.playEffect('muzzle', x - 10, this.ship.y);
+    }
+  }
+
+  private launchMissile(): void {
+    this.missileCooldownMs = 1900;
+    this.missilePoseMs = 280;
+    this.changeShipAnimation('missile_launch');
+    this.createPlayerProjectile(
+      'rivet-v3-missile', 'rivet-v3-missile-anim',
+      this.ship.x + 40, this.ship.y - 24, 400, -32, 3.0, 18, 0.7,
+    );
+    this.hud.flash('MISSIL  /  RIVET', '#ffd19f', 600);
+  }
+
+  private launchPrism(): void {
+    this.prismCooldownMs = 10500; // Temporario ate o medidor de ressonancia existir.
+    this.prismPoseMs = 550;
+    this.changeShipAnimation('prism_charge');
+    for (const tilt of [-0.36, 0, 0.36]) {
+      this.createPlayerProjectile(
+        'rivet-v3-prism', 'rivet-v3-prism-anim',
+        this.ship.x + 55, this.ship.y, 410, 410 * tilt,
+        1.65, 16, 0.62,
+      );
+    }
+    this.hud.flash('TEMPESTADE PRISMATICA  /  TESTE', '#d6b2ff', 900);
   }
 
   private makeEnemyVisual(enemy: EnemyModel): void {
@@ -234,6 +329,7 @@ export class PrototypeScene extends Phaser.Scene {
     bullet.play('shot-enemy-loop');
     this.enemyShots.push({
       node: bullet, velocityX: event.velocityX, velocityY: event.velocityY,
+      damage: 1, hitRadius: 8,
     });
     this.playEffect('muzzle', event.x + 11, event.y);
   }
@@ -243,14 +339,16 @@ export class PrototypeScene extends Phaser.Scene {
       const shot = this.shots[i];
       const prevX = shot.node.x;
       shot.node.x += shot.velocityX * dt / 1000;
+      shot.node.y += shot.velocityY * dt / 1000;
       let collided = false;
       for (const enemy of this.director.enemies) {
         const hx = enemy.kind === 'scout' ? 19 : 29;
         const hy = enemy.kind === 'scout' ? 15 : 21;
         // Teste varrido no eixo X para não atravessar inimigos entre frames.
-        if (shot.node.x + 6 >= enemy.x - hx && prevX - 6 <= enemy.x + hx
-          && Math.abs(shot.node.y - enemy.y) <= hy) {
-          const hit = this.director.damage(enemy.id, this.pilot.damage);
+        if (shot.node.x + shot.hitRadius >= enemy.x - hx
+          && prevX - shot.hitRadius <= enemy.x + hx
+          && Math.abs(shot.node.y - enemy.y) <= hy + shot.hitRadius * 0.4) {
+          const hit = this.director.damage(enemy.id, shot.damage);
           this.playEffect(hit.killed ? 'explosion' : 'hit', enemy.x, enemy.y);
           if (hit.killed) {
             this.score += hit.score;
@@ -321,6 +419,8 @@ export class PrototypeScene extends Phaser.Scene {
       }
       this.playEffect('hit', this.ship.x, this.ship.y);
     } else if (outcome.event === 'respawn') {
+      this.missilePoseMs = 0;
+      this.prismPoseMs = 0;
       const oldX = this.ship.x, oldY = this.ship.y;
       this.playEffect('explosion', oldX, oldY);
       this.clearEnemyShots();
@@ -333,7 +433,9 @@ export class PrototypeScene extends Phaser.Scene {
     } else if (outcome.event === 'game-over') {
       this.clearEnemyShots();
       this.clearPlayerShots();
-      this.shipSprite.play('ship-' + this.pilot.id + '-death');
+      this.shipSprite.play(
+        this.pilot.id === 'nolan' ? 'rivet-v3-destruction-anim' : 'ship-' + this.pilot.id + '-death',
+      );
       this.playEffect('explosion', this.ship.x, this.ship.y);
       this.shipSprite.once('animationcomplete', () => {
         this.ship.setVisible(false);

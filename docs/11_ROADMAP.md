@@ -14,7 +14,8 @@
 | T07 | BASE V1 — não aprovada visualmente | Sprites preliminares integrados, mas exigem revisão individual; [base técnica](20_T07_SPRITES_COMBATE.md) |
 | T07.1 | RIVET V2 IMPLEMENTADA — QA visual pendente | Uma nave por vez: nova Rivet 112×54, animações de voo, tiro, dano e morte; [detalhes](21_RIVET_V2_MODERN_PIXEL_ART.md) |
 | T08 | IMPLEMENTADA — QA visual pendente | Resolução 768×432, parallax e StageDirector sem ondas; [detalhes](22_T08_SCROLL_CONTINUO_E_QUALIDADE.md) |
-| Próximo | FOCO | Validar a progressão em navegador e corrigir texturas verdes se ainda surgirem |
+| T09.1 | EM TESTE — QA visual pendente | Rivet V3 gerada em PNG ao rodar o projeto, pulso LV1–3 em modo teste, míssil e Prism; [detalhes](23_RIVET_V3.md) |
+| Próximo | FOCO | Validar a Rivet V3 e completar a evolução por pickups de verdade |
 | T09–T70 | REPLANEJAR APÓS GATE RIVET | Especiais com sprites, combate completo, fases e boss mais adiante |
 
 A avaliação de T02 inclui CI build/typecheck e teste manual de viewport e toque. Para detalhes ver [T02](15_T02_GAMEPLAY_FIRST.md). A T03 implementa dano/vidas com [registro de aceite](16_T03_COMBATE_E_DANO.md). A T04 entrega UI funcional e o fluxo de reinício em [seu documento](17_T04_HUD_E_GAME_OVER.md). A T05 descreve a primeira IA de inimigos no [registro histórico](18_T05_INIMIGOS_E_ONDAS.md), cujo modelo de ondas foi retirado em T08. A T06 registra a escolha real de pilotos em [seu documento](19_T06_ESCOLHA_DE_PILOTOS.md).

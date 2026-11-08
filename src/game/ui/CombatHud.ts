@@ -59,7 +59,7 @@ export class CombatHud {
       .setDepth(40);
     scene.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - HUD_BOTTOM, GAME_WIDTH, 2, 0x36526c)
       .setDepth(41);
-    this.text(scene, 17, GAME_HEIGHT - 28, 'WASD / SETAS   MOVER      ESPACO   TIRO      ESC   PILOTOS',
+    this.text(scene, 17, GAME_HEIGHT - 28, 'WASD MOVER   ESPACO TIRO   M MISSIL   X ESPECIAL   ESC PILOTOS',
       13, '#e7f1f5');
 
     const restartButton = scene.add.rectangle(
