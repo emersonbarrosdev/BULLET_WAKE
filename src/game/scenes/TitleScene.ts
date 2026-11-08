@@ -44,16 +44,16 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     registerGameAnimations(this);
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
-    this.backdrop = new StageBackdrop(this, 1);
+    this.backdrop = new StageBackdrop(this, 1, { fullWidth: true, showBezels: false });
     this.previewDistance = 0;
     this.selectedIndex = 0;
     this.menuButtons = [];
 
     // Fundo de vinheta de centro de comando
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040b15, 0.48);
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040b15, 0.48).setDepth(8);
 
     // Barra superior de status da operação militar
-    this.add.rectangle(GAME_WIDTH / 2, 10, GAME_WIDTH, 20, 0x050e18, 0.9);
+    this.add.rectangle(GAME_WIDTH / 2, 10, GAME_WIDTH, 20, 0x050e18, 0.9).setDepth(10);
     this.add.text(
       GAME_WIDTH / 2,
       4,
@@ -64,26 +64,26 @@ export class TitleScene extends Phaser.Scene {
         color: '#64748b',
         letterSpacing: 2,
       },
-    ).setOrigin(0.5, 0).setResolution(2);
+    ).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
     // Moldura cibernética do Título com linhas duplas
     this.add.rectangle(GAME_WIDTH / 2, 75, 620, 94, 0x071322, 0.92)
-      .setStrokeStyle(1.5, 0x1f3c4d);
+      .setStrokeStyle(1.5, 0x1f3c4d).setDepth(10);
     this.add.rectangle(GAME_WIDTH / 2, 75, 628, 102, 0x00f0ff, 0.1)
-      .setStrokeStyle(1, 0x00f0ff, 0.3);
+      .setStrokeStyle(1, 0x00f0ff, 0.3).setDepth(10);
 
     // Efeito de brilho neon no título
     this.titleGlow = this.add.text(GAME_WIDTH / 2, 38, 'BULLET WAKE', {
       fontFamily: FONT_TITLE,
       fontSize: '40px',
       color: '#00f0ff',
-    }).setOrigin(0.5, 0).setAlpha(0.35);
+    }).setOrigin(0.5, 0).setAlpha(0.35).setDepth(11);
 
     this.add.text(GAME_WIDTH / 2, 38, 'BULLET WAKE', {
       fontFamily: FONT_TITLE,
       fontSize: '40px',
       color: '#ffffff',
-    }).setOrigin(0.5, 0).setStroke('#0a1d2e', 5);
+    }).setOrigin(0.5, 0).setStroke('#0a1d2e', 5).setDepth(12);
 
     this.add.text(
       GAME_WIDTH / 2,
@@ -95,7 +95,7 @@ export class TitleScene extends Phaser.Scene {
         color: '#00f0ff',
         letterSpacing: 4,
       },
-    ).setOrigin(0.5, 0);
+    ).setOrigin(0.5, 0).setDepth(12);
 
     this.add.text(
       GAME_WIDTH / 2,
@@ -107,7 +107,7 @@ export class TitleScene extends Phaser.Scene {
         color: '#94a3b8',
         letterSpacing: 1,
       },
-    ).setOrigin(0.5, 0);
+    ).setOrigin(0.5, 0).setDepth(12);
 
     // Itens de Menu (com ação principal em destaque absoluto)
     this.menuItems = [
@@ -150,17 +150,17 @@ export class TitleScene extends Phaser.Scene {
       if (isPrimary) {
         this.primaryGlow = this.add
           .rectangle(GAME_WIDTH / 2, y, width + 6, height + 6, 0x00f0ff, 0.15)
-          .setStrokeStyle(1.5, 0x00f0ff, 0.6);
+          .setStrokeStyle(1.5, 0x00f0ff, 0.6).setDepth(10);
       }
 
       const bg = this.add
         .rectangle(GAME_WIDTH / 2, y, width, height, isPrimary ? 0x0d2838 : 0x081320, 0.94)
         .setStrokeStyle(isPrimary ? 2 : 1, isPrimary ? 0x00f0ff : 0x1f3c4d)
-        .setInteractive({ useHandCursor: true });
+        .setInteractive({ useHandCursor: true }).setDepth(10);
 
       const border = this.add
         .rectangle(GAME_WIDTH / 2 - width / 2 + 3, y, 3.5, height - 6, isPrimary ? 0x00f0ff : 0x38bdf8)
-        .setVisible(index === 0);
+        .setVisible(index === 0).setDepth(11);
 
       const label = this.add.text(
         GAME_WIDTH / 2 - width / 2 + 18,
@@ -172,7 +172,7 @@ export class TitleScene extends Phaser.Scene {
           color: isPrimary ? '#ffffff' : '#94a3b8',
           letterSpacing: 1,
         },
-      ).setResolution(2);
+      ).setResolution(2).setDepth(11);
 
       if (item.badge) {
         this.add.text(
@@ -185,7 +185,7 @@ export class TitleScene extends Phaser.Scene {
             color: isPrimary ? '#ffd166' : '#38bdf8',
             fontStyle: 'bold',
           },
-        ).setOrigin(1, 0).setResolution(2);
+        ).setOrigin(1, 0).setResolution(2).setDepth(11);
       }
 
       bg.on('pointerover', () => this.selectItem(index));
@@ -195,8 +195,8 @@ export class TitleScene extends Phaser.Scene {
     });
 
     // Rodapé de navegação e ajuda
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 16, GAME_WIDTH, 32, 0x050e18, 0.96);
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 32, GAME_WIDTH, 1.5, 0x1f3c4d);
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 16, GAME_WIDTH, 32, 0x050e18, 0.96).setDepth(10);
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 32, GAME_WIDTH, 1.5, 0x1f3c4d).setDepth(10);
     this.add.text(
       GAME_WIDTH / 2,
       GAME_HEIGHT - 22,
@@ -206,7 +206,7 @@ export class TitleScene extends Phaser.Scene {
         fontSize: '11px',
         color: '#64748b',
       },
-    ).setOrigin(0.5, 0).setResolution(2);
+    ).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
     this.selectItem(0);
 

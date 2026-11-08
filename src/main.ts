@@ -10,38 +10,50 @@ import { EndingScene } from './game/scenes/EndingScene';
 // Disponibiliza o Phaser globalmente no escopo do navegador para debug e extensibilidade
 (window as unknown as { Phaser: typeof Phaser }).Phaser = Phaser;
 
-const host = document.getElementById('game');
+async function bootGame(): Promise<void> {
+  // Aguarda o carregamento completo das fontes web (Oxanium e Rajdhani) antes de iniciar as cenas
+  if (typeof document !== 'undefined' && 'fonts' in document) {
+    try {
+      await document.fonts.ready;
+    } catch {
+      // Fallback gracioso
+    }
+  }
 
-if (!host) {
-  throw new Error('Elemento #game não encontrado para inicializar BULLET WAKE.');
-}
+  const host = document.getElementById('game');
+  if (!host) {
+    throw new Error('Elemento #game não encontrado para inicializar BULLET WAKE.');
+  }
 
-const config: Phaser.Types.Core.GameConfig = {
-  type: Phaser.AUTO, // Preferir WebGL; fallback Canvas fornecido pelo Phaser.
-  parent: host,
-  backgroundColor: GAME_BACKGROUND,
-  width: GAME_WIDTH,
-  height: GAME_HEIGHT,
-  render: { pixelArt: true },
-  fps: {
-    min: 30,
-    target: 240, // Permite rodar acima de 60fps (120Hz, 144Hz, 240Hz)
-    forceSetTimeOut: false,
-    smoothStep: true,
-  },
-  scale: {
-    mode: Phaser.Scale.FIT,
-    // O CSS Flexbox centraliza o Canvas.
-    autoCenter: Phaser.Scale.NO_CENTER,
+  const config: Phaser.Types.Core.GameConfig = {
+    type: Phaser.AUTO, // Preferir WebGL; fallback Canvas fornecido pelo Phaser.
+    parent: host,
+    backgroundColor: GAME_BACKGROUND,
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
-  },
-  scene: [TitleScene, StageSelectScene, PilotSelectScene, PrototypeScene, EndingScene],
-};
+    render: { pixelArt: true },
+    fps: {
+      min: 30,
+      target: 240, // Permite rodar acima de 60fps (120Hz, 144Hz, 240Hz)
+      forceSetTimeOut: false,
+      smoothStep: true,
+    },
+    scale: {
+      mode: Phaser.Scale.FIT,
+      // O CSS Flexbox centraliza o Canvas.
+      autoCenter: Phaser.Scale.NO_CENTER,
+      width: GAME_WIDTH,
+      height: GAME_HEIGHT,
+    },
+    scene: [TitleScene, StageSelectScene, PilotSelectScene, PrototypeScene, EndingScene],
+  };
 
-const game = new Phaser.Game(config);
-(window as unknown as { __GAME__: Phaser.Game }).__GAME__ = game;
+  const game = new Phaser.Game(config);
+  (window as unknown as { __GAME__: Phaser.Game }).__GAME__ = game;
 
-if (import.meta.hot) {
-  import.meta.hot.dispose(() => game.destroy(true));
+  if (import.meta.hot) {
+    import.meta.hot.dispose(() => game.destroy(true));
+  }
 }
+
+void bootGame();

@@ -170,7 +170,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.director = new StageDirector(GAME_WIDTH, true, this.stageNumber, difficulty);
     this.shootCooldown = 0;
 
-    this.backdrop = new StageBackdrop(this, this.stageNumber);
+    this.backdrop = new StageBackdrop(this, this.stageNumber, { fullWidth: false, showBezels: true });
     this.inputManager = new InputManager(this);
 
     this.hud = new CombatHud(this, () => this.restart());
@@ -271,10 +271,10 @@ export class PrototypeScene extends Phaser.Scene {
       { x: this.vectorShip.x, y: this.vectorShip.y },
       dx, dy, speed, dt,
       {
-        minX: PLAYFIELD_X + halfW + 6,
-        maxX: PLAYFIELD_RIGHT - halfW - 6,
-        minY: halfH + 12,
-        maxY: GAME_HEIGHT - halfH - 12,
+        minX: PLAYFIELD_X + halfW + 4,
+        maxX: PLAYFIELD_RIGHT - halfW - 4,
+        minY: halfH + 6,
+        maxY: GAME_HEIGHT - halfH - 8,
       },
     );
     this.vectorShip.setPosition(moved.x, moved.y);

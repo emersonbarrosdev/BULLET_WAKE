@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 
+export type VectorShipViewMode = 'top-down' | 'profile';
+
 export interface VectorShipConfig {
   pilotId: string;
 }
@@ -45,20 +47,18 @@ const PALETTES: Record<string, Palette> = {
 };
 
 /**
- * BULLET WAKE V2 — Caça Espacial de Combate Vertical em Visão Superior (Top-Down).
- * Fiel à estética dos clássicos shoot 'em up verticais (Sonic Wings, Raiden, Fire Shark, DoDonPachi):
- * - Nariz afilado apontando para o topo da tela (-Y).
- * - Asas delta/aerodinâmicas simétricas se estendendo lateralmente.
- * - Cockpit central com cúpula translúcida e micro-hitbox precisa de 5px.
- * - Propulsores duplos traseiros emitindo chamas contínuas para baixo (+Y).
- * - Inclinação dinâmica em roll (banking) ao se mover para a esquerda (A) ou direita (D).
- * - Efeitos de propulsão de emergência (Dash), muzzle flashes e escudo de blindagem.
+ * BULLET WAKE V2 — Renderizador Vetorial Neo-Arcade de Caças Espaciais.
+ * 
+ * Modos de Apresentação:
+ * 1. 'top-down': Visão superior de combate vertical (28×32px, compacto, micro-hitbox, nariz ao norte -Y).
+ * 2. 'profile': Perfil lateral aeronáutico elegante para cards e interfaces de seleção.
  */
 export class VectorShip extends Phaser.GameObjects.Container {
-  readonly halfWidth = 18;
-  readonly halfHeight = 22;
-  readonly hitRadius = 5;
+  readonly halfWidth: number;
+  readonly halfHeight: number;
+  readonly hitRadius = 4.5;
   readonly pilotId: string;
+  readonly viewMode: VectorShipViewMode;
 
   private readonly graphics: Phaser.GameObjects.Graphics;
   private readonly shieldGraphics: Phaser.GameObjects.Graphics;
@@ -73,11 +73,21 @@ export class VectorShip extends Phaser.GameObjects.Container {
   private muzzleFlashTimer = 0;
   private hasShieldActive = false;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, pilotId = 'nolan') {
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    pilotId = 'nolan',
+    viewMode: VectorShipViewMode = 'top-down',
+  ) {
     super(scene, x, y);
 
     this.pilotId = pilotId;
+    this.viewMode = viewMode;
     this.palette = PALETTES[pilotId] || PALETTES.nolan;
+
+    this.halfWidth = viewMode === 'profile' ? 22 : 14;
+    this.halfHeight = viewMode === 'profile' ? 10 : 16;
 
     this.graphics = scene.add.graphics();
     this.shieldGraphics = scene.add.graphics();
@@ -98,18 +108,24 @@ export class VectorShip extends Phaser.GameObjects.Container {
     hasShield: boolean,
     isDashing = false,
   ): void {
+    if (this.viewMode === 'profile') {
+      this.flamePhase += dt * 0.035;
+      this.redraw(dt, 0, isDashing);
+      return;
+    }
+
     // 1. Inclinação aerodinâmica lateral (Banking / Roll ao mover para a esquerda ou direita)
     if (dx < 0) {
-      this.targetBankAngle = -0.25; // Rola para a esquerda
+      this.targetBankAngle = -0.22; // Rola para a esquerda
     } else if (dx > 0) {
-      this.targetBankAngle = 0.25;  // Rola para a direita
+      this.targetBankAngle = 0.22;  // Rola para a direita
     } else {
       this.targetBankAngle = 0;
     }
 
     const lerpRate = Math.min(1, (dt * 14) / 1000);
     this.bankAngle += (this.targetBankAngle - this.bankAngle) * lerpRate;
-    this.rotation = this.bankAngle * 0.45; // Leve rotação de proa combinada ao roll
+    this.rotation = this.bankAngle * 0.40;
 
     // 2. Animação de propulsão e estados de combate
     this.flamePhase += dt * 0.04;
@@ -130,7 +146,19 @@ export class VectorShip extends Phaser.GameObjects.Container {
     g.clear();
 
     const p = this.palette;
-    const roll = this.bankAngle; // -0.25 a +0.25
+
+    if (this.viewMode === 'profile') {
+      if (this.pilotId === 'cora') {
+        this.drawMothProfile(g, p, isDashing);
+      } else if (this.pilotId === 'harlan') {
+        this.drawKnuckleProfile(g, p, isDashing);
+      } else {
+        this.drawRivetProfile(g, p, isDashing);
+      }
+      return;
+    }
+
+    const roll = this.bankAngle;
 
     // Renderiza a silhueta top-down autêntica de cada caça
     if (this.pilotId === 'cora') {
@@ -146,9 +174,9 @@ export class VectorShip extends Phaser.GameObjects.Container {
     cd.clear();
     const trimColor = this.isHit ? 0xff2222 : p.trim;
     cd.fillStyle(trimColor, 0.45);
-    cd.fillCircle(0, 0, this.hitRadius + 1.5);
+    cd.fillCircle(0, 0, this.hitRadius + 1.2);
     cd.fillStyle(0xffffff, 0.95);
-    cd.fillCircle(0, 0, 2);
+    cd.fillCircle(0, 0, 1.8);
 
     // Escudo de energia esférico (se ativo)
     const sg = this.shieldGraphics;
@@ -156,194 +184,322 @@ export class VectorShip extends Phaser.GameObjects.Container {
     if (this.hasShieldActive) {
       const shieldPulse = Math.sin(this.flamePhase * 3) * 0.12 + 0.55;
       sg.lineStyle(1.8, 0x00f0ff, shieldPulse);
-      sg.strokeCircle(0, 0, 26);
+      sg.strokeCircle(0, 0, 22);
       sg.fillStyle(0x00f0ff, 0.10);
-      sg.fillCircle(0, 0, 26);
+      sg.fillCircle(0, 0, 22);
     }
   }
 
+  // =========================================================================
+  // RENDERIZAÇÃO EM PERFIL LATERAL (Aeronave Subordinada para Menus e Cards)
+  // =========================================================================
+
   /**
-   * RIVET V3 (Nolan Fitch) — Caça Militar Tático Top-Down.
-   * Nariz afilado com blindagem frontal ciano, asas delta swept-back e turbinas duplas.
+   * RIVET V3 — Perfil Lateral Aerodinâmico (Nolan Fitch)
+   */
+  private drawRivetProfile(g: Phaser.GameObjects.Graphics, p: Palette, isDashing: boolean): void {
+    const flameLen = isDashing ? 24 : (12 + Math.sin(this.flamePhase) * 3);
+
+    // 1. Chama da Turbina de Pós-Combustor (ejetada para trás / esquerda -X)
+    g.fillStyle(p.engineGlow, 0.85);
+    g.fillTriangle(-18, -2, -18, 2, -18 - flameLen, 0);
+    g.fillStyle(p.engineCore, 0.95);
+    g.fillTriangle(-18, -1.2, -18, 1.2, -18 - flameLen * 0.5, 0);
+
+    // 2. Fuselagem Inferior / Intake
+    g.fillStyle(p.hullDark, 1);
+    g.beginPath();
+    g.moveTo(20, 0);          // Ponta do nariz militar
+    g.lineTo(12, 4);          // Queixo aerodinâmico
+    g.lineTo(-10, 4);         // Linha ventral
+    g.lineTo(-18, 2);         // Bocal de exaustão
+    g.lineTo(-18, -2);
+    g.lineTo(-10, -1);
+    g.lineTo(10, -1);
+    g.closePath();
+    g.fillPath();
+
+    // 3. Fuselagem Superior com Estabilizador Dorsal
+    g.fillStyle(p.hull, 1);
+    g.beginPath();
+    g.moveTo(20, 0);
+    g.lineTo(6, -3);          // Cobertura do nariz
+    g.lineTo(-2, -3);         // Base do cockpit
+    g.lineTo(-12, -8);        // Topo da deriva vertical dorsal
+    g.lineTo(-16, -8);
+    g.lineTo(-18, -2);
+    g.lineTo(10, 0);
+    g.closePath();
+    g.fillPath();
+
+    // 4. Asa em Diedro de Perfil
+    g.fillStyle(p.trim, 0.9);
+    g.beginPath();
+    g.moveTo(2, 0);
+    g.lineTo(-12, 5);
+    g.lineTo(-15, 4);
+    g.lineTo(-6, 0);
+    g.closePath();
+    g.fillPath();
+
+    // 5. Cockpit Canopy em Bolha Translúcida Ciano
+    g.fillStyle(p.canopy, 0.95);
+    g.beginPath();
+    g.moveTo(10, -1);
+    g.lineTo(2, -5);
+    g.lineTo(-4, -5);
+    g.lineTo(-7, -2);
+    g.closePath();
+    g.fillPath();
+
+    // Reflexo de luz
+    g.fillStyle(0xffffff, 0.9);
+    g.fillRect(1, -4.5, 4, 1.2);
+  }
+
+  /**
+   * MOTH V2 — Perfil Lateral Curvo e Esguio (Cora Vance)
+   */
+  private drawMothProfile(g: Phaser.GameObjects.Graphics, p: Palette, isDashing: boolean): void {
+    const flameLen = isDashing ? 26 : (13 + Math.sin(this.flamePhase) * 3);
+
+    // Chama magenta
+    g.fillStyle(p.engineGlow, 0.85);
+    g.fillTriangle(-18, -2, -18, 2, -18 - flameLen, 0);
+    g.fillStyle(0xffffff, 0.9);
+    g.fillTriangle(-18, -1, -18, 1, -18 - flameLen * 0.5, 0);
+
+    // Fuselagem fluida
+    g.fillStyle(p.hullDark, 1);
+    g.beginPath();
+    g.moveTo(22, 1);
+    g.lineTo(8, 5);
+    g.lineTo(-12, 3);
+    g.lineTo(-18, 1);
+    g.lineTo(-18, -1);
+    g.lineTo(8, -2);
+    g.closePath();
+    g.fillPath();
+
+    g.fillStyle(p.hull, 1);
+    g.beginPath();
+    g.moveTo(22, 1);
+    g.lineTo(4, -4);
+    g.lineTo(-10, -9);
+    g.lineTo(-14, -8);
+    g.lineTo(-18, -1);
+    g.closePath();
+    g.fillPath();
+
+    // Cockpit esmeralda alongado
+    g.fillStyle(p.canopy, 0.95);
+    g.beginPath();
+    g.moveTo(12, 0);
+    g.lineTo(2, -5);
+    g.lineTo(-5, -4);
+    g.lineTo(-7, 0);
+    g.closePath();
+    g.fillPath();
+  }
+
+  /**
+   * KNUCKLE V2 — Perfil Lateral Blindado e Robusto (Harlan Cruz)
+   */
+  private drawKnuckleProfile(g: Phaser.GameObjects.Graphics, p: Palette, isDashing: boolean): void {
+    const flameLen = isDashing ? 26 : (14 + Math.sin(this.flamePhase) * 3);
+
+    // Chama alaranjada dupla
+    g.fillStyle(p.engineGlow, 0.85);
+    g.fillTriangle(-18, -4, -18, -1, -18 - flameLen, -2.5);
+    g.fillTriangle(-18, 1, -18, 4, -18 - flameLen, 2.5);
+
+    // Chassi blindado espesso
+    g.fillStyle(p.hullDark, 1);
+    g.fillRect(-18, -3, 34, 8);
+
+    g.fillStyle(p.hull, 1);
+    g.fillRect(-14, -6, 26, 4);
+
+    // Borda de titânio laranja
+    g.lineStyle(1.5, p.trim, 0.95);
+    g.strokeRect(-16, -5, 30, 9);
+
+    // Cockpit blindado dourado
+    g.fillStyle(p.canopy, 0.95);
+    g.fillRect(0, -5, 8, 3);
+  }
+
+  // =========================================================================
+  // RENDERIZAÇÃO TOP-DOWN (Visão Superior de Combate Vertical)
+  // =========================================================================
+
+  /**
+   * RIVET V3 (Nolan Fitch) — Caça Militar Tático Top-Down (28×32px).
    */
   private drawRivetTopDown(g: Phaser.GameObjects.Graphics, p: Palette, roll: number, dashing: boolean): void {
-    // Compressão de perspectiva no roll (asa esquerda ou direita encurta levemente)
-    const leftSpan = 18 * (1 + roll * 0.4);
-    const rightSpan = 18 * (1 - roll * 0.4);
+    const leftSpan = 14 * (1 + roll * 0.35);
+    const rightSpan = 14 * (1 - roll * 0.35);
 
-    // 1. Chamas dos Propulsores Traseiros (emitidas para baixo, +Y)
-    const flameLen = dashing ? 28 : (14 + Math.sin(this.flamePhase) * 4);
+    // 1. Chamas das Turbinas Traseiras (+Y)
+    const flameLen = dashing ? 22 : (12 + Math.sin(this.flamePhase) * 3);
     g.fillStyle(p.engineGlow, dashing ? 0.95 : 0.75);
-    // Turbina esquerda
-    g.fillTriangle(-6, 16, -2, 16, -4, 16 + flameLen);
-    // Turbina direita
-    g.fillTriangle(2, 16, 6, 16, 4, 16 + flameLen);
-    // Núcleo branco das turbinas
+    g.fillTriangle(-5, 12, -1, 12, -3, 12 + flameLen);
+    g.fillTriangle(1, 12, 5, 12, 3, 12 + flameLen);
     g.fillStyle(p.engineCore, 0.9);
-    g.fillTriangle(-5, 16, -3, 16, -4, 16 + flameLen * 0.45);
-    g.fillTriangle(3, 16, 5, 16, 4, 16 + flameLen * 0.45);
+    g.fillTriangle(-4, 12, -2, 12, -3, 12 + flameLen * 0.45);
+    g.fillTriangle(2, 12, 4, 12, 3, 12 + flameLen * 0.45);
 
-    // 2. Fuselagem Base / Asas (Delta Wing)
+    // 2. Fuselagem Base / Asas Delta
     g.fillStyle(this.isHit ? 0xff4444 : p.hullDark, 1);
     g.beginPath();
-    g.moveTo(0, -22);                  // Nariz militar
-    g.lineTo(rightSpan, 12);           // Ponta da asa direita
-    g.lineTo(rightSpan * 0.7, 16);     // Borda de fuga direita
-    g.lineTo(8, 16);                   // Encaixe turbina direita
-    g.lineTo(0, 18);                   // Centro traseiro
-    g.lineTo(-8, 16);                  // Encaixe turbina esquerda
-    g.lineTo(-leftSpan * 0.7, 16);     // Borda de fuga esquerda
-    g.lineTo(-leftSpan, 12);           // Ponta da asa esquerda
+    g.moveTo(0, -16);                  // Nariz militar
+    g.lineTo(rightSpan, 8);            // Asa direita
+    g.lineTo(rightSpan * 0.75, 12);
+    g.lineTo(6, 12);
+    g.lineTo(0, 14);
+    g.lineTo(-6, 12);
+    g.lineTo(-leftSpan * 0.75, 12);
+    g.lineTo(-leftSpan, 8);            // Asa esquerda
     g.closePath();
     g.fillPath();
 
     // 3. Fuselagem Superior Reforçada
     g.fillStyle(this.isHit ? 0xff8888 : p.hull, 1);
     g.beginPath();
-    g.moveTo(0, -20);
-    g.lineTo(rightSpan * 0.65, 8);
-    g.lineTo(5, 14);
-    g.lineTo(-5, 14);
-    g.lineTo(-leftSpan * 0.65, 8);
+    g.moveTo(0, -15);
+    g.lineTo(rightSpan * 0.6, 6);
+    g.lineTo(4, 11);
+    g.lineTo(-4, 11);
+    g.lineTo(-leftSpan * 0.6, 6);
     g.closePath();
     g.fillPath();
 
     // 4. Detalhes de Acabamento e Lâminas Militares (Trim Ciano)
-    g.lineStyle(1.5, p.trim, 0.95);
+    g.lineStyle(1.2, p.trim, 0.95);
     g.beginPath();
-    g.moveTo(0, -18);
-    g.lineTo(rightSpan * 0.85, 11);
-    g.moveTo(0, -18);
-    g.lineTo(-leftSpan * 0.85, 11);
+    g.moveTo(0, -13);
+    g.lineTo(rightSpan * 0.8, 8);
+    g.moveTo(0, -13);
+    g.lineTo(-leftSpan * 0.8, 8);
     g.strokePath();
 
     // 5. Cockpit Central Translúcido (Canopy)
-    g.fillStyle(p.canopy, 0.85);
+    g.fillStyle(p.canopy, 0.9);
     g.beginPath();
-    g.moveTo(0, -14);
-    g.lineTo(3.5, -4);
+    g.moveTo(0, -10);
+    g.lineTo(2.8, -2);
     g.lineTo(0, 4);
-    g.lineTo(-3.5, -4);
+    g.lineTo(-2.8, -2);
     g.closePath();
     g.fillPath();
 
     g.fillStyle(0xffffff, 0.9);
-    g.fillCircle(1, -6, 1.4); // Brilho de reflexo solar
+    g.fillCircle(0.8, -4, 1.2);
 
-    // 6. Muzzle Flash nos Canos das Asas (ao atirar)
+    // 6. Muzzle Flash
     if (this.isFiring) {
-      g.fillStyle(p.muzzle, 0.9);
-      g.fillCircle(-8, -12, 4);
-      g.fillCircle(8, -12, 4);
+      g.fillStyle(p.muzzle, 0.95);
+      g.fillCircle(-6, -8, 3.5);
+      g.fillCircle(6, -8, 3.5);
       g.fillStyle(0xffffff, 0.95);
-      g.fillCircle(-8, -12, 2);
-      g.fillCircle(8, -12, 2);
+      g.fillCircle(-6, -8, 1.8);
+      g.fillCircle(6, -8, 1.8);
     }
   }
 
   /**
-   * MOTH V2 (Cora Wren) — Interceptador Ágil de Asas Invertidas Top-Down.
+   * MOTH V2 (Cora Vance) — Interceptador Ágil Top-Down (28×32px).
    */
   private drawMothTopDown(g: Phaser.GameObjects.Graphics, p: Palette, roll: number, dashing: boolean): void {
-    const leftSpan = 20 * (1 + roll * 0.45);
-    const rightSpan = 20 * (1 - roll * 0.45);
+    const leftSpan = 15 * (1 + roll * 0.4);
+    const rightSpan = 15 * (1 - roll * 0.4);
 
-    // Propulsores
-    const flameLen = dashing ? 30 : (16 + Math.sin(this.flamePhase) * 5);
+    const flameLen = dashing ? 24 : (13 + Math.sin(this.flamePhase) * 4);
     g.fillStyle(p.engineGlow, 0.85);
-    g.fillTriangle(-3, 14, 3, 14, 0, 14 + flameLen);
+    g.fillTriangle(-2.5, 12, 2.5, 12, 0, 12 + flameLen);
     g.fillStyle(0xffffff, 0.9);
-    g.fillTriangle(-1.5, 14, 1.5, 14, 0, 14 + flameLen * 0.5);
+    g.fillTriangle(-1.2, 12, 1.2, 12, 0, 12 + flameLen * 0.5);
 
-    // Asas aerodinâmicas esbeltas
     g.fillStyle(this.isHit ? 0xff4444 : p.hullDark, 1);
     g.beginPath();
-    g.moveTo(0, -24);
-    g.lineTo(rightSpan, 6);
-    g.lineTo(rightSpan * 0.8, 12);
-    g.lineTo(4, 14);
-    g.lineTo(-4, 14);
-    g.lineTo(-leftSpan * 0.8, 12);
-    g.lineTo(-leftSpan, 6);
+    g.moveTo(0, -17);
+    g.lineTo(rightSpan, 5);
+    g.lineTo(rightSpan * 0.75, 10);
+    g.lineTo(3, 12);
+    g.lineTo(-3, 12);
+    g.lineTo(-leftSpan * 0.75, 10);
+    g.lineTo(-leftSpan, 5);
     g.closePath();
     g.fillPath();
 
-    // Corpo central magenta/ametista
     g.fillStyle(this.isHit ? 0xff8888 : p.hull, 1);
     g.beginPath();
-    g.moveTo(0, -22);
-    g.lineTo(6, 4);
-    g.lineTo(0, 14);
-    g.lineTo(-6, 4);
+    g.moveTo(0, -15);
+    g.lineTo(5, 3);
+    g.lineTo(0, 11);
+    g.lineTo(-5, 3);
     g.closePath();
     g.fillPath();
 
-    // Linhas de luz esmeralda/ametista
-    g.lineStyle(1.5, p.trim, 0.9);
-    g.lineBetween(-leftSpan * 0.85, 7, 0, -16);
-    g.lineBetween(rightSpan * 0.85, 7, 0, -16);
+    g.lineStyle(1.2, p.trim, 0.9);
+    g.lineBetween(-leftSpan * 0.8, 6, 0, -12);
+    g.lineBetween(rightSpan * 0.8, 6, 0, -12);
 
-    // Cockpit fino
     g.fillStyle(p.canopy, 0.9);
-    g.fillEllipse(0, -6, 4, 11);
+    g.fillEllipse(0, -4, 3.2, 8);
     g.fillStyle(0xffffff, 0.9);
-    g.fillCircle(0.8, -9, 1.3);
+    g.fillCircle(0.7, -6, 1.1);
 
     if (this.isFiring) {
       g.fillStyle(p.muzzle, 0.95);
-      g.fillCircle(0, -26, 4);
+      g.fillCircle(0, -18, 3.5);
       g.fillStyle(0xffffff, 0.95);
-      g.fillCircle(0, -26, 2);
+      g.fillCircle(0, -18, 1.8);
     }
   }
 
   /**
-   * KNUCKLE V2 (Harlan Greer) — Caça Blindado Pesado Top-Down.
+   * KNUCKLE V2 (Harlan Cruz) — Caça Blindado Top-Down (28×32px).
    */
   private drawKnuckleTopDown(g: Phaser.GameObjects.Graphics, p: Palette, roll: number, dashing: boolean): void {
-    const leftSpan = 21 * (1 + roll * 0.35);
-    const rightSpan = 21 * (1 - roll * 0.35);
+    const leftSpan = 15 * (1 + roll * 0.3);
+    const rightSpan = 15 * (1 - roll * 0.3);
 
-    // 4 turbinas pesadas traseiras
-    const flameLen = dashing ? 32 : (15 + Math.sin(this.flamePhase) * 4);
+    const flameLen = dashing ? 24 : (12 + Math.sin(this.flamePhase) * 3);
     g.fillStyle(p.engineGlow, 0.8);
-    for (const offset of [-8, -3, 3, 8]) {
-      g.fillTriangle(offset - 1.5, 15, offset + 1.5, 15, offset, 15 + flameLen);
+    for (const offset of [-6, -2, 2, 6]) {
+      g.fillTriangle(offset - 1.2, 12, offset + 1.2, 12, offset, 12 + flameLen);
     }
 
-    // Blindagem de chassi pesado
     g.fillStyle(this.isHit ? 0xff4444 : p.hullDark, 1);
     g.beginPath();
-    g.moveTo(-6, -18);
-    g.lineTo(6, -18);
-    g.lineTo(rightSpan, 4);
-    g.lineTo(rightSpan * 0.85, 15);
-    g.lineTo(-leftSpan * 0.85, 15);
-    g.lineTo(-leftSpan, 4);
+    g.moveTo(-5, -14);
+    g.lineTo(5, -14);
+    g.lineTo(rightSpan, 3);
+    g.lineTo(rightSpan * 0.8, 12);
+    g.lineTo(-leftSpan * 0.8, 12);
+    g.lineTo(-leftSpan, 3);
     g.closePath();
     g.fillPath();
 
-    // Revestimento de titânio
     g.fillStyle(this.isHit ? 0xff8888 : p.hull, 1);
-    g.fillRect(-10, -12, 20, 24);
+    g.fillRect(-8, -9, 16, 18);
 
-    // Borda angular alaranjada
-    g.lineStyle(2, p.trim, 0.95);
-    g.strokeRect(-9, -11, 18, 22);
+    g.lineStyle(1.5, p.trim, 0.95);
+    g.strokeRect(-7, -8, 14, 16);
 
-    // Cockpit blindado dourado
     g.fillStyle(p.canopy, 0.85);
-    g.fillRect(-4, -8, 8, 10);
+    g.fillRect(-3, -6, 6, 7);
     g.fillStyle(0xffffff, 0.9);
-    g.fillCircle(1, -6, 1.4);
+    g.fillCircle(0.8, -4, 1.1);
 
     if (this.isFiring) {
       g.fillStyle(p.muzzle, 0.9);
-      g.fillCircle(-7, -20, 5);
-      g.fillCircle(7, -20, 5);
+      g.fillCircle(-5, -15, 4);
+      g.fillCircle(5, -15, 4);
       g.fillStyle(0xffffff, 0.95);
-      g.fillCircle(-7, -20, 2.5);
-      g.fillCircle(7, -20, 2.5);
+      g.fillCircle(-5, -15, 2);
+      g.fillCircle(5, -15, 2);
     }
   }
 }

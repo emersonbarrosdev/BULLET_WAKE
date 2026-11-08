@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH, PLAYFIELD_X, PLAYFIELD_WIDTH, PLAYFIELD_RIGHT } from '../constants';
 
 type BackdropLayer = 'abyss' | 'reefs' | 'surface' | 'mist';
-const TEXTURE_WIDTH = PLAYFIELD_WIDTH; // 384px
+const TEXTURE_WIDTH = GAME_WIDTH; // 768px para cobrir menus e o corredor widescreen sem esticar
 const TEXTURE_HEIGHT = 768; // Altura para tiling vertical perfeito
 
 function random(seed: number): number {
@@ -29,10 +29,10 @@ function drawPelagicLayer(
     ctx.fillRect(0, 0, W, H);
 
     // Fossas abissais e veios de bioluminescência submarina alienígena
-    for (let i = 0; i < 7; i++) {
-      const cy = (i * 120 + 30) % H;
-      const cx = (random(i * 19 + 7) * (W - 80)) + 40;
-      const radius = 60 + random(i + 13) * 70;
+    for (let i = 0; i < 12; i++) {
+      const cy = (i * 80 + 30) % H;
+      const cx = (random(i * 19 + 7) * (W - 120)) + 60;
+      const radius = 70 + random(i + 13) * 80;
 
       const g = ctx.createRadialGradient(cx, cy, 5, cx, cy, radius);
       g.addColorStop(0, 'rgba(0, 240, 255, 0.14)');
@@ -50,12 +50,12 @@ function drawPelagicLayer(
     ctx.strokeStyle = '#00f0ff22';
     ctx.lineWidth = 1.5;
 
-    for (let i = 0; i < 8; i++) {
-      const y = i * 95 + 20;
+    for (let i = 0; i < 14; i++) {
+      const y = i * 65 + 15;
       const isLeft = i % 2 === 0;
-      const x = isLeft ? 15 : W - 85;
-      const w = 70 + random(i + 4) * 45;
-      const h = 50 + random(i + 8) * 35;
+      const x = isLeft ? 20 + random(i) * 120 : W - 180 + random(i + 2) * 80;
+      const w = 90 + random(i + 4) * 55;
+      const h = 55 + random(i + 8) * 35;
 
       ctx.beginPath();
       ctx.roundRect(x, y, w, h, [14, 18, 12, 16]);
@@ -64,9 +64,9 @@ function drawPelagicLayer(
 
       // Pólipos bioluminescentes sobre os recifes
       ctx.fillStyle = '#00f0ff55';
-      for (let p = 0; p < 4; p++) {
-        const px = x + 12 + p * 14;
-        const py = y + 10 + (p % 2) * 16;
+      for (let p = 0; p < 5; p++) {
+        const px = x + 14 + p * 16;
+        const py = y + 12 + (p % 2) * 16;
         ctx.beginPath();
         ctx.arc(px, py, 2.5, 0, Math.PI * 2);
         ctx.fill();
@@ -77,10 +77,10 @@ function drawPelagicLayer(
     // Sombras gigantescas de criaturas abissais passando sob as águas
     ctx.fillStyle = 'rgba(2, 10, 18, 0.45)';
     ctx.beginPath();
-    ctx.ellipse(W * 0.45, H * 0.35, 110, 35, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(W * 0.35, H * 0.35, 140, 40, -0.15, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.ellipse(W * 0.6, H * 0.75, 130, 42, 0.15, 0, Math.PI * 2);
+    ctx.ellipse(W * 0.65, H * 0.75, 160, 45, 0.12, 0, Math.PI * 2);
     ctx.fill();
     return;
   }
@@ -90,9 +90,9 @@ function drawPelagicLayer(
     ctx.strokeStyle = 'rgba(80, 200, 255, 0.22)';
     ctx.lineWidth = 1.2;
 
-    for (let y = 10; y < H; y += 22) {
+    for (let y = 10; y < H; y += 20) {
       ctx.beginPath();
-      const waveOffset = Math.sin(y * 0.08) * 15;
+      const waveOffset = Math.sin(y * 0.08) * 20;
       ctx.moveTo(10, y);
       ctx.bezierCurveTo(
         W * 0.33 + waveOffset, y - 6,
@@ -104,7 +104,7 @@ function drawPelagicLayer(
 
     // Espuma marítima cintilante (wake do oceano)
     ctx.fillStyle = 'rgba(160, 240, 255, 0.35)';
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < 140; i++) {
       const x = random(i * 17 + 5) * (W - 20) + 10;
       const y = random(i * 29 + 11) * H;
       ctx.fillRect(x, y, 2.5, 1.2);
@@ -114,19 +114,24 @@ function drawPelagicLayer(
 
   // 4. Neblina Atmosférica e Nuvens Altas
   ctx.fillStyle = 'rgba(180, 225, 255, 0.04)';
-  for (let i = 0; i < 5; i++) {
-    const y = i * 160 + 30;
-    const x = random(i * 11 + 3) * (W - 140) + 20;
+  for (let i = 0; i < 7; i++) {
+    const y = i * 130 + 20;
+    const x = random(i * 11 + 3) * (W - 180) + 30;
     ctx.beginPath();
-    ctx.ellipse(x + 50, y, 90, 45, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + 60, y, 120, 50, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 }
 
+export interface StageBackdropOptions {
+  fullWidth?: boolean;
+  showBezels?: boolean;
+}
+
 /**
  * Cenário Vertical Neo-Arcade da Fase 1 (Fenda Pelágica).
- * Renderiza o oceano verticalmente no corredor central de 384px,
- * e molduras de gabinete arcade nos painéis laterais (0-192 e 576-768).
+ * Configurado SEMPRE com z-index/depth negativo (-10 a -4) para jamais encobrir
+ * qualquer elemento de UI, cards, textos ou HUD de combate.
  */
 export class StageBackdrop {
   private readonly abyssTile: Phaser.GameObjects.TileSprite;
@@ -134,12 +139,14 @@ export class StageBackdrop {
   private readonly surfaceTile: Phaser.GameObjects.TileSprite;
   private readonly mistTile: Phaser.GameObjects.TileSprite;
 
-  constructor(scene: Phaser.Scene, _stageNumber = 1) {
+  constructor(scene: Phaser.Scene, _stageNumber = 1, options: StageBackdropOptions = {}) {
+    const fullWidth = Boolean(options.fullWidth);
+    const showBezels = options.showBezels ?? !fullWidth;
 
     // 1. Cria ou reutiliza texturas de canvas procedural para cada camada
     const layers: BackdropLayer[] = ['abyss', 'reefs', 'surface', 'mist'];
     for (const layer of layers) {
-      const key = `bg-pelagic-${layer}`;
+      const key = `bg-pelagic-${layer}-hd`;
       if (!scene.textures.exists(key)) {
         const canvas = scene.textures.createCanvas(key, TEXTURE_WIDTH, TEXTURE_HEIGHT);
         if (canvas) {
@@ -149,32 +156,35 @@ export class StageBackdrop {
       }
     }
 
-    // 2. Molduras de painel lateral (Bezels Arcade Neo-Retro)
-    // Painel Esquerdo (X: 0 a 192)
-    scene.add.rectangle(PLAYFIELD_X / 2, GAME_HEIGHT / 2, PLAYFIELD_X, GAME_HEIGHT, 0x050b12, 1)
-      .setDepth(1);
-    scene.add.rectangle(PLAYFIELD_X, GAME_HEIGHT / 2, 2, GAME_HEIGHT, 0x00f0ff, 0.4)
-      .setDepth(2);
-
-    // Painel Direito (X: 576 a 768)
-    const rightPanelCenterX = PLAYFIELD_RIGHT + (GAME_WIDTH - PLAYFIELD_RIGHT) / 2;
-    scene.add.rectangle(rightPanelCenterX, GAME_HEIGHT / 2, GAME_WIDTH - PLAYFIELD_RIGHT, GAME_HEIGHT, 0x050b12, 1)
-      .setDepth(1);
-    scene.add.rectangle(PLAYFIELD_RIGHT, GAME_HEIGHT / 2, 2, GAME_HEIGHT, 0x00f0ff, 0.4)
-      .setDepth(2);
-
-    // 3. Camadas de Tiling Vertical no Corredor Central (X: 192 a 576)
-    const centerX = PLAYFIELD_X + PLAYFIELD_WIDTH / 2;
+    const width = fullWidth ? GAME_WIDTH : PLAYFIELD_WIDTH;
+    const centerX = fullWidth ? GAME_WIDTH / 2 : PLAYFIELD_X + PLAYFIELD_WIDTH / 2;
     const centerY = GAME_HEIGHT / 2;
 
-    this.abyssTile = scene.add.tileSprite(centerX, centerY, PLAYFIELD_WIDTH, GAME_HEIGHT, 'bg-pelagic-abyss')
-      .setDepth(2);
-    this.reefsTile = scene.add.tileSprite(centerX, centerY, PLAYFIELD_WIDTH, GAME_HEIGHT, 'bg-pelagic-reefs')
-      .setDepth(3);
-    this.surfaceTile = scene.add.tileSprite(centerX, centerY, PLAYFIELD_WIDTH, GAME_HEIGHT, 'bg-pelagic-surface')
-      .setDepth(4);
-    this.mistTile = scene.add.tileSprite(centerX, centerY, PLAYFIELD_WIDTH, GAME_HEIGHT, 'bg-pelagic-mist')
-      .setDepth(5);
+    // 2. Camadas de Tiling Vertical com profundidade negativa (-10 a -7)
+    this.abyssTile = scene.add.tileSprite(centerX, centerY, width, GAME_HEIGHT, 'bg-pelagic-abyss-hd')
+      .setDepth(-10);
+    this.reefsTile = scene.add.tileSprite(centerX, centerY, width, GAME_HEIGHT, 'bg-pelagic-reefs-hd')
+      .setDepth(-9);
+    this.surfaceTile = scene.add.tileSprite(centerX, centerY, width, GAME_HEIGHT, 'bg-pelagic-surface-hd')
+      .setDepth(-8);
+    this.mistTile = scene.add.tileSprite(centerX, centerY, width, GAME_HEIGHT, 'bg-pelagic-mist-hd')
+      .setDepth(-7);
+
+    // 3. Molduras de painel lateral (Bezels Arcade Neo-Retro) - APENAS no gameplay
+    if (showBezels) {
+      // Painel Esquerdo (X: 0 a 192)
+      scene.add.rectangle(PLAYFIELD_X / 2, GAME_HEIGHT / 2, PLAYFIELD_X, GAME_HEIGHT, 0x050b12, 1)
+        .setDepth(-5);
+      scene.add.rectangle(PLAYFIELD_X, GAME_HEIGHT / 2, 2, GAME_HEIGHT, 0x00f0ff, 0.4)
+        .setDepth(-4);
+
+      // Painel Direito (X: 576 a 768)
+      const rightPanelCenterX = PLAYFIELD_RIGHT + (GAME_WIDTH - PLAYFIELD_RIGHT) / 2;
+      scene.add.rectangle(rightPanelCenterX, GAME_HEIGHT / 2, GAME_WIDTH - PLAYFIELD_RIGHT, GAME_HEIGHT, 0x050b12, 1)
+        .setDepth(-5);
+      scene.add.rectangle(PLAYFIELD_RIGHT, GAME_HEIGHT / 2, 2, GAME_HEIGHT, 0x00f0ff, 0.4)
+        .setDepth(-4);
+    }
   }
 
   /**
@@ -182,7 +192,6 @@ export class StageBackdrop {
    * A nave voa para o norte (-Y), logo o cenário avança predominantemente para baixo (+Y).
    */
   update(scrollPx: number): void {
-    // Parallax proporcional a cada profundidade da água
     this.abyssTile.tilePositionY -= scrollPx * 0.25;
     this.reefsTile.tilePositionY -= scrollPx * 0.55;
     this.surfaceTile.tilePositionY -= scrollPx * 1.0;

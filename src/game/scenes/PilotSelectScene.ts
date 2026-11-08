@@ -53,29 +53,29 @@ export class PilotSelectScene extends Phaser.Scene {
   create(): void {
     registerGameAnimations(this);
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
-    this.backdrop = new StageBackdrop(this, this.stageNumber);
+    this.backdrop = new StageBackdrop(this, this.stageNumber, { fullWidth: true, showBezels: false });
     this.previewDistance = 0;
     this.cards = [];
     this.shipVisuals = [];
     this.keys = this.input.keyboard?.addKeys('LEFT,RIGHT,ENTER,SPACE,ONE,TWO,THREE,ESC') as MenuKeys | undefined;
 
     // Cabeçalho militar de inteligência tática (Zona Superior)
-    this.add.rectangle(GAME_WIDTH / 2, 38, GAME_WIDTH, 68, 0x050e18, 0.92);
-    this.add.rectangle(GAME_WIDTH / 2, 71, GAME_WIDTH, 1.5, 0x1f3c4d);
+    this.add.rectangle(GAME_WIDTH / 2, 38, GAME_WIDTH, 68, 0x050e18, 0.92).setDepth(10);
+    this.add.rectangle(GAME_WIDTH / 2, 71, GAME_WIDTH, 1.5, 0x1f3c4d).setDepth(10);
 
     this.add.text(GAME_WIDTH / 2, 10, 'BULLET WAKE // CENTRO DE OPERAÇÕES', {
       fontFamily: FONT_TITLE,
       fontSize: '20px',
       color: '#ffffff',
       letterSpacing: 3,
-    }).setOrigin(0.5, 0).setResolution(2);
+    }).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
     this.add.text(GAME_WIDTH / 2, 42, 'SELEÇÃO DE PILOTO DE COMBATE — ESCOLHA SEU OPERADOR', {
       fontFamily: FONT_HUD,
       fontSize: '12px',
       color: '#00f0ff',
       letterSpacing: 2,
-    }).setOrigin(0.5, 0).setResolution(2);
+    }).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
     // Constrói os 3 cards focados nos pilotos
     const cardCenters = [136, 384, 632];
@@ -84,35 +84,35 @@ export class PilotSelectScene extends Phaser.Scene {
     // Painel inferior de Briefing Narrativo do Piloto Selecionado
     const briefY = 356;
     this.add.rectangle(GAME_WIDTH / 2, briefY, GAME_WIDTH - 48, 44, 0x060f1b, 0.94)
-      .setStrokeStyle(1, 0x1b384c);
+      .setStrokeStyle(1, 0x1b384c).setDepth(10);
 
     this.briefingText = this.add.text(GAME_WIDTH / 2, briefY - 14, '', {
       fontFamily: FONT_HUD,
       fontSize: '11px',
       color: '#e2e8f0',
       align: 'center',
-    }).setOrigin(0.5, 0).setResolution(2);
+    }).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
     this.specialDetailText = this.add.text(GAME_WIDTH / 2, briefY + 4, '', {
       fontFamily: FONT_HUD,
       fontSize: '11px',
       color: '#ffd166',
       align: 'center',
-    }).setOrigin(0.5, 0).setResolution(2);
+    }).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
     // Rodapé de navegação e confirmação
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 18, GAME_WIDTH, 36, 0x050e18, 0.96);
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 36, GAME_WIDTH, 1.5, 0x1f3c4d);
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 18, GAME_WIDTH, 36, 0x050e18, 0.96).setDepth(10);
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 36, GAME_WIDTH, 1.5, 0x1f3c4d).setDepth(10);
 
     this.add.text(24, GAME_HEIGHT - 26, '[1 / 2 / 3] OU [SETAS] SELECIONAR  |  [ESC] VOLTAR', {
       fontFamily: FONT_HUD,
       fontSize: '11px',
       color: '#64748b',
-    }).setResolution(2);
+    }).setResolution(2).setDepth(11);
 
     // Botão de ação principal altamente evidente (com borda ciano e destaque luminoso)
     const startBtn = this.add.rectangle(GAME_WIDTH - 130, GAME_HEIGHT - 18, 220, 26, 0x0e7490)
-      .setStrokeStyle(1.5, 0x00f0ff).setInteractive({ useHandCursor: true });
+      .setStrokeStyle(1.5, 0x00f0ff).setInteractive({ useHandCursor: true }).setDepth(11);
 
     this.add.text(GAME_WIDTH - 130, GAME_HEIGHT - 18, 'INICIAR OPERAÇÃO [ENTER]', {
       fontFamily: FONT_HUD,
@@ -120,7 +120,7 @@ export class PilotSelectScene extends Phaser.Scene {
       color: '#ffffff',
       fontStyle: 'bold',
       letterSpacing: 1,
-    }).setOrigin(0.5).setResolution(2);
+    }).setOrigin(0.5).setResolution(2).setDepth(12);
 
     startBtn.on('pointerover', () => {
       startBtn.setFillStyle(0x0284c7);
@@ -141,19 +141,26 @@ export class PilotSelectScene extends Phaser.Scene {
     this.shipVisuals.forEach(s => s.updateShip(delta, 0, 0, 0, false, false));
 
     if (!this.keys) return;
-    if (Phaser.Input.Keyboard.JustDown(this.keys.ONE)) this.select(0);
-    if (Phaser.Input.Keyboard.JustDown(this.keys.TWO)) this.select(1);
-    if (Phaser.Input.Keyboard.JustDown(this.keys.THREE)) this.select(2);
-    if (Phaser.Input.Keyboard.JustDown(this.keys.LEFT))
+    const isJustDown = (k?: unknown) => {
+      if (!k || typeof k !== 'object') return false;
+      const anyKey = k as { _justDown?: boolean };
+      if (anyKey._justDown) {
+        anyKey._justDown = false;
+        return true;
+      }
+      return false;
+    };
+
+    if (isJustDown(this.keys.ONE)) this.select(0);
+    if (isJustDown(this.keys.TWO)) this.select(1);
+    if (isJustDown(this.keys.THREE)) this.select(2);
+    if (isJustDown(this.keys.LEFT))
       this.select((this.selectedIndex + PILOTS.length - 1) % PILOTS.length);
-    if (Phaser.Input.Keyboard.JustDown(this.keys.RIGHT))
+    if (isJustDown(this.keys.RIGHT))
       this.select((this.selectedIndex + 1) % PILOTS.length);
-    if (
-      Phaser.Input.Keyboard.JustDown(this.keys.ENTER) ||
-      Phaser.Input.Keyboard.JustDown(this.keys.SPACE)
-    )
+    if (isJustDown(this.keys.ENTER) || isJustDown(this.keys.SPACE))
       this.startGame();
-    if (Phaser.Input.Keyboard.JustDown(this.keys.ESC)) {
+    if (isJustDown(this.keys.ESC)) {
       this.scene.start('StageSelectScene');
     }
   }
@@ -165,10 +172,10 @@ export class PilotSelectScene extends Phaser.Scene {
 
     // Fundo do card com relevo
     const panel = this.add.rectangle(x, cardY, cardWidth, cardHeight, 0x091422, 0.94)
-      .setStrokeStyle(1, 0x1f3c4d).setInteractive({ useHandCursor: true });
+      .setStrokeStyle(1, 0x1f3c4d).setInteractive({ useHandCursor: true }).setDepth(10);
 
     const glow = this.add.rectangle(x, cardY, cardWidth + 4, cardHeight + 4, 0x00f0ff, 0.12)
-      .setStrokeStyle(2, 0x00f0ff).setVisible(false);
+      .setStrokeStyle(2, 0x00f0ff).setVisible(false).setDepth(10);
 
     panel.on('pointerdown', () => this.select(index));
     panel.on('pointerover', () => this.select(index));
@@ -179,7 +186,7 @@ export class PilotSelectScene extends Phaser.Scene {
       fontSize: '15px',
       color: '#f8fafc',
       letterSpacing: 1,
-    }).setOrigin(0.5, 0).setResolution(2);
+    }).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
     const callsignText = this.add.text(x, 114, `"${pilot.callsign}"`, {
       fontFamily: FONT_HUD,
@@ -187,14 +194,14 @@ export class PilotSelectScene extends Phaser.Scene {
       color: '#38bdf8',
       fontStyle: 'bold',
       letterSpacing: 1,
-    }).setOrigin(0.5, 0).setResolution(2);
+    }).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
     // 2. Retrato em Pixel Art do Piloto (Protagonismo Central)
     const portraitFrame = this.add.rectangle(x, 160, 68, 68, 0x0e1c2d, 1)
-      .setStrokeStyle(1.5, 0x38bdf8);
+      .setStrokeStyle(1.5, 0x38bdf8).setDepth(11);
 
     const portrait = this.add.sprite(x, 160, pilot.portraitKey)
-      .setScale(1.0);
+      .setScale(1.0).setDepth(12);
 
     // 3. Função Tática e Especial
     this.add.text(x, 202, pilot.role, {
@@ -203,27 +210,28 @@ export class PilotSelectScene extends Phaser.Scene {
       color: '#94a3b8',
       fontStyle: 'bold',
       letterSpacing: 1,
-    }).setOrigin(0.5, 0).setResolution(2);
+    }).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
     this.add.text(x, 218, `ESP: ${pilot.specialName}`, {
       fontFamily: FONT_HUD,
       fontSize: '11px',
       color: '#ffd166',
       fontStyle: 'bold',
-    }).setOrigin(0.5, 0).setResolution(2);
+    }).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
     // 4. Aeronave Subordinada em Perfil Lateral
     this.add.rectangle(x, 252, cardWidth - 24, 30, 0x060f1b, 0.9)
-      .setStrokeStyle(1, 0x182c3c);
+      .setStrokeStyle(1, 0x182c3c).setDepth(11);
 
-    this.add.text(x - 42, 244, `NAVE: ${pilot.shipName.toUpperCase()}`, {
+    this.add.text(x - 88, 246, `NAVE: ${pilot.shipName.toUpperCase()}`, {
       fontFamily: FONT_HUD,
       fontSize: '10px',
       color: '#64748b',
-    }).setResolution(2);
+    }).setResolution(2).setDepth(12);
 
-    const shipVisual = new VectorShip(this, x + 58, 252, pilot.id);
+    const shipVisual = new VectorShip(this, x + 54, 252, pilot.id, 'profile');
     shipVisual.setScale(0.85);
+    shipVisual.setDepth(12);
     this.shipVisuals.push(shipVisual);
 
     // 5. Estatísticas Comparativas
@@ -235,7 +243,7 @@ export class PilotSelectScene extends Phaser.Scene {
       fontFamily: FONT_HUD,
       fontSize: '10px',
       color: '#94a3b8',
-    }).setOrigin(0.5, 0).setResolution(2);
+    }).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
     this.cards.push({
       panel,

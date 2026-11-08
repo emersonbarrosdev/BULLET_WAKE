@@ -34,23 +34,23 @@ export class StageSelectScene extends Phaser.Scene {
 
     const data = saveSystem.getSaveData();
 
-    this.backdrop = new StageBackdrop(this, 1);
+    this.backdrop = new StageBackdrop(this, 1, { fullWidth: true, showBezels: false });
 
     // Cabeçalho
-    this.add.rectangle(GAME_WIDTH / 2, 44, GAME_WIDTH, 84, 0x050e18, 0.88);
+    this.add.rectangle(GAME_WIDTH / 2, 44, GAME_WIDTH, 84, 0x050e18, 0.88).setDepth(10);
     this.add.text(GAME_WIDTH / 2, 12, 'BULLET WAKE', {
       fontFamily: FONT_TITLE,
       fontSize: '26px',
       color: '#ffffff',
       letterSpacing: 3,
-    }).setOrigin(0.5, 0).setResolution(2);
+    }).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
     this.add.text(GAME_WIDTH / 2, 48, 'COORDENADAS DE MISSÃO E SELEÇÃO DE SETORES', {
       fontFamily: FONT_TECH,
       fontSize: '13px',
       color: '#00f0ff',
       letterSpacing: 2,
-    }).setOrigin(0.5, 0).setResolution(2);
+    }).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
     // Cards horizontais das 5 fases
     const startX = 84;
@@ -65,7 +65,8 @@ export class StageSelectScene extends Phaser.Scene {
       const panel = this.add
         .rectangle(x, cardY, 138, 160, unlocked ? 0x0c1b2c : 0x081018, 0.94)
         .setStrokeStyle(1, unlocked ? 0x22425e : 0x14212e)
-        .setInteractive({ useHandCursor: unlocked });
+        .setInteractive({ useHandCursor: unlocked })
+        .setDepth(10);
 
       const title = this.add.text(
         x,
@@ -77,7 +78,7 @@ export class StageSelectScene extends Phaser.Scene {
           color: unlocked ? '#00f0ff' : '#475569',
           letterSpacing: 1,
         },
-      ).setOrigin(0.5, 0).setResolution(2);
+      ).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
       const subtitle = this.add.text(
         x,
@@ -89,7 +90,7 @@ export class StageSelectScene extends Phaser.Scene {
           color: unlocked ? '#f8fafc' : '#334155',
           fontStyle: 'bold',
         },
-      ).setOrigin(0.5, 0).setResolution(2);
+      ).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
       const bossText = this.add.text(
         x,
@@ -101,7 +102,7 @@ export class StageSelectScene extends Phaser.Scene {
           color: unlocked ? '#f59e0b' : '#64748b',
           align: 'center',
         },
-      ).setOrigin(0.5, 0).setResolution(2);
+      ).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
       const scoreText = this.add.text(
         x,
@@ -113,7 +114,7 @@ export class StageSelectScene extends Phaser.Scene {
           color: unlocked ? '#10b981' : '#334155',
           align: 'center',
         },
-      ).setOrigin(0.5, 0).setResolution(2);
+      ).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
       panel.on('pointerdown', () => {
         if (unlocked) {
@@ -138,7 +139,7 @@ export class StageSelectScene extends Phaser.Scene {
 
     // Painel de Briefing e Inteligência da Missão
     this.add.rectangle(GAME_WIDTH / 2, 310, GAME_WIDTH - 80, 80, 0x071320, 0.94)
-      .setStrokeStyle(1, 0x1e3a5f);
+      .setStrokeStyle(1, 0x1e3a5f).setDepth(10);
 
     this.briefingText = this.add.text(
       GAME_WIDTH / 2,
@@ -150,31 +151,31 @@ export class StageSelectScene extends Phaser.Scene {
         color: '#93c5fd',
         align: 'center',
       },
-    ).setOrigin(0.5, 0).setResolution(2);
+    ).setOrigin(0.5, 0).setResolution(2).setDepth(11);
 
     // Rodapé de navegação
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 22, GAME_WIDTH, 44, 0x050e18, 0.92);
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 22, GAME_WIDTH, 44, 0x050e18, 0.92).setDepth(10);
 
     const backBtn = this.add.rectangle(130, GAME_HEIGHT - 22, 190, 32, 0x1e293b)
-      .setStrokeStyle(1, 0x475569).setInteractive({ useHandCursor: true });
+      .setStrokeStyle(1, 0x475569).setInteractive({ useHandCursor: true }).setDepth(11);
     this.add.text(130, GAME_HEIGHT - 22, 'VOLTAR AO MENU [ESC]', {
       fontFamily: FONT_HUD,
       fontSize: '12px',
       color: '#94a3b8',
       fontStyle: 'bold',
       letterSpacing: 1,
-    }).setOrigin(0.5).setResolution(2);
+    }).setOrigin(0.5).setResolution(2).setDepth(12);
     backBtn.on('pointerdown', () => this.backToMenu());
 
     const startBtn = this.add.rectangle(GAME_WIDTH - 140, GAME_HEIGHT - 22, 210, 32, 0x0e7490)
-      .setStrokeStyle(1, 0x38bdf8).setInteractive({ useHandCursor: true });
+      .setStrokeStyle(1, 0x38bdf8).setInteractive({ useHandCursor: true }).setDepth(11);
     this.add.text(GAME_WIDTH - 140, GAME_HEIGHT - 22, 'INICIAR MISSÃO [ENTER]', {
       fontFamily: FONT_HUD,
       fontSize: '12px',
       color: '#ffffff',
       fontStyle: 'bold',
       letterSpacing: 1,
-    }).setOrigin(0.5).setResolution(2);
+    }).setOrigin(0.5).setResolution(2).setDepth(12);
     startBtn.on('pointerdown', () => this.launchStage());
 
     this.selectStage(0);
