@@ -5,8 +5,11 @@ import {
   advanceHealth,
   applyPlayerHit,
   initialPlayerHealth,
+  type HitEvent,
   type PlayerHealth,
 } from '../systems/combat';
+import { CombatHud } from '../ui/CombatHud';
+import { GameOverOverlay } from '../ui/GameOverOverlay';
 
 type Keys = Record<'W' | 'A' | 'S' | 'D' | 'SPACE' | 'R', Phaser.Input.Keyboard.Key>;
 interface Projectile {
@@ -21,16 +24,14 @@ interface Target {
 }
 
 /**
- * Arena de teste de GAMEPLAY. As figuras geométricas são marcadores temporários
- * de hitbox e não são os sprites artísticos definitivos das naves e inimigos.
+ * T04: combate de teste com HUD funcional, três vidas e Game Over.
+ * Marcadores geométricos = debug de gameplay, NÃO sprites definitivos.
  */
 export class PrototypeScene extends Phaser.Scene {
   private ship!: Phaser.GameObjects.Container;
+  private hud!: CombatHud;
   private keyboardControls?: Keys;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
-  private scoreText!: Phaser.GameObjects.Text;
-  private healthText!: Phaser.GameObjects.Text;
-  private livesText!: Phaser.GameObjects.Text;
   private shots: Projectile[] = [];
   private enemyShots: Projectile[] = [];
   private targets: Target[] = [];
@@ -45,7 +46,6 @@ export class PrototypeScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
-    // Scene.restart reutiliza a instância: reiniciar também campos de lógica.
     this.shots = [];
     this.enemyShots = [];
     this.targets = [];
@@ -57,17 +57,11 @@ export class PrototypeScene extends Phaser.Scene {
     this.keyboardControls = this.input.keyboard?.addKeys('W,A,S,D,SPACE,R') as Keys | undefined;
     this.cursors = this.input.keyboard?.createCursorKeys();
 
-    // HUD de teste com fonte regular mais legível e textura de texto em resolução 2x.
-    // O design arcade definitivo do HUD é tarefa T04.
-    this.add.rectangle(GAME_WIDTH / 2, 23, GAME_WIDTH, 46, 0x19283a);
-    this.hudText(9, 6, 'BULLET WAKE  /  T03', '#eaf2f5', 12);
-    this.scoreText = this.hudText(9, 25, 'SCORE 00000', '#83e5df', 11);
-    this.healthText = this.hudText(160, 25, 'HP 3/3', '#eaf2f5', 11);
-    this.livesText = this.hudText(275, 25, 'VIDAS 3', '#eaf2f5', 11);
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 11, GAME_WIDTH, 22, 0x19283a);
-    this.hudText(9, GAME_HEIGHT - 18, 'WASD/SETAS: MOVER   ESPACO: TIRO   R: REINICIAR', '#d4e1e9', 9);
+    this.hud = new CombatHud(this, () => this.restart());
+    this.hud.setScore(this.score);
+    this.hud.setHealth(this.health);
 
-    // Marcador de nave controlável. NÃO é sprite final.
+    // Marcador de prototipagem, não arte final.
     const marker = this.add.graphics();
     marker.fillStyle(0x263447, 1);
     marker.fillRect(-13, -4, 25, 8);
@@ -79,39 +73,39 @@ export class PrototypeScene extends Phaser.Scene {
     marker.fillRect(-17, -2, 4, 4);
     this.ship = this.add.container(64, GAME_HEIGHT / 2, [marker]);
 
-    for (let i = 0; i < 3; i += 1) {
-      const node = this.add.rectangle(272 + i * 46, 62 + i * 52, 17, 17, 0xd75e56);
+    for (let row = 0; row < 3; row += 1) {
+      const node = this.add.rectangle(272 + row * 46, 67 + row * 48, 17, 17, 0xd75e56);
       node.setStrokeStyle(2, 0xf7a96c);
-      this.targets.push({ node, row: i, reloadMs: 900 + i * 450 });
+      this.targets.push({ node, row, reloadMs: 900 + row * 450 });
     }
-
-    // Um segundo toque após o Game Over reinicia sem precisar de teclado.
-    this.input.on('pointerdown', () => {
-      if (this.health.gameOver) this.scene.restart();
-    });
   }
 
   update(_time: number, delta: number): void {
     const dt = clamp(delta, 0, 50);
-    const key = (name: keyof Keys): boolean => Boolean(this.keyboardControls?.[name].isDown);
-    if (key('R')) {
-      this.scene.restart();
+
+    // JustDown impede reinício em loop se R permanecer pressionado.
+    if (this.keyboardControls && Phaser.Input.Keyboard.JustDown(this.keyboardControls.R)) {
+      this.restart();
       return;
     }
-    if (this.health.gameOver) return;
 
+    if (this.health.gameOver) return;
     this.health = advanceHealth(this.health, dt);
+    this.hud.update(dt);
+
+    // Piscar é feedback visual; a hitbox não muda enquanto há i-frames.
     this.ship.setAlpha(
-      this.health.invulnerableMs > 0 && Math.floor(this.health.invulnerableMs / 100) % 2 === 0
-        ? 0.35 : 1,
+      this.health.invulnerableMs > 0 && Math.floor(this.health.invulnerableMs / 110) % 2 === 0
+        ? 0.3 : 1,
     );
 
+    const key = (name: keyof Keys): boolean => Boolean(this.keyboardControls?.[name].isDown);
     let dx = Number(key('D') || this.cursors?.right.isDown) - Number(key('A') || this.cursors?.left.isDown);
     let dy = Number(key('S') || this.cursors?.down.isDown) - Number(key('W') || this.cursors?.up.isDown);
     const pointer = this.input.activePointer;
 
-    // Controle touch temporário: segue o dedo, disparando quando pressiona.
-    if (pointer.isDown) {
+    // Controle de toque é provisório. O botão de restart recebe clique próprio.
+    if (pointer.isDown && pointer.y > 45 && pointer.y < GAME_HEIGHT - 25) {
       dx = Math.abs(pointer.x - this.ship.x) > 8 ? Math.sign(pointer.x - this.ship.x) : 0;
       dy = Math.abs(pointer.y - this.ship.y) > 8 ? Math.sign(pointer.y - this.ship.y) : 0;
     }
@@ -119,28 +113,26 @@ export class PrototypeScene extends Phaser.Scene {
     const moved = moveInBounds(
       { x: this.ship.x, y: this.ship.y },
       dx, dy, 190, dt,
-      { minX: 23, maxX: GAME_WIDTH - 24, minY: 53, maxY: GAME_HEIGHT - 28 },
+      { minX: 23, maxX: GAME_WIDTH - 24, minY: 56, maxY: GAME_HEIGHT - 32 },
     );
     this.ship.setPosition(moved.x, moved.y);
 
     this.shootCooldown = Math.max(0, this.shootCooldown - dt);
-    if ((key('SPACE') || this.cursors?.space.isDown || pointer.isDown) && this.shootCooldown <= 0) {
+    if ((key('SPACE') || this.cursors?.space.isDown || (
+      pointer.isDown && pointer.y > 45 && pointer.y < GAME_HEIGHT - 25
+    )) && this.shootCooldown <= 0) {
       this.fire();
       this.shootCooldown += 125;
     }
 
     this.advanceTargets(dt);
+    if (this.health.gameOver) return;
     this.advancePlayerShots(dt);
     this.advanceEnemyShots(dt);
   }
 
-  private hudText(x: number, y: number, text: string, color: string, fontSize: number): Phaser.GameObjects.Text {
-    return this.add.text(x, y, text, {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: fontSize + 'px',
-      fontStyle: 'bold',
-      color,
-    }).setResolution(2).setDepth(10);
+  private restart(): void {
+    this.scene.restart();
   }
 
   private fire(): void {
@@ -151,16 +143,14 @@ export class PrototypeScene extends Phaser.Scene {
   private advanceTargets(dt: number): void {
     for (const target of this.targets) {
       target.node.x -= 18 * dt / 1000;
-      if (target.node.x < -20) {
-        this.resetTarget(target);
-      }
+      if (target.node.x < -20) this.resetTarget(target);
       target.reloadMs -= dt;
       if (target.reloadMs <= 0) {
         this.fireEnemyShot(target);
         target.reloadMs += 1500 + target.row * 280;
       }
-      // Contato casco-alvo também provoca dano, apenas uma vez por i-frame.
-      if (Math.abs(target.node.x - this.ship.x) <= 13 && Math.abs(target.node.y - this.ship.y) <= 10) {
+      if (Math.abs(target.node.x - this.ship.x) <= 13 &&
+          Math.abs(target.node.y - this.ship.y) <= 10) {
         this.damageShip();
         this.resetTarget(target);
         if (this.health.gameOver) return;
@@ -188,9 +178,10 @@ export class PrototypeScene extends Phaser.Scene {
       shot.node.x += shot.velocityX * dt / 1000;
       let hit = false;
       for (const target of this.targets) {
-        if (Math.abs(shot.node.x - target.node.x) < 11 && Math.abs(shot.node.y - target.node.y) < 9) {
+        if (Math.abs(shot.node.x - target.node.x) < 11 &&
+            Math.abs(shot.node.y - target.node.y) < 9) {
           this.score += 100;
-          this.scoreText.setText('SCORE ' + String(this.score).padStart(5, '0'));
+          this.hud.setScore(this.score);
           this.resetTarget(target);
           hit = true;
           break;
@@ -209,42 +200,46 @@ export class PrototypeScene extends Phaser.Scene {
       shot.node.x += shot.velocityX * dt / 1000;
       shot.node.y += shot.velocityY * dt / 1000;
 
-      const hit = Math.abs(shot.node.x - this.ship.x) <= 8
-        && Math.abs(shot.node.y - this.ship.y) <= 6;
-      const outside = shot.node.x < -8 || shot.node.x > GAME_WIDTH + 8
-        || shot.node.y < -8 || shot.node.y > GAME_HEIGHT + 8;
+      const hit = Math.abs(shot.node.x - this.ship.x) <= 8 &&
+        Math.abs(shot.node.y - this.ship.y) <= 6;
+      const outside = shot.node.x < -8 || shot.node.x > GAME_WIDTH + 8 ||
+        shot.node.y < -8 || shot.node.y > GAME_HEIGHT + 8;
 
       if (hit || outside) {
         shot.node.destroy();
         this.enemyShots.splice(i, 1);
       }
+
       if (hit) {
-        this.damageShip();
-        // No respawn limpamos todos os projéteis; não iterar índices antigos.
-        if (this.health.gameOver || this.health.invulnerableMs > 1500) break;
+        const event = this.damageShip();
+        // No respawn, todo o array foi limpo: retornar e nunca iterar índices inválidos.
+        if (event === 'respawn' || event === 'game-over') return;
       }
     }
   }
 
-  private damageShip(): void {
+  private damageShip(): HitEvent {
     const result = applyPlayerHit(this.health);
     this.health = result.state;
-    if (result.event === 'ignored') return;
-    this.healthText.setText('HP ' + this.health.hp + '/3');
-    this.livesText.setText('VIDAS ' + this.health.lives);
+    if (result.event === 'ignored') return result.event;
 
+    this.hud.setHealth(this.health);
+    if (result.event === 'damaged') {
+      this.hud.flash('ACERTO!  -1 HP', '#ffb77b', 1000);
+    }
     if (result.event === 'respawn') {
+      this.clearEnemyShots();
       this.ship.setPosition(64, GAME_HEIGHT / 2);
       this.ship.setAlpha(1);
-      this.clearEnemyShots();
+      this.hud.flash('VIDA PERDIDA  /  PROTEGIDO', '#f4c480', 1600);
     }
     if (result.event === 'game-over') {
       this.clearEnemyShots();
+      this.clearPlayerShots();
       this.ship.setVisible(false);
-      this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, 78, 0x101827, 0.95).setDepth(19);
-      this.hudText(118, GAME_HEIGHT / 2 - 28, 'GAME OVER', '#ffba76', 24).setDepth(20);
-      this.hudText(88, GAME_HEIGHT / 2 + 6, 'R OU TOQUE PARA REINICIAR', '#eaf2f5', 11).setDepth(20);
+      new GameOverOverlay(this, this.score, () => this.restart());
     }
+    return result.event;
   }
 
   private clearEnemyShots(): void {
@@ -252,12 +247,17 @@ export class PrototypeScene extends Phaser.Scene {
     this.enemyShots = [];
   }
 
+  private clearPlayerShots(): void {
+    for (const bullet of this.shots) bullet.node.destroy();
+    this.shots = [];
+  }
+
   private resetTarget(target: Target): void {
     this.targetWave += 1;
     target.reloadMs = 900 + target.row * 300;
     target.node.setPosition(
       GAME_WIDTH + 12 + (this.targetWave % 3) * 20,
-      62 + target.row * 52,
+      67 + target.row * 48,
     );
   }
 }
