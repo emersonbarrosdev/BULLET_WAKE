@@ -101,11 +101,12 @@ function makeFortressChassisFrame(f) {
   rect(im, 40, 16, 75, 96, C.bioStone);
   rect(im, 60, 24, 52, 80, [32, 38, 46, 255]);
   for (let y = 30; y <= 98; y += 18) {
-    line(im, 25, y, 75, y, C.bioGlow);
-    circle(im, 85, y, 6, C.bioBright, true);
+    const pulse = (f * 3) % 8;
+    line(im, 25 + pulse, y, 75, y, C.bioGlow);
+    circle(im, 85, y, 5 + (f % 2), C.bioBright, true);
   }
   rect(im, 15, 48, 28, 32, C.bioStone);
-  line(im, 15, 64, 43, 64, C.bioBright);
+  line(im, 15, 64, 43 + f * 2, 64, C.bioBright);
   return im;
 }
 
