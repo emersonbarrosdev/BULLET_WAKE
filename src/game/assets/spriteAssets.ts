@@ -35,6 +35,19 @@ export const SPRITE_SHEETS = [
   { key: 'fx-hit', url: 'assets/fx/hit.png', frameWidth: 16, frameHeight: 16 },
   { key: 'fx-explosion', url: 'assets/fx/explosion.png', frameWidth: 24, frameHeight: 24 },
   { key: 'fx-warning', url: 'assets/fx/warning.png', frameWidth: 16, frameHeight: 16 },
+  { key: 'pickup-upgrade', url: 'assets/pickups/upgrade.png', frameWidth: 24, frameHeight: 24 },
+  { key: 'pickup-repair', url: 'assets/pickups/repair.png', frameWidth: 24, frameHeight: 24 },
+  { key: 'pickup-bomb', url: 'assets/pickups/bomb.png', frameWidth: 24, frameHeight: 24 },
+  { key: 'pickup-resonance', url: 'assets/pickups/resonance.png', frameWidth: 24, frameHeight: 24 },
+  { key: 'pickup-shield', url: 'assets/pickups/shield.png', frameWidth: 24, frameHeight: 24 },
+  { key: 'pickup-score', url: 'assets/pickups/score.png', frameWidth: 24, frameHeight: 24 },
+  { key: 'fx-shield', url: 'assets/fx/shield.png', frameWidth: 48, frameHeight: 48 },
+  { key: 'fx-bomb-wave', url: 'assets/fx/bomb_wave.png', frameWidth: 96, frameHeight: 96 },
+  { key: 'fx-nova-wave', url: 'assets/fx/nova_wave.png', frameWidth: 128, frameHeight: 128 },
+  { key: 'boss-krm17-hull', url: 'assets/bosses/krm17/hull.png', frameWidth: 144, frameHeight: 96 },
+  { key: 'boss-krm17-drill', url: 'assets/bosses/krm17/drill.png', frameWidth: 48, frameHeight: 48 },
+  { key: 'boss-krm17-turret', url: 'assets/bosses/krm17/turret.png', frameWidth: 32, frameHeight: 24 },
+  { key: 'boss-krm17-core', url: 'assets/bosses/krm17/core.png', frameWidth: 32, frameHeight: 32 },
 ] as const;
 
 export function loadGameSprites(scene: Phaser.Scene): void {
@@ -115,6 +128,19 @@ animations.push(
   { id: 'fx-hit-play', sheet: 'fx-hit', first: 0, last: 5, frameRate: 20 },
   { id: 'fx-explosion-play', sheet: 'fx-explosion', first: 0, last: 7, frameRate: 17 },
   { id: 'fx-warning-loop', sheet: 'fx-warning', first: 0, last: 3, frameRate: 10, repeat: -1 },
+  { id: 'pickup-upgrade-loop', sheet: 'pickup-upgrade', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'pickup-repair-loop', sheet: 'pickup-repair', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'pickup-bomb-loop', sheet: 'pickup-bomb', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'pickup-resonance-loop', sheet: 'pickup-resonance', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'pickup-shield-loop', sheet: 'pickup-shield', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'pickup-score-loop', sheet: 'pickup-score', first: 0, last: 3, frameRate: 8, repeat: -1 },
+  { id: 'fx-shield-loop', sheet: 'fx-shield', first: 0, last: 3, frameRate: 12, repeat: -1 },
+  { id: 'fx-bomb-wave-play', sheet: 'fx-bomb-wave', first: 0, last: 7, frameRate: 18, repeat: 0 },
+  { id: 'fx-nova-wave-play', sheet: 'fx-nova-wave', first: 0, last: 7, frameRate: 16, repeat: 0 },
+  { id: 'boss-krm17-hull-idle', sheet: 'boss-krm17-hull', first: 0, last: 3, frameRate: 6, repeat: -1 },
+  { id: 'boss-krm17-drill-spin', sheet: 'boss-krm17-drill', first: 0, last: 3, frameRate: 16, repeat: -1 },
+  { id: 'boss-krm17-turret-aim', sheet: 'boss-krm17-turret', first: 0, last: 3, frameRate: 10, repeat: -1 },
+  { id: 'boss-krm17-core-pulse', sheet: 'boss-krm17-core', first: 0, last: 3, frameRate: 12, repeat: -1 },
 );
 
 export function registerGameAnimations(scene: Phaser.Scene): void {

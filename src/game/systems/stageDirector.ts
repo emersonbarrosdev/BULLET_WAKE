@@ -5,6 +5,8 @@
  * eventos únicos são disparados pela distância percorrida pelo cenário.
  * Simulação pura, sem dependência de Phaser ou DOM.
  */
+import { BossKrm17, type BossTick } from './bossKrm17.ts';
+
 export type EnemyKind = 'scout' | 'lancer';
 export type EnemyPhase = 'approach' | 'telegraph' | 'attack' | 'recover' | 'exit';
 export type SectorId = 'evacuacao' | 'destrocos' | 'industria' | 'aproximacao';
@@ -36,6 +38,8 @@ export interface StageTick {
   sector: SectorId;
   sectorChanged: boolean;
   completed: boolean;
+  bossTick?: BossTick;
+  bossActive?: boolean;
 }
 
 export const SCROLL_SPEED = 68; // pixels lógicos/s (cenário permanece avançando)
@@ -93,24 +97,67 @@ export function getSector(distancePx: number): SectorId {
 
 export class StageDirector {
   readonly enemies: EnemyModel[] = [];
+  boss: BossKrm17 | null = null;
   scrollPx = 0;
   private eventIndex = 0;
   private nextId = 1;
   private currentSector: SectorId = 'evacuacao';
   private readonly viewportWidth: number;
+  private readonly enableBoss: boolean;
 
-  constructor(viewportWidth = 768) {
+  constructor(viewportWidth = 768, enableBoss = false) {
     this.viewportWidth = viewportWidth;
+    this.enableBoss = enableBoss;
   }
 
   update(deltaMs: number, playerX: number, playerY: number): StageTick {
     const dt = clamp(deltaMs, 0, 50);
-    this.scrollPx += SCROLL_SPEED * dt / 1000;
+    if (!this.boss) {
+      this.scrollPx += (SCROLL_SPEED * dt) / 1000;
+    } else {
+      this.scrollPx += (SCROLL_SPEED * 0.25 * dt) / 1000;
+    }
+
     const sector = getSector(this.scrollPx);
     const sectorChanged = sector !== this.currentSector;
     this.currentSector = sector;
     const spawned: EnemyModel[] = [];
     const shots: EnemyShotEvent[] = [];
+
+    // Spawna chefe KRM-17 se habilitado e ao atingir a distância final
+    if (this.enableBoss && this.scrollPx >= DEMO_DISTANCE && !this.boss && this.enemies.length === 0) {
+      this.boss = new BossKrm17();
+    }
+
+    let bossTick: BossTick | undefined;
+    if (this.boss) {
+      bossTick = this.boss.update(dt, playerX, playerY);
+      for (const shot of bossTick.shots) {
+        shots.push({
+          x: shot.x,
+          y: shot.y,
+          velocityX: shot.velocityX,
+          velocityY: shot.velocityY,
+        });
+      }
+      for (const sp of bossTick.spawns) {
+        const drone: EnemyModel = {
+          id: this.nextId++,
+          kind: sp.kind,
+          phase: 'approach',
+          x: sp.x,
+          y: sp.y,
+          baseY: sp.y,
+          ageMs: 0,
+          phaseMs: 0,
+          hp: 1,
+          maxHp: 1,
+          secondShotFired: false,
+        };
+        this.enemies.push(drone);
+        spawned.push(drone);
+      }
+    }
 
     while (this.eventIndex < STAGE_EVENTS.length
       && this.scrollPx >= STAGE_EVENTS[this.eventIndex].distance) {
@@ -185,6 +232,10 @@ export class StageDirector {
       if (this.enemies[i].x < -60) this.enemies.splice(i, 1);
     }
 
+    const isCompleted = this.enableBoss
+      ? (this.boss !== null && this.boss.phase === 'defeated')
+      : (this.scrollPx >= DEMO_DISTANCE && this.enemies.length === 0);
+
     return {
       spawned,
       shots,
@@ -192,8 +243,9 @@ export class StageDirector {
       progress: clamp(this.scrollPx / DEMO_DISTANCE, 0, 1),
       sector,
       sectorChanged,
-      // O trecho é único: após o último evento não há loop/repetição.
-      completed: this.scrollPx >= DEMO_DISTANCE && this.enemies.length === 0,
+      completed: isCompleted,
+      bossTick,
+      bossActive: Boolean(this.boss && this.boss.phase !== 'defeated'),
     };
   }
 
@@ -205,6 +257,11 @@ export class StageDirector {
     if (enemy.hp > 0) return { killed: false, score: 0 };
     this.enemies.splice(index, 1);
     return { killed: true, score: enemy.kind === 'scout' ? 100 : 300 };
+  }
+
+  damageBoss(amount: number, hitX: number, hitY: number) {
+    if (!this.boss) return { bossDamage: 0, moduleDestroyed: null, killed: false };
+    return this.boss.damage(amount, hitX, hitY);
   }
 
   remove(id: number): void {
