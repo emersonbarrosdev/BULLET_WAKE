@@ -4,6 +4,8 @@
  * Lógica pura, modular e desacoplada do Phaser.
  */
 
+import type { StageBoss, BossHitResult } from './bosses/types.ts';
+
 export type BossPhase = 'intro' | 'phase1_turrets' | 'phase2_drill' | 'phase3_core' | 'defeated';
 
 export interface BossModule {
@@ -45,7 +47,8 @@ export interface BossTick {
   defeated: boolean;
 }
 
-export class BossKrm17 {
+export class BossKrm17 implements StageBoss {
+  readonly name = 'KRM-17 Excavator';
   x = 880; // Inicia fora da tela à direita
   y = 216; // Centralizado verticalmente
   targetX = 640;

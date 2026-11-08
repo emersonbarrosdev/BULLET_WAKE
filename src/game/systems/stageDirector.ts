@@ -5,7 +5,8 @@
  * eventos únicos são disparados pela distância percorrida pelo cenário.
  * Simulação pura, sem dependência de Phaser ou DOM.
  */
-import { BossKrm17, type BossTick } from './bossKrm17.ts';
+import type { BossTick, StageBoss } from './bosses/types.ts';
+import { createStageBoss } from './bosses/factory.ts';
 
 export type EnemyKind = 'scout' | 'lancer';
 export type EnemyPhase = 'approach' | 'telegraph' | 'attack' | 'recover' | 'exit';
@@ -97,17 +98,19 @@ export function getSector(distancePx: number): SectorId {
 
 export class StageDirector {
   readonly enemies: EnemyModel[] = [];
-  boss: BossKrm17 | null = null;
+  boss: StageBoss | null = null;
   scrollPx = 0;
   private eventIndex = 0;
   private nextId = 1;
   private currentSector: SectorId = 'evacuacao';
   private readonly viewportWidth: number;
   private readonly enableBoss: boolean;
+  readonly stageNumber: number;
 
-  constructor(viewportWidth = 768, enableBoss = false) {
+  constructor(viewportWidth = 768, enableBoss = false, stageNumber = 1) {
     this.viewportWidth = viewportWidth;
     this.enableBoss = enableBoss;
+    this.stageNumber = stageNumber;
   }
 
   update(deltaMs: number, playerX: number, playerY: number): StageTick {
@@ -124,9 +127,9 @@ export class StageDirector {
     const spawned: EnemyModel[] = [];
     const shots: EnemyShotEvent[] = [];
 
-    // Spawna chefe KRM-17 se habilitado e ao atingir a distância final
+    // Spawna chefe correspondente à fase se habilitado e ao atingir a distância final
     if (this.enableBoss && this.scrollPx >= DEMO_DISTANCE && !this.boss && this.enemies.length === 0) {
-      this.boss = new BossKrm17();
+      this.boss = createStageBoss(this.stageNumber);
     }
 
     let bossTick: BossTick | undefined;
