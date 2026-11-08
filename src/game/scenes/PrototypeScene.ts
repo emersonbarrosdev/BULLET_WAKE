@@ -9,19 +9,20 @@ import {
 } from '../systems/enemyDirector';
 import { CombatHud } from '../ui/CombatHud';
 import { getPilot, shotIntervalMs, type PilotDefinition } from '../data/pilots';
-import { createPrototypeShip } from '../ui/PrototypeShip';
+import { registerGameAnimations } from '../assets/spriteAssets';
 import { GameOverOverlay } from '../ui/GameOverOverlay';
 
 type Keys = Record<'W' | 'A' | 'S' | 'D' | 'SPACE' | 'R' | 'ESC', Phaser.Input.Keyboard.Key>;
 interface Projectile {
-  node: Phaser.GameObjects.Rectangle;
+  node: Phaser.GameObjects.Sprite;
   velocityX: number;
   velocityY: number;
 }
 interface EnemyVisual {
   container: Phaser.GameObjects.Container;
-  warning: Phaser.GameObjects.Rectangle;
-  damagePlate: Phaser.GameObjects.Rectangle;
+  body: Phaser.GameObjects.Sprite;
+  warning: Phaser.GameObjects.Sprite;
+  animationKey: string;
 }
 
 /**
@@ -30,6 +31,8 @@ interface EnemyVisual {
  */
 export class PrototypeScene extends Phaser.Scene {
   private ship!: Phaser.GameObjects.Container;
+  private shipSprite!: Phaser.GameObjects.Sprite;
+  private shipAnimation = '';
   private pilot: PilotDefinition = getPilot('nolan');
   private hud!: CombatHud;
   private keyboardControls?: Keys;
@@ -51,8 +54,10 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   create(): void {
+    registerGameAnimations(this);
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
     // Scene.restart reusa instância; esvaziar absolutamente todo estado de gameplay.
+    this.shipAnimation = '';
     this.shots = [];
     this.enemyShots = [];
     this.enemyVisuals.clear();
@@ -70,10 +75,10 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.setWave(1);
     this.hud.setPilot(this.pilot.shipName);
 
-    // Nave ainda representada por silhueta temporária de gameplay.
-    this.ship = this.add.container(
-      64, GAME_HEIGHT / 2, [createPrototypeShip(this, this.pilot)],
-    );
+    // Sprite PNG animado em perfil; hurtbox continua independente do desenho.
+    this.shipSprite = this.add.sprite(0, 0, 'ship-' + this.pilot.id, 0);
+    this.ship = this.add.container(64, GAME_HEIGHT / 2, [this.shipSprite]);
+    this.changeShipAnimation('idle');
   }
 
   update(_time: number, delta: number): void {
@@ -112,6 +117,7 @@ export class PrototypeScene extends Phaser.Scene {
       { minX: 23, maxX: GAME_WIDTH - 24, minY: 56, maxY: GAME_HEIGHT - 32 },
     );
     this.ship.setPosition(moved.x, moved.y);
+    this.changeShipAnimation(dy < 0 ? 'up' : dy > 0 ? 'down' : 'idle');
 
     this.shootCooldown = Math.max(0, this.shootCooldown - dt);
     if ((key('SPACE') || this.cursors?.space.isDown || touchingArena) && this.shootCooldown <= 0) {
@@ -141,37 +147,38 @@ export class PrototypeScene extends Phaser.Scene {
     this.scene.start('PilotSelectScene', { selectedPilotId: this.pilot.id });
   }
 
+  private changeShipAnimation(state: 'idle' | 'up' | 'down'): void {
+    if (this.shipAnimation === state) return;
+    this.shipAnimation = state;
+    this.shipSprite.play('ship-' + this.pilot.id + '-' + state, true);
+  }
+
+  private playEffect(kind: 'muzzle' | 'hit' | 'explosion', x: number, y: number): void {
+    const fx = this.add.sprite(x, y, 'fx-' + kind, 0).setDepth(15);
+    fx.once('animationcomplete', () => fx.destroy());
+    fx.play('fx-' + kind + '-play');
+  }
+
   private fire(): void {
-    const heavy = this.pilot.id === 'harlan';
-    const needle = this.pilot.id === 'cora';
-    const node = this.add.rectangle(
-      this.ship.x + (heavy ? 25 : 21),
-      this.ship.y,
-      heavy ? 11 : needle ? 9 : 7,
-      heavy ? 5 : needle ? 2 : 3,
-      this.pilot.projectileColor,
-    );
+    const offset = this.pilot.id === 'harlan' ? 24 : 21;
+    const x = this.ship.x + offset;
+    const node = this.add.sprite(x, this.ship.y, 'shot-' + this.pilot.id, 0)
+      .setDepth(8);
+    node.play('shot-' + this.pilot.id + '-loop');
     this.shots.push({ node, velocityX: 300, velocityY: 0 });
+    this.playEffect('muzzle', x - 5, this.ship.y);
   }
 
   private makeEnemyVisual(enemy: EnemyModel): void {
-    const isScout = enemy.kind === 'scout';
-    const hull = this.add.graphics();
-    hull.fillStyle(isScout ? 0x803c53 : 0x533c62);
-    hull.fillRect(isScout ? -8 : -13, isScout ? -5 : -7, isScout ? 16 : 26, isScout ? 10 : 14);
-    hull.fillStyle(isScout ? 0xd95f61 : 0xb9757f);
-    hull.fillRect(isScout ? -7 : -10, isScout ? -8 : -11, isScout ? 12 : 20, 3);
-    hull.fillRect(isScout ? -7 : -10, isScout ? 5 : 8, isScout ? 12 : 20, 3);
-    hull.fillStyle(0xffba76);
-    hull.fillRect(-10, -2, 3, 4);
-
-    const damagePlate = this.add.rectangle(0, 0, isScout ? 11 : 17, 3, 0xffbc83)
-      .setAlpha(0);
-    const warning = this.add.rectangle(-14, 0, 4, isScout ? 10 : 16, 0xffd48e)
-      .setAlpha(0);
-    const container = this.add.container(enemy.x, enemy.y, [hull, damagePlate, warning]);
-    container.setDepth(3);
-    this.enemyVisuals.set(enemy.id, { container, warning, damagePlate });
+    const key = 'enemy-' + enemy.kind;
+    const body = this.add.sprite(0, 0, key, 0);
+    body.play(key + '-fly');
+    const warning = this.add.sprite(enemy.kind === 'scout' ? -13 : -20, 0, 'fx-warning', 0)
+      .setVisible(false).setScale(0.65);
+    const container = this.add.container(enemy.x, enemy.y, [body, warning]).setDepth(5);
+    this.enemyVisuals.set(enemy.id, {
+      container, body, warning, animationKey: key + '-fly',
+    });
   }
 
   private syncEnemyVisuals(): void {
@@ -186,20 +193,27 @@ export class PrototypeScene extends Phaser.Scene {
       const visual = this.enemyVisuals.get(enemy.id);
       if (!visual) continue;
       visual.container.setPosition(enemy.x, enemy.y);
-      // Indicador de preparação piscante; a bala só dispara após este aviso.
-      visual.warning.setAlpha(
-        enemy.phase === 'telegraph'
-          ? (Math.floor(enemy.ageMs / 120) % 2 === 0 ? 1 : 0.45)
-          : enemy.phase === 'attack' ? 0.7 : 0,
-      );
-      visual.damagePlate.setAlpha(enemy.hp < enemy.maxHp ? 0.9 : 0);
+      const warning = enemy.phase === 'telegraph';
+      const nextKey = 'enemy-' + enemy.kind + (warning ? '-warning' : '-fly');
+      if (nextKey !== visual.animationKey) {
+        visual.body.play(nextKey, true);
+        visual.animationKey = nextKey;
+      }
+      if (warning && !visual.warning.visible) {
+        visual.warning.setVisible(true).play('fx-warning-loop');
+      } else if (!warning && visual.warning.visible) {
+        visual.warning.setVisible(false).stop();
+      }
+      if (enemy.hp < enemy.maxHp) visual.body.setTint(0xffb1a7);
+      else visual.body.clearTint();
     }
   }
 
   private spawnEnemyShot(event: EnemyShotEvent): void {
     if (this.enemyShots.length >= 45) return;
-    const bullet = this.add.rectangle(event.x, event.y, 5, 5, 0xffba76);
-    bullet.setStrokeStyle(1, 0xd75e56);
+    const bullet = this.add.sprite(event.x, event.y, 'shot-enemy', 0).setDepth(9);
+    bullet.play('shot-enemy-loop');
+    this.playEffect('muzzle', event.x + 7, event.y);
     this.enemyShots.push({
       node: bullet,
       velocityX: event.velocityX,
@@ -218,6 +232,7 @@ export class PrototypeScene extends Phaser.Scene {
         if (Math.abs(shot.node.x - enemy.x) <= extentX
           && Math.abs(shot.node.y - enemy.y) <= extentY) {
           const outcome = this.director.damage(enemy.id, this.pilot.damage);
+          this.playEffect(outcome.killed ? 'explosion' : 'hit', enemy.x, enemy.y);
           if (outcome.killed) {
             this.score += outcome.score;
             this.hud.setScore(this.score);
@@ -243,6 +258,7 @@ export class PrototypeScene extends Phaser.Scene {
         const result = this.damageShip();
         // Evita um inimigo colado repetir contato quando a proteção acaba.
         this.director.remove(enemy.id);
+        this.playEffect('explosion', enemy.x, enemy.y);
         this.syncEnemyVisuals();
         if (result === 'game-over') return;
         break;
@@ -277,18 +293,24 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.setHealth(this.health);
     if (result.event === 'damaged') {
       this.hud.flash('ACERTO!  -1 HP', '#ffb77b', 1000);
+      this.playEffect('hit', this.ship.x, this.ship.y);
     }
     if (result.event === 'respawn') {
       this.clearEnemyShots();
       this.ship.setPosition(64, GAME_HEIGHT / 2);
       this.ship.setAlpha(1);
+      this.playEffect('explosion', this.ship.x, this.ship.y);
       this.hud.flash('VIDA PERDIDA  /  PROTEGIDO', '#f4c480', 1500);
     }
     if (result.event === 'game-over') {
       this.clearEnemyShots();
       this.clearPlayerShots();
-      this.ship.setVisible(false);
-      new GameOverOverlay(this, this.score, () => this.restart(), () => this.choosePilot());
+      this.shipSprite.play('ship-' + this.pilot.id + '-death');
+      this.playEffect('explosion', this.ship.x, this.ship.y);
+      this.shipSprite.once('animationcomplete', () => {
+        this.ship.setVisible(false);
+        new GameOverOverlay(this, this.score, () => this.restart(), () => this.choosePilot());
+      });
     }
     return result.event;
   }

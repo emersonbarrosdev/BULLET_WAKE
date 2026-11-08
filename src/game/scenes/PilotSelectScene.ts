@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from '../constants';
 import { PILOTS, type PilotDefinition } from '../data/pilots';
-import { createPrototypeShip } from '../ui/PrototypeShip';
+import { loadGameSprites, registerGameAnimations } from '../assets/spriteAssets';
 
 type MenuKeys = Record<
   'LEFT' | 'RIGHT' | 'ENTER' | 'SPACE' | 'ONE' | 'TWO' | 'THREE',
@@ -29,7 +29,12 @@ export class PilotSelectScene extends Phaser.Scene {
     this.selectedIndex = index >= 0 ? index : 0;
   }
 
+  preload(): void {
+    loadGameSprites(this);
+  }
+
   create(): void {
+    registerGameAnimations(this);
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
     this.cards = [];
     this.keys = this.input.keyboard?.addKeys(
@@ -84,9 +89,8 @@ export class PilotSelectScene extends Phaser.Scene {
       .setOrigin(0.5, 0);
     this.text(x, 77, pilot.shipName.toUpperCase(), 15, '#f2f7fa')
       .setOrigin(0.5, 0);
-    const ship = createPrototypeShip(this, pilot);
-    ship.setPosition(x, 111);
-    ship.setScale(1.35);
+    const ship = this.add.sprite(x, 111, 'ship-' + pilot.id, 0);
+    ship.setScale(1.25).play('ship-' + pilot.id + '-idle');
     this.text(x, 133, pilot.role, 10, '#b5d9df').setOrigin(0.5, 0);
     this.text(x, 148, 'VEL ' + pilot.speed + '   TIROS ' + pilot.shotsPerSecond + '/s', 9, '#e2e9ef')
       .setOrigin(0.5, 0);
