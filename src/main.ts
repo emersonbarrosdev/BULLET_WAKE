@@ -20,6 +20,12 @@ const config: Phaser.Types.Core.GameConfig = {
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
   render: { pixelArt: true },
+  fps: {
+    min: 30,
+    target: 240, // Permite rodar acima de 60fps (120Hz, 144Hz, 240Hz)
+    forceSetTimeOut: false,
+    smoothStep: true,
+  },
   scale: {
     mode: Phaser.Scale.FIT,
     // O CSS Flexbox centraliza o Canvas.

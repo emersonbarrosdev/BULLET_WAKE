@@ -234,3 +234,4 @@ export class BossFortress implements StageBoss {
     };
   }
 }
+

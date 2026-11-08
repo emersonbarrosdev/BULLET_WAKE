@@ -61,3 +61,4 @@ for (const [relPath, fw, fh, count] of [...mothSheets, ...knuckleSheets]) {
     assert.ok(seen.size >= 2, 'animacao estatica: ' + relPath);
   });
 }
+

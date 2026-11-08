@@ -222,3 +222,4 @@ export class BossSerpent implements StageBoss {
     };
   }
 }
+

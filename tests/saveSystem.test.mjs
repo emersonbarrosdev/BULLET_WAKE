@@ -55,3 +55,4 @@ test('SaveSystem updates and persists settings', () => {
   assert.equal(save.getData().settings.isMuted, true);
   assert.equal(save.getData().settings.difficulty, 'hard');
 });
+

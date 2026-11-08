@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from '../constants';
+import { FONT_HUD, FONT_TECH, FONT_TITLE, GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from '../constants';
 import { STAGES, type StageDefinition } from '../data/stages';
 import { StageBackdrop } from './StageBackdrop';
 import { saveSystem } from '../systems/saveSystem.ts';
@@ -37,9 +37,20 @@ export class StageSelectScene extends Phaser.Scene {
     this.backdrop = new StageBackdrop(this, 1);
 
     // Cabeçalho
-    this.add.rectangle(GAME_WIDTH / 2, 45, GAME_WIDTH, 90, 0x081320, 0.88);
-    this.text(GAME_WIDTH / 2, 14, 'BULLET WAKE', 28, '#ffffff').setOrigin(0.5, 0);
-    this.text(GAME_WIDTH / 2, 48, 'SELEÇÃO DE FASES E COORDENADAS DO WAKE', 15, '#7bf7ea').setOrigin(0.5, 0);
+    this.add.rectangle(GAME_WIDTH / 2, 44, GAME_WIDTH, 84, 0x050e18, 0.88);
+    this.add.text(GAME_WIDTH / 2, 12, 'BULLET WAKE', {
+      fontFamily: FONT_TITLE,
+      fontSize: '26px',
+      color: '#ffffff',
+      letterSpacing: 3,
+    }).setOrigin(0.5, 0).setResolution(2);
+
+    this.add.text(GAME_WIDTH / 2, 48, 'COORDENADAS DE MISSÃO E SELEÇÃO DE SETORES', {
+      fontFamily: FONT_TECH,
+      fontSize: '13px',
+      color: '#00f0ff',
+      letterSpacing: 2,
+    }).setOrigin(0.5, 0).setResolution(2);
 
     // Cards horizontais das 5 fases
     const startX = 84;
@@ -52,41 +63,57 @@ export class StageSelectScene extends Phaser.Scene {
       const bestScore = data.bestScores[stageDef.stageNumber]?.score || 0;
 
       const panel = this.add
-        .rectangle(x, cardY, 138, 160, unlocked ? 0x132737 : 0x0d161f, 0.94)
-        .setStrokeStyle(1, unlocked ? 0x487994 : 0x223544)
+        .rectangle(x, cardY, 138, 160, unlocked ? 0x0c1b2c : 0x081018, 0.94)
+        .setStrokeStyle(1, unlocked ? 0x22425e : 0x14212e)
         .setInteractive({ useHandCursor: unlocked });
 
-      const title = this.text(
+      const title = this.add.text(
         x,
         cardY - 68,
         `FASE 0${stageDef.stageNumber}`,
-        14,
-        unlocked ? '#7df9ff' : '#527282',
-      ).setOrigin(0.5, 0);
+        {
+          fontFamily: FONT_TITLE,
+          fontSize: '13px',
+          color: unlocked ? '#00f0ff' : '#475569',
+          letterSpacing: 1,
+        },
+      ).setOrigin(0.5, 0).setResolution(2);
 
-      const subtitle = this.text(
+      const subtitle = this.add.text(
         x,
         cardY - 48,
         stageDef.title.toUpperCase(),
-        11,
-        unlocked ? '#e5f3fa' : '#698190',
-      ).setOrigin(0.5, 0);
+        {
+          fontFamily: FONT_TECH,
+          fontSize: '11px',
+          color: unlocked ? '#f8fafc' : '#334155',
+          fontStyle: 'bold',
+        },
+      ).setOrigin(0.5, 0).setResolution(2);
 
-      const bossText = this.text(
+      const bossText = this.add.text(
         x,
         cardY - 10,
         unlocked ? `CHEFE:\n${stageDef.bossName}` : '[BLOQUEADA]',
-        10,
-        unlocked ? '#ffd79e' : '#885555',
-      ).setOrigin(0.5, 0);
+        {
+          fontFamily: FONT_TECH,
+          fontSize: '10px',
+          color: unlocked ? '#f59e0b' : '#64748b',
+          align: 'center',
+        },
+      ).setOrigin(0.5, 0).setResolution(2);
 
-      const scoreText = this.text(
+      const scoreText = this.add.text(
         x,
         cardY + 45,
         unlocked ? `RECORDE:\n${bestScore.toString().padStart(6, '0')}` : '---',
-        10,
-        unlocked ? '#97e8c3' : '#455966',
-      ).setOrigin(0.5, 0);
+        {
+          fontFamily: FONT_TECH,
+          fontSize: '10px',
+          color: unlocked ? '#10b981' : '#334155',
+          align: 'center',
+        },
+      ).setOrigin(0.5, 0).setResolution(2);
 
       panel.on('pointerdown', () => {
         if (unlocked) {
@@ -110,28 +137,44 @@ export class StageSelectScene extends Phaser.Scene {
     });
 
     // Painel de Briefing e Inteligência da Missão
-    this.add.rectangle(GAME_WIDTH / 2, 310, GAME_WIDTH - 80, 80, 0x0c1b28, 0.92)
-      .setStrokeStyle(1, 0x3d6b82);
+    this.add.rectangle(GAME_WIDTH / 2, 310, GAME_WIDTH - 80, 80, 0x071320, 0.94)
+      .setStrokeStyle(1, 0x1e3a5f);
 
-    this.briefingText = this.text(
+    this.briefingText = this.add.text(
       GAME_WIDTH / 2,
       282,
       '',
-      13,
-      '#dbebf5',
-    ).setOrigin(0.5, 0);
+      {
+        fontFamily: FONT_TECH,
+        fontSize: '12px',
+        color: '#93c5fd',
+        align: 'center',
+      },
+    ).setOrigin(0.5, 0).setResolution(2);
 
     // Rodapé de navegação
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 20, GAME_WIDTH, 40, 0x081320, 0.9);
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 22, GAME_WIDTH, 44, 0x050e18, 0.92);
 
-    const backBtn = this.add.rectangle(120, GAME_HEIGHT - 20, 180, 30, 0x1b3547)
-      .setStrokeStyle(1, 0x599bb8).setInteractive({ useHandCursor: true });
-    this.text(120, GAME_HEIGHT - 27, 'VOLTAR AO MENU [ESC]', 13, '#ffffff').setOrigin(0.5, 0);
+    const backBtn = this.add.rectangle(130, GAME_HEIGHT - 22, 190, 32, 0x1e293b)
+      .setStrokeStyle(1, 0x475569).setInteractive({ useHandCursor: true });
+    this.add.text(130, GAME_HEIGHT - 22, 'VOLTAR AO MENU [ESC]', {
+      fontFamily: FONT_HUD,
+      fontSize: '12px',
+      color: '#94a3b8',
+      fontStyle: 'bold',
+      letterSpacing: 1,
+    }).setOrigin(0.5).setResolution(2);
     backBtn.on('pointerdown', () => this.backToMenu());
 
-    const startBtn = this.add.rectangle(GAME_WIDTH - 130, GAME_HEIGHT - 20, 200, 30, 0x245a6c)
-      .setStrokeStyle(1, 0x7df9ff).setInteractive({ useHandCursor: true });
-    this.text(GAME_WIDTH - 130, GAME_HEIGHT - 27, 'INICIAR MISSÃO [ENTER]', 13, '#ffffff').setOrigin(0.5, 0);
+    const startBtn = this.add.rectangle(GAME_WIDTH - 140, GAME_HEIGHT - 22, 210, 32, 0x0e7490)
+      .setStrokeStyle(1, 0x38bdf8).setInteractive({ useHandCursor: true });
+    this.add.text(GAME_WIDTH - 140, GAME_HEIGHT - 22, 'INICIAR MISSÃO [ENTER]', {
+      fontFamily: FONT_HUD,
+      fontSize: '12px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      letterSpacing: 1,
+    }).setOrigin(0.5).setResolution(2);
     startBtn.on('pointerdown', () => this.launchStage());
 
     this.selectStage(0);
@@ -140,14 +183,7 @@ export class StageSelectScene extends Phaser.Scene {
     const kb = this.input.keyboard;
     if (kb) {
       kb.on('keydown-LEFT', () => this.moveSelection(-1));
-      kb.on('keydown-A', () => this.moveSelection(-1));
       kb.on('keydown-RIGHT', () => this.moveSelection(1));
-      kb.on('keydown-D', () => this.moveSelection(1));
-      kb.on('keydown-ONE', () => this.selectStage(0));
-      kb.on('keydown-TWO', () => this.selectStage(1));
-      kb.on('keydown-THREE', () => this.selectStage(2));
-      kb.on('keydown-FOUR', () => this.selectStage(3));
-      kb.on('keydown-FIVE', () => this.selectStage(4));
       kb.on('keydown-ENTER', () => this.launchStage());
       kb.on('keydown-SPACE', () => this.launchStage());
       kb.on('keydown-ESC', () => this.backToMenu());
@@ -155,34 +191,39 @@ export class StageSelectScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    this.previewDistance += Math.min(delta, 50) * 0.024;
+    this.previewDistance += Math.min(delta, 50) * 0.026;
     this.backdrop.update(this.previewDistance);
   }
 
   private moveSelection(dir: number): void {
-    const total = this.cards.length;
-    let next = (this.selectedIndex + dir + total) % total;
-    while (!this.cards[next].unlocked && next !== this.selectedIndex) {
-      next = (next + dir + total) % total;
-    }
+    const next = (this.selectedIndex + dir + STAGES.length) % STAGES.length;
     this.selectStage(next);
   }
 
   private selectStage(index: number): void {
     this.selectedIndex = index;
-    const stage = STAGES[index];
-    this.cards.forEach((card, idx) => {
+    const stageDef = STAGES[index];
+    const card = this.cards[index];
+
+    this.cards.forEach((c, idx) => {
       const isSelected = idx === index;
-      if (card.unlocked) {
-        card.panel.setStrokeStyle(isSelected ? 2 : 1, isSelected ? 0x7df9ff : 0x487994);
-        card.panel.setFillStyle(isSelected ? 0x22435b : 0x132737, 0.95);
+      if (c.unlocked) {
+        c.panel.setStrokeStyle(isSelected ? 2 : 1, isSelected ? 0x00f0ff : 0x22425e);
+        c.panel.setFillStyle(isSelected ? 0x16304a : 0x0c1b2c, 0.95);
       }
     });
 
-    this.briefingText.setText(
-      `BIOMA: ${stage.biome.toUpperCase()}  |  ALVO HOSTIL: ${stage.bossName.toUpperCase()}\n` +
-      `DIRETRIZ: ${stage.briefing}`,
-    );
+    if (card && card.unlocked) {
+      this.briefingText.setText(
+        `BRIEFING DE COMBATE // FASE 0${stageDef.stageNumber}: ${stageDef.title.toUpperCase()}\n` +
+        `BIOMA: ${stageDef.biome.toUpperCase()}  |  ALVO PRIMÁRIO: ${stageDef.bossName.toUpperCase()}\n` +
+        `RELATÓRIO: Setor hostil ativo com patrulhas pesadas e armamentos de área.`,
+      );
+    } else {
+      this.briefingText.setText(
+        `COORDENADAS BLOQUEADAS // CONCLUA AS FASES ANTERIORES PARA SINTONIZAR O SINAL DE RASTRO.`,
+      );
+    }
   }
 
   private launchStage(): void {
@@ -194,17 +235,5 @@ export class StageSelectScene extends Phaser.Scene {
 
   private backToMenu(): void {
     this.scene.start('TitleScene');
-  }
-
-  private text(x: number, y: number, value: string, size: number, color: string): Phaser.GameObjects.Text {
-    return this.add
-      .text(x, y, value, {
-        fontFamily: 'Arial, Helvetica, sans-serif',
-        fontSize: size + 'px',
-        color,
-        fontStyle: 'bold',
-        align: 'center',
-      })
-      .setResolution(2);
   }
 }

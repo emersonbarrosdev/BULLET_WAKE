@@ -20,3 +20,4 @@ export function createStageBoss(stageNumber: number): StageBoss {
       return new BossKrm17();
   }
 }
+

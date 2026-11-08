@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME_HEIGHT, GAME_WIDTH } from '../constants';
+import { FONT_HUD, FONT_TECH, FONT_TITLE, GAME_HEIGHT, GAME_WIDTH } from '../constants';
 import { STAGES } from '../data/stages';
 
 /** Tela de vitória de fase com pontuação, bônus e transição de missão. */
@@ -21,116 +21,166 @@ export class StageCompleteOverlay extends Phaser.GameObjects.Container {
       GAME_HEIGHT / 2,
       GAME_WIDTH,
       GAME_HEIGHT,
-      0x07111c,
+      0x050d18,
       0.88,
     );
 
     const panel = scene.add.rectangle(
       GAME_WIDTH / 2,
       GAME_HEIGHT / 2,
-      560,
+      570,
       300,
-      0x132435,
-    ).setStrokeStyle(2, 0x64ded4);
+      0x0a1626,
+      0.95,
+    ).setStrokeStyle(2, 0x00f0ff);
 
-    const title = this.text(
-      scene,
+    const title = scene.add.text(
       GAME_WIDTH / 2,
       95,
       'MISSÃO CUMPRIDA!',
-      30,
-      '#7bf7ea',
-    ).setOrigin(0.5, 0);
+      {
+        fontFamily: FONT_TITLE,
+        fontSize: '24px',
+        color: '#00f0ff',
+        fontStyle: 'bold',
+        letterSpacing: 2,
+      },
+    ).setOrigin(0.5, 0).setResolution(2);
 
-    const caption = this.text(
-      scene,
+    const caption = scene.add.text(
       GAME_WIDTH / 2,
-      138,
-      `FASE 0${stageNumber}: ${stageDef.title.toUpperCase()}  /  ${stageDef.bossName.toUpperCase()} CONTIDO`,
-      14,
-      '#dbebf5',
-    ).setOrigin(0.5, 0);
+      136,
+      `FASE 0${stageNumber}: ${stageDef.title.toUpperCase()}  //  ${stageDef.bossName.toUpperCase()} NEUTRALIZADO`,
+      {
+        fontFamily: FONT_TECH,
+        fontSize: '12px',
+        color: '#93c5fd',
+        letterSpacing: 1,
+      },
+    ).setOrigin(0.5, 0).setResolution(2);
 
-    const scoreText = this.text(
-      scene,
+    const scoreText = scene.add.text(
       GAME_WIDTH / 2,
-      172,
-      'PONTUAÇÃO TOTAL: ' + score.toString().padStart(6, '0'),
-      20,
-      '#ffd494',
-    ).setOrigin(0.5, 0);
+      168,
+      'PONTUAÇÃO TOTAL: ' + score.toString().padStart(7, '0'),
+      {
+        fontFamily: FONT_HUD,
+        fontSize: '20px',
+        color: '#ffd166',
+        fontStyle: 'bold',
+        letterSpacing: 1,
+      },
+    ).setOrigin(0.5, 0).setResolution(2);
 
-    const promptText = this.text(
-      scene,
+    const promptText = scene.add.text(
       GAME_WIDTH / 2,
-      206,
+      204,
       'ROTA DE CONTENÇÃO ESTABILIZADA. PRÓXIMAS COORDENADAS DESBLOQUEADAS.',
-      12,
-      '#a2c7dc',
-    ).setOrigin(0.5, 0);
+      {
+        fontFamily: FONT_TECH,
+        fontSize: '11px',
+        color: '#64748b',
+        letterSpacing: 1,
+      },
+    ).setOrigin(0.5, 0).setResolution(2);
 
-    // Botões
+    // Botão Próxima Fase [ENTER]
     const nextBtn = scene.add.rectangle(
       GAME_WIDTH / 2 - 165,
       262,
       160,
       38,
-      0x276a77,
-    ).setStrokeStyle(2, 0x8df5ea).setInteractive({ useHandCursor: true });
+      0x0e7490,
+      0.95,
+    ).setStrokeStyle(2, 0x38bdf8).setInteractive({ useHandCursor: true });
 
-    const nextText = this.text(
-      scene,
+    const nextText = scene.add.text(
       GAME_WIDTH / 2 - 165,
-      252,
+      262,
       'AVANÇAR [ENTER]',
-      14,
-      '#ffffff',
-    ).setOrigin(0.5, 0);
+      {
+        fontFamily: FONT_HUD,
+        fontSize: '13px',
+        color: '#ffffff',
+        fontStyle: 'bold',
+        letterSpacing: 1,
+      },
+    ).setOrigin(0.5).setResolution(2);
 
-    nextBtn.on('pointerover', () => nextBtn.setFillStyle(0x328a9b));
-    nextBtn.on('pointerout', () => nextBtn.setFillStyle(0x276a77));
+    nextBtn.on('pointerover', () => {
+      nextBtn.setFillStyle(0x0284c7);
+      nextBtn.setStrokeStyle(2, 0x7dd3fc);
+    });
+    nextBtn.on('pointerout', () => {
+      nextBtn.setFillStyle(0x0e7490);
+      nextBtn.setStrokeStyle(2, 0x38bdf8);
+    });
     nextBtn.on('pointerdown', onNextStage);
 
+    // Botão Rejogar [R]
     const replayBtn = scene.add.rectangle(
       GAME_WIDTH / 2,
       262,
       150,
       38,
-      0x1e3f52,
-    ).setStrokeStyle(1, 0x60a0b8).setInteractive({ useHandCursor: true });
+      0x1e293b,
+      0.95,
+    ).setStrokeStyle(1, 0x475569).setInteractive({ useHandCursor: true });
 
-    const replayText = this.text(
-      scene,
+    const replayText = scene.add.text(
       GAME_WIDTH / 2,
-      252,
+      262,
       'REJOGAR [R]',
-      14,
-      '#ffffff',
-    ).setOrigin(0.5, 0);
+      {
+        fontFamily: FONT_HUD,
+        fontSize: '13px',
+        color: '#cbd5e1',
+        fontStyle: 'bold',
+        letterSpacing: 1,
+      },
+    ).setOrigin(0.5).setResolution(2);
 
-    replayBtn.on('pointerover', () => replayBtn.setFillStyle(0x285670));
-    replayBtn.on('pointerout', () => replayBtn.setFillStyle(0x1e3f52));
+    replayBtn.on('pointerover', () => {
+      replayBtn.setFillStyle(0x334155);
+      replayText.setColor('#ffffff');
+    });
+    replayBtn.on('pointerout', () => {
+      replayBtn.setFillStyle(0x1e293b);
+      replayText.setColor('#cbd5e1');
+    });
     replayBtn.on('pointerdown', onReplay);
 
+    // Botão Fases [ESC]
     const selectBtn = scene.add.rectangle(
       GAME_WIDTH / 2 + 165,
       262,
       160,
       38,
-      0x192e40,
-    ).setStrokeStyle(1, 0x487994).setInteractive({ useHandCursor: true });
+      0x1e293b,
+      0.95,
+    ).setStrokeStyle(1, 0x475569).setInteractive({ useHandCursor: true });
 
-    const selectText = this.text(
-      scene,
+    const selectText = scene.add.text(
       GAME_WIDTH / 2 + 165,
-      252,
+      262,
       'FASES [ESC]',
-      14,
-      '#ffffff',
-    ).setOrigin(0.5, 0);
+      {
+        fontFamily: FONT_HUD,
+        fontSize: '13px',
+        color: '#cbd5e1',
+        fontStyle: 'bold',
+        letterSpacing: 1,
+      },
+    ).setOrigin(0.5).setResolution(2);
 
-    selectBtn.on('pointerover', () => selectBtn.setFillStyle(0x24425b));
-    selectBtn.on('pointerout', () => selectBtn.setFillStyle(0x192e40));
+    selectBtn.on('pointerover', () => {
+      selectBtn.setFillStyle(0x334155);
+      selectText.setColor('#ffffff');
+    });
+    selectBtn.on('pointerout', () => {
+      selectBtn.setFillStyle(0x1e293b);
+      selectText.setColor('#cbd5e1');
+    });
     selectBtn.on('pointerdown', onStageSelect);
 
     this.add([
@@ -158,21 +208,5 @@ export class StageCompleteOverlay extends Phaser.GameObjects.Container {
       kb.once('keydown-R', onReplay);
       kb.once('keydown-ESC', onStageSelect);
     }
-  }
-
-  private text(
-    scene: Phaser.Scene,
-    x: number,
-    y: number,
-    value: string,
-    size: number,
-    color: string,
-  ): Phaser.GameObjects.Text {
-    return scene.add.text(x, y, value, {
-      fontFamily: 'Arial, Helvetica, sans-serif',
-      fontSize: size + 'px',
-      color,
-      fontStyle: 'bold',
-    }).setResolution(2);
   }
 }

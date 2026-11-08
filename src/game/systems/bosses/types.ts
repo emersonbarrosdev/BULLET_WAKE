@@ -60,3 +60,4 @@ export interface StageBoss {
   update(dt: number, playerX: number, playerY: number): BossTick;
   damage(amount: number, hitX: number, hitY: number): BossHitResult;
 }
+

@@ -239,3 +239,4 @@ for (const [dest, count, draw] of defs) {
   writeFileSync(dest, makePNG(Array.from({ length: count }, (_, i) => draw(i))));
   console.log(dest);
 }
+

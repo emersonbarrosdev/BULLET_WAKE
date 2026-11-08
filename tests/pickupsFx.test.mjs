@@ -55,3 +55,4 @@ for (const [relPath, fw, fh, count] of pickupSheets) {
     assert.ok(seen.size >= 2, 'animacao estatica: ' + relPath);
   });
 }
+

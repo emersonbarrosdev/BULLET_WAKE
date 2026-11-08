@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from '../constants';
+import { FONT_HUD, FONT_TECH, FONT_TITLE, GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from '../constants';
 import { getPilot, type PilotDefinition } from '../data/pilots';
 import { StageBackdrop } from './StageBackdrop';
 import { saveSystem } from '../systems/saveSystem.ts';
@@ -34,24 +34,33 @@ export class EndingScene extends Phaser.Scene {
     saveSystem.recordStageClear(5, this.pilot.id, this.finalScore);
 
     // Painel Central
-    this.add.rectangle(GAME_WIDTH / 2, 75, GAME_WIDTH, 110, 0x060f18, 0.9);
+    this.add.rectangle(GAME_WIDTH / 2, 70, GAME_WIDTH, 100, 0x050e18, 0.9);
 
-    const victoryTitle = this.text(
+    const victoryTitle = this.add.text(
       GAME_WIDTH / 2,
-      28,
+      22,
       'A MALHA FOI CONTIDA',
-      32,
-      '#7df9ff',
-    ).setOrigin(0.5, 0);
-    victoryTitle.setStroke('#113848', 4);
+      {
+        fontFamily: FONT_TITLE,
+        fontSize: '28px',
+        color: '#00f0ff',
+        fontStyle: 'bold',
+        letterSpacing: 3,
+      },
+    ).setOrigin(0.5, 0).setResolution(2);
+    victoryTitle.setStroke('#083344', 4);
 
-    this.text(
+    this.add.text(
       GAME_WIDTH / 2,
-      68,
+      62,
       'CAMPANHA COMPLETA // O RASTRO DO WAKE SE DISSIPA NO VÁCUO',
-      14,
-      '#d2ebf5',
-    ).setOrigin(0.5, 0);
+      {
+        fontFamily: FONT_TECH,
+        fontSize: '12px',
+        color: '#93c5fd',
+        letterSpacing: 2,
+      },
+    ).setOrigin(0.5, 0).setResolution(2);
 
     // Nave voando triunfante no centro
     let shipTexture = 'rivet-v3-idle';
@@ -66,20 +75,25 @@ export class EndingScene extends Phaser.Scene {
       shipAnim = 'knuckle-v2-idle-anim';
       shipScale = 1.3;
     }
-    this.add.sprite(GAME_WIDTH / 2, 165, shipTexture, 0)
+    this.add.sprite(GAME_WIDTH / 2, 160, shipTexture, 0)
       .setScale(shipScale).play(shipAnim);
 
     // Painel de Epílogo Narrativo do Piloto (fiel à Bíblia docs/01_HISTORIA.md)
-    this.add.rectangle(GAME_WIDTH / 2, 260, 640, 115, 0x0c1e2b, 0.94)
-      .setStrokeStyle(2, 0x56a6b8);
+    this.add.rectangle(GAME_WIDTH / 2, 260, 640, 115, 0x071320, 0.95)
+      .setStrokeStyle(1, 0x1e3a5f);
 
-    this.text(
+    this.add.text(
       GAME_WIDTH / 2,
       212,
       `EPÍLOGO // ${this.pilot.name.toUpperCase()} (${this.pilot.shipName.toUpperCase()})`,
-      15,
-      '#ffd494',
-    ).setOrigin(0.5, 0);
+      {
+        fontFamily: FONT_HUD,
+        fontSize: '14px',
+        color: '#ffd166',
+        fontStyle: 'bold',
+        letterSpacing: 1,
+      },
+    ).setOrigin(0.5, 0).setResolution(2);
 
     let epilogueText = '';
     if (this.pilot.id === 'nolan') {
@@ -99,34 +113,56 @@ export class EndingScene extends Phaser.Scene {
         'executando uma ordem de proteção esquecida sem prioridade pela vida."';
     }
 
-    this.text(
+    this.add.text(
       GAME_WIDTH / 2,
       236,
       epilogueText,
-      13,
-      '#e5f4fa',
-    ).setOrigin(0.5, 0);
+      {
+        fontFamily: FONT_TECH,
+        fontSize: '12px',
+        color: '#e2e8f0',
+        align: 'center',
+        lineSpacing: 4,
+      },
+    ).setOrigin(0.5, 0).setResolution(2);
 
     // Pontuação Final
-    this.text(
+    this.add.text(
       GAME_WIDTH / 2,
       305,
-      `PONTUAÇÃO FINAL DA CAMPANHA: ${this.finalScore.toString().padStart(6, '0')} PONTOS`,
-      15,
-      '#7df9ff',
-    ).setOrigin(0.5, 0);
+      `PONTUAÇÃO FINAL DA CAMPANHA: ${this.finalScore.toString().padStart(7, '0')} PONTOS`,
+      {
+        fontFamily: FONT_HUD,
+        fontSize: '14px',
+        color: '#00f0ff',
+        fontStyle: 'bold',
+        letterSpacing: 1,
+      },
+    ).setOrigin(0.5, 0).setResolution(2);
 
     // Rodapé com botões de ação
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 24, GAME_WIDTH, 48, 0x060f18, 0.92);
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 22, GAME_WIDTH, 44, 0x050e18, 0.92);
 
-    const menuBtn = this.add.rectangle(GAME_WIDTH / 2 - 130, GAME_HEIGHT - 24, 220, 34, 0x1a3848)
-      .setStrokeStyle(1, 0x64ded4).setInteractive({ useHandCursor: true });
-    this.text(GAME_WIDTH / 2 - 130, GAME_HEIGHT - 32, 'MENU PRINCIPAL [ENTER]', 14, '#ffffff').setOrigin(0.5, 0);
+    const menuBtn = this.add.rectangle(GAME_WIDTH / 2 - 130, GAME_HEIGHT - 22, 220, 32, 0x0e7490)
+      .setStrokeStyle(1, 0x38bdf8).setInteractive({ useHandCursor: true });
+    this.add.text(GAME_WIDTH / 2 - 130, GAME_HEIGHT - 22, 'MENU PRINCIPAL [ENTER]', {
+      fontFamily: FONT_HUD,
+      fontSize: '12px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      letterSpacing: 1,
+    }).setOrigin(0.5).setResolution(2);
     menuBtn.on('pointerdown', () => this.backToMenu());
 
-    const stageSelectBtn = this.add.rectangle(GAME_WIDTH / 2 + 130, GAME_HEIGHT - 24, 220, 34, 0x244f62)
-      .setStrokeStyle(1, 0x7df9ff).setInteractive({ useHandCursor: true });
-    this.text(GAME_WIDTH / 2 + 130, GAME_HEIGHT - 32, 'SELEÇÃO DE FASES [ESC]', 14, '#ffffff').setOrigin(0.5, 0);
+    const stageSelectBtn = this.add.rectangle(GAME_WIDTH / 2 + 130, GAME_HEIGHT - 22, 220, 32, 0x1e293b)
+      .setStrokeStyle(1, 0x475569).setInteractive({ useHandCursor: true });
+    this.add.text(GAME_WIDTH / 2 + 130, GAME_HEIGHT - 22, 'SELEÇÃO DE FASES [ESC]', {
+      fontFamily: FONT_HUD,
+      fontSize: '12px',
+      color: '#cbd5e1',
+      fontStyle: 'bold',
+      letterSpacing: 1,
+    }).setOrigin(0.5).setResolution(2);
     stageSelectBtn.on('pointerdown', () => this.backToStageSelect());
 
     // Teclado
@@ -152,17 +188,5 @@ export class EndingScene extends Phaser.Scene {
 
   private backToStageSelect(): void {
     this.scene.start('StageSelectScene');
-  }
-
-  private text(x: number, y: number, value: string, size: number, color: string): Phaser.GameObjects.Text {
-    return this.add
-      .text(x, y, value, {
-        fontFamily: 'Arial, Helvetica, sans-serif',
-        fontSize: size + 'px',
-        color,
-        fontStyle: 'bold',
-        align: 'center',
-      })
-      .setResolution(2);
   }
 }
