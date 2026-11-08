@@ -121,3 +121,4 @@ A seleção do BULLET WAKE é uma **seleção de pilotos operacionais**, não um
 - **Ação Principal Evidente:** Botões primários (`INICIAR OPERAÇÃO`) possuem iluminação ciano neon pulsante, bordas reforçadas e tamanho proeminente.
 - Estados de interface explícitos: `Normal`, `Hover / Foco`, `Selecionado`, `Bloqueado`.
 - Suporte imediato para controles de teclado (`Enter`, `Espaço`, `Setas`, `WASD`, `ESC`) e toque móvel responsivo.
+

@@ -299,3 +299,4 @@ for (const [dest, draw] of pilots) {
   writeFileSync(dest, makePNG(draw()));
   console.log(dest);
 }
+

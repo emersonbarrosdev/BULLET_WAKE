@@ -13,6 +13,11 @@
   - Inimigos comuns sem barras de HP individuais; Chefes com barra principal na Zona A.
   - Seleção de personagens centrada no piloto (espírito *Sonic Wings*) com portrait, callsign tático, especial e nave subordinada em perfil lateral.
   - Tipografia de 2 famílias: `Orbitron` (Display/Títulos) e `Chakra Petch` (Interface/HUD).
+- **[PRIORIDADE MÁXIMA] Diretriz de Dificuldade e Balanceamento Arcade (docs/25_DIRETRIZ_DIFICULDADE_BALANCEAMENTO.md):**
+  - Gameplay reformulado para evitar facilidade excessiva e estratégias triviais de ficar parado atirando.
+  - Inimigos com múltiplos comportamentos: Scouts (esquadrões ágeis), Darts (mergulho rasante), Lancers (disparo em leque triplo de contenção), Cutters (investida horizontal veloz) e Swarms (salvas sincronizadas).
+  - Progressão contínua sem vácuos de combate, anti-camping e telegrafia justa.
+  - Duelos contra chefes balanceados e estratégicos com transições de fases e vulnerabilidade em pontos fracos críticos.
 
 ## Decisão de engenharia da pré-produção
 **Phaser 4 + TypeScript + Vite + Canvas/WebGL**. Angular fora do gameplay inicial; opcional para ferramenta externa futura. Primeiro web desktop, depois Android via empacotamento candidato (Capacitor a validar). Phaser versão exata a travar no lockfile durante implementação.

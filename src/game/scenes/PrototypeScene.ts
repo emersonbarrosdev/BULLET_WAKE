@@ -515,10 +515,11 @@ export class PrototypeScene extends Phaser.Scene {
 
   private makeEnemyVisual(enemy: EnemyModel): void {
     const texture = 'enemy-' + enemy.kind;
+    const isSmall = enemy.kind === 'scout' || enemy.kind === 'dart';
     const body = this.add.sprite(0, 0, texture, 0)
-      .setScale(enemy.kind === 'scout' ? 2.15 : 1.85);
+      .setScale(isSmall ? 2.15 : 1.85);
     body.play(texture + '-fly');
-    const warning = this.add.sprite(enemy.kind === 'scout' ? -28 : -40, 0, 'fx-warning', 0)
+    const warning = this.add.sprite(isSmall ? -28 : -40, 0, 'fx-warning', 0)
       .setScale(1.15).setVisible(false);
     const container = this.add.container(enemy.x, enemy.y, [body, warning]).setDepth(5);
     this.enemyVisuals.set(enemy.id, { container, body, warning, animationKey: texture + '-fly' });
@@ -720,12 +721,14 @@ export class PrototypeScene extends Phaser.Scene {
       this.hud.setScore(this.scoreCombo.score, this.scoreCombo.comboCount, getComboMultiplier(this.scoreCombo.comboCount));
       this.spawnScorePopup(hit.score, x, y);
 
-      // Ganha ressonância
-      this.weapons = addResonance(this.weapons, 6);
+      // Ganha ressonância equilibrada: 4% para drones leves, 8% para interceptadores
+      const resGain = (hit.score >= 250) ? 8 : 4;
+      this.weapons = addResonance(this.weapons, resGain);
       this.hud.setResonance(this.weapons.resonance);
 
       // Drop de itens
-      const dropType = determineEnemyDrop(hit.score >= 300 ? 'lancer' : 'scout', this.totalKills);
+      const dropKind = (hit.score >= 300) ? 'lancer' : (hit.score >= 250) ? 'cutter' : (hit.score >= 150) ? 'dart' : 'scout';
+      const dropType = determineEnemyDrop(dropKind, this.totalKills);
       if (dropType) {
         this.pickups.spawn(dropType, x, y);
       }
@@ -746,8 +749,9 @@ export class PrototypeScene extends Phaser.Scene {
 
       // Colisão com inimigos normais
       for (const enemy of this.director.enemies) {
-        const hx = enemy.kind === 'scout' ? 19 : 29;
-        const hy = enemy.kind === 'scout' ? 15 : 21;
+        const isSmall = enemy.kind === 'scout' || enemy.kind === 'dart';
+        const hx = isSmall ? 19 : 29;
+        const hy = isSmall ? 15 : 21;
         if (
           shot.node.x + shot.hitRadius >= enemy.x - hx &&
           prevX - shot.hitRadius <= enemy.x + hx &&
@@ -807,8 +811,9 @@ export class PrototypeScene extends Phaser.Scene {
     }
 
     for (const enemy of this.director.enemies) {
-      const hx = enemy.kind === 'scout' ? 18 : 28;
-      const hy = enemy.kind === 'scout' ? 14 : 20;
+      const isSmall = enemy.kind === 'scout' || enemy.kind === 'dart';
+      const hx = isSmall ? 18 : 28;
+      const hy = isSmall ? 14 : 20;
       const dist = Math.hypot(this.vectorShip.x - enemy.x, this.vectorShip.y - enemy.y);
       if (dist < Math.hypot(hx, hy) * 0.75 + this.vectorShip.hitRadius + 3) {
         const response = this.damageShip();

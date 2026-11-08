@@ -38,7 +38,9 @@ export const SPRITE_SHEETS = [
   { key: 'ship-knuckle-v2-hit', url: 'assets/ships/knuckle/v2/hit.png', frameWidth: 144, frameHeight: 88 },
   { key: 'ship-knuckle-v2-death', url: 'assets/ships/knuckle/v2/destruction.png', frameWidth: 144, frameHeight: 88 },
   { key: 'enemy-scout', url: 'assets/enemies/scout.png', frameWidth: 24, frameHeight: 16 },
+  { key: 'enemy-dart', url: 'assets/enemies/dart.png', frameWidth: 24, frameHeight: 16 },
   { key: 'enemy-lancer', url: 'assets/enemies/lancer.png', frameWidth: 40, frameHeight: 24 },
+  { key: 'enemy-cutter', url: 'assets/enemies/cutter.png', frameWidth: 40, frameHeight: 24 },
   { key: 'shot-rivet', url: 'assets/projectiles/rivet.png', frameWidth: 12, frameHeight: 8 },
   { key: 'shot-moth', url: 'assets/projectiles/moth.png', frameWidth: 12, frameHeight: 8 },
   { key: 'shot-knuckle', url: 'assets/projectiles/knuckle.png', frameWidth: 16, frameHeight: 10 },
@@ -148,7 +150,7 @@ animations.push({ id: 'rivet-v3-pulse-2-anim', sheet: 'rivet-v3-pulse-2', first:
 animations.push({ id: 'rivet-v3-pulse-3-anim', sheet: 'rivet-v3-pulse-3', first: 0, last: 3, frameRate: 14, repeat: -1 });
 animations.push({ id: 'rivet-v3-missile-anim', sheet: 'rivet-v3-missile', first: 0, last: 3, frameRate: 14, repeat: -1 });
 animations.push({ id: 'rivet-v3-prism-anim', sheet: 'rivet-v3-prism', first: 0, last: 3, frameRate: 14, repeat: -1 });
-for (const [kind, deathEnd] of [['scout', 14], ['lancer', 16]] as const) {
+for (const [kind, deathEnd] of [['scout', 14], ['dart', 14], ['lancer', 16], ['cutter', 16]] as const) {
   const sheet = 'enemy-' + kind;
   animations.push(
     { id: sheet + '-fly', sheet, first: 0, last: 3, frameRate: 9, repeat: -1 },

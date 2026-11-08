@@ -21,9 +21,10 @@
     "assets:pickups": "node scripts/generate-pickups-fx.mjs",
     "assets:bosses": "node scripts/generate-boss-krm17.mjs && node scripts/generate-bosses-2-5.mjs",
     "assets:pilots": "node scripts/generate-pilots.mjs",
-    "predev": "npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses && npm run assets:pilots",
-    "prebuild": "npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses && npm run assets:pilots",
-    "pretest": "npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses && npm run assets:pilots"
+    "assets:enemies": "node scripts/generate-sprites.mjs",
+    "predev": "npm run assets:enemies && npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses && npm run assets:pilots",
+    "prebuild": "npm run assets:enemies && npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses && npm run assets:pilots",
+    "pretest": "npm run assets:enemies && npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses && npm run assets:pilots"
   },
   "dependencies": {
     "phaser": "4.2.1"

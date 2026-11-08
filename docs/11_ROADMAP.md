@@ -62,3 +62,9 @@ Medição em combate automatizado via Headless Chrome:
 - **Seleção de Pilotos (Espírito Sonic Wings):** Retrato do piloto em destaque, callsign tático, especial e nave subordinada.
 - **Tipografia:** Máximo de 2 famílias (`Orbitron` e `Chakra Petch`).
 - **Vitalidade de Inimigos:** Zero poluição no campo; barras somente para chefes no HUD superior.
+
+### 6. Diretriz de Dificuldade e Balanceamento Arcade (docs/25_DIRETRIZ_DIFICULDADE_BALANCEAMENTO.md)
+- **Desafio Imediato:** Combate intenso nos primeiros segundos; combate contínuo sem vácuos de gameplay.
+- **Anti-Camping & Geometria de Tiro:** Padrões em leque triplo (fan spread -18°/0°/+18°), tiros direcionados rápidos e rasantes que eliminam safe spots.
+- **Diversidade de Classes:** Scouts, Darts, Swarms, Lancers e Cutters em formações coordenadas.
+- **Chefes com Múltiplas Fases e Ponto Fraco:** Duelos de ~35-45s com telegrafia justa e aberturas de esquiva calculadas.

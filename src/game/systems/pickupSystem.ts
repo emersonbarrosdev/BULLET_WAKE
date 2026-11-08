@@ -87,17 +87,17 @@ export class PickupSystem {
 
 /** Tabela determinística de drops por inimigo abatido. */
 export function determineEnemyDrop(
-  enemyKind: 'scout' | 'lancer' | 'miniboss' | 'boss',
+  enemyKind: 'scout' | 'dart' | 'lancer' | 'cutter' | 'miniboss' | 'boss',
   killCount: number,
 ): PickupType | null {
-  if (enemyKind === 'lancer') {
-    // Lancers garantem drop útil
+  if (enemyKind === 'lancer' || enemyKind === 'cutter') {
+    // Interceptadores garantem drop útil
     if (killCount % 3 === 1) return 'upgrade';
     if (killCount % 3 === 2) return 'resonance';
     return 'score';
   }
-  if (enemyKind === 'scout') {
-    // Scouts dropam periodicamente para recompensar formações limpas
+  if (enemyKind === 'scout' || enemyKind === 'dart') {
+    // Drones leves dropam periodicamente para recompensar formações limpas
     if (killCount % 12 === 4) return 'upgrade';
     if (killCount % 12 === 8) return 'resonance';
     if (killCount % 12 === 0) return 'repair';

@@ -126,7 +126,9 @@ function shipFrame(c,ship,f){
 }
 
 function enemyFrame(c,kind,f){
- const isScout=kind==="scout";
+ const isScout = kind==="scout" || kind==="dart";
+ const isDart = kind==="dart";
+ const isCutter = kind==="cutter";
  const idle=4, tele=3, hit=2, death=isScout?6:8;
  const state=f<idle?"fly":f<idle+tele?"warning":f<idle+tele+hit?"hit":"death";
  const phase=state==="fly"?f:state==="warning"?f-idle:state==="hit"?f-idle-tele:f-idle-tele-hit;
@@ -136,7 +138,16 @@ function enemyFrame(c,kind,f){
   if(phase<4){ellipse(c,cx,cy,3+phase*2,2+phase,phase%2?26:27);ellipse(c,cx,cy,Math.max(1,phase),1,28)}
   return;
  }
- if(isScout){
+ if(isDart){
+  // Drone Dart em asa delta afilada e aerodinâmica dourada
+  poly(c,[[1,8],[6,2],[16,4],[22,7],[22,9],[16,12],[6,14]],1);
+  poly(c,[[3,8],[8,4],[16,6],[20,8],[16,10],[8,12]],14);
+  poly(c,[[8,4],[14,1],[18,3],[17,5]],15);
+  poly(c,[[8,12],[14,15],[18,13],[17,11]],15);
+  line(c,2,8,12,8,26);rect(c,10,7,4,2,27);
+  rect(c,17,7,5,2,f%2?19:18);
+  rect(c,2,7,3,2,28);
+ }else if(isScout){
   poly(c,[[1,8],[7,3],[14,3],[19,5],[22,8],[19,11],[14,13],[7,13]],1);
   poly(c,[[3,8],[8,5],[14,5],[18,7],[20,8],[18,9],[14,11],[8,11]],16);
   poly(c,[[7,5],[11,1],[16,3],[17,5]],17);
@@ -144,6 +155,16 @@ function enemyFrame(c,kind,f){
   line(c,4,8,12,8,18);rect(c,9,6,3,1,19);
   rect(c,17,7,5,2,f%2?26:23);
   rect(c,3,7,4,2,23);
+ }else if(isCutter){
+  // Interceptador Cutter com mandíbulas afiadas e chassi couraçado
+  poly(c,[[0,6],[6,3],[14,2],[31,3],[38,7],[38,17],[31,21],[14,22],[6,21],[0,18],[4,12]],1);
+  poly(c,[[2,7],[8,5],[28,5],[34,9],[36,12],[34,15],[28,19],[8,19],[2,17],[6,12]],24);
+  // Lâminas de choque frontais
+  line(c,0,6,8,10,18); line(c,0,18,8,14,18);
+  rect(c,12,7,16,3,25); rect(c,12,14,16,3,25);
+  rect(c,18,10,10,4,19);
+  rect(c,6,10,6,4,f%2?27:26);
+  rect(c,32,10,5,4,28);
  }else{
   poly(c,[[1,11],[8,6],[13,4],[29,4],[35,7],[39,11],[35,17],[29,20],[13,20],[8,16]],1);
   poly(c,[[4,11],[12,7],[29,7],[35,10],[37,11],[35,14],[29,17],[12,17]],20);
@@ -236,7 +257,9 @@ function generateAssets(){
  const ships=["rivet","moth","knuckle"];
  ships.forEach((name,i)=>result[`public/assets/ships/${name}/flight.png`]=sheet(48,24,20,(c,f)=>shipFrame(c,i,f)));
  result["public/assets/enemies/scout.png"]=sheet(24,16,15,(c,f)=>enemyFrame(c,"scout",f));
+ result["public/assets/enemies/dart.png"]=sheet(24,16,15,(c,f)=>enemyFrame(c,"dart",f));
  result["public/assets/enemies/lancer.png"]=sheet(40,24,17,(c,f)=>enemyFrame(c,"lancer",f));
+ result["public/assets/enemies/cutter.png"]=sheet(40,24,17,(c,f)=>enemyFrame(c,"cutter",f));
  result["public/assets/projectiles/rivet.png"]=sheet(12,8,4,(c,f)=>projectileFrame(c,"rivet",f));
  result["public/assets/projectiles/moth.png"]=sheet(12,8,4,(c,f)=>projectileFrame(c,"moth",f));
  result["public/assets/projectiles/knuckle.png"]=sheet(16,10,4,(c,f)=>projectileFrame(c,"knuckle",f));

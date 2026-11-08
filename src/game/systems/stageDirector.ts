@@ -1,14 +1,14 @@
 /**
- * Diretor do primeiro trecho da fase Cinturão de Ferrugem.
+ * Diretor da fase com progressão contínua e roteiro cinematográfico do BULLET WAKE.
  *
- * Sem rounds, ondas recorrentes, contagem regressiva ou arena fechada:
- * eventos únicos são disparados pela distância percorrida pelo cenário.
- * Simulação pura, sem dependência de Phaser ou DOM.
+ * Sem rounds, ondas repetitivas em arena fechada:
+ * eventos únicos e composições táticas disparados pela distância percorrida pelo cenário.
+ * Simulação pura desacoplada do motor de renderização.
  */
 import type { BossTick, StageBoss } from './bosses/types.ts';
 import { createStageBoss } from './bosses/factory.ts';
 
-export type EnemyKind = 'scout' | 'lancer';
+export type EnemyKind = 'scout' | 'dart' | 'lancer' | 'cutter';
 export type EnemyPhase = 'approach' | 'telegraph' | 'attack' | 'recover' | 'exit';
 export type SectorId = 'evacuacao' | 'destrocos' | 'industria' | 'aproximacao';
 
@@ -25,12 +25,14 @@ export interface EnemyModel {
   maxHp: number;
   secondShotFired: boolean;
 }
+
 export interface EnemyShotEvent {
   x: number;
   y: number;
   velocityX: number;
   velocityY: number;
 }
+
 export interface StageTick {
   spawned: EnemyModel[];
   shots: EnemyShotEvent[];
@@ -44,48 +46,77 @@ export interface StageTick {
 }
 
 export const SCROLL_SPEED = 68; // pixels lógicos/s (cenário permanece avançando)
-export const DEMO_DISTANCE = 4250; // cerca de um minuto de trecho roteirizado
+export const DEMO_DISTANCE = 4250; // distância total até a arena do chefe
 const SPAWN_X_PADDING = 42;
 
-// Roteiro por posição percorrida. Pares e trios são formações de passagem,
-// NÃO ondas em arena. Nenhum evento reaparece automaticamente.
+// Roteiro por posição percorrida. Combinações táticas de passagem contínua.
+// Nenhum evento reaparece como round de arena.
 export const STAGE_EVENTS: readonly { distance: number; kind: EnemyKind; y: number }[] = [
-  { distance: 125, kind: 'scout', y: 130 },
-  { distance: 210, kind: 'scout', y: 210 },
-  { distance: 295, kind: 'scout', y: 285 },
-  { distance: 490, kind: 'lancer', y: 175 },
-  { distance: 630, kind: 'scout', y: 112 },
-  { distance: 695, kind: 'scout', y: 152 },
-  { distance: 760, kind: 'scout', y: 195 },
-  { distance: 960, kind: 'lancer', y: 280 },
-  { distance: 1100, kind: 'scout', y: 268 },
-  { distance: 1170, kind: 'scout', y: 205 },
-  { distance: 1240, kind: 'scout', y: 142 },
-  { distance: 1400, kind: 'lancer', y: 135 },
-  { distance: 1540, kind: 'scout', y: 112 },
-  { distance: 1630, kind: 'scout', y: 278 },
-  { distance: 1800, kind: 'lancer', y: 232 },
-  { distance: 1990, kind: 'scout', y: 166 },
-  { distance: 2055, kind: 'scout', y: 210 },
-  { distance: 2120, kind: 'scout', y: 254 },
-  { distance: 2290, kind: 'lancer', y: 150 },
-  { distance: 2420, kind: 'scout', y: 275 },
-  { distance: 2480, kind: 'scout', y: 228 },
-  { distance: 2670, kind: 'lancer', y: 290 },
-  { distance: 2870, kind: 'scout', y: 122 },
-  { distance: 2940, kind: 'scout', y: 174 },
-  { distance: 3100, kind: 'lancer', y: 170 },
-  { distance: 3240, kind: 'scout', y: 275 },
-  { distance: 3300, kind: 'scout', y: 230 },
-  { distance: 3360, kind: 'scout', y: 185 },
-  { distance: 3520, kind: 'lancer', y: 240 },
-  { distance: 3690, kind: 'scout', y: 140 },
-  { distance: 3760, kind: 'scout', y: 190 },
-  { distance: 3850, kind: 'lancer', y: 267 },
+  // --- SETOR 1: EVACUAÇÃO (0m - 1000m) ---
+  { distance: 125, kind: 'scout', y: 125 },
+  { distance: 210, kind: 'scout', y: 180 },
+  { distance: 295, kind: 'scout', y: 235 },
+  { distance: 380, kind: 'dart', y: 80 },
+  { distance: 490, kind: 'lancer', y: 190 },
+  { distance: 590, kind: 'scout', y: 110 },
+  { distance: 650, kind: 'scout', y: 160 },
+  { distance: 710, kind: 'scout', y: 210 },
+  { distance: 810, kind: 'dart', y: 310 },
+  { distance: 920, kind: 'lancer', y: 260 },
+
+  // --- SETOR 2: DESTROÇOS (1000m - 2100m) ---
+  { distance: 1050, kind: 'cutter', y: 180 },
+  { distance: 1160, kind: 'scout', y: 270 },
+  { distance: 1220, kind: 'scout', y: 210 },
+  { distance: 1280, kind: 'scout', y: 150 },
+  { distance: 1390, kind: 'dart', y: 95 },
+  { distance: 1480, kind: 'lancer', y: 160 },
+  { distance: 1590, kind: 'cutter', y: 260 },
+  { distance: 1700, kind: 'scout', y: 120 },
+  { distance: 1760, kind: 'scout', y: 280 },
+  { distance: 1870, kind: 'lancer', y: 220 },
+  { distance: 1980, kind: 'dart', y: 290 },
+  { distance: 2070, kind: 'cutter', y: 170 },
+
+  // --- SETOR 3: INDÚSTRIA (2100m - 3200m) ---
+  { distance: 2180, kind: 'lancer', y: 140 },
+  { distance: 2260, kind: 'lancer', y: 260 },
+  { distance: 2380, kind: 'dart', y: 85 },
+  { distance: 2450, kind: 'dart', y: 315 },
+  { distance: 2580, kind: 'scout', y: 120 },
+  { distance: 2640, kind: 'scout', y: 170 },
+  { distance: 2700, kind: 'scout', y: 220 },
+  { distance: 2820, kind: 'cutter', y: 220 },
+  { distance: 2930, kind: 'lancer', y: 180 },
+  { distance: 3050, kind: 'dart', y: 110 },
+  { distance: 3140, kind: 'cutter', y: 270 },
+
+  // --- SETOR 4: APROXIMAÇÃO DO CHEFE (3200m - 4250m) ---
+  { distance: 3260, kind: 'cutter', y: 140 },
+  { distance: 3330, kind: 'cutter', y: 260 },
+  { distance: 3460, kind: 'lancer', y: 210 },
+  { distance: 3560, kind: 'dart', y: 95 },
+  { distance: 3640, kind: 'dart', y: 285 },
+  { distance: 3760, kind: 'scout', y: 150 },
+  { distance: 3820, kind: 'scout', y: 210 },
+  { distance: 3940, kind: 'lancer', y: 170 },
+  { distance: 4050, kind: 'cutter', y: 216 },
 ];
 
-const SPEED: Readonly<Record<EnemyKind, number>> = { scout: 146, lancer: 98 };
-const CHARGE_MS: Readonly<Record<EnemyKind, number>> = { scout: 650, lancer: 950 };
+const SPEED: Readonly<Record<EnemyKind, number>> = {
+  scout: 165,
+  dart: 235,
+  lancer: 115,
+  cutter: 135,
+};
+
+const CHARGE_MS: Readonly<Record<EnemyKind, number>> = {
+  scout: 420,
+  dart: 260,
+  lancer: 620,
+  cutter: 450,
+};
+
 const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, value));
 
@@ -162,9 +193,12 @@ export class StageDirector {
       }
     }
 
-    while (this.eventIndex < STAGE_EVENTS.length
-      && this.scrollPx >= STAGE_EVENTS[this.eventIndex].distance) {
+    while (
+      this.eventIndex < STAGE_EVENTS.length &&
+      this.scrollPx >= STAGE_EVENTS[this.eventIndex].distance
+    ) {
       const event = STAGE_EVENTS[this.eventIndex++];
+      const hp = event.kind === 'lancer' ? 3 : event.kind === 'cutter' ? 2 : 1;
       const enemy: EnemyModel = {
         id: this.nextId++,
         kind: event.kind,
@@ -174,8 +208,8 @@ export class StageDirector {
         baseY: event.y,
         ageMs: 0,
         phaseMs: 0,
-        hp: event.kind === 'scout' ? 1 : 3,
-        maxHp: event.kind === 'scout' ? 1 : 3,
+        hp,
+        maxHp: hp,
         secondShotFired: false,
       };
       this.enemies.push(enemy);
@@ -185,49 +219,181 @@ export class StageDirector {
     for (const enemy of this.enemies) {
       enemy.ageMs += dt;
       const speed = SPEED[enemy.kind];
-      switch (enemy.phase) {
-        case 'approach':
-          enemy.x -= speed * dt / 1000;
-          if (enemy.kind === 'scout') {
-            enemy.y = clamp(enemy.baseY + Math.sin(enemy.ageMs / 280) * 23, 96, 320);
-          } else {
-            enemy.y += clamp(playerY - enemy.y, -37 * dt / 1000, 37 * dt / 1000);
-            enemy.y = clamp(enemy.y, 96, 320);
-          }
-          if (enemy.x <= this.viewportWidth * (enemy.kind === 'scout' ? 0.74 : 0.79)) {
-            enemy.phase = 'telegraph';
-            enemy.phaseMs = CHARGE_MS[enemy.kind];
+
+      switch (enemy.kind) {
+        case 'scout': {
+          switch (enemy.phase) {
+            case 'approach':
+              enemy.x -= (speed * dt) / 1000;
+              enemy.y = clamp(enemy.baseY + Math.sin(enemy.ageMs / 220) * 28, 48, 380);
+              if (enemy.x <= this.viewportWidth * 0.75) {
+                enemy.phase = 'telegraph';
+                enemy.phaseMs = CHARGE_MS.scout;
+              }
+              break;
+            case 'telegraph':
+              enemy.x -= (speed * 0.35 * dt) / 1000;
+              enemy.phaseMs -= dt;
+              if (enemy.phaseMs <= 0) {
+                enemy.phase = 'attack';
+                enemy.phaseMs = 220;
+                shots.push(this.aim(enemy, playerX, playerY, 225));
+              }
+              break;
+            case 'attack':
+              enemy.x -= (speed * 0.5 * dt) / 1000;
+              enemy.phaseMs -= dt;
+              if (enemy.phaseMs <= 0) {
+                enemy.phase = 'recover';
+                enemy.phaseMs = 180;
+              }
+              break;
+            case 'recover':
+              enemy.x -= (speed * dt) / 1000;
+              enemy.phaseMs -= dt;
+              if (enemy.phaseMs <= 0) enemy.phase = 'exit';
+              break;
+            case 'exit':
+              enemy.x -= (speed * 1.6 * dt) / 1000;
+              enemy.y += ((enemy.baseY < 216 ? 40 : -40) * dt) / 1000;
+              break;
           }
           break;
-        case 'telegraph':
-          enemy.x -= speed * 0.32 * dt / 1000;
-          enemy.phaseMs -= dt;
-          if (enemy.phaseMs <= 0) {
-            enemy.phase = 'attack';
-            enemy.phaseMs = enemy.kind === 'scout' ? 240 : 500;
-            shots.push(this.aim(enemy, playerX, playerY, enemy.kind === 'scout' ? 180 : 190));
+        }
+
+        case 'dart': {
+          const dirY = enemy.baseY < 216 ? 1 : -1;
+          switch (enemy.phase) {
+            case 'approach':
+              enemy.x -= (speed * dt) / 1000;
+              enemy.y = clamp(enemy.y + (dirY * 115 * dt) / 1000, 48, 380);
+              if (enemy.x <= this.viewportWidth * 0.72) {
+                enemy.phase = 'telegraph';
+                enemy.phaseMs = CHARGE_MS.dart;
+              }
+              break;
+            case 'telegraph':
+              enemy.x -= (speed * 0.6 * dt) / 1000;
+              enemy.y = clamp(enemy.y + (dirY * 60 * dt) / 1000, 48, 380);
+              enemy.phaseMs -= dt;
+              if (enemy.phaseMs <= 0) {
+                enemy.phase = 'attack';
+                enemy.phaseMs = 200;
+                shots.push(this.aim(enemy, playerX, playerY, 235));
+              }
+              break;
+            case 'attack':
+              enemy.x -= (speed * 1.1 * dt) / 1000;
+              enemy.y += (dirY * 80 * dt) / 1000;
+              enemy.phaseMs -= dt;
+              if (enemy.phaseMs <= 0) {
+                enemy.phase = 'recover';
+                enemy.phaseMs = 150;
+              }
+              break;
+            case 'recover':
+              enemy.x -= (speed * 1.3 * dt) / 1000;
+              enemy.phaseMs -= dt;
+              if (enemy.phaseMs <= 0) enemy.phase = 'exit';
+              break;
+            case 'exit':
+              enemy.x -= (speed * 1.8 * dt) / 1000;
+              enemy.y += (dirY * 80 * dt) / 1000;
+              break;
           }
           break;
-        case 'attack':
-          enemy.x -= speed * 0.48 * dt / 1000;
-          enemy.phaseMs -= dt;
-          if (enemy.kind === 'lancer' && !enemy.secondShotFired && enemy.phaseMs <= 230) {
-            enemy.secondShotFired = true;
-            shots.push(this.aim(enemy, playerX, playerY, 190));
+        }
+
+        case 'lancer': {
+          switch (enemy.phase) {
+            case 'approach':
+              enemy.x -= (speed * dt) / 1000;
+              enemy.y += clamp(playerY - enemy.y, (-65 * dt) / 1000, (65 * dt) / 1000);
+              enemy.y = clamp(enemy.y, 48, 380);
+              if (enemy.x <= this.viewportWidth * 0.80) {
+                enemy.phase = 'telegraph';
+                enemy.phaseMs = CHARGE_MS.lancer;
+              }
+              break;
+            case 'telegraph':
+              enemy.x -= (speed * 0.3 * dt) / 1000;
+              enemy.phaseMs -= dt;
+              if (enemy.phaseMs <= 0) {
+                enemy.phase = 'attack';
+                enemy.phaseMs = 450;
+                // Disparo em leque triplo de contenção (fan spread)
+                shots.push(this.aim(enemy, playerX, playerY, 215, 0));
+                shots.push(this.aim(enemy, playerX, playerY, 215, -0.31));
+                shots.push(this.aim(enemy, playerX, playerY, 215, +0.31));
+              }
+              break;
+            case 'attack':
+              enemy.x -= (speed * 0.4 * dt) / 1000;
+              enemy.phaseMs -= dt;
+              if (!enemy.secondShotFired && enemy.phaseMs <= 200) {
+                enemy.secondShotFired = true;
+                shots.push(this.aim(enemy, playerX, playerY, 225, 0));
+              }
+              if (enemy.phaseMs <= 0) {
+                enemy.phase = 'recover';
+                enemy.phaseMs = 280;
+              }
+              break;
+            case 'recover':
+              enemy.x -= (speed * dt) / 1000;
+              enemy.phaseMs -= dt;
+              if (enemy.phaseMs <= 0) enemy.phase = 'exit';
+              break;
+            case 'exit':
+              enemy.x -= (speed * 1.5 * dt) / 1000;
+              break;
           }
-          if (enemy.phaseMs <= 0) {
-            enemy.phase = 'recover';
-            enemy.phaseMs = enemy.kind === 'scout' ? 230 : 330;
+          break;
+        }
+
+        case 'cutter': {
+          switch (enemy.phase) {
+            case 'approach':
+              enemy.x -= (speed * dt) / 1000;
+              enemy.y += clamp(playerY - enemy.y, (-80 * dt) / 1000, (80 * dt) / 1000);
+              enemy.y = clamp(enemy.y, 48, 380);
+              if (enemy.x <= this.viewportWidth * 0.74) {
+                enemy.phase = 'telegraph';
+                enemy.phaseMs = CHARGE_MS.cutter;
+              }
+              break;
+            case 'telegraph':
+              enemy.x -= (speed * 0.2 * dt) / 1000;
+              enemy.phaseMs -= dt;
+              if (enemy.phaseMs <= 0) {
+                enemy.phase = 'attack';
+                enemy.phaseMs = 550;
+                // Disparo de fagulhas laterais no início da investida
+                shots.push({ x: enemy.x - 16, y: enemy.y - 12, velocityX: -180, velocityY: -65 });
+                shots.push({ x: enemy.x - 16, y: enemy.y + 12, velocityX: -180, velocityY: 65 });
+              }
+              break;
+            case 'attack':
+              // Investida veloz para frente cortando a rota horizontal
+              enemy.x -= (310 * dt) / 1000;
+              enemy.phaseMs -= dt;
+              if (enemy.phaseMs <= 0) {
+                enemy.phase = 'recover';
+                enemy.phaseMs = 300;
+              }
+              break;
+            case 'recover':
+              enemy.x -= (speed * 0.6 * dt) / 1000;
+              enemy.phaseMs -= dt;
+              if (enemy.phaseMs <= 0) enemy.phase = 'exit';
+              break;
+            case 'exit':
+              enemy.x -= (speed * 1.6 * dt) / 1000;
+              enemy.y += ((enemy.baseY < 216 ? -50 : 50) * dt) / 1000;
+              break;
           }
           break;
-        case 'recover':
-          enemy.x -= speed * dt / 1000;
-          enemy.phaseMs -= dt;
-          if (enemy.phaseMs <= 0) enemy.phase = 'exit';
-          break;
-        case 'exit':
-          enemy.x -= speed * 1.8 * dt / 1000;
-          break;
+        }
       }
     }
 
@@ -236,8 +402,8 @@ export class StageDirector {
     }
 
     const isCompleted = this.enableBoss
-      ? (this.boss !== null && this.boss.phase === 'defeated')
-      : (this.scrollPx >= DEMO_DISTANCE && this.enemies.length === 0);
+      ? Boolean(this.boss !== null && this.boss.phase === 'defeated')
+      : Boolean(this.scrollPx >= DEMO_DISTANCE && this.enemies.length === 0);
 
     return {
       spawned,
@@ -259,7 +425,13 @@ export class StageDirector {
     enemy.hp = Math.max(0, enemy.hp - Math.max(0, amount));
     if (enemy.hp > 0) return { killed: false, score: 0 };
     this.enemies.splice(index, 1);
-    return { killed: true, score: enemy.kind === 'scout' ? 100 : 300 };
+    const scoreMap: Record<EnemyKind, number> = {
+      scout: 100,
+      dart: 150,
+      cutter: 250,
+      lancer: 300,
+    };
+    return { killed: true, score: scoreMap[enemy.kind] || 100 };
   }
 
   damageBoss(amount: number, hitX: number, hitY: number) {
@@ -272,15 +444,16 @@ export class StageDirector {
     if (index >= 0) this.enemies.splice(index, 1);
   }
 
-  private aim(enemy: EnemyModel, x: number, y: number, speed: number): EnemyShotEvent {
+  private aim(enemy: EnemyModel, x: number, y: number, speed: number, angleOffsetRad = 0): EnemyShotEvent {
     const dx = x - enemy.x;
     const dy = y - enemy.y;
-    const length = Math.hypot(dx, dy) || 1;
+    const baseAngle = Math.atan2(dy, dx);
+    const finalAngle = baseAngle + angleOffsetRad;
     return {
-      x: enemy.x - 18,
+      x: enemy.x - 16,
       y: enemy.y,
-      velocityX: speed * dx / length,
-      velocityY: speed * dy / length,
+      velocityX: speed * Math.cos(finalAngle),
+      velocityY: speed * Math.sin(finalAngle),
     };
   }
 }

@@ -60,7 +60,7 @@ test('Boss KRM-17 transitions from intro to combat and fires aimed shots', () =>
   // Advance through intro
   const tick1 = boss.update(2900, 200, 216);
   assert.equal(tick1.phase, 'phase1_turrets');
-  assert.equal(tick1.hp, 90);
+  assert.equal(tick1.hp, 140);
 
   // Advance to shoot
   const tick2 = boss.update(1500, 200, 216);
@@ -72,13 +72,13 @@ test('Boss KRM-17 modular destruction of turrets and phase 2 transition', () => 
   boss.update(2900, 200, 216); // Exit intro
 
   // Destroy top turret
-  const hitTop = boss.damage(15, boss.x + boss.modules[0].offsetX, boss.y + boss.modules[0].offsetY);
+  const hitTop = boss.damage(20, boss.x + boss.modules[0].offsetX, boss.y + boss.modules[0].offsetY);
   assert.equal(hitTop.moduleDestroyed, 'turret_top');
   assert.equal(boss.modules[0].destroyed, true);
 
   // Deal damage to trigger phase 2
-  boss.damage(30, boss.x, boss.y);
-  assert.ok(boss.hp <= 60);
+  boss.damage(50, boss.x, boss.y);
+  assert.ok(boss.hp <= 95);
 
   const tick = boss.update(100, 200, 216);
   assert.equal(tick.phase, 'phase2_drill');
@@ -89,7 +89,7 @@ test('Boss KRM-17 phase 3 core vulnerability and defeat condition', () => {
   boss.update(2900, 200, 216);
 
   // Reduce HP to trigger phase 3
-  boss.damage(65, boss.x, boss.y);
+  boss.damage(100, boss.x, boss.y);
   const tick = boss.update(100, 200, 216);
   assert.equal(tick.phase, 'phase3_core');
 

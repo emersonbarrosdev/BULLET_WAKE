@@ -61,8 +61,8 @@ export class BossKrm17 implements StageBoss {
   specialTimerMs = 3500;
   isTelegraphing = false;
 
-  readonly maxHp = 90;
-  hp = 90;
+  readonly maxHp = 140;
+  hp = 140;
 
   // Módulos destrutíveis
   readonly modules: BossModule[] = [
@@ -73,8 +73,8 @@ export class BossKrm17 implements StageBoss {
       offsetY: -34,
       width: 32,
       height: 24,
-      hp: 15,
-      maxHp: 15,
+      hp: 20,
+      maxHp: 20,
       destroyed: false,
     },
     {
@@ -84,8 +84,8 @@ export class BossKrm17 implements StageBoss {
       offsetY: 34,
       width: 32,
       height: 24,
-      hp: 15,
-      maxHp: 15,
+      hp: 20,
+      maxHp: 20,
       destroyed: false,
     },
     {
@@ -95,8 +95,8 @@ export class BossKrm17 implements StageBoss {
       offsetY: 0,
       width: 48,
       height: 40,
-      hp: 20,
-      maxHp: 20,
+      hp: 30,
+      maxHp: 30,
       destroyed: false,
     },
   ];
@@ -152,29 +152,29 @@ export class BossKrm17 implements StageBoss {
     if (this.phase === 'phase1_turrets') {
       this.shootTimerMs -= dt;
       if (this.shootTimerMs <= 0) {
-        this.shootTimerMs = 1400;
+        this.shootTimerMs = 1100;
 
         // Disparo das torres que ainda não foram destruídas
         const top = this.modules[0];
         const bot = this.modules[1];
 
         if (!top.destroyed) {
-          shots.push(this.aimShot(this.x + top.offsetX, this.y + top.offsetY, playerX, playerY, 210));
+          shots.push(this.aimShot(this.x + top.offsetX, this.y + top.offsetY, playerX, playerY, 220, -0.12));
         }
         if (!bot.destroyed) {
-          shots.push(this.aimShot(this.x + bot.offsetX, this.y + bot.offsetY, playerX, playerY, 210));
+          shots.push(this.aimShot(this.x + bot.offsetX, this.y + bot.offsetY, playerX, playerY, 220, +0.12));
         }
       }
 
       // Transição de fase por dano recebido
-      if (this.hp <= 30) {
+      if (this.hp <= 45) {
         this.phase = 'phase3_core';
         this.shootTimerMs = 1000;
-      } else if (this.hp <= 60 || (this.modules[0].destroyed && this.modules[1].destroyed)) {
+      } else if (this.hp <= 95 || (this.modules[0].destroyed && this.modules[1].destroyed)) {
         this.phase = 'phase2_drill';
         this.phaseTimerMs = 0;
         this.specialTimerMs = 2800;
-        this.shootTimerMs = 1200;
+        this.shootTimerMs = 1100;
       }
     }
 
@@ -188,28 +188,28 @@ export class BossKrm17 implements StageBoss {
         this.isTelegraphing = true;
       } else if (this.specialTimerMs <= 0) {
         this.isTelegraphing = false;
-        this.specialTimerMs = 4500;
+        this.specialTimerMs = 4000;
         // Solta 2 drones scouts de apoio de mineração
         spawns.push({ kind: 'scout', x: this.x + 20, y: this.y - 45 });
         spawns.push({ kind: 'scout', x: this.x + 20, y: this.y + 45 });
       }
 
       if (this.shootTimerMs <= 0) {
-        this.shootTimerMs = 1600;
-        // Rajada frontal angular da broca
-        for (const angle of [-0.35, 0, 0.35]) {
+        this.shootTimerMs = 1350;
+        // Rajada frontal angular da broca em leque de 5 vias
+        for (const angle of [-0.40, -0.20, 0, 0.20, 0.40]) {
           shots.push({
             x: this.x - 55,
             y: this.y,
-            velocityX: -220 * Math.cos(angle),
-            velocityY: 220 * Math.sin(angle),
+            velocityX: -230 * Math.cos(angle),
+            velocityY: 230 * Math.sin(angle),
             damage: 1,
           });
         }
       }
 
-      // Transição para Fase 3 se HP cair abaixo de 30
-      if (this.hp <= 30) {
+      // Transição para Fase 3 se HP cair abaixo de 45
+      if (this.hp <= 45) {
         this.phase = 'phase3_core';
         this.shootTimerMs = 1000;
       }
@@ -219,16 +219,16 @@ export class BossKrm17 implements StageBoss {
     else if (this.phase === 'phase3_core') {
       this.shootTimerMs -= dt;
       if (this.shootTimerMs <= 0) {
-        this.shootTimerMs = 1500;
-        // Salva radial de emergência em 8 direções
-        const numShots = 8;
+        this.shootTimerMs = 1300;
+        // Salva radial de emergência em 10 direções
+        const numShots = 10;
         for (let i = 0; i < numShots; i++) {
-          const a = (i * 2 * Math.PI) / numShots + (this.ageMs / 1000);
+          const a = (i * 2 * Math.PI) / numShots + (this.ageMs / 900);
           shots.push({
             x: this.x - 10,
             y: this.y,
-            velocityX: Math.cos(a) * 190,
-            velocityY: Math.sin(a) * 190,
+            velocityX: Math.cos(a) * 200,
+            velocityY: Math.sin(a) * 200,
             damage: 1,
           });
         }
@@ -299,15 +299,16 @@ export class BossKrm17 implements StageBoss {
     };
   }
 
-  private aimShot(fromX: number, fromY: number, toX: number, toY: number, speed: number): BossShot {
+  private aimShot(fromX: number, fromY: number, toX: number, toY: number, speed: number, angleOffset = 0): BossShot {
     const dx = toX - fromX;
     const dy = toY - fromY;
-    const len = Math.hypot(dx, dy) || 1;
+    const baseAngle = Math.atan2(dy, dx);
+    const finalAngle = baseAngle + angleOffset;
     return {
       x: fromX,
       y: fromY,
-      velocityX: (speed * dx) / len,
-      velocityY: (speed * dy) / len,
+      velocityX: speed * Math.cos(finalAngle),
+      velocityY: speed * Math.sin(finalAngle),
       damage: 1,
     };
   }
