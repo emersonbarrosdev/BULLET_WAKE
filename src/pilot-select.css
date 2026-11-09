@@ -47,7 +47,7 @@
 #bw-pilot-select .bw-pilot-card {
   color: #fff0e2; text-align: center; min-width: 0;
   position: relative; display: flex; flex-direction: column;
-  align-items: center; gap: clamp(4px, .6vh, 9px);
+  align-items: center; justify-content: space-evenly; gap: clamp(4px, .6vh, 9px);
   padding: clamp(12px, 1.3vw, 23px) clamp(8px, 1.05vw, 18px) clamp(8px, 1vh, 16px);
   background: linear-gradient(165deg,rgba(38,9,12,.90),rgba(10,2,7,.95) 57%,rgba(32,6,8,.91));
   border: 1px solid rgba(250,90,48,.50); border-radius: 5px;
@@ -73,7 +73,7 @@
   letter-spacing: .06em;
 }
 #bw-pilot-select .bw-pilot-portrait-wrap {
-  width: min(62%, 220px); flex: 1 1 auto; min-height: 100px; max-height: min(32vh, 255px);
+  width: min(62%, 220px); flex: 1 1 auto; min-height: 100px; max-height: min(41vh, 390px);
   overflow: hidden; border: 1px solid rgba(251,98,45,.34);
   border-radius: 5px; background: #19070e;
   box-shadow: inset 0 0 12px rgba(242,63,19,.2);
@@ -156,6 +156,9 @@
 #bw-pilot-select .bw-pilot-profile-special strong {font:italic 800 clamp(20px,1.75vw,29px)/1.1 'Oxanium',sans-serif;color:#ffc24f;display:block;margin:4px 0;}
 #bw-pilot-select .bw-pilot-profile-special p {font-size:clamp(17px,1.45vw,23px);margin:5px 0;}
 #bw-pilot-select .bw-pilot-profile-stats {justify-content:flex-start;gap:clamp(22px,3vw,60px);margin-top:auto;}
+@media (max-height: 850px) {
+  #bw-pilot-select .bw-pilot-portrait-wrap {max-height: min(30vh, 235px);}
+}
 @media (max-height: 650px) {
   #bw-pilot-select .bw-pilot-ui {padding-top:5px;padding-bottom:5px;}
   #bw-pilot-select .bw-pilot-header h1 {font-size:22px;margin:0 0 2px;}
