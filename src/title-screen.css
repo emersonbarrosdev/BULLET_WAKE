@@ -28,14 +28,40 @@
   background-image: url('/assets/title/title-apocalyptic-base-v3.webp');
   pointer-events: none;
 }
-#bw-title-screen .bw-press-on {
+/* Only real text and its shadow blink. The aircraft and engine flames are
+   baked into the STATIC background and are never part of this animated node. */
+#bw-title-screen .bw-press-text {
   position: absolute;
-  /* Crop coordinates from the same 1672x941 artwork (not viewport pixels). */
-  left: 29.6053%; top: 70.6695%;
-  width: 41.6866%; height: 14.0276%;
-  /* Text AND all pre-rendered glow are in this one layer. They blink together. */
-  background: url('/assets/title/title-press-all-v3.webp') center / 100% 100% no-repeat;
+  left: 50%;
+  top: 78.3%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(12px, 1.6vw, 26px);
+  white-space: nowrap;
+  pointer-events: none;
   animation: bw-press-blink 1.15s steps(1, end) infinite;
+  filter: drop-shadow(0 0 9px rgba(255, 62, 24, .85));
+}
+#bw-title-screen .bw-press-text-label {
+  font-family: 'Oxanium', 'Rajdhani', sans-serif;
+  font-size: clamp(27px, 3.05vw, 60px);
+  font-weight: 800;
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: .08em;
+  color: #fff8ed;
+  text-shadow: 0 0 2px #fff5dc, 0 0 8px #ff6826, 0 0 20px rgba(231, 48, 13, .9);
+  transform: scaleX(1.08);
+}
+#bw-title-screen .bw-press-text-arrow {
+  font-family: 'Oxanium', 'Rajdhani', sans-serif;
+  font-size: clamp(19px, 2.05vw, 35px);
+  font-weight: 800;
+  line-height: 1;
+  color: #ffdbb7;
+  text-shadow: 0 0 9px #ff572b;
 }
 @keyframes bw-press-blink {
   0%, 53% { opacity: 1; }
@@ -221,7 +247,7 @@
   #bw-title-screen .bw-submenu-help { font-size: 11px; margin-top: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  #bw-title-screen .bw-press-on { animation: none; opacity: 1; }
+  #bw-title-screen .bw-press-text { animation: none; opacity: 1; }
   #bw-title-screen .bw-choice-pointer,
   #bw-title-screen .bw-visual-choice::after,
   #bw-title-screen .bw-submenu-choice,
