@@ -190,3 +190,103 @@
 @media (prefers-reduced-motion: reduce) {
   #bw-pilot-select *, #bw-pilot-select *::before, #bw-pilot-select *::after {transition:none !important;}
 }
+
+
+/* Pilot selection v3 — compact cards and a genuinely viewport-constrained profile.
+   The 3-column cards remain a fixed visual size; spare screen height becomes
+   breathing room rather than stretching the card boxes. */
+@media (min-height: 681px) and (min-width: 951px) {
+  #bw-pilot-select.bw-pilot-select { overflow-y: hidden; }
+  #bw-pilot-select .bw-pilot-ui {
+    height: 100dvh;
+    min-height: 0;
+    padding-top: clamp(17px, 2vh, 25px);
+    padding-bottom: clamp(16px, 2vh, 24px);
+  }
+  #bw-pilot-select .bw-pilot-cards {
+    flex: 1 1 0;
+    min-height: 0;
+    align-items: center;
+    width: min(100%, 1350px);
+    margin: clamp(16px, 2vh, 25px) auto clamp(14px, 2vh, 23px);
+  }
+  #bw-pilot-select .bw-pilot-card {
+    height: min(52dvh, 440px);
+    max-height: 100%;
+    min-height: 0;
+    justify-content: space-between;
+    gap: clamp(3px, .55vh, 7px);
+    padding: clamp(9px, .9vw, 15px) clamp(8px, 1vw, 15px);
+  }
+  #bw-pilot-select .bw-pilot-portrait-wrap {
+    flex: 0 1 auto;
+    width: min(49%, 185px);
+    height: min(24dvh, 200px);
+    max-height: min(24dvh, 200px);
+    min-height: 0;
+  }
+  #bw-pilot-select .bw-pilot-ship-row { min-height: clamp(48px, 6.2dvh, 64px); }
+  #bw-pilot-select .bw-pilot-ship-row img {max-height: 61px; width: 54%;}
+  #bw-pilot-select .bw-pilot-brief { margin-top: 0; }
+  #bw-pilot-select .bw-pilot-footer { padding-top: clamp(9px, 1.3vh, 14px); }
+
+  #bw-pilot-select .bw-pilot-ui-profile .bw-pilot-profile {
+    flex: 1 1 0;
+    align-self: center;
+    width: min(100%, 1240px);
+    max-height: min(61dvh, 575px);
+    min-height: 0;
+    margin: clamp(15px, 2vh, 25px) auto;
+    grid-template-columns: minmax(200px, 30%) minmax(0, 1fr);
+    padding: clamp(12px, 1.35vw, 22px);
+  }
+  #bw-pilot-select .bw-pilot-profile-art {
+    min-height: 0;
+    height: 100%;
+    align-self: stretch;
+  }
+  #bw-pilot-select .bw-pilot-profile-content {
+    min-height: 0;
+    justify-content: center;
+    gap: clamp(7px, 1.1dvh, 13px);
+  }
+  #bw-pilot-select .bw-pilot-profile-ship {
+    min-height: 0;
+    padding: 5px 12px;
+  }
+  #bw-pilot-select .bw-pilot-profile-ship img { max-height: min(8.5dvh, 82px); }
+  #bw-pilot-select .bw-pilot-profile-stats {margin-top: clamp(5px, 1.4dvh, 16px);}
+  #bw-pilot-select .bw-pilot-ui-profile .bw-pilot-footer {margin-top:auto;}
+}
+
+/* All three ship images share one menu treatment. The RIVET keeps its approved
+   white/red triple-engine silhouette, but the painted scene around it is faded
+   so it no longer looks like a cut-out from the cinematic title artwork. */
+#bw-pilot-select .bw-pilot-ship-row img,
+#bw-pilot-select .bw-pilot-profile-ship img {
+  object-fit: contain;
+  mix-blend-mode: screen;
+  filter: saturate(.93) contrast(1.10);
+}
+#bw-pilot-select img[src$="ship-nolan.webp"] {
+  -webkit-mask-image: radial-gradient(ellipse 68% 66% at 50% 50%, #000 66%, transparent 100%);
+  mask-image: radial-gradient(ellipse 68% 66% at 50% 50%, #000 66%, transparent 100%);
+}
+
+/* Approved 2D promotional-illustration treatment: subtle flattening of the
+   specular highlights, while preserving the characters' original identity. */
+#bw-pilot-select .bw-pilot-portrait-wrap img,
+#bw-pilot-select .bw-pilot-profile-art img {
+  filter: contrast(1.06) saturate(.89);
+}
+
+/* Compact landscape devices retain controlled page scrolling rather than
+   clipping important controls. Full desktop screens do not need to scroll. */
+@media (max-height: 680px) {
+  #bw-pilot-select.bw-pilot-select {overflow-y:auto;}
+  #bw-pilot-select .bw-pilot-ui {height:auto;min-height:100dvh;}
+  #bw-pilot-select .bw-pilot-cards {flex: 0 0 auto;}
+  #bw-pilot-select .bw-pilot-card {min-height:310px;}
+  #bw-pilot-select .bw-pilot-profile {min-height:360px;max-height:none;}
+  #bw-pilot-select .bw-pilot-profile-art {min-height:0;}
+}
