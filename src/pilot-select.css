@@ -24,7 +24,7 @@
   position: relative; z-index: 1; min-height: 100%;
   width: min(96vw, 1560px); margin: auto;
   display: flex; flex-direction: column;
-  padding: clamp(8px, 1vh, 14px) clamp(10px, 1vw, 18px) clamp(8px, 1vh, 14px);
+  padding: clamp(12px, 1.6vh, 20px) clamp(10px, 1vw, 18px) clamp(14px, 1.8vh, 24px);
 }
 #bw-pilot-select .bw-pilot-header { text-align: center; flex: 0 0 auto; }
 #bw-pilot-select .bw-pilot-brand {
@@ -38,11 +38,12 @@
   letter-spacing: .11em; color: #ffd8b7; text-shadow: 0 0 18px rgba(255,65,19,.7);
 }
 #bw-pilot-select .bw-pilot-header p {
-  margin: 0 0 8px; font-size: clamp(13px, 1.2vw, 17px); letter-spacing: .15em; color: #ffb56e;
+  margin: 0 0 clamp(10px, 1.3vh, 15px); font-size: clamp(13px, 1.2vw, 17px); letter-spacing: .15em; color: #ffb56e;
 }
 #bw-pilot-select .bw-pilot-cards {
   width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(9px, 1.15vw, 20px); flex: 1 1 auto; min-height: 0;
+  margin-top: clamp(18px, 2.2vh, 28px); margin-bottom: clamp(10px, 1.5vh, 18px);
 }
 #bw-pilot-select .bw-pilot-card {
   color: #fff0e2; text-align: center; min-width: 0;
@@ -102,14 +103,14 @@
 #bw-pilot-select .bw-pilot-stat-bars i { width: clamp(6px,.72vw,12px); height: clamp(10px,1vw,15px); transform: skew(-9deg); border:1px solid #613d35; background: #2a1f25; }
 #bw-pilot-select .bw-pilot-stat-bars i.bw-lit { background: linear-gradient(#fff091,#ff9e19 60%,#e3430d); border-color: #ff9c22; box-shadow: 0 0 5px #dc5511; }
 #bw-pilot-select .bw-pilot-brief {
-  flex: 0 0 auto; margin-top: 12px; padding: clamp(8px, 1.1vh, 15px);
+  flex: 0 0 auto; margin-top: clamp(18px, 2.3vh, 26px); padding: clamp(8px, 1.1vh, 15px);
   text-align: center; border: 1px solid rgba(244,94,47,.55); background: rgba(16,2,6,.86);
   box-shadow: inset 0 0 21px rgba(227,44,14,.12);
 }
 #bw-pilot-select .bw-pilot-brief p { margin: 2px 0; font-size: clamp(14px,1.17vw,18px); }
 #bw-pilot-select .bw-pilot-brief-special { color: #ffd15d; font-weight: 800; }
 #bw-pilot-select .bw-pilot-footer {
-  padding: 9px 0 2px; display: flex; justify-content: space-between;
+  padding: clamp(16px, 2vh, 23px) 0 2px; display: flex; justify-content: space-between;
   align-items: center; gap: 10px; flex: 0 0 auto;
 }
 #bw-pilot-select .bw-pilot-help { color: #f3d4c3; font-size: clamp(12px, 1.12vw, 17px); letter-spacing: .035em; }
@@ -157,15 +158,16 @@
 #bw-pilot-select .bw-pilot-profile-special p {font-size:clamp(17px,1.45vw,23px);margin:5px 0;}
 #bw-pilot-select .bw-pilot-profile-stats {justify-content:flex-start;gap:clamp(22px,3vw,60px);margin-top:auto;}
 @media (max-height: 850px) {
-  #bw-pilot-select .bw-pilot-portrait-wrap {max-height: min(30vh, 235px);}
+  #bw-pilot-select .bw-pilot-portrait-wrap {max-height: min(26vh, 205px);}
 }
 @media (max-height: 650px) {
-  #bw-pilot-select .bw-pilot-ui {padding-top:5px;padding-bottom:5px;}
+  #bw-pilot-select .bw-pilot-ui {padding-top:4px;padding-bottom:4px;}
   #bw-pilot-select .bw-pilot-header h1 {font-size:22px;margin:0 0 2px;}
   #bw-pilot-select .bw-pilot-header p {margin:0 0 5px;font-size:12px;}
+  #bw-pilot-select .bw-pilot-cards {margin-top: 0; margin-bottom: 0;}
   #bw-pilot-select .bw-pilot-brand {font-size:25px;}
-  #bw-pilot-select .bw-pilot-card {gap:3px;padding:8px;}
-  #bw-pilot-select .bw-pilot-portrait-wrap {max-height:23vh;min-height:75px;width:min(53%,150px);}
+  #bw-pilot-select .bw-pilot-card {gap:2px;padding:6px;}
+  #bw-pilot-select .bw-pilot-portrait-wrap {max-height:20vh;min-height:60px;width:min(53%,150px);}
   #bw-pilot-select .bw-pilot-ship-row {min-height:48px;}
   #bw-pilot-select .bw-pilot-ship-row img {max-height:45px;}
   #bw-pilot-select .bw-pilot-brief {margin-top:6px;padding:5px;}
