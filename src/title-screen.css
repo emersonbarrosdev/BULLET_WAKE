@@ -25,20 +25,21 @@
   background-size: 100% 100%;
 }
 #bw-title-screen .bw-attract-art {
-  background-image: url('/assets/title/title-apocalyptic.webp');
+  background-image: url('/assets/title/title-apocalyptic-clean.webp');
   pointer-events: none;
 }
-#bw-title-screen .bw-press-off-cover {
+#bw-title-screen .bw-press-on {
   position: absolute;
   /* Crop coordinates from the same 1672x941 artwork (not viewport pixels). */
   left: 29.6053%; top: 70.6695%;
   width: 41.6866%; height: 14.0276%;
-  background: url('/assets/title/title-press-off.webp') center / 100% 100% no-repeat;
+  /* Text AND all pre-rendered glow are in this one layer. They blink together. */
+  background: url('/assets/title/title-press-on.webp') center / 100% 100% no-repeat;
   animation: bw-press-blink 1.15s steps(1, end) infinite;
 }
 @keyframes bw-press-blink {
-  0%, 53% { opacity: 0; }
-  54%, 100% { opacity: 1; }
+  0%, 53% { opacity: 1; }
+  54%, 100% { opacity: 0; }
 }
 #bw-title-screen .bw-press-activation {
   position: absolute;
@@ -113,8 +114,18 @@
    The two approved opening screens are always the image-led attract and main menu. */
 #bw-title-screen .bw-submenu-art { pointer-events: none; }
 #bw-title-screen .bw-submenu-shade {
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse 45% 45% at center, rgba(13, 2, 7, .94), rgba(14, 1, 8, .58) 65%, rgba(10, 0, 6, .40));
+  position: absolute;
+  inset: 0;
+  /* Quiet the apocalyptic painting while keeping its edges recognizable.
+     Option/controls text stays above this layer; no opaque button panels. */
+  background:
+    radial-gradient(ellipse 68% 78% at 50% 48%,
+      rgba(7, 1, 6, .985) 0%,
+      rgba(9, 1, 7, .955) 54%,
+      rgba(10, 2, 8, .72) 100%),
+    linear-gradient(180deg, rgba(4, 0, 5, .16), rgba(17, 0, 4, .24));
+  -webkit-backdrop-filter: blur(4px) saturate(.72);
+  backdrop-filter: blur(4px) saturate(.72);
   pointer-events: none;
 }
 #bw-title-screen .bw-submenu-shell {
@@ -210,7 +221,7 @@
   #bw-title-screen .bw-submenu-help { font-size: 11px; margin-top: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  #bw-title-screen .bw-press-off-cover { animation: none; opacity: 0; }
+  #bw-title-screen .bw-press-on { animation: none; opacity: 1; }
   #bw-title-screen .bw-choice-pointer,
   #bw-title-screen .bw-visual-choice::after,
   #bw-title-screen .bw-submenu-choice,

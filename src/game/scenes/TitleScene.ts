@@ -88,7 +88,7 @@ export class TitleScene extends Phaser.Scene {
     if (this.mode === 'attract') {
       this.root.innerHTML = `
         <div class="bw-art-frame bw-attract-art" aria-hidden="true">
-          <div class="bw-press-off-cover"></div>
+          <div class="bw-press-on"></div>
         </div>
         <button type="button" class="bw-press-activation" aria-label="PRESS START — abrir menu principal"></button>
       `;
