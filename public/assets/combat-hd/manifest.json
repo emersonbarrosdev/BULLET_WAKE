@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "direction": "top-down; Rivet north, enemies south",
+  "medium": "hand-painted 2D concept art",
+  "sheetLayout": { "columns": 4, "rows": 1, "frameWidth": 256, "frameHeight": 256, "pivot": [128, 128] },
+  "sheets": {
+    "rivet": { "file": "rivet.webp", "frames": ["flight-a", "flight-b", "bank-left", "bank-right"], "displaySize": [54, 54], "hitRadiusUnchanged": 4.5 },
+    "scout": { "file": "scout.webp", "frames": ["flight-a", "flight-b", "charge", "recovery"], "displaySize": [47, 47] },
+    "dart": { "file": "dart.webp", "frames": ["flight-a", "flight-b", "charge", "recovery"], "displaySize": [62, 62] },
+    "lancer": { "file": "lancer.webp", "frames": ["flight-a", "flight-b", "charge", "recovery"], "displaySize": [61, 61] },
+    "cutter": { "file": "cutter.webp", "frames": ["flight-a", "flight-b", "charge", "recovery"], "displaySize": [66, 66] },
+    "bomb": { "file": "bomb.webp", "frames": ["ignition", "expansion", "pressure-ring", "dissipation"], "frameRate": 9, "displaySize": [410, 410] }
+  },
+  "images": {
+    "ocean": { "file": "ocean.webp", "size": [1024, 1536], "loop": "second half mirrored vertically at runtime" },
+    "capsule": { "file": "capsule.webp", "size": [256, 256], "displaySize": [39, 39], "labels": "P, P★, W, H, B, M, S, E overlaid in engine" }
+  },
+  "provenance": "Created with integrated image_gen. Local approved Rivet menu art used as identity reference. No third-party game art. FFmpeg packaging only."
+}

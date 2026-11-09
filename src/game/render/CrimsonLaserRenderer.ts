@@ -27,7 +27,7 @@ export interface RenderableShotTrail {
 export class CrimsonLaserRenderer {
   private readonly graphics: Phaser.GameObjects.Graphics;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, private readonly paintedShots = false) {
     this.graphics = scene.add.graphics();
     // Depth 8: Acima do oceano (-10..-7) e dos inimigos (5), mas ABAIXO da nave (15) e dos tiros inimigos (18)
     // para garantir legibilidade absoluta dos projéteis hostis mesmo no Nível 4 máximo.
@@ -45,7 +45,7 @@ export class CrimsonLaserRenderer {
     g.clear();
 
     // 1. Renderiza trilhas energéticas helicoidais (ENERGIA ESPIRALADA) ou lanças direcionais (DISPERSÃO)
-    if (activeShots.length > 0) {
+    if (activeShots.length > 0 && !(this.paintedShots && weaponFamily === 'ion')) {
       this.renderProjectileEnergyStreams(g, activeShots, weaponFamily, weaponLevel, timeMs);
     }
 

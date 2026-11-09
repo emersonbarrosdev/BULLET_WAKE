@@ -313,6 +313,19 @@ Esta lista substitui as declarações de campanha completa da versão horizontal
 5. **Salvamento e vitória V2:** expandir o schema limitado às cinco fases antigas para a campanha canônica, migrar saves e registrar corretamente a fase concluída. O epílogo atual ainda chama `recordStageClear(5, ...)` após a vitória da Fase 1.
 6. **Controles e distribuição planejados:** implementar suporte efetivo a gamepad, controles táteis completos para dash/bomba/especial/carga e empacotamento Android. A entrada atual cobre teclado e movimento/tiro por toque.
 
+## 9. FASE 1 — ETAPA VISUAL DA RIVET (09/11/2026)
+
+Prioridade de produção: concluir e revisar visualmente a Fase 1 antes de avançar à Fase 2. Nesta etapa, apenas a nave de Nolan recebe novo acabamento de combate; Moth e Knuckle preservam suas implementações atuais.
+
+- **Cenário:** oceano e recifes alienígenas pintados em 2D, centro escuro livre e continuidade vertical sem emendas.
+- **HUD do Nolan:** retrato ilustrado e linguagem bordô/âmbar das telas iniciais, Oxanium/Rajdhani, informações nas laterais sem reduzir a arena.
+- **RIVET:** spritesheet de combate próprio em vista superior, branca/vermelha, três motores, voo e inclinações; framebuffer Full HD com coordenadas lógicas preservadas.
+- **Inimigos comuns:** sheets animados de Agulha Pelágica, Raia de Fenda, Parasita Abissal e Casulo Marinho, com voo e telegrafia de ataque.
+- **Tiros e itens:** Dispersão Azul visualmente renovada nos quatro níveis (3/5/7/9 direções), bomba pintada com expansão/dissipação, cápsulas de P/W/H/B/M/S/E identificáveis. Três P por nível, dano e colisões preservados.
+- **QA:** build/TypeScript e 125 testes aprovados; Chrome real em 1366×768 e 1920×1080, HUD sem cortes/scroll, quatro frames distintos por sheet, coleta/bomba/movimento/dash e ciclo de saída/reinício verificados; zero erros de navegador.
+
+Inventário, prompts, evidências e limites em [Fase 1 — revisão visual da RIVET](29_FASE_1_VISUAL_RIVET.md). Antes de considerar toda a arte da Fase 1 encerrada, ainda revisar Raia-Dente/Talassarca e as artes auxiliares de carga, mísseis e especial. A campanha além da Fase 1 permanece bloqueada.
+
 
 
 

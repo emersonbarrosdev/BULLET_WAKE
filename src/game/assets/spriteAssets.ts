@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { loadCombatArt, registerCombatArt } from './combatArt';
 
 /** Contratos de sprites PNG: Rivet V2 validada para integração; demais unidades continuam com arte v0.1 provisória. */
 export const SPRITE_SHEETS = [
@@ -84,6 +85,7 @@ export function loadGameSprites(scene: Phaser.Scene): void {
   const base = import.meta.env.BASE_URL.endsWith('/')
     ? import.meta.env.BASE_URL.slice(0, -1)
     : import.meta.env.BASE_URL;
+  loadCombatArt(scene, base);
   for (const sheet of SPRITE_SHEETS) {
     if (scene.textures.exists(sheet.key)) continue;
     // Caminho absoluto relativo ao base do Vite funciona em dev e deploy.
@@ -191,6 +193,7 @@ animations.push(
 );
 
 export function registerGameAnimations(scene: Phaser.Scene): void {
+  registerCombatArt(scene);
   // Mantém filtragem nítida para spritesheets de arte enquanto Text e Graphics usam anti-aliasing HD
   for (const sheet of SPRITE_SHEETS) {
     if (scene.textures.exists(sheet.key)) {

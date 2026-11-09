@@ -13,6 +13,7 @@ import { clamp, moveInBounds } from '../systems/movement';
 import { advanceHealth, applyPlayerHit, initialPlayerHealth, type HitEvent, type PlayerHealth } from '../systems/combat';
 import { StageDirector, type EnemyModel, type EnemyShotEvent } from '../systems/stageDirector';
 import { CombatHud } from '../ui/CombatHud';
+import { PremiumCombatHud } from '../ui/PremiumCombatHud';
 import { getPilot, type PilotDefinition } from '../data/pilots';
 import { loadGameSprites, registerGameAnimations } from '../assets/spriteAssets';
 import { GameOverOverlay } from '../ui/GameOverOverlay';
@@ -21,6 +22,7 @@ import { StageBackdrop } from './StageBackdrop';
 import { STAGES } from '../data/stages';
 import { saveSystem } from '../systems/saveSystem.ts';
 import { VectorShip } from '../render/VectorShip';
+import { enableCombatResolution } from '../render/combatResolution';
 import {
   createInitialDashState,
   triggerDash,
@@ -62,7 +64,7 @@ import {
 } from '../systems/crimsonLaserSystem.ts';
 import { CrimsonLaserRenderer } from '../render/CrimsonLaserRenderer.ts';
 import { InputManager } from '../systems/inputSystem.ts';
-import { PickupSystem, determineEnemyDrop } from '../systems/pickupSystem.ts';
+import { PickupSystem, determineEnemyDrop, type PickupType } from '../systems/pickupSystem.ts';
 import {
   initialScoreCombo,
   registerKill,
@@ -128,7 +130,7 @@ export class PrototypeScene extends Phaser.Scene {
   private health: PlayerHealth = initialPlayerHealth();
   private dashState: DashState = createInitialDashState();
 
-  private hud!: CombatHud;
+  private hud!: CombatHud | PremiumCombatHud;
   private backdrop!: StageBackdrop;
   private inputManager!: InputManager;
 
@@ -164,6 +166,7 @@ export class PrototypeScene extends Phaser.Scene {
 
   create(): void {
     registerGameAnimations(this);
+    if (this.pilot.id === 'nolan') enableCombatResolution(this);
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
 
     this.hitPoseMs = 0;
@@ -194,7 +197,9 @@ export class PrototypeScene extends Phaser.Scene {
     this.backdrop = new StageBackdrop(this, this.stageNumber, { fullWidth: false, showBezels: true });
     this.inputManager = new InputManager(this);
 
-    this.hud = new CombatHud(this, () => this.restart());
+    this.hud = this.pilot.id === 'nolan'
+      ? new PremiumCombatHud(this, () => this.restart())
+      : new CombatHud(this, () => this.restart());
     this.hud.setPilot(this.pilot.id, this.pilot.shipName);
     this.hud.setScore(0);
     this.hud.setHealth(this.health, false);
@@ -215,7 +220,7 @@ export class PrototypeScene extends Phaser.Scene {
 
     // Inicializa sistema e renderizador do Laser Rubro (multifeixes contínuos)
     this.crimsonLaserState = createInitialCrimsonLaserState(this.weapons.weaponLevel);
-    this.crimsonLaserRenderer = new CrimsonLaserRenderer(this);
+    this.crimsonLaserRenderer = new CrimsonLaserRenderer(this, this.pilot.id === 'nolan');
 
     // Atalhos de Sandbox / Validação de Desenvolvimento (Teclas 1, 2, 3, 4 selecionam Laser Rubro LV1–LV4)
     this.registerSandboxShortcuts();
@@ -517,6 +522,13 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private playEffect(kind: 'muzzle' | 'hit' | 'explosion', x: number, y: number): void {
+    if (this.pilot.id === 'nolan') {
+      const size = kind === 'explosion' ? 62 : kind === 'hit' ? 25 : 14;
+      const effect = this.add.sprite(x, y, 'hd-bomb', 0).setDisplaySize(size, size).setDepth(13);
+      effect.once('animationcomplete', () => effect.destroy());
+      effect.play('hd-bomb-play');
+      return;
+    }
     const sprite = this.add.sprite(x, y, 'fx-' + kind, 0).setScale(1.5).setDepth(15);
     if (kind === 'muzzle') {
       sprite.setAngle(-90);
@@ -526,15 +538,18 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private createPlayerProjectile(def: ProjectileSpawnDef, tint?: number): void {
-    const node = this.add.sprite(def.x, def.y, def.texture, 0)
+    const painted = this.pilot.id === 'nolan' && !def.piercing && def.texture.startsWith('shot-');
+    const texture = painted ? `hd-shot-${this.weapons.weaponFamily === 'green' ? 'green' : 'blue'}` : def.texture;
+    const node = this.add.sprite(def.x, def.y, texture, 0)
       .setScale(def.scale)
       .setDepth(9);
     // Orienta o sprite ao longo do vetor de disparo (Norte -Y = -90 graus)
     node.setRotation(Math.atan2(def.velocityY, def.velocityX));
-    if (tint) {
+    if (tint && !painted) {
       node.setTint(tint);
     }
-    node.play(def.animation);
+    if (painted) node.setDisplaySize(18 + this.weapons.weaponLevel * 2, 9 + this.weapons.weaponLevel);
+    else node.play(def.animation);
     this.shots.push({
       node,
       baseX: def.x,
@@ -769,6 +784,12 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private spawnPhantomAfterimage(): void {
+    if (this.pilot.id === 'nolan') {
+      const ghost = this.add.image(this.vectorShip.x, this.vectorShip.y, 'hd-rivet', 0)
+        .setDisplaySize(54, 54).setTint(0xffa457).setAlpha(.3).setDepth(6);
+      this.tweens.add({ targets: ghost, alpha: 0, duration: 260, onComplete: () => ghost.destroy() });
+      return;
+    }
     const ghost = this.add.graphics();
     ghost.fillStyle(0x38bdf8, 0.45);
     ghost.fillTriangle(
@@ -825,14 +846,15 @@ export class PrototypeScene extends Phaser.Scene {
     globalAudio.playBomb();
 
     // Onda de choque massiva de tela
-    const bombSprite = this.add.sprite(PLAYFIELD_X + PLAYFIELD_WIDTH / 2, GAME_HEIGHT / 2, 'fx-bomb-wave', 0)
-      .setScale(4.2).setDepth(30);
+    const painted = this.pilot.id === 'nolan';
+    const bombSprite = this.add.sprite(PLAYFIELD_X + PLAYFIELD_WIDTH / 2, GAME_HEIGHT / 2, painted ? 'hd-bomb' : 'fx-bomb-wave', 0)
+      .setDisplaySize(painted ? 410 : 403, painted ? 410 : 403).setDepth(painted ? 12 : 30);
     bombSprite.once('animationcomplete', () => bombSprite.destroy());
-    bombSprite.play('fx-bomb-wave-play');
+    bombSprite.play(painted ? 'hd-bomb-play' : 'fx-bomb-wave-play');
 
     // Flash e shake
-    this.cameras.main.flash(280, 255, 255, 255);
-    this.cameras.main.shake(380, 0.016);
+    if (!painted) this.cameras.main.flash(280, 255, 255, 255);
+    this.cameras.main.shake(painted ? 180 : 380, painted ? 0.004 : 0.016);
     this.hud.flash('BOMBA DETONADA!', '#ffae7a', 1200);
 
     // Limpa todos os projéteis hostis
@@ -848,15 +870,14 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private makeEnemyVisual(enemy: EnemyModel): void {
-    const texture = 'enemy-' + enemy.kind;
-    const isSmall = enemy.kind === 'scout' || enemy.kind === 'dart';
+    const texture = 'hd-' + enemy.kind;
+    const size = { scout: 47, dart: 62, lancer: 61, cutter: 66 }[enemy.kind];
     const body = this.add.sprite(0, 0, texture, 0)
-      .setScale(isSmall ? 2.15 : 1.85);
-    // Aponta para o Sul (+Y) em direção ao jogador (sprite original desenhado apontando para o oeste -X)
-    body.setAngle(-90);
+      .setDisplaySize(size, size);
+    // Painted sheets already face south; do not rotate their top-down anatomy.
     body.play(texture + '-fly');
-    const warning = this.add.sprite(0, 24, 'fx-warning', 0)
-      .setScale(1.15).setVisible(false);
+    const warning = this.add.sprite(0, 22, 'hd-shot-enemy', 'orb')
+      .setDisplaySize(10, 10).setVisible(false);
     const container = this.add.container(enemy.x, enemy.y, [body, warning]).setDepth(5);
     this.enemyVisuals.set(enemy.id, { container, body, warning, animationKey: texture + '-fly' });
   }
@@ -873,16 +894,17 @@ export class PrototypeScene extends Phaser.Scene {
       if (!visual) continue;
       visual.container.setPosition(enemy.x, enemy.y);
       const preparing = enemy.phase === 'telegraph';
-      const desired = 'enemy-' + enemy.kind + (preparing ? '-warning' : '-fly');
+      const desired = 'hd-' + enemy.kind + (preparing ? '-warning' : '-fly');
       if (desired !== visual.animationKey) {
         visual.body.play(desired, true);
         visual.animationKey = desired;
       }
       if (preparing && !visual.warning.visible) {
-        visual.warning.setVisible(true).play('fx-warning-loop');
+        visual.warning.setVisible(true);
       } else if (!preparing && visual.warning.visible) {
         visual.warning.setVisible(false).stop();
       }
+      if (preparing) visual.warning.setAlpha(.5 + .4 * Math.sin(enemy.phaseMs / 75));
       if (enemy.hp < enemy.maxHp) visual.body.setTint(0xffb1a7);
       else visual.body.clearTint();
     }
@@ -898,6 +920,11 @@ export class PrototypeScene extends Phaser.Scene {
     for (const p of this.pickups.pickups) {
       let node = this.pickupVisuals.get(p.id);
       if (!node) {
+        if (this.pilot.id === 'nolan') {
+          node = this.createPaintedPickup(p.type).setPosition(p.x, p.y);
+          this.pickupVisuals.set(p.id, node);
+          continue;
+        }
         const isWeaponCapsule =
           p.type === 'weapon_ion' || p.type === 'weapon_green' || p.type === 'weapon_red';
 
@@ -1008,8 +1035,29 @@ export class PrototypeScene extends Phaser.Scene {
         this.pickupVisuals.set(p.id, node);
       } else {
         node.setPosition(p.x, p.y);
+        if (this.pilot.id === 'nolan') node.setScale(1 + Math.sin(p.ageMs / 230) * .035);
       }
     }
+  }
+
+  private createPaintedPickup(type: PickupType): Phaser.GameObjects.Container {
+    const looks: Record<PickupType, [string, string, number]> = {
+      power: ['P', 'POTÊNCIA', 0xffcc55], full_power: ['P★', 'MÁXIMO', 0xff7660],
+      weapon_ion: ['W', 'AZUL', 0x77d9ff], weapon_green: ['W', 'VERDE', 0x8aea9b],
+      weapon_red: ['W', 'RUBRO', 0xff7d6b], health: ['H', 'REPARO', 0x8aea9b],
+      bomb: ['B', 'BOMBA', 0xffb45d], missile: ['M', 'MÍSSIL', 0xf2deca],
+      score: ['S', 'PONTOS', 0xffd778], special: ['E', 'ESPECIAL', 0xe6a2e8],
+    };
+    const [glyph, label, color] = looks[type];
+    const hex = '#' + color.toString(16).padStart(6, '0');
+    const shell = this.add.image(0, 0, 'hd-capsule').setDisplaySize(39, 39);
+    const light = this.add.graphics();
+    light.fillStyle(color, .2); light.fillCircle(0, 0, 9);
+    light.lineStyle(1, color, .7); light.strokeCircle(0, 0, type.startsWith('weapon_') ? 10 : 8);
+    const symbol = this.add.text(0, 0, glyph, { fontFamily: FONT_TECH, fontSize: type === 'full_power' ? '13px' : '17px', fontStyle: 'bold', color: hex, stroke: '#10080e', strokeThickness: 2 }).setOrigin(.5).setResolution(3);
+    const badgeBg = this.add.rectangle(0, 23, 47, 11, 0x160b10, .94).setStrokeStyle(.5, color, .6);
+    const badge = this.add.text(0, 23, label, { fontFamily: FONT_TECH, fontSize: '9px', fontStyle: 'bold', color: hex }).setOrigin(.5).setResolution(3);
+    return this.add.container(0, 0, [shell, light, symbol, badgeBg, badge]).setDepth(14);
   }
 
   private checkPickupCollisions(): void {
@@ -1174,9 +1222,8 @@ export class PrototypeScene extends Phaser.Scene {
   private spawnEnemyShot(event: EnemyShotEvent): void {
     if (this.enemyShots.length >= 84) return;
     // Depth 18 garante que projéteis inimigos fiquem sempre visíveis e legíveis sobre os feixes do Laser Rubro (depth 8)
-    const bullet = this.add.sprite(event.x, event.y, 'shot-enemy', 0)
-      .setScale(1.55).setDepth(18);
-    bullet.play('shot-enemy-loop');
+    const bullet = this.add.sprite(event.x, event.y, 'hd-shot-enemy', 'orb')
+      .setDisplaySize(12, 12).setDepth(18);
     this.enemyShots.push({
       node: bullet,
       baseX: event.x,

@@ -64,6 +64,7 @@ export class VectorShip extends Phaser.GameObjects.Container {
   private readonly shieldGraphics: Phaser.GameObjects.Graphics;
   private readonly coreDot: Phaser.GameObjects.Graphics;
   private readonly palette: Palette;
+  private readonly paintedRivet?: Phaser.GameObjects.Sprite;
 
   private bankAngle = 0;
   private targetBankAngle = 0;
@@ -94,6 +95,10 @@ export class VectorShip extends Phaser.GameObjects.Container {
     this.coreDot = scene.add.graphics();
 
     this.add([this.shieldGraphics, this.graphics, this.coreDot]);
+    if (pilotId === 'nolan' && viewMode === 'top-down' && scene.textures.exists('hd-rivet')) {
+      this.paintedRivet = scene.add.sprite(0, 0, 'hd-rivet', 0).setDisplaySize(54, 54);
+      this.addAt(this.paintedRivet, 2);
+    }
     this.setDepth(15);
     scene.add.existing(this);
 
@@ -165,6 +170,23 @@ export class VectorShip extends Phaser.GameObjects.Container {
       this.drawMothTopDown(g, p, roll, isDashing);
     } else if (this.pilotId === 'harlan') {
       this.drawKnuckleTopDown(g, p, roll, isDashing);
+    } else if (this.paintedRivet) {
+      const frame = roll < -.05 ? 2 : roll > .05 ? 3 : Math.floor(this.flamePhase / 5) % 2;
+      this.paintedRivet.setFrame(frame);
+      if (this.isHit) this.paintedRivet.setTint(0xffbdb4);
+      else this.paintedRivet.clearTint();
+      if (this.isFiring) {
+        g.fillStyle(0x38bdf8, .25);
+        g.fillEllipse(0, -20, 16, 8);
+        g.fillStyle(0xe0f7ff, .95);
+        g.fillEllipse(0, -22, 4, 7);
+      }
+      if (isDashing) {
+        for (const x of [-5, 0, 5]) {
+          g.fillStyle(0xffa83d, .45);
+          g.fillTriangle(x - 2, 19, x + 2, 19, x, 37 + Math.sin(this.flamePhase) * 2);
+        }
+      }
     } else {
       this.drawRivetTopDown(g, p, roll, isDashing);
     }

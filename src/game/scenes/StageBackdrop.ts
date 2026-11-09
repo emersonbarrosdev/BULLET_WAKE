@@ -274,6 +274,18 @@ export class StageBackdrop {
   constructor(scene: Phaser.Scene, _stageNumber = 1, options: StageBackdropOptions = {}) {
     const fullWidth = Boolean(options.fullWidth);
     const showBezels = options.showBezels ?? !fullWidth;
+    const painted = scene.textures.exists('hd-ocean') && !fullWidth;
+    if (painted && !scene.textures.exists('bg-pelagic-painted-loop')) {
+      // Mirror the second half: identical edge pixels at both vertical joins.
+      const source = scene.textures.get('hd-ocean').getSourceImage() as HTMLImageElement;
+      const loop = scene.textures.createCanvas('bg-pelagic-painted-loop', 1024, 3072);
+      if (loop) {
+        loop.context.drawImage(source, 0, 0, 1024, 1536);
+        loop.context.save(); loop.context.translate(0, 3072); loop.context.scale(1, -1);
+        loop.context.drawImage(source, 0, 0, 1024, 1536); loop.context.restore();
+        loop.refresh(); loop.setFilter(Phaser.Textures.FilterMode.LINEAR);
+      }
+    }
 
     // 1. Cria ou reutiliza texturas de canvas procedural para cada camada
     const layers: BackdropLayer[] = ['abyss', 'reefs', 'surface', 'mist'];
@@ -296,9 +308,10 @@ export class StageBackdrop {
     // Alinha tilePositionX em PLAYFIELD_X quando em modo corredor para centralizar a fenda abissal e os recifes
     const tileOffsetX = fullWidth ? 0 : PLAYFIELD_X;
 
-    this.abyssTile = scene.add.tileSprite(centerX, centerY, width, GAME_HEIGHT, 'bg-pelagic-abyss-hd')
+    this.abyssTile = scene.add.tileSprite(centerX, centerY, width, GAME_HEIGHT, painted ? 'bg-pelagic-painted-loop' : 'bg-pelagic-abyss-hd')
       .setDepth(-10);
-    this.abyssTile.tilePositionX = tileOffsetX;
+    this.abyssTile.tilePositionX = painted ? 0 : tileOffsetX;
+    if (painted) this.abyssTile.setTileScale(width / 1024);
 
     this.reefsTile = scene.add.tileSprite(centerX, centerY, width, GAME_HEIGHT, 'bg-pelagic-reefs-hd')
       .setDepth(-9);
@@ -311,20 +324,25 @@ export class StageBackdrop {
     this.mistTile = scene.add.tileSprite(centerX, centerY, width, GAME_HEIGHT, 'bg-pelagic-mist-hd')
       .setDepth(-7);
     this.mistTile.tilePositionX = tileOffsetX;
+    if (painted) {
+      this.reefsTile.setVisible(false);
+      this.surfaceTile.setVisible(false);
+      this.mistTile.setVisible(false);
+    }
 
     // 3. Molduras de painel lateral (Bezels Arcade Neo-Retro) - APENAS no gameplay
     if (showBezels) {
       // Painel Esquerdo (X: 0 a 192)
       scene.add.rectangle(PLAYFIELD_X / 2, GAME_HEIGHT / 2, PLAYFIELD_X, GAME_HEIGHT, 0x050b12, 1)
         .setDepth(-5);
-      scene.add.rectangle(PLAYFIELD_X, GAME_HEIGHT / 2, 2, GAME_HEIGHT, 0x00f0ff, 0.4)
+      scene.add.rectangle(PLAYFIELD_X, GAME_HEIGHT / 2, 1, GAME_HEIGHT, 0xff8520, 0.4)
         .setDepth(-4);
 
       // Painel Direito (X: 576 a 768)
       const rightPanelCenterX = PLAYFIELD_RIGHT + (GAME_WIDTH - PLAYFIELD_RIGHT) / 2;
       scene.add.rectangle(rightPanelCenterX, GAME_HEIGHT / 2, GAME_WIDTH - PLAYFIELD_RIGHT, GAME_HEIGHT, 0x050b12, 1)
         .setDepth(-5);
-      scene.add.rectangle(PLAYFIELD_RIGHT, GAME_HEIGHT / 2, 2, GAME_HEIGHT, 0x00f0ff, 0.4)
+      scene.add.rectangle(PLAYFIELD_RIGHT, GAME_HEIGHT / 2, 1, GAME_HEIGHT, 0xff8520, 0.4)
         .setDepth(-4);
     }
   }

@@ -205,6 +205,7 @@ export class InputManager {
     const pointer = this.scene.input.activePointer;
     const isDesktop = this.scene.game.device.os.desktop;
     const isTouch = !isDesktop && Boolean(pointer.wasTouch);
+    const worldPoint = isTouch ? this.scene.cameras.main.getWorldPoint(pointer.x, pointer.y) : undefined;
 
     const cDown = Boolean(this.keys?.C.isDown);
     const cJustUp = !cDown && this.prevCDown;
@@ -253,8 +254,8 @@ export class InputManager {
 
       isTouch,
       touchPointerDown: pointer.isDown && isTouch,
-      touchX: pointer.x,
-      touchY: pointer.y,
+      touchX: worldPoint?.x ?? pointer.x,
+      touchY: worldPoint?.y ?? pointer.y,
       shipX,
       shipY,
     };
