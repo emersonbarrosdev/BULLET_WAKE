@@ -1,5 +1,8 @@
 # BULLET WAKE — DIRETRIZ OFICIAL: CONTROLES, DISPARO E ARMAS CARREGÁVEIS
 
+> **Atualização 09/11/2026:** [Bíblia V2](27_BULLET_WAKE_V2_DEFINITIVO.md) e [Fase 1 — Normal](30_FASE1_NORMAL_FIRE_SHARK.md) substituem conflitos deste histórico: mouse não atira no PC, Shift é dash, C carrega e tapping não acelera a cadência em relação a segurar Espaço.
+
+
 > [!IMPORTANT]
 > **REGRA FUNDAMENTAL PERMANENTE — PRIORIDADE MÁXIMA**
 > 1. **Correção do Bug do Mouse:** No Desktop PC, o clique do mouse (esquerdo ou direito) NUNCA altera a velocidade, o deslocamento (`moveX`, `moveY`) ou as coordenadas da nave. WASD e as Setas do teclado são os únicos responsáveis pela movimentação no PC.

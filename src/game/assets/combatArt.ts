@@ -1,9 +1,14 @@
 import Phaser from 'phaser';
+import { PICKUP_GUIDE, pickupSvg } from '../data/pickupGuide';
+import type { PickupType } from '../systems/pickupSystem';
 
 /** Hand-painted combat art is separate from legacy pixel sheets and menu assets. */
 export const COMBAT_SHEETS = ['rivet', 'scout', 'dart', 'lancer', 'cutter', 'bomb'] as const;
 
 export function loadCombatArt(scene: Phaser.Scene, base: string): void {
+  for (const type of Object.keys(PICKUP_GUIDE) as PickupType[]) {
+    if (!scene.textures.exists(`pickup-icon-${type}`)) scene.load.svg(`pickup-icon-${type}`, `data:image/svg+xml;base64,${btoa(pickupSvg(type))}`);
+  }
   for (const name of COMBAT_SHEETS) {
     if (!scene.textures.exists(`hd-${name}`)) {
       scene.load.spritesheet(`hd-${name}`, `${base}/assets/combat-hd/${name}.webp`, { frameWidth: 256, frameHeight: 256 });

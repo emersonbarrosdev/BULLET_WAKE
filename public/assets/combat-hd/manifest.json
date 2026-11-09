@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "direction": "top-down; Rivet north, enemies south",
   "medium": "hand-painted 2D concept art",
   "sheetLayout": { "columns": 4, "rows": 1, "frameWidth": 256, "frameHeight": 256, "pivot": [128, 128] },
@@ -13,7 +13,9 @@
   },
   "images": {
     "ocean": { "file": "ocean.webp", "size": [1024, 1536], "loop": "second half mirrored vertically at runtime" },
-    "capsule": { "file": "capsule.webp", "size": [256, 256], "displaySize": [39, 39], "labels": "P, P★, W, H, B, M, S, E overlaid in engine" }
+    "capsule": { "file": "capsule.webp", "size": [256, 256], "usage": "Historical; replaced in gameplay by shared SVG catalog" },
+    "carbon-wreckage": { "file": "carbon-wreckage.webp", "size": [768, 1152], "usage": "Opaque carbon HUD; original image_gen art, FFmpeg WebP conversion" }
   },
+  "pickups": { "source": "src/game/data/pickupGuide.ts", "displaySize": [30, 30], "identification": "Unique silhouette, glyph and color; shared combat/options catalog" },
   "provenance": "Created with integrated image_gen. Local approved Rivet menu art used as identity reference. No third-party game art. FFmpeg packaging only."
 }

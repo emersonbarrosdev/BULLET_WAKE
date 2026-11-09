@@ -1,5 +1,8 @@
 # 05 — Campanha: cinco fases artesanais
 
+> **Atualização 09/11/2026:** A campanha abaixo é um registro histórico da versão horizontal. A Fase 1 vigente é Fenda Pelágica, oceano terrestre sob invasão alienígena. Cenário móvel, ameaças de superfície e aproximação em profundidade para biomas futuros estão definidos em [Fase 1 — Normal](30_FASE1_NORMAL_FIRE_SHARK.md); a campanha canônica de 15 fases está na [Bíblia V2](27_BULLET_WAKE_V2_DEFINITIVO.md).
+
+
 Cada etapa tem início seguro, apresentação de inimigo, ondas roteirizadas, evento ambiental, checkpoint, miniboss ou emboscada, boss com 2–3 etapas, desfecho e salvamento. Scroll horizontal, parallax de várias profundidades e pelo menos um corredor possível de esquiva em todos os padrões. Tempos alvo sem mortes; total ~49 minutos.
 
 | # | Fase | Tempo alvo | Local | Objetivo | Chefe |

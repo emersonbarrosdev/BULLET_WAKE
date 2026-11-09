@@ -90,7 +90,7 @@ export class PremiumCombatHud {
     this.text('level', `NV ${level}/4`); this.segments('pips', level); this.setPowerMeter(powerMeter, level);
   }
   setPowerMeter(meter: number, level: WeaponLevel): void {
-    this.text('power', level >= 4 ? 'MÁXIMO' : `${Math.max(0, Math.min(3, meter))} / 3`); this.segments('power-segments', level >= 4 ? 3 : meter);
+    this.text('power', level >= 4 ? `RESERVA ${Math.max(0, Math.min(3, meter))}/3` : `${Math.max(0, Math.min(3, meter))} / 3`); this.segments('power-segments', meter);
   }
   setHeat(_heat: number, _isOverheated: boolean): void { /* Autofire never blocks for heat. */ }
   setBombs(n: number): void { this.text('bombs', String(Math.max(0, n)).padStart(2, '0')); }

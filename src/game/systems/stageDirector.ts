@@ -9,6 +9,7 @@ import type { BossTick, StageBoss } from './bosses/types.ts';
 import { createStageBoss } from './bosses/factory.ts';
 import { MinibossRaiaDente } from './bosses/minibossRaiaDente.ts';
 import { PLAYFIELD_X, PLAYFIELD_WIDTH, PLAYFIELD_RIGHT } from '../constants.ts';
+import type { PickupType } from './pickupSystem.ts';
 
 export type EnemyKind = 'scout' | 'dart' | 'lancer' | 'cutter';
 export type EnemyPhase = 'approach' | 'telegraph' | 'attack' | 'recover' | 'exit';
@@ -28,6 +29,10 @@ export interface EnemyModel {
   hp: number;
   maxHp: number;
   secondShotFired: boolean;
+  flight?: 'sweep-left' | 'sweep-right';
+  layer?: 'surface';
+  spawnScroll?: number;
+  drop?: PickupType | null;
 }
 
 export interface EnemyShotEvent {
@@ -35,6 +40,7 @@ export interface EnemyShotEvent {
   y: number;
   velocityX: number;
   velocityY: number;
+  sourceLayer?: 'surface';
 }
 
 export interface StageTick {
@@ -54,7 +60,8 @@ export const DEMO_DISTANCE = 4250; // distância total até a arena do chefe
 
 // Roteiro por posição percorrida. Combinações táticas de passagem contínua.
 // Nenhum evento reaparece como round de arena.
-export const STAGE_EVENTS: readonly { distance: number; kind: EnemyKind; y: number }[] = [
+interface StageEvent { distance: number; kind: EnemyKind; y: number; flight?: EnemyModel['flight']; layer?: 'surface'; drop?: PickupType | null; }
+const SOLO_EVENTS: StageEvent[] = [
   // --- SETOR 1: EVACUAÇÃO (0m - 1000m) ---
   { distance: 125, kind: 'scout', y: 125 },
   { distance: 210, kind: 'scout', y: 180 },
@@ -105,6 +112,18 @@ export const STAGE_EVENTS: readonly { distance: number; kind: EnemyKind; y: numb
   { distance: 3940, kind: 'lancer', y: 170 },
   { distance: 4050, kind: 'cutter', y: 216 },
 ];
+
+// Nine P across the entire approach: no instant-max reward or power from flocks.
+export const SUPPLY_EVENTS: StageEvent[] = [
+  ...[450, 900, 1400, 1900, 2400, 2900, 3400, 3800, 4150].map((distance, i) => ({ distance, kind: 'cutter' as const, y: 115 + (i % 3) * 80, drop: 'power' as const })),
+  ...(['weapon_ion', 'weapon_green', 'weapon_red', 'weapon_ion', 'weapon_green', 'weapon_red'] as const).map((drop, i) => ({ distance: [650, 1150, 1750, 2550, 3250, 3900][i], kind: 'cutter' as const, y: 150 + (i % 2) * 95, drop })),
+  ...(['speed', 'health', 'bomb', 'speed', 'health', 'bomb'] as const).map((drop, i) => ({ distance: [700, 1300, 2050, 2650, 3500, 4000][i], kind: 'cutter' as const, y: 100 + (i % 3) * 90, drop })),
+];
+const FLOCK_EVENTS: StageEvent[] = [360, 740, 1100, 1450, 2050, 2450, 2850, 3200, 3650].flatMap((distance, group) =>
+  Array.from({ length: group < 2 ? 5 : 6 }, (_, i) => ({ distance: distance + i * 15, kind: 'scout' as const, y: 100, flight: group % 2 ? 'sweep-right' as const : 'sweep-left' as const, drop: null })));
+const SURFACE_EVENTS: StageEvent[] = [820, 1550, 2250, 3050, 3720].map((distance, i) => ({ distance, kind: 'lancer', y: i % 2 ? 105 : 290, layer: 'surface', drop: null }));
+export const STAGE_EVENTS: readonly StageEvent[] = [...SOLO_EVENTS, ...SUPPLY_EVENTS, ...FLOCK_EVENTS, ...SURFACE_EVENTS].sort((a, b) => a.distance - b.distance);
+export const SURFACE_SCROLL_FACTOR = 0.72;
 
 const SPEED: Readonly<Record<EnemyKind, number>> = {
   scout: 105,   // Agulha Pelágica: mergulho controlado e suave
@@ -217,7 +236,7 @@ export class StageDirector {
       this.scrollPx >= STAGE_EVENTS[this.eventIndex].distance
     ) {
       const event = STAGE_EVENTS[this.eventIndex++];
-      const hp = event.kind === 'lancer' ? 3 : event.kind === 'cutter' ? 2 : 1;
+      const hp = event.flight ? 0.3 : event.drop ? 4 : event.kind === 'lancer' ? 3 : event.kind === 'cutter' ? 2 : 1;
       // Distribui a coordenada X ao longo do corredor central (PLAYFIELD_X até PLAYFIELD_RIGHT)
       const eventX = PLAYFIELD_X + 28 + ((event.y - 80) / 235) * (PLAYFIELD_WIDTH - 56);
       const enemy: EnemyModel = {
@@ -233,6 +252,10 @@ export class StageDirector {
         hp,
         maxHp: hp,
         secondShotFired: false,
+        flight: event.flight,
+        layer: event.layer,
+        spawnScroll: this.scrollPx,
+        drop: event.drop,
       };
       this.enemies.push(enemy);
       spawned.push(enemy);
@@ -243,6 +266,26 @@ export class StageDirector {
 
     for (const enemy of this.enemies) {
       enemy.ageMs += dt;
+      if (enemy.flight) {
+        const t = enemy.ageMs / 3400;
+        const left = PLAYFIELD_X - 24;
+        const travel = PLAYFIELD_WIDTH + 48;
+        enemy.x = enemy.flight === 'sweep-left' ? left + travel * t : left + travel * (1 - t);
+        enemy.y = 36 + Math.sin(Math.PI * t) * 245 + Math.sin(Math.PI * 2 * t) * 20;
+        if (t >= 1) enemy.y = 481;
+        continue; // Fast, fragile formations never fire.
+      }
+      if (enemy.layer === 'surface') {
+        enemy.y = -35 + (this.scrollPx - (enemy.spawnScroll ?? 0)) * SURFACE_SCROLL_FACTOR;
+        enemy.phaseMs -= dt;
+        if (enemy.y >= 25 && enemy.y <= 320 && enemy.phaseMs <= 0) {
+          if (enemy.phase === 'telegraph') {
+            for (const angle of [-0.12, 0.12]) shots.push({ ...this.aim(enemy, playerX, playerY, 125, angle), sourceLayer: 'surface' });
+            enemy.phase = 'recover'; enemy.phaseMs = 2100;
+          } else { enemy.phase = 'telegraph'; enemy.phaseMs = 750; }
+        }
+        continue;
+      }
       const speed = SPEED[enemy.kind];
 
       switch (enemy.kind) {
@@ -463,7 +506,7 @@ export class StageDirector {
       cutter: 250,
       lancer: 300,
     };
-    return { killed: true, score: scoreMap[enemy.kind] || 100 };
+    return { killed: true, score: enemy.flight ? 40 : scoreMap[enemy.kind] || 100 };
   }
 
   damageBoss(amount: number, hitX: number, hitY: number) {

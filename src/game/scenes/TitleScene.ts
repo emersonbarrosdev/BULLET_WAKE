@@ -3,9 +3,10 @@ import '../../title-screen.css';
 import { GAME_BACKGROUND } from '../constants';
 import { saveSystem } from '../systems/saveSystem.ts';
 import { globalAudio } from '../audio/audioSystem.ts';
+import { NORMAL_GUIDE_ITEMS, PICKUP_GUIDE, pickupSvg } from '../data/pickupGuide';
 
-type TitleMode = 'attract' | 'main' | 'options' | 'controls';
-type TitleAction = 'pilots' | 'options' | 'music' | 'effects' | 'difficulty' | 'controls' | 'back';
+type TitleMode = 'attract' | 'main' | 'options' | 'controls' | 'guide';
+type TitleAction = 'pilots' | 'options' | 'music' | 'effects' | 'difficulty' | 'controls' | 'guide' | 'back';
 
 /**
  * Abertura cinematográfica aprovada — somente apresentação e menu do jogo.
@@ -23,6 +24,10 @@ export class TitleScene extends Phaser.Scene {
     if (!['enter', ' ', 'escape', 'arrowup', 'arrowdown', 'w', 's'].includes(key)) return;
     event.preventDefault();
     event.stopPropagation();
+    if (this.mode === 'guide' && (key === 'arrowup' || key === 'arrowdown')) {
+      this.root.querySelector('.bw-item-guide')?.scrollBy({ top: key === 'arrowup' ? -75 : 75 });
+      return;
+    }
     if (event.repeat) return;
 
     if (this.mode === 'attract') {
@@ -31,7 +36,7 @@ export class TitleScene extends Phaser.Scene {
     }
 
     if (key === 'escape') {
-      if (this.mode === 'controls') this.showMode('options');
+      if (this.mode === 'controls' || this.mode === 'guide') this.showMode('options');
       else if (this.mode === 'options') this.showMode('main');
       else this.showMode('attract');
       return;
@@ -119,11 +124,11 @@ export class TitleScene extends Phaser.Scene {
       <div class="bw-art-frame bw-submenu-art" aria-hidden="true"></div>
       <div class="bw-submenu-shade" aria-hidden="true"></div>
       <main class="bw-submenu-shell">
-        <h1>${controls ? 'CONTROLES' : 'OPÇÕES'}</h1>
+        <h1>${this.mode === 'guide' ? 'ITENS E ARMAS' : controls ? 'CONTROLES' : 'OPÇÕES'}</h1>
         <nav class="bw-submenu-list" aria-label="${controls ? 'Controles' : 'Opções'}">
           ${this.renderActions()}
         </nav>
-        <p class="bw-submenu-help">↑ ↓ NAVEGAR&nbsp;&nbsp; · &nbsp;&nbsp;ENTER SELECIONAR&nbsp;&nbsp; · &nbsp;&nbsp;ESC VOLTAR</p>
+        <p class="bw-submenu-help">${this.mode === 'guide' ? '↑ ↓ ROLAR LEGENDA' : '↑ ↓ NAVEGAR'}&nbsp;&nbsp; · &nbsp;&nbsp;ENTER SELECIONAR&nbsp;&nbsp; · &nbsp;&nbsp;ESC VOLTAR</p>
       </main>
     `;
     this.bindActions();
@@ -131,16 +136,21 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private renderActions(): string {
+    if (this.mode === 'guide') {
+      return `<p class="bw-guide-intro">Colete por contato. Cor escolhe a arma; P aumenta potência. Os itens nunca recuperam dash.</p><div class="bw-item-guide" tabindex="0" aria-label="Legenda de itens, role para ver todos">${NORMAL_GUIDE_ITEMS.map(type => {
+        const item = PICKUP_GUIDE[type];
+        return `<article><div class="bw-guide-icon">${pickupSvg(type)}</div><div><h2 style="color:${item.color}">${item.letter} · ${item.label}</h2><p>${item.description}</p></div></article>`;
+      }).join('')}</div>${this.actionButton('back', 'VOLTAR', '', 0)}`;
+    }
     if (this.mode === 'options') {
       const { settings } = saveSystem.getSaveData();
-      const difficulty = settings.difficulty || 'normal';
-      const difficultyNames = { normal: 'NORMAL', hard: 'DIFÍCIL', arcade: 'ARCADE' };
       return [
         this.actionButton('music', 'MÚSICA', settings.musicVolume > 0 ? 'LIGADA' : 'DESLIGADA', 0),
         this.actionButton('effects', 'EFEITOS', settings.sfxVolume > 0 ? 'LIGADOS' : 'DESLIGADOS', 1),
-        this.actionButton('difficulty', 'DIFICULDADE', difficultyNames[difficulty], 2),
+        this.actionButton('difficulty', 'DIFICULDADE', 'NORMAL · EM AJUSTE', 2),
         this.actionButton('controls', 'CONTROLES', '', 3),
-        this.actionButton('back', 'VOLTAR', '', 4),
+        this.actionButton('guide', 'GUIA DE ITENS E ARMAS', '', 4),
+        this.actionButton('back', 'VOLTAR', '', 5),
       ].join('');
     }
     return `
@@ -214,8 +224,11 @@ export class TitleScene extends Phaser.Scene {
       case 'controls':
         this.showMode('controls');
         return;
+      case 'guide':
+        this.showMode('guide');
+        return;
       case 'back':
-        this.showMode(this.mode === 'controls' ? 'options' : 'main');
+        this.showMode(this.mode === 'controls' || this.mode === 'guide' ? 'options' : 'main');
         return;
       case 'music': {
         const enabled = saveSystem.getSaveData().settings.musicVolume > 0;
@@ -229,9 +242,7 @@ export class TitleScene extends Phaser.Scene {
         break;
       }
       case 'difficulty': {
-        const current = saveSystem.getSaveData().settings.difficulty || 'normal';
-        const values = ['normal', 'hard', 'arcade'] as const;
-        saveSystem.updateSettings({ difficulty: values[(values.indexOf(current) + 1) % values.length] });
+        saveSystem.updateSettings({ difficulty: 'normal' });
         break;
       }
     }

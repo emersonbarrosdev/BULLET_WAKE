@@ -4,7 +4,7 @@
  * Regra Crítica:
  * - NENHUM coletável recupera cargas de Dash (as 3 cargas por fase são fixas).
  * - Itens aparecem fisicamente na arena de combate e flutuam descendo suavemente.
- * - Coleta automática por contato com atração magnética quando o jogador está próximo.
+ * - Coleta por contato, sem atração magnética ou troca involuntária de arma.
  */
 import { PLAYFIELD_X, PLAYFIELD_RIGHT } from '../constants.ts';
 
@@ -15,10 +15,11 @@ export type PickupType =
   | 'weapon_ion'    // Cápsula Azul: Troca para DISPERSÃO AZUL
   | 'weapon_red'    // Cápsula Vermelha: Troca para LASER RUBRO
   | 'health'        // H: Recupera 1 ponto de vida
-  | 'bomb'          // B: Concede 1 bomba (máx 4)
+  | 'bomb'          // B: Concede 1 bomba (máx 10)
   | 'missile'       // M: Reabastece munição de mísseis
-  | 'score'         // S: Concede pontos (1.000 pts)
-  | 'special';      // E: Energia de ressonância especial (+35%)
+  | 'speed'         // S: Velocidade, até 3 incrementos
+  | 'score'         // $: Concede 500 pontos
+  | 'special';      // E: Energia de ressonância especial (+25%)
 
 export interface PickupModel {
   id: number;
@@ -28,10 +29,11 @@ export interface PickupModel {
   baseX: number;
   ageMs: number;
   collected: boolean;
+  velocityX: number;
 }
 
-export const PICKUP_RADIUS = 16;
-export const PICKUP_MAGNET_RADIUS = 75;
+export const PICKUP_RADIUS = 10;
+export const PICKUP_MAGNET_RADIUS = 0;
 export const PICKUP_FLOAT_SPEED_Y = 24; // Desloca suavemente para baixo no campo vertical
 
 export class PickupSystem {
@@ -49,12 +51,13 @@ export class PickupSystem {
       baseX: clampedX,
       ageMs: 0,
       collected: false,
+      velocityX: this.nextId % 2 ? -38 : 38,
     };
     this.pickups.push(pickup);
     return pickup;
   }
 
-  update(deltaMs: number, playerX: number, playerY: number): void {
+  update(deltaMs: number, _playerX: number, _playerY: number): void {
     const dt = Math.max(0, deltaMs);
     for (let i = this.pickups.length - 1; i >= 0; i--) {
       const p = this.pickups[i];
@@ -62,22 +65,15 @@ export class PickupSystem {
 
       // Movimento de descida com oscilação horizontal senoidal suave
       const sway = Math.sin(p.ageMs / 280) * 8;
-      const isWeaponCapsule =
-        p.type === 'weapon_ion' || p.type === 'weapon_green' || p.type === 'weapon_red';
-
-      // No Fire Shark (Mega Drive), cápsulas de troca de arma NUNCA têm ímã magnético:
-      // o jogador só troca de arma se encostar intencionalmente na cápsula colorida!
-      const dx = playerX - (p.baseX + sway);
-      const dy = playerY - p.y;
-      const dist = Math.hypot(dx, dy);
-
-      if (!isWeaponCapsule && dist < PICKUP_MAGNET_RADIUS && dist > 1) {
-        const pull = (1 - dist / PICKUP_MAGNET_RADIUS) * 210;
-        p.baseX += (dx / dist) * pull * (dt / 1000);
-        p.y += (dy / dist) * pull * (dt / 1000);
-      } else {
-        p.y += PICKUP_FLOAT_SPEED_Y * (dt / 1000);
+      if (p.type.startsWith('weapon_') || p.type === 'speed') {
+        p.baseX += p.velocityX * dt / 1000;
+        if (p.baseX < PLAYFIELD_X + 20 || p.baseX > PLAYFIELD_RIGHT - 20) {
+          p.baseX = Math.max(PLAYFIELD_X + 20, Math.min(PLAYFIELD_RIGHT - 20, p.baseX));
+          p.velocityX *= -1;
+        }
       }
+      // Contact only: collecting a color must be a deliberate movement.
+      p.y += PICKUP_FLOAT_SPEED_Y * (dt / 1000);
 
       p.x = Math.max(PLAYFIELD_X + 16, Math.min(PLAYFIELD_RIGHT - 16, p.baseX + sway));
 
@@ -88,7 +84,7 @@ export class PickupSystem {
     }
   }
 
-  checkCollection(playerX: number, playerY: number, collectRadius = 24): PickupModel[] {
+  checkCollection(playerX: number, playerY: number, collectRadius = 5): PickupModel[] {
     const collected: PickupModel[] = [];
     for (const p of this.pickups) {
       if (p.collected) continue;
@@ -111,48 +107,11 @@ export function determineEnemyDrop(
   enemyKind: 'scout' | 'dart' | 'lancer' | 'cutter' | 'carrier' | 'miniboss' | 'boss',
   killCount: number,
 ): PickupType | null {
-  if (enemyKind === 'carrier') {
-    const r = killCount % 4;
-    if (r === 0) return 'power';
-    if (r === 1) return 'weapon_ion';
-    if (r === 2) return 'weapon_red';
-    return 'weapon_green';
-  }
-
-  if (enemyKind === 'cutter') {
-    // No início da fase (primeiros abates), Casulos Marinhos soltam itens P para o jogador
-    // evoluir a arma atual (3 P = +1 Nível) sem trocar prematuramente de cor no Tiro 1.
-    if (killCount <= 12) return 'power';
-    const r = killCount % 4;
-    if (r === 0) return 'power';
-    if (r === 1) return 'weapon_green';
-    if (r === 2) return 'weapon_red';
-    return 'weapon_ion';
-  }
-
-  if (enemyKind === 'lancer') {
-    if (killCount % 4 === 1) return 'power';
-    if (killCount % 4 === 2) return 'special';
-    if (killCount % 4 === 3) return 'bomb';
-    return 'score';
-  }
-
-  if (enemyKind === 'dart') {
-    if (killCount % 2 === 0) return 'power';
-    if (killCount % 7 === 3) return 'score';
-    if (killCount % 11 === 5) return 'health';
-    return null;
-  }
-
-  if (enemyKind === 'scout') {
-    if (killCount % 7 === 3) return 'score';
-    if (killCount % 11 === 5) return 'health';
-    if (killCount % 3 === 2) return 'power';
-  }
-
-  if (enemyKind === 'miniboss') {
-    return 'full_power';
-  }
-
+  // Power and weapon capsules belong to scripted carriers, not kill-count farming.
+  if (enemyKind === 'miniboss') return 'health';
+  if (enemyKind === 'boss') return null;
+  if (killCount % 17 === 0) return 'special';
+  if (killCount % 23 === 0) return 'health';
+  if (killCount % 7 === 0) return 'score';
   return null;
 }

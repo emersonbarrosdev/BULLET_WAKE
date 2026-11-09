@@ -12,7 +12,6 @@ import {
 import { clamp, moveInBounds } from '../systems/movement';
 import { advanceHealth, applyPlayerHit, initialPlayerHealth, type HitEvent, type PlayerHealth } from '../systems/combat';
 import { StageDirector, type EnemyModel, type EnemyShotEvent } from '../systems/stageDirector';
-import { CombatHud } from '../ui/CombatHud';
 import { PremiumCombatHud } from '../ui/PremiumCombatHud';
 import { getPilot, type PilotDefinition } from '../data/pilots';
 import { loadGameSprites, registerGameAnimations } from '../assets/spriteAssets';
@@ -34,8 +33,9 @@ import {
 import {
   createPlayerWeapons,
   collectPowerItem,
+  collectWeaponCapsule,
+  collectSpeedItem,
   collectFullPowerItem,
-  switchWeaponFamily,
   addResonance,
   activateSpecial,
   useBomb,
@@ -63,6 +63,7 @@ import {
   type LaserTargetCircle,
 } from '../systems/crimsonLaserSystem.ts';
 import { CrimsonLaserRenderer } from '../render/CrimsonLaserRenderer.ts';
+import { PICKUP_GUIDE } from '../data/pickupGuide';
 import { InputManager } from '../systems/inputSystem.ts';
 import { PickupSystem, determineEnemyDrop, type PickupType } from '../systems/pickupSystem.ts';
 import {
@@ -87,6 +88,7 @@ interface Projectile {
   waveAmplitude?: number;
   waveFrequency?: number;
   wavePhase?: number;
+  sourceLayer?: 'surface';
 }
 
 interface EnemyVisual {
@@ -130,7 +132,7 @@ export class PrototypeScene extends Phaser.Scene {
   private health: PlayerHealth = initialPlayerHealth();
   private dashState: DashState = createInitialDashState();
 
-  private hud!: CombatHud | PremiumCombatHud;
+  private hud!: PremiumCombatHud;
   private backdrop!: StageBackdrop;
   private inputManager!: InputManager;
 
@@ -166,7 +168,7 @@ export class PrototypeScene extends Phaser.Scene {
 
   create(): void {
     registerGameAnimations(this);
-    if (this.pilot.id === 'nolan') enableCombatResolution(this);
+    enableCombatResolution(this);
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
 
     this.hitPoseMs = 0;
@@ -189,7 +191,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.pickups.clear();
     this.bossVisual = undefined;
 
-    const difficulty = saveSystem.getSettings().difficulty || 'normal';
+    const difficulty = 'normal' as const;
     this.director = new StageDirector(GAME_WIDTH, true, this.stageNumber, difficulty);
     this.shootCooldown = 0;
     this.laserAudioTimerMs = 0;
@@ -197,9 +199,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.backdrop = new StageBackdrop(this, this.stageNumber, { fullWidth: false, showBezels: true });
     this.inputManager = new InputManager(this);
 
-    this.hud = this.pilot.id === 'nolan'
-      ? new PremiumCombatHud(this, () => this.restart())
-      : new CombatHud(this, () => this.restart());
+    this.hud = new PremiumCombatHud(this, () => this.restart());
     this.hud.setPilot(this.pilot.id, this.pilot.shipName);
     this.hud.setScore(0);
     this.hud.setHealth(this.health, false);
@@ -210,7 +210,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.setResonance(0);
 
     const stageDef = STAGES[this.stageNumber - 1] || STAGES[0];
-    const diffTag = difficulty === 'arcade' ? ' [ARCADE]' : difficulty === 'hard' ? ' [HARD]' : '';
+    const diffTag = ' [NORMAL]';
     this.hud.flash(`FASE 0${this.stageNumber}  -  ${stageDef.title.toUpperCase()}${diffTag}`, '#a6e3e2', 2600);
 
     // Nave do jogador centralizada no corredor vertical, apontando para o Norte (-Y)
@@ -240,7 +240,7 @@ export class PrototypeScene extends Phaser.Scene {
    */
   private registerSandboxShortcuts(): void {
     const kb = this.input.keyboard;
-    if (!kb) return;
+    if (!kb || (!import.meta.env.DEV && !new URLSearchParams(location.search).has('sandbox'))) return;
 
     kb.on('keydown-ONE', () => this.setTestWeapon(this.weapons.weaponFamily, 1));
     kb.on('keydown-TWO', () => this.setTestWeapon(this.weapons.weaponFamily, 2));
@@ -360,7 +360,7 @@ export class PrototypeScene extends Phaser.Scene {
     let dx = commands.moveX;
     let dy = commands.moveY;
 
-    let speed = this.pilot.speed * PLAYER_SPEED_FACTOR;
+    let speed = this.pilot.speed * PLAYER_SPEED_FACTOR * (1 + this.weapons.speedLevel * 0.08);
     const dashing = isDashActive(this.dashState);
     if (dashing) {
       speed *= 2.8;
@@ -871,14 +871,19 @@ export class PrototypeScene extends Phaser.Scene {
 
   private makeEnemyVisual(enemy: EnemyModel): void {
     const texture = 'hd-' + enemy.kind;
-    const size = { scout: 47, dart: 62, lancer: 61, cutter: 66 }[enemy.kind];
+    const size = ({ scout: 47, dart: 62, lancer: 61, cutter: 66 }[enemy.kind]) * (enemy.flight ? 0.72 : enemy.layer ? 0.8 : 1);
     const body = this.add.sprite(0, 0, texture, 0)
       .setDisplaySize(size, size);
     // Painted sheets already face south; do not rotate their top-down anatomy.
     body.play(texture + '-fly');
     const warning = this.add.sprite(0, 22, 'hd-shot-enemy', 'orb')
       .setDisplaySize(10, 10).setVisible(false);
-    const container = this.add.container(enemy.x, enemy.y, [body, warning]).setDepth(5);
+    const container = this.add.container(enemy.x, enemy.y, [body, warning]).setDepth(enemy.layer === 'surface' ? -3 : 5);
+    if (enemy.layer === 'surface') {
+      const anchor = this.add.graphics().lineStyle(1, 0x77a7aa, .35).strokeEllipse(0, 8, 46, 23);
+      anchor.fillStyle(0x081b22, .7).fillEllipse(0, 8, 43, 20);
+      container.addAt(anchor, 0); body.setTint(0x789998);
+    }
     this.enemyVisuals.set(enemy.id, { container, body, warning, animationKey: texture + '-fly' });
   }
 
@@ -893,6 +898,12 @@ export class PrototypeScene extends Phaser.Scene {
       const visual = this.enemyVisuals.get(enemy.id);
       if (!visual) continue;
       visual.container.setPosition(enemy.x, enemy.y);
+      if (enemy.flight) {
+        const t = enemy.ageMs / 3400;
+        const vx = (enemy.flight === 'sweep-left' ? 1 : -1) * (PLAYFIELD_WIDTH + 48);
+        const vy = Math.PI * 245 * Math.cos(Math.PI * t) + Math.PI * 40 * Math.cos(Math.PI * 2 * t);
+        visual.body.setRotation(Math.atan2(vy, vx) - Math.PI / 2);
+      }
       const preparing = enemy.phase === 'telegraph';
       const desired = 'hd-' + enemy.kind + (preparing ? '-warning' : '-fly');
       if (desired !== visual.animationKey) {
@@ -906,6 +917,7 @@ export class PrototypeScene extends Phaser.Scene {
       }
       if (preparing) visual.warning.setAlpha(.5 + .4 * Math.sin(enemy.phaseMs / 75));
       if (enemy.hp < enemy.maxHp) visual.body.setTint(0xffb1a7);
+      else if (enemy.layer === 'surface') visual.body.setTint(0x789998);
       else visual.body.clearTint();
     }
   }
@@ -920,148 +932,26 @@ export class PrototypeScene extends Phaser.Scene {
     for (const p of this.pickups.pickups) {
       let node = this.pickupVisuals.get(p.id);
       if (!node) {
-        if (this.pilot.id === 'nolan') {
-          node = this.createPaintedPickup(p.type).setPosition(p.x, p.y);
-          this.pickupVisuals.set(p.id, node);
-          continue;
-        }
-        const isWeaponCapsule =
-          p.type === 'weapon_ion' || p.type === 'weapon_green' || p.type === 'weapon_red';
-
-        let key = 'pickup-upgrade';
-        let label = 'P';
-        let centerSymbol = '';
-        let badgeHex = '#fde047';
-        let ringColor = 0xfacc15;
-        let coreColor = 0xfef08a;
-        let spriteTint: number | undefined;
-
-        if (p.type === 'power') {
-          key = 'pickup-upgrade';
-          label = 'P';
-          badgeHex = '#fde047';
-          ringColor = 0xfacc15;
-          spriteTint = 0xfde047;
-        } else if (p.type === 'full_power') {
-          key = 'pickup-resonance';
-          label = 'P★';
-          badgeHex = '#fde047';
-          ringColor = 0xff1e42;
-          spriteTint = 0xff1e42;
-        } else if (p.type === 'weapon_ion') {
-          label = 'AZUL';
-          centerSymbol = 'W';
-          badgeHex = '#7dd3fc';
-          ringColor = 0x00f0ff;
-          coreColor = 0xe0f2fe;
-        } else if (p.type === 'weapon_green') {
-          label = 'VERDE';
-          centerSymbol = 'W';
-          badgeHex = '#86efac';
-          ringColor = 0x22c55e;
-          coreColor = 0xdcfce7;
-        } else if (p.type === 'weapon_red') {
-          label = 'RUBRO';
-          centerSymbol = 'W';
-          badgeHex = '#fda4af';
-          ringColor = 0xff1e42;
-          coreColor = 0xffe4e6;
-        } else if (p.type === 'health') {
-          key = 'pickup-repair';
-          label = 'HP';
-          badgeHex = '#86efac';
-          ringColor = 0x4ade80;
-        } else if (p.type === 'bomb') {
-          key = 'pickup-bomb';
-          label = 'B';
-          badgeHex = '#fdba74';
-          ringColor = 0xf97316;
-        } else if (p.type === 'special') {
-          key = 'pickup-resonance';
-          label = 'ESP';
-          badgeHex = '#d8b4fe';
-          ringColor = 0xa855f7;
-        } else if (p.type === 'score') {
-          key = 'pickup-score';
-          label = 'PTS';
-          badgeHex = '#fde047';
-          ringColor = 0xeab308;
-        }
-
-        const halo = this.add.graphics();
-        halo.fillStyle(0x020617, 0.84);
-        halo.fillCircle(0, -2, 13);
-        halo.lineStyle(2, ringColor, 0.95);
-        halo.strokeCircle(0, -2, 13);
-        halo.fillStyle(0x020617, 0.92);
-        halo.fillRoundedRect(-20, 9, 40, 13, 3);
-        halo.lineStyle(1, ringColor, 0.88);
-        halo.strokeRoundedRect(-20, 9, 40, 13, 3);
-
-        const children: Phaser.GameObjects.GameObject[] = [halo];
-
-        if (isWeaponCapsule) {
-          // Cápsula de Troca de Arma Fire Shark (Orbe colorido com símbolo W — NUNCA usa a letra P!)
-          halo.fillStyle(ringColor, 0.35);
-          halo.fillCircle(0, -2, 10);
-          halo.lineStyle(1.5, coreColor, 0.9);
-          halo.strokeCircle(0, -2, 8);
-
-          const wGlyph = this.add.text(0, -2, centerSymbol, {
-            fontFamily: FONT_TECH,
-            fontSize: '12px',
-            fontStyle: 'bold',
-            color: '#ffffff',
-          }).setOrigin(0.5).setResolution(3);
-          children.push(wGlyph);
-        } else {
-          const sprite = this.add.sprite(0, -2, key, 0).setScale(1.25);
-          if (spriteTint !== undefined) {
-            sprite.setTint(spriteTint);
-          }
-          sprite.play(key + '-loop');
-          children.push(sprite);
-        }
-
-        const badge = this.add.text(0, 15.5, label, {
-          fontFamily: FONT_TECH,
-          fontSize: '10px',
-          fontStyle: 'bold',
-          color: badgeHex,
-        }).setOrigin(0.5).setResolution(3);
-        children.push(badge);
-
-        node = this.add.container(p.x, p.y, children).setDepth(14);
+        node = this.createPaintedPickup(p.type);
         this.pickupVisuals.set(p.id, node);
-      } else {
-        node.setPosition(p.x, p.y);
-        if (this.pilot.id === 'nolan') node.setScale(1 + Math.sin(p.ageMs / 230) * .035);
       }
+      node.setPosition(p.x, p.y);
+      node.setScale(1 + Math.sin(p.ageMs / 230) * .035);
     }
   }
 
   private createPaintedPickup(type: PickupType): Phaser.GameObjects.Container {
-    const looks: Record<PickupType, [string, string, number]> = {
-      power: ['P', 'POTÊNCIA', 0xffcc55], full_power: ['P★', 'MÁXIMO', 0xff7660],
-      weapon_ion: ['W', 'AZUL', 0x77d9ff], weapon_green: ['W', 'VERDE', 0x8aea9b],
-      weapon_red: ['W', 'RUBRO', 0xff7d6b], health: ['H', 'REPARO', 0x8aea9b],
-      bomb: ['B', 'BOMBA', 0xffb45d], missile: ['M', 'MÍSSIL', 0xf2deca],
-      score: ['S', 'PONTOS', 0xffd778], special: ['E', 'ESPECIAL', 0xe6a2e8],
-    };
-    const [glyph, label, color] = looks[type];
-    const hex = '#' + color.toString(16).padStart(6, '0');
-    const shell = this.add.image(0, 0, 'hd-capsule').setDisplaySize(39, 39);
-    const light = this.add.graphics();
-    light.fillStyle(color, .2); light.fillCircle(0, 0, 9);
-    light.lineStyle(1, color, .7); light.strokeCircle(0, 0, type.startsWith('weapon_') ? 10 : 8);
-    const symbol = this.add.text(0, 0, glyph, { fontFamily: FONT_TECH, fontSize: type === 'full_power' ? '13px' : '17px', fontStyle: 'bold', color: hex, stroke: '#10080e', strokeThickness: 2 }).setOrigin(.5).setResolution(3);
-    const badgeBg = this.add.rectangle(0, 23, 47, 11, 0x160b10, .94).setStrokeStyle(.5, color, .6);
-    const badge = this.add.text(0, 23, label, { fontFamily: FONT_TECH, fontSize: '9px', fontStyle: 'bold', color: hex }).setOrigin(.5).setResolution(3);
-    return this.add.container(0, 0, [shell, light, symbol, badgeBg, badge]).setDepth(14);
+    const entry = PICKUP_GUIDE[type];
+    const color = Number.parseInt(entry.color.slice(1), 16);
+    const icon = this.add.image(0, 0, 'pickup-icon-' + type).setDisplaySize(30, 30);
+    const label = entry.letter + ' · ' + (type.startsWith('weapon_') ? entry.label.split(' ').at(-1) : entry.label.split(' ')[0]);
+    const badgeBg = this.add.rectangle(0, 23, 64, 11, 0x070a0f, .95).setStrokeStyle(.5, color, .65);
+    const badge = this.add.text(0, 23, label, { fontFamily: FONT_TECH, fontSize: '8px', fontStyle: 'bold', color: entry.color }).setOrigin(.5).setResolution(3);
+    return this.add.container(0, 0, [icon, badgeBg, badge]).setDepth(14);
   }
 
   private checkPickupCollisions(): void {
-    const collected = this.pickups.checkCollection(this.ship.x, this.ship.y, 24);
+    const collected = this.pickups.checkCollection(this.ship.x, this.ship.y, this.vectorShip.hitRadius);
     for (const item of collected) {
       globalAudio.playPickup(item.type);
 
@@ -1071,9 +961,11 @@ export class PrototypeScene extends Phaser.Scene {
         this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
         if (res.levelIncreased) {
           this.hud.flash(`UPGRADE DE ARMA! NÍVEL ${this.weapons.weaponLevel} [3/3 P]`, '#facc15', 1400);
+        } else if (!res.meterIncreased) {
+          this.scoreCombo = addRawScore(this.scoreCombo, 5000);
+          this.hud.flash('POTÊNCIA E RESERVA COMPLETAS (+5000 PTS)', '#fbbf24', 1000);
         } else if (this.weapons.weaponLevel >= 4) {
-          this.scoreCombo = addRawScore(this.scoreCombo, 400);
-          this.hud.flash('ARMA EM POTÊNCIA MÁXIMA (+400 PTS)', '#fbbf24', 1000);
+          this.hud.flash('RESERVA P: ' + this.weapons.powerMeter + '/3', '#fbbf24', 1000);
         } else {
           this.hud.flash(`ITEM P COLETADO [${this.weapons.powerMeter}/3]`, '#fde047', 950);
         }
@@ -1082,39 +974,18 @@ export class PrototypeScene extends Phaser.Scene {
         this.weapons = res.state;
         this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
         this.hud.flash('SUPER P★ COLETADO! POTÊNCIA MÁXIMA NV 4!', '#fde047', 1500);
-      } else if (item.type === 'weapon_green') {
-        if (this.weapons.weaponFamily === 'green') {
-          const res = collectPowerItem(this.weapons);
-          this.weapons = res.state;
-          this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
-          this.hud.flash(`CÁPSULA VERDE (+1 P) [${this.weapons.powerMeter}/3]`, '#4ade80', 1100);
-        } else {
-          this.weapons = switchWeaponFamily(this.weapons, 'green');
-          this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
-          this.hud.flash('ARMA: ENERGIA ESPIRALADA ATIVADA!', '#4ade80', 1200);
-        }
-      } else if (item.type === 'weapon_ion') {
-        if (this.weapons.weaponFamily === 'ion') {
-          const res = collectPowerItem(this.weapons);
-          this.weapons = res.state;
-          this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
-          this.hud.flash(`CÁPSULA AZUL (+1 P) [${this.weapons.powerMeter}/3]`, '#00f0ff', 1100);
-        } else {
-          this.weapons = switchWeaponFamily(this.weapons, 'ion');
-          this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
-          this.hud.flash('ARMA: DISPERSÃO AZUL ATIVADA!', '#00f0ff', 1200);
-        }
-      } else if (item.type === 'weapon_red') {
-        if (this.weapons.weaponFamily === 'red') {
-          const res = collectPowerItem(this.weapons);
-          this.weapons = res.state;
-          this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
-          this.hud.flash(`CÁPSULA RUBRA (+1 P) [${this.weapons.powerMeter}/3]`, '#ff1e42', 1100);
-        } else {
-          this.weapons = switchWeaponFamily(this.weapons, 'red');
-          this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
-          this.hud.flash('ARMA: LASER RUBRO ATIVADO!', '#ff1e42', 1200);
-        }
+      } else if (item.type === 'weapon_green' || item.type === 'weapon_ion' || item.type === 'weapon_red') {
+        const family = item.type.slice(7) as WeaponFamily;
+        const result = collectWeaponCapsule(this.weapons, family);
+        this.weapons = result.state;
+        this.scoreCombo = addRawScore(this.scoreCombo, result.bonusPoints);
+        this.hud.setWeapon(family, this.weapons.weaponLevel, this.weapons.powerMeter);
+        this.hud.flash(result.bonusPoints ? 'MESMA COR: +5000 PONTOS' : PICKUP_GUIDE[item.type].label + ' EQUIPADA', PICKUP_GUIDE[item.type].color, 1100);
+      } else if (item.type === 'speed') {
+        const alreadyMax = this.weapons.speedLevel >= 3;
+        this.weapons = collectSpeedItem(this.weapons);
+        if (alreadyMax) this.scoreCombo = addRawScore(this.scoreCombo, 5000);
+        this.hud.flash(alreadyMax ? 'VELOCIDADE MÁXIMA: +5000 PONTOS' : 'VELOCIDADE S: ' + this.weapons.speedLevel + '/3', '#a5b7ff', 1100);
       } else if (item.type === 'health') {
         if (this.health.hp < 3) {
           this.health = { ...this.health, hp: this.health.hp + 1 };
@@ -1141,6 +1012,7 @@ export class PrototypeScene extends Phaser.Scene {
         this.hud.flash('+500 PONTOS', '#ffea88', 850);
         this.spawnScorePopup(500, this.vectorShip.x, this.vectorShip.y, '#ffd700');
       }
+      this.hud.setScore(this.scoreCombo.score, this.scoreCombo.comboCount, getComboMultiplier(this.scoreCombo.comboCount));
     }
   }
 
@@ -1223,7 +1095,7 @@ export class PrototypeScene extends Phaser.Scene {
     if (this.enemyShots.length >= 84) return;
     // Depth 18 garante que projéteis inimigos fiquem sempre visíveis e legíveis sobre os feixes do Laser Rubro (depth 8)
     const bullet = this.add.sprite(event.x, event.y, 'hd-shot-enemy', 'orb')
-      .setDisplaySize(12, 12).setDepth(18);
+      .setDisplaySize(event.sourceLayer ? 5 : 12, event.sourceLayer ? 5 : 12).setDepth(18);
     this.enemyShots.push({
       node: bullet,
       baseX: event.x,
@@ -1231,7 +1103,8 @@ export class PrototypeScene extends Phaser.Scene {
       velocityX: event.velocityX,
       velocityY: event.velocityY,
       damage: 1,
-      hitRadius: 8,
+      hitRadius: event.sourceLayer ? 1 : 3,
+      sourceLayer: event.sourceLayer,
     });
     this.playEffect('muzzle', event.x, event.y + 8);
     globalAudio.playEnemyShot();
@@ -1259,20 +1132,12 @@ export class PrototypeScene extends Phaser.Scene {
       this.spawnScorePopup(hit.score, x, y);
 
       // Ganho de ressonância: 4% para drones leves, 8% para bio-médios
-      const resGain = (hit.score >= 250) ? 8 : 4;
+      const resGain = targetBefore?.flight ? 1 : (hit.score >= 250) ? 6 : 3;
       this.weapons = addResonance(this.weapons, resGain);
       this.hud.setResonance(this.weapons.resonance);
 
-      // Drop de itens físicos nas coordenadas reais do inimigo abatido:
-      // Enquanto o jogador estiver no Nível 1 (Tiro 1), portadores priorizam itens P
-      // para evoluir o tiro inicial antes de soltar cápsulas de troca de cor.
-      let dropType = determineEnemyDrop(dropKind, this.totalKills);
-      if (
-        this.weapons.weaponLevel === 1 &&
-        (dropType === 'weapon_green' || dropType === 'weapon_red' || dropType === 'weapon_ion')
-      ) {
-        dropType = 'power';
-      }
+      // Scripted supplies are independent of equipped weapon and kill count.
+      const dropType = targetBefore?.drop !== undefined ? targetBefore.drop : determineEnemyDrop(dropKind, this.totalKills);
       if (dropType) {
         this.pickups.spawn(dropType, x, y);
       }
@@ -1349,6 +1214,7 @@ export class PrototypeScene extends Phaser.Scene {
     // Dash de emergência ou Salto Fantasma ativo causa dano de abalroamento sem sofrer dano
     if (isDashActive(this.dashState) || this.phantomDashTimerMs > 0) {
       for (const enemy of [...this.director.enemies]) {
+        if (enemy.layer === 'surface') continue;
         if (Math.hypot(enemy.x - this.vectorShip.x, enemy.y - this.vectorShip.y) <= 55) {
           this.applyDamageToEnemy(enemy.id, 10);
         }
@@ -1361,6 +1227,7 @@ export class PrototypeScene extends Phaser.Scene {
     if (isProtected) return;
 
     for (const enemy of this.director.enemies) {
+      if (enemy.layer === 'surface') continue;
       const isSmall = enemy.kind === 'scout' || enemy.kind === 'dart';
       const enemyRadius = isSmall ? 10 : 16;
       const dist = Math.hypot(this.vectorShip.x - enemy.x, this.vectorShip.y - enemy.y);
@@ -1378,6 +1245,12 @@ export class PrototypeScene extends Phaser.Scene {
   private advanceEnemyShots(dt: number): void {
     for (let i = this.enemyShots.length - 1; i >= 0; i--) {
       const shot = this.enemyShots[i];
+      shot.ageMs += dt;
+      if (shot.sourceLayer === 'surface') {
+        const size = 5 + 7 * Math.min(1, shot.ageMs / 500);
+        shot.node.setDisplaySize(size, size);
+        shot.hitRadius = 1 + 2 * Math.min(1, shot.ageMs / 500);
+      }
       shot.node.x += (shot.velocityX * dt) / 1000;
       shot.node.y += (shot.velocityY * dt) / 1000;
 
@@ -1441,9 +1314,11 @@ export class PrototypeScene extends Phaser.Scene {
       globalAudio.playExplosion(true);
       this.cameras.main.shake(320, 0.015);
       this.weapons = resetWeaponsOnRespawn(this.weapons);
-      this.crimsonLaserState = createInitialCrimsonLaserState(1);
+      this.crimsonLaserState = createInitialCrimsonLaserState(this.weapons.weaponLevel);
       this.crimsonLaserRenderer.clear();
-      this.hud.setWeapon(this.weapons.weaponFamily, 1, 0);
+      this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
+      this.hud.setBombs(this.weapons.bombs);
+      this.clearPlayerShots();
       this.hud.setResonance(this.weapons.resonance);
       this.hud.flash('REINICIANDO CAÇA...', '#38bdf8', 1400);
 

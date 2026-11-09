@@ -1,4 +1,7 @@
 # BULLET WAKE
+
+> **Estado atual V2:** shooter vertical top-down; somente Fase 1 — Fenda Pelágica está liberada. Consulte a [Bíblia V2](docs/27_BULLET_WAKE_V2_DEFINITIVO.md) e a [revisão do Normal](docs/30_FASE1_NORMAL_FIRE_SHARK.md). As descrições da campanha horizontal abaixo são históricas.
+
 *Every shot leaves a trace.*
 
 **BULLET WAKE** é um shoot 'em up 2D de rolagem horizontal que combina a ação dos arcades clássicos com ficção científica cinematográfica e pixel art 16-bit moderna.

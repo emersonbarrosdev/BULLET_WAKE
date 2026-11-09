@@ -1,0 +1,361 @@
+{
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "width": 1366,
+        "height": 768,
+        "clipped": [],
+        "scroll": false,
+        "pageScroll": false
+      },
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "w": 1366,
+        "h": 768,
+        "nativeW": 1366,
+        "nativeH": 768,
+        "world": {
+          "x": 384.00000000000006,
+          "y": 216
+        }
+      },
+      "flock": {
+        "flock": 5,
+        "actors": 9,
+        "distance": 543.9999999999984,
+        "normal": "normal",
+        "background": -928.4266666666639
+      },
+      "collect": {
+        "duplicate": {
+          "level": 1,
+          "meter": 0,
+          "points": 5000
+        },
+        "red": {
+          "family": "red",
+          "level": 1
+        },
+        "swap": {
+          "family": "green",
+          "meter": 2
+        },
+        "power": {
+          "level": 2,
+          "meter": 0
+        },
+        "speed": 1
+      },
+      "surface": {
+        "exists": true,
+        "depth": -3,
+        "bulletSize": 6.4,
+        "hitRadius": 1.4
+      },
+      "noSurfaceContact": true,
+      "respawn": {
+        "outcome": "respawn",
+        "family": "ion",
+        "level": 2,
+        "meter": 0,
+        "speed": 0,
+        "bombs": 3,
+        "hudLevel": "NV 2/4",
+        "hudBombs": "03"
+      },
+      "victory": {
+        "x": 0,
+        "y": 0,
+        "width": 1366,
+        "height": 768,
+        "clipped": [],
+        "scroll": false,
+        "pageScroll": false
+      },
+      "layered": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080,
+        "clipped": [],
+        "scroll": false,
+        "pageScroll": false
+      },
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080,
+        "nativeW": 1920,
+        "nativeH": 1080,
+        "world": {
+          "x": 384,
+          "y": 216
+        }
+      },
+      "flock": {
+        "flock": 5,
+        "actors": 9,
+        "distance": 543.9999999999984,
+        "normal": "normal",
+        "background": -928.4266666666639
+      },
+      "collect": {
+        "duplicate": {
+          "level": 1,
+          "meter": 0,
+          "points": 5000
+        },
+        "red": {
+          "family": "red",
+          "level": 1
+        },
+        "swap": {
+          "family": "green",
+          "meter": 2
+        },
+        "power": {
+          "level": 2,
+          "meter": 0
+        },
+        "speed": 1
+      },
+      "surface": {
+        "exists": true,
+        "depth": -3,
+        "bulletSize": 6.4,
+        "hitRadius": 1.4
+      },
+      "noSurfaceContact": true,
+      "respawn": {
+        "outcome": "respawn",
+        "family": "ion",
+        "level": 2,
+        "meter": 0,
+        "speed": 0,
+        "bombs": 3,
+        "hudLevel": "NV 2/4",
+        "hudBombs": "03"
+      },
+      "victory": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080,
+        "clipped": [],
+        "scroll": false,
+        "pageScroll": false
+      },
+      "layered": true
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 800,
+        "clipped": [],
+        "scroll": false,
+        "pageScroll": false
+      },
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "w": 1280,
+        "h": 800,
+        "nativeW": 1280,
+        "nativeH": 800,
+        "world": {
+          "x": 384,
+          "y": 216
+        }
+      },
+      "flock": {
+        "flock": 5,
+        "actors": 9,
+        "distance": 543.9999999999984,
+        "normal": "normal",
+        "background": -928.4266666666639
+      },
+      "collect": {
+        "duplicate": {
+          "level": 1,
+          "meter": 0,
+          "points": 5000
+        },
+        "red": {
+          "family": "red",
+          "level": 1
+        },
+        "swap": {
+          "family": "green",
+          "meter": 2
+        },
+        "power": {
+          "level": 2,
+          "meter": 0
+        },
+        "speed": 1
+      },
+      "surface": {
+        "exists": true,
+        "depth": -3,
+        "bulletSize": 6.4,
+        "hitRadius": 1.4
+      },
+      "noSurfaceContact": true,
+      "respawn": {
+        "outcome": "respawn",
+        "family": "ion",
+        "level": 2,
+        "meter": 0,
+        "speed": 0,
+        "bombs": 3,
+        "hudLevel": "NV 2/4",
+        "hudBombs": "03"
+      },
+      "victory": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 800,
+        "clipped": [],
+        "scroll": false,
+        "pageScroll": false
+      },
+      "layered": true
+    },
+    {
+      "width": 2560,
+      "height": 1080,
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "width": 2560,
+        "height": 1080,
+        "clipped": [],
+        "scroll": false,
+        "pageScroll": false
+      },
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "w": 2560,
+        "h": 1080,
+        "nativeW": 2560,
+        "nativeH": 1080,
+        "world": {
+          "x": 384,
+          "y": 215.99999999999997
+        }
+      },
+      "flock": {
+        "flock": 5,
+        "actors": 9,
+        "distance": 543.9999999999984,
+        "normal": "normal",
+        "background": -928.4266666666639
+      },
+      "collect": {
+        "duplicate": {
+          "level": 1,
+          "meter": 0,
+          "points": 5000
+        },
+        "red": {
+          "family": "red",
+          "level": 1
+        },
+        "swap": {
+          "family": "green",
+          "meter": 2
+        },
+        "power": {
+          "level": 2,
+          "meter": 0
+        },
+        "speed": 1
+      },
+      "surface": {
+        "exists": true,
+        "depth": -3,
+        "bulletSize": 6.4,
+        "hitRadius": 1.4
+      },
+      "noSurfaceContact": true,
+      "respawn": {
+        "outcome": "respawn",
+        "family": "ion",
+        "level": 2,
+        "meter": 0,
+        "speed": 0,
+        "bombs": 3,
+        "hudLevel": "NV 2/4",
+        "hudBombs": "03"
+      },
+      "victory": {
+        "x": 0,
+        "y": 0,
+        "width": 2560,
+        "height": 1080,
+        "clipped": [],
+        "scroll": false,
+        "pageScroll": false
+      },
+      "layered": true
+    }
+  ],
+  "regression": {
+    "title": true,
+    "productionSandboxDisabled": true,
+    "correctStageSavedAfterEpilogue": true,
+    "guide1366": {
+      "x": 0,
+      "y": 0,
+      "width": 1366,
+      "height": 768,
+      "clipped": [],
+      "scroll": false,
+      "pageScroll": false
+    },
+    "guide1920": {
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 1080,
+      "clipped": [],
+      "scroll": false,
+      "pageScroll": false
+    },
+    "coraShipPreserved": {
+      "id": "cora",
+      "painted": false,
+      "width": 1920,
+      "height": 1080,
+      "portrait": "./assets/pilot-selection/portrait-cora.webp"
+    },
+    "harlanShipPreserved": {
+      "id": "harlan",
+      "painted": false,
+      "width": 1920,
+      "height": 1080,
+      "portrait": "./assets/pilot-selection/portrait-harlan.webp"
+    },
+    "profileAfterCombat": true,
+    "gameOver": true,
+    "touchReplay": true
+  },
+  "errors": []
+}

@@ -352,7 +352,7 @@ export class StageBackdrop {
    * Atribuição direta (=) e NÃO incremento (-=), garantindo velocidade constante e sem aberração.
    */
   update(scrollPx: number): void {
-    this.abyssTile.tilePositionY = -scrollPx * 0.25;
+    this.abyssTile.tilePositionY = -scrollPx * 0.72 / this.abyssTile.tileScaleY;
     this.reefsTile.tilePositionY = -scrollPx * 0.55;
     this.surfaceTile.tilePositionY = -scrollPx * 1.0;
     this.mistTile.tilePositionY = -scrollPx * 1.4;

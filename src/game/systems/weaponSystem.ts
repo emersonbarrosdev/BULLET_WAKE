@@ -40,6 +40,7 @@ export interface PlayerWeaponsState {
   weaponLevel: WeaponLevel;
   /** Medidor de potência P (0 a 3): 3 itens P aumentam 1 nível de arma */
   powerMeter: number;
+  speedLevel: number;
   bombs: number;
   hasShield: boolean;
   resonance: number; // 0 a 100
@@ -61,8 +62,8 @@ export interface PlayerWeaponsState {
 
 export const MAX_WEAPON_LEVEL: WeaponLevel = 4;
 export const POWER_ITEMS_PER_LEVEL = 3;
-export const MAX_BOMBS = 4;
-export const START_BOMBS = 2;
+export const MAX_BOMBS = 10;
+export const START_BOMBS = 3;
 export const MAX_RESONANCE = 100;
 export const MISSILE_COOLDOWN_MS = 1500;
 
@@ -82,15 +83,15 @@ export interface WeaponSpecs {
 
 export const WEAPON_FAMILY_SPECS: Record<WeaponFamily, WeaponSpecs> = {
   green: {
-    autoIntervalMs: 125,
-    burstIntervalMs: 90,
+    autoIntervalMs: 240,
+    burstIntervalMs: 240,
     heatPerShot: 7,
     coolingRatePerSec: 45,
     displayName: 'ENERGIA ESPIRALADA',
   },
   ion: {
-    autoIntervalMs: 140,
-    burstIntervalMs: 100,
+    autoIntervalMs: 220,
+    burstIntervalMs: 220,
     heatPerShot: 8,
     coolingRatePerSec: 50,
     displayName: 'DISPERSÃO AZUL',
@@ -105,7 +106,7 @@ export const WEAPON_FAMILY_SPECS: Record<WeaponFamily, WeaponSpecs> = {
 };
 
 export const PILOT_WEAPON_SPECS: Record<string, WeaponSpecs> = {
-  nolan: WEAPON_FAMILY_SPECS.green,
+  nolan: WEAPON_FAMILY_SPECS.ion,
   cora: WEAPON_FAMILY_SPECS.ion,
   harlan: WEAPON_FAMILY_SPECS.red,
   green: WEAPON_FAMILY_SPECS.green,
@@ -119,7 +120,7 @@ export const SPECIAL_DURATIONS: Record<SpecialType, number> = {
   nova: 900,    // Harlan: Ruptura Nova
 };
 
-export function createPlayerWeapons(pilotId: PilotId = 'nolan', initialFamily: WeaponFamily = 'green'): PlayerWeaponsState {
+export function createPlayerWeapons(pilotId: PilotId = 'nolan', initialFamily: WeaponFamily = 'ion'): PlayerWeaponsState {
   const pilot = getPilot(pilotId);
   const specialType: SpecialType =
     pilot.id === 'cora' ? 'phantom' : pilot.id === 'harlan' ? 'nova' : 'prism';
@@ -132,6 +133,7 @@ export function createPlayerWeapons(pilotId: PilotId = 'nolan', initialFamily: W
     weaponFamily: family,
     weaponLevel: 1,
     powerMeter: 0,
+    speedLevel: 0,
     bombs: START_BOMBS,
     hasShield: false,
     resonance: 0,
@@ -158,6 +160,19 @@ export function switchWeaponFamily(state: PlayerWeaponsState, newFamily: WeaponF
   };
 }
 
+/** Colored capsules select a weapon; duplicates award points, never power. */
+export function collectWeaponCapsule(state: PlayerWeaponsState, family: WeaponFamily): {
+  state: PlayerWeaponsState; bonusPoints: number;
+} {
+  return state.weaponFamily === family
+    ? { state, bonusPoints: 5000 }
+    : { state: switchWeaponFamily(state, family), bonusPoints: 0 };
+}
+
+export function collectSpeedItem(state: PlayerWeaponsState): PlayerWeaponsState {
+  return { ...state, speedLevel: Math.min(3, state.speedLevel + 1) };
+}
+
 /** Coleta 1 item P: a cada 3 itens P completos, aumenta 1 nível de potência (até o Nível 4) */
 export function collectPowerItem(state: PlayerWeaponsState): {
   state: PlayerWeaponsState;
@@ -166,8 +181,8 @@ export function collectPowerItem(state: PlayerWeaponsState): {
 } {
   if (state.weaponLevel >= MAX_WEAPON_LEVEL) {
     return {
-      state: { ...state, powerMeter: POWER_ITEMS_PER_LEVEL },
-      meterIncreased: false,
+      state: { ...state, powerMeter: Math.min(POWER_ITEMS_PER_LEVEL, state.powerMeter + 1) },
+      meterIncreased: state.powerMeter < POWER_ITEMS_PER_LEVEL,
       levelIncreased: false,
     };
   }
@@ -179,7 +194,7 @@ export function collectPowerItem(state: PlayerWeaponsState): {
       state: {
         ...state,
         weaponLevel: nextLevel,
-        powerMeter: nextLevel >= MAX_WEAPON_LEVEL ? POWER_ITEMS_PER_LEVEL : 0,
+        powerMeter: 0,
       },
       meterIncreased: true,
       levelIncreased: true,
@@ -202,14 +217,14 @@ export function upgradeWeapon(state: PlayerWeaponsState): {
   upgraded: boolean;
 } {
   if (state.weaponLevel >= MAX_WEAPON_LEVEL) {
-    return { state: { ...state, powerMeter: POWER_ITEMS_PER_LEVEL }, upgraded: false };
+    return { state, upgraded: false };
   }
   const nextLevel = (state.weaponLevel + 1) as WeaponLevel;
   return {
     state: {
       ...state,
       weaponLevel: nextLevel,
-      powerMeter: nextLevel >= MAX_WEAPON_LEVEL ? POWER_ITEMS_PER_LEVEL : 0,
+      powerMeter: 0,
     },
     upgraded: true,
   };
@@ -308,10 +323,14 @@ export function advanceWeapons(state: PlayerWeaponsState, deltaMs: number): Play
 }
 
 export function resetWeaponsOnRespawn(state: PlayerWeaponsState): PlayerWeaponsState {
+  const reserveReady = state.weaponLevel === MAX_WEAPON_LEVEL && state.powerMeter === POWER_ITEMS_PER_LEVEL;
   return {
     ...state,
-    weaponLevel: 1,
-    powerMeter: 0,
+    weaponFamily: 'ion',
+    weaponLevel: reserveReady ? 2 : 1,
+    powerMeter: reserveReady ? 0 : state.powerMeter,
+    speedLevel: 0,
+    bombs: START_BOMBS,
     hasShield: false,
     specialActiveMs: 0,
     missileCooldownMs: 0,

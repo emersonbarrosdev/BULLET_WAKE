@@ -29,10 +29,10 @@ import {
   COMBO_WINDOW_MS,
 } from '../src/game/systems/scoreComboSystem.ts';
 
-test('weapons start at LV1 with 2 bombs and 0 resonance', () => {
+test('weapons start at LV1 with 3 bombs and 0 resonance', () => {
   const w = createPlayerWeapons('nolan');
   assert.equal(w.weaponLevel, 1);
-  assert.equal(w.bombs, 2);
+  assert.equal(w.bombs, 3);
   assert.equal(w.resonance, 0);
   assert.equal(w.hasShield, false);
   assert.equal(w.specialActiveMs, 0);
@@ -78,24 +78,15 @@ test('resonance accumulates up to 100 and enables special', () => {
   assert.equal(canActivateSpecial(act.state), false);
 });
 
-test('bombs can be consumed and restored up to MAX_BOMBS', () => {
+test('bomb stock starts at three, reaches zero, and caps at ten', () => {
   let w = createPlayerWeapons('harlan');
-  assert.equal(w.bombs, 2);
-
-  const b1 = useBomb(w);
-  assert.equal(b1.used, true);
-  assert.equal(b1.state.bombs, 1);
-
-  const b2 = useBomb(b1.state);
-  assert.equal(b2.used, true);
-  assert.equal(b2.state.bombs, 0);
-
-  const b3 = useBomb(b2.state);
-  assert.equal(b3.used, false);
-  assert.equal(b3.state.bombs, 0);
-
-  let full = addBomb(addBomb(addBomb(addBomb(addBomb(b3.state)))));
-  assert.equal(full.bombs, MAX_BOMBS);
+  assert.equal(w.bombs, 3);
+  for (let i = 0; i < 3; i++) { const r = useBomb(w); assert.equal(r.used, true); w = r.state; }
+  assert.equal(w.bombs, 0);
+  assert.equal(useBomb(w).used, false);
+  for (let i = 0; i < 15; i++) w = addBomb(w);
+  assert.equal(w.bombs, MAX_BOMBS);
+  assert.equal(MAX_BOMBS, 10);
 });
 
 test('primary projectiles scale with weapon levels for all three pilots', () => {
@@ -140,7 +131,7 @@ test('reset on respawn restores weapon to LV1 and removes shield', () => {
   assert.equal(reset.resonance, 40); // 50% conservada
 });
 
-test('pickup system spawns, attracts, and collects power-ups', () => {
+test('pickup system spawns, drifts, and collects power-ups', () => {
   const sys = new PickupSystem();
   sys.spawn('power', 300, 200);
   sys.spawn('health', 300, 100);
@@ -150,10 +141,10 @@ test('pickup system spawns, attracts, and collects power-ups', () => {
   sys.update(100, 50, 50);
   assert.ok(sys.pickups[0].y > 200);
 
-  // Player approaches pickup - magnetic attraction activates
+  // Nearby player cannot attract the capsule
   const beforeY = sys.pickups[0].y;
   sys.update(100, sys.pickups[0].x, beforeY - 40);
-  assert.ok(sys.pickups[0].y < beforeY + 10);
+  assert.equal(sys.pickups[0].y, beforeY + 2.4);
 
   // Collection
   const collected = sys.checkCollection(sys.pickups[0].x, sys.pickups[0].y, 30);
@@ -166,12 +157,13 @@ test('pickup system spawns, attracts, and collects power-ups', () => {
   assert.equal(sys.pickups.length, 1);
 });
 
-test('determineEnemyDrop produces expected rewards', () => {
-  assert.equal(determineEnemyDrop('lancer', 1), 'power');
-  assert.equal(determineEnemyDrop('lancer', 2), 'special');
-  assert.equal(determineEnemyDrop('lancer', 3), 'bomb');
-  assert.equal(determineEnemyDrop('carrier', 0), 'power');
-  assert.equal(determineEnemyDrop('carrier', 1), 'weapon_ion');
+test('regular kills cannot farm power or weapon changes', () => {
+  for (const kind of ['scout', 'dart', 'lancer', 'cutter', 'carrier']) {
+    for (let kill = 1; kill <= 200; kill++) {
+      assert.ok(!['power', 'full_power', 'weapon_ion', 'weapon_red', 'weapon_green'].includes(determineEnemyDrop(kind, kill)));
+    }
+  }
+  assert.equal(determineEnemyDrop('miniboss', 100), 'health');
 });
 
 test('score combo system multiplies consecutive kills and decays after window', () => {

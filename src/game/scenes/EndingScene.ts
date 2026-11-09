@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import { FONT_HUD, FONT_TECH, FONT_TITLE, GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from '../constants';
 import { getPilot, type PilotDefinition } from '../data/pilots';
 import { StageBackdrop } from './StageBackdrop';
-import { saveSystem } from '../systems/saveSystem.ts';
 import { globalAudio } from '../audio/audioSystem.ts';
 import { VectorShip } from '../render/VectorShip';
 
@@ -32,8 +31,7 @@ export class EndingScene extends Phaser.Scene {
     this.backdrop = new StageBackdrop(this, 1, { fullWidth: true, showBezels: false });
     this.previewDistance = 0;
 
-    // Registra vitória definitiva no sistema de salvamento
-    saveSystem.recordStageClear(5, this.pilot.id, this.finalScore);
+    // The combat scene already records the actual cleared stage.
 
     // Painel Central
     this.add.rectangle(GAME_WIDTH / 2, 70, GAME_WIDTH, 100, 0x050e18, 0.9);

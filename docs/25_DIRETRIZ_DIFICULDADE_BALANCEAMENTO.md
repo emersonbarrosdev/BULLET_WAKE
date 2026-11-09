@@ -1,5 +1,8 @@
 # 25 — Diretriz Importante: Reformulação da Dificuldade e Balanceamento
 
+> **Atualização 09/11/2026:** Os números e modos abaixo são históricos. A diretriz vigente é [Fase 1 — Normal e Fire Shark](30_FASE1_NORMAL_FIRE_SHARK.md). Ajustar apenas Normal nesta etapa; Fácil, Difícil e Real ficam planejados. Bandos rápidos e frágeis não atiram. Real terá uma vida e letalidade por ataque, com avarias e reparos possíveis; não está implementado.
+
+
 > [!IMPORTANT]
 > **DIRETRIZ PERMANENTE DE ALTA PRIORIDADE DO BULLET WAKE**
 > O gameplay anterior estava fácil demais e foi reformulado para proporcionar uma experiência de shoot 'em up arcade desafiadora, intensa, recompensadora e justa desde os primeiros segundos.

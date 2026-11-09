@@ -1,5 +1,8 @@
 # 11 — Roadmap de produção (BULLET WAKE)
 
+> **Atualização 09/11/2026:** A tabela antiga de cinco fases concluídas não descreve a campanha V2. Consulte as pendências reais na [Bíblia V2, seção 8.1](27_BULLET_WAKE_V2_DEFINITIVO.md#81-pendências-reais-da-campanha-v2) e a prioridade atual em [Fase 1 — Normal](30_FASE1_NORMAL_FIRE_SHARK.md). Somente Fenda Pelágica está liberada; os modos Fácil, Difícil e Real ainda serão implementados.
+
+
 > **Estado atual (09/11/2026):** a campanha horizontal descrita abaixo é histórica. A referência vigente é a [Bíblia V2](27_BULLET_WAKE_V2_DEFINITIVO.md), com somente a Fase 1 liberada. Consulte as [pendências reais da campanha V2](27_BULLET_WAKE_V2_DEFINITIVO.md#81-pendências-reais-da-campanha-v2). A seleção de pilotos recebeu a [correção final de assets](28_CORRECAO_FINAL_PILOTOS.md), validada em 1366×768 e 1920×1080 sem alterar o layout aprovado.
 
 **Direção do projeto:** Shoot 'em up 2D horizontal contínuo, sem rounds ou ondas em arena. Pixel art moderna 16-bit com naves autorais, 5 fases com chefes polimórficos, sintetizador Web Audio procedural nativo e 60 FPS estável.

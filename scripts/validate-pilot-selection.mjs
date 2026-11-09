@@ -8,8 +8,9 @@ import { spawn } from 'node:child_process';
 
 const root = resolve('dist');
 const stage1 = process.argv.includes('--stage1');
-const confirmation = !stage1;
-const screenshots = resolve(confirmation ? 'docs/screenshots/pilot-confirmation' : stage1 ? 'docs/screenshots/stage1-visual' : 'docs/screenshots/pilot-selection-final');
+const normal = process.argv.includes('--normal');
+const confirmation = !stage1 && !normal;
+const screenshots = resolve(normal ? 'docs/screenshots/normal-phase1' : confirmation ? 'docs/screenshots/pilot-confirmation' : 'docs/screenshots/stage1-visual');
 mkdirSync(screenshots, { recursive: true });
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png' };
 const server = createServer((req, res) => {
@@ -59,7 +60,7 @@ try {
   };
   const waitFor = async expression => {
     for (let i = 0; i < 150; i++) { if (await evaluate(expression)) return; await pause(100); }
-    throw new Error('Timed out: ' + expression);
+    throw new Error('Timed out: ' + expression + '\n' + JSON.stringify({errors, state:await evaluate(`({scenes:window.__GAME__?.scene.scenes.map(s=>({key:s.sys.settings.key,status:s.sys.settings.status})),text:document.body.innerText.slice(-500)})`)}));
   };
   const key = async (key, code = key, virtualKey = key.charCodeAt(0)) => {
     await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode: virtualKey });
@@ -107,7 +108,115 @@ try {
   await click('.bw-press-activation');
   await click('[data-action="pilots"]');
   await waitFor(`Boolean(document.querySelector('.bw-pilot-card'))`);
-  if (confirmation) {
+  if (normal) {
+    await click('[data-pilot-index="0"]'); await click('[data-action="start"]');
+    const active = `window.__GAME__.scene.getScene('PrototypeScene')`;
+    const start = async () => {
+      await waitFor(`window.__GAME__.scene.isActive('PrototypeScene')&&Boolean(document.querySelector('#bw-combat-hud'))`);
+      await pause(150);
+      await evaluate(`{const s=${active};s.health.invulnerableMs=600000;s.scene.pause();void 0;}`);
+    };
+    await start();
+    await evaluate(`{${active}.scene.resume();void 0;}`);await key('4','Digit4',52);
+    assert.equal(await evaluate(`${active}.weapons.weaponLevel`),1,'Production shortcut must not grant free power');
+    await evaluate(`{${active}.scene.pause();void 0;}`);report.regression.productionSandboxDisabled=true;
+    const inspect = selector => evaluate(`(() => {
+      const r=document.querySelector(${JSON.stringify(selector)}), rect=r.getBoundingClientRect();
+      const bad=[...r.querySelectorAll('button,h1,h2,p,aside *')].filter(e=>{const b=e.getBoundingClientRect();return b.top<-.5||b.left<-.5||b.bottom>innerHeight+.5||b.right>innerWidth+.5;}).map(e=>e.className||e.tagName);
+      return {x:rect.x,y:rect.y,width:rect.width,height:rect.height,clipped:bad,scroll:r.scrollHeight>r.clientHeight+1,pageScroll:document.documentElement.scrollHeight>innerHeight};
+    })()`);
+    for (const [width,height] of [[1366,768],[1920,1080],[1280,800],[2560,1080]]) {
+      await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false}); await pause(250);
+      const layout=await inspect('#bw-combat-hud');
+      assert.equal(layout.x,0);assert.equal(layout.y,0);assert.equal(layout.width,width);assert.equal(layout.height,height);
+      assert.deepEqual(layout.clipped,[]);assert.equal(layout.scroll,false);assert.equal(layout.pageScroll,false);
+      const canvas=await evaluate(`(()=>{const s=${active},c=s.game.canvas.getBoundingClientRect();return {x:c.x,y:c.y,w:c.width,h:c.height,nativeW:s.game.canvas.width,nativeH:s.game.canvas.height,world:s.cameras.main.getWorldPoint(c.width/2,c.height/2)};})()`);
+      assert.equal(canvas.x,0);assert.equal(canvas.y,0);assert.equal(canvas.w,width);assert.equal(canvas.h,height);
+      assert.equal(canvas.nativeW,width);assert.equal(canvas.nativeH,height);assert.ok(Math.abs(canvas.world.x-384)<.001);assert.ok(Math.abs(canvas.world.y-216)<.001);
+      await evaluate(`(()=>{const s=${active};s.clearEnemyShots();s.clearPlayerShots();s.pickups.clear();s.director.enemies.length=0;s.syncEnemyVisuals();s.director.boss=null;s.director.minibossSpawned=false;s.director.eventIndex=0;s.director.scrollPx=0;s.completed=false;
+        for(let i=0;i<160;i++)s.update(i*50,50);
+        s.ship.setAlpha(1);
+      })()`);
+      const flock=await evaluate(`(()=>{const s=${active};return {flock:s.director.enemies.filter(e=>e.flight).length,actors:s.director.enemies.length,distance:s.director.scrollPx,normal:s.director.difficulty,background:s.backdrop.abyssTile.tilePositionY};})()`);
+      assert.ok(flock.flock>=4);assert.ok(flock.actors>=7);assert.equal(flock.normal,'normal');assert.ok(flock.background < -500);
+      await shot(`combat-${width}x${height}`);
+      const collect=await evaluate(`(()=>{const s=${active};s.setTestWeapon('ion',1);s.weapons.powerMeter=0;const before=s.scoreCombo.score;
+        const pickup=t=>{s.pickups.clear();s.pickups.spawn(t,s.ship.x,s.ship.y);s.checkPickupCollisions();};
+        pickup('weapon_ion');const duplicate={level:s.weapons.weaponLevel,meter:s.weapons.powerMeter,points:s.scoreCombo.score-before};
+        pickup('weapon_red');const red={family:s.weapons.weaponFamily,level:s.weapons.weaponLevel};
+        pickup('power');pickup('power');pickup('weapon_green');const swap={family:s.weapons.weaponFamily,meter:s.weapons.powerMeter};
+        pickup('power');const power={level:s.weapons.weaponLevel,meter:s.weapons.powerMeter};
+        pickup('speed');const speed=s.weapons.speedLevel;
+        s.pickups.clear();s.clearEnemyShots();s.syncPickupVisuals();
+        for(const[i,t]of ['power','weapon_ion','weapon_green','weapon_red','health','bomb','speed','missile','score','special'].entries())s.pickups.spawn(t,205+(i%5)*88,220+Math.floor(i/5)*65);
+        s.syncPickupVisuals();return{duplicate,red,swap,power,speed};})()`);
+      assert.deepEqual(collect.duplicate,{level:1,meter:0,points:5000});assert.deepEqual(collect.red,{family:'red',level:1});assert.deepEqual(collect.swap,{family:'green',meter:2});assert.deepEqual(collect.power,{level:2,meter:0});assert.equal(collect.speed,1);
+      await shot(`items-${width}x${height}`);
+      const surface = await evaluate(`(()=>{const s=${active};s.pickups.clear();s.syncPickupVisuals();
+        for(let i=0;i<200;i++)s.update(i*50,50);
+        const pod=s.director.enemies.find(e=>e.layer==='surface');
+        s.clearEnemyShots();s.spawnEnemyShot({x:280,y:100,velocityX:0,velocityY:125,sourceLayer:'surface'});s.advanceEnemyShots(100);
+        return {exists:!!pod,depth:pod?s.enemyVisuals.get(pod.id).container.depth:null,bulletSize:s.enemyShots[0].node.displayWidth,hitRadius:s.enemyShots[0].hitRadius};})()`);
+      assert.equal(surface.exists,true);assert.equal(surface.depth,-3);assert.ok(surface.bulletSize>5&&surface.bulletSize<12);assert.ok(surface.hitRadius<3);
+      await shot(`surface-${width}x${height}`);
+      const noSurfaceContact=await evaluate(`(()=>{const s=${active},pod=s.director.enemies.find(e=>e.layer==='surface'),others=[...s.director.enemies],pos={x:pod.x,y:pod.y};
+        s.director.enemies.length=0;s.director.enemies.push(pod);pod.x=s.ship.x;pod.y=s.ship.y;s.health.invulnerableMs=0;const hp=s.health.hp;s.checkEnemyContacts();
+        const safe=s.health.hp===hp&&s.director.enemies.includes(pod);Object.assign(pod,pos);s.director.enemies.length=0;s.director.enemies.push(...others);return safe;})()`);
+      assert.ok(noSurfaceContact);
+      const respawn = await evaluate(`(()=>{const s=${active};s.setTestWeapon('red',4,3);s.weapons.speedLevel=3;s.weapons.bombs=0;s.health={hp:1,lives:2,invulnerableMs:0,gameOver:false};
+        const outcome=s.damageShip();return{outcome,family:s.weapons.weaponFamily,level:s.weapons.weaponLevel,meter:s.weapons.powerMeter,speed:s.weapons.speedLevel,bombs:s.weapons.bombs,hudLevel:document.querySelector('[data-field="level"]').textContent,hudBombs:document.querySelector('[data-field="bombs"]').textContent};})()`);
+      assert.deepEqual(respawn,{outcome:'respawn',family:'ion',level:2,meter:0,speed:0,bombs:3,hudLevel:'NV 2/4',hudBombs:'03'});
+      await evaluate(`(()=>{const s=${active};s.pickups.clear();s.syncPickupVisuals();s.director.enemies.length=0;s.director.scrollPx=4251;s.director.eventIndex=999;s.director.minibossSpawned=true;s.director.boss=null;s.director.update(50,s.ship.x,s.ship.y);const boss=s.director.boss;boss.phase='core';boss.hp=1;boss.damage(999,boss.x,boss.y);s.update(0,16);})()`);
+      await waitFor(`Boolean(document.querySelector('.bw-mission-result'))`);
+      const victory=await inspect('.bw-mission-result');assert.deepEqual(victory.clipped,[]);assert.equal(victory.scroll,false);assert.equal(victory.width,width);
+      const layered=await evaluate(`(()=>{const b=document.querySelector('[data-result-action="0"]').getBoundingClientRect();return document.elementFromPoint(b.x+b.width/2,b.y+b.height/2).closest('.bw-mission-result')!==null&&document.querySelector('#bw-combat-hud').inert;})()`);
+      assert.ok(layered);await shot(`victory-${width}x${height}`);
+      if(width===2560) {
+        await key('Enter','Enter',13);await waitFor(`window.__GAME__.scene.isActive('EndingScene')`);
+        const save=await evaluate(`JSON.parse(localStorage.getItem('bullet_wake_save_data_v1'))`);
+        assert.ok(save.bestScores['1']);assert.equal(save.bestScores['5'],undefined);assert.deepEqual(save.completedCampaignPilots,[]);
+        assert.equal(await evaluate(`document.querySelectorAll('#bw-combat-hud,.bw-mission-result').length`),0);
+        await evaluate(`{window.__GAME__.scene.getScene('EndingScene').scene.start('PrototypeScene',{pilotId:'nolan',stageNumber:1});void 0;}`);
+        report.regression.correctStageSavedAfterEpilogue=true;
+      } else if(width===1280) {
+        await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
+        const p=await evaluate(`(()=>{const b=document.querySelector('[data-result-action="1"]').getBoundingClientRect();return{x:b.x+b.width/2,y:b.y+b.height/2};})()`);
+        await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...p,radiusX:1,radiusY:1}]});await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+        await send('Emulation.setTouchEmulationEnabled',{enabled:false});
+      } else if(width===1366) await key('r','KeyR',82);
+      else await click('[data-result-action="1"]');
+      await waitFor(`!document.querySelector('.bw-mission-result')&&${active}.completed===false`);await start();
+      report.viewports.push({width,height,layout,canvas,flock,collect,surface,noSurfaceContact,respawn,victory,layered});
+    }
+    await evaluate(`{const s=${active};s.scene.resume();s.scene.start('TitleScene');void 0;}`);
+    await waitFor(`Boolean(document.querySelector('.bw-press-activation'))`);assert.equal(await evaluate(`document.querySelectorAll('#bw-combat-hud,.bw-mission-result').length`),0);
+    await click('.bw-press-activation');await click('[data-action="options"]');await click('[data-action="guide"]');
+    for(const[width,height]of [[1366,768],[1920,1080]]){
+      await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});await pause(180);
+      const guide=await inspect('#bw-title-screen');assert.deepEqual(guide.clipped,[]);assert.equal(guide.pageScroll,false);
+      assert.equal(await evaluate(`document.querySelectorAll('.bw-item-guide article').length`),10);await shot(`guide-${width}x${height}`);
+      report.regression['guide'+width]=guide;
+    }
+    await key('Escape','Escape',27);assert.ok(await evaluate(`Boolean(document.querySelector('[data-action="guide"]'))`));
+    await key('Escape','Escape',27);await click('[data-action="pilots"]');
+    await click('[data-action="profile"]');await imagesReady();checkGeometry(await geometry(),1920,1080);await key('Escape','Escape',27);
+    await click('[data-pilot-index="0"]');await click('[data-action="start"]');await start();
+    await evaluate(`{const s=${active};s.health={hp:1,lives:1,invulnerableMs:0,gameOver:false};s.damageShip();void 0;}`);
+    assert.deepEqual((await inspect('.bw-mission-result')).clipped,[]);await shot('game-over-1920x1080');
+    await key('Escape','Escape',27);await waitFor(`Boolean(document.querySelector('.bw-pilot-card'))`);
+    assert.equal(await evaluate(`document.querySelectorAll('#bw-combat-hud,.bw-mission-result').length`),0);
+    for(const[index,id]of [[1,'cora'],[2,'harlan']]) {
+      await click(`[data-pilot-index="${index}"]`);await click('[data-action="start"]');await start();
+      const other=await evaluate(`(()=>{const s=${active};return{id:s.pilot.id,painted:!!s.ship.paintedRivet,width:s.game.canvas.width,height:s.game.canvas.height,portrait:document.querySelector('[data-field="portrait"]').getAttribute('src')};})()`);
+      assert.equal(other.id,id);assert.equal(other.painted,false);assert.equal(other.width,1920);assert.equal(other.height,1080);assert.ok(other.portrait.includes(id));
+      report.regression[id+'ShipPreserved']=other;
+      await evaluate(`{const s=${active};s.scene.resume();s.scene.start('PilotSelectScene');void 0;}`);await waitFor(`Boolean(document.querySelector('.bw-pilot-card'))`);
+    }
+    report.regression.profileAfterCombat=true;report.regression.gameOver=true;report.regression.touchReplay=true;
+    assert.deepEqual(errors,[],'Browser errors');
+    writeFileSync(join(screenshots,'validation.json'),JSON.stringify(report,null,2)+'\n');
+    console.log('PASS: native full viewport, carbon HUD, Normal flocks, real collection rules, distinct icons, complete victory/game-over dialogs, replay by keyboard/mouse/touch, options guide, clean scene lifecycle.');
+  } else if (confirmation) {
     const baseline = JSON.parse(readFileSync(resolve('docs/screenshots/pilot-selection-final/validation.json'),'utf8'));
     const ready = () => evaluate(`!document.querySelector('[data-action="start"]').hidden`);
     const chosen = () => evaluate(`window.__GAME__.scene.getScene('PilotSelectScene').chosenIndex`);
@@ -224,7 +333,7 @@ try {
       })()`);
       assert.deepEqual(layout.clipped, [], 'HUD content clipped'); assert.equal(layout.scroll, false);
       assert(Math.abs(layout.width-layout.canvasWidth)<1&&Math.abs(layout.height-layout.canvasHeight)<1);
-      assert.deepEqual(await evaluate(`({width:window.__GAME__.canvas.width,height:window.__GAME__.canvas.height,zoom:window.__GAME__.scene.getScene('PrototypeScene').cameras.main.zoom})`),{width:1920,height:1080,zoom:2.5});
+      assert.deepEqual(await evaluate(`({width:window.__GAME__.canvas.width,height:window.__GAME__.canvas.height})`),{width,height});
       const counts = [];
       for (const level of [1, 2, 3, 4]) {
         const count = await evaluate(`(()=>{
@@ -286,10 +395,10 @@ try {
     report.regression.restartAndProfileAfterCombat=true;
     for(const id of ['cora','harlan']) {
       await evaluate(`{const s=window.__GAME__.scene.getScene('PrototypeScene');s.scene.restart({pilotId:'${id}',stageNumber:1});void 0;}`);
-      await waitFor(`window.__GAME__.scene.getScene('PrototypeScene').pilot.id==='${id}'&&!document.querySelector('#bw-combat-hud')`);
+      await waitFor(`window.__GAME__.scene.getScene('PrototypeScene').pilot.id==='${id}'&&Boolean(document.querySelector('#bw-combat-hud'))`);
       await pause(100);
       assert.equal(await evaluate(`Boolean(window.__GAME__.scene.getScene('PrototypeScene').ship.paintedRivet)`),false);
-      assert.deepEqual(await evaluate(`({width:window.__GAME__.canvas.width,zoom:window.__GAME__.scene.getScene('PrototypeScene').cameras.main.zoom})`),{width:768,zoom:1});
+      assert.deepEqual(await evaluate(`({width:window.__GAME__.canvas.width,height:window.__GAME__.canvas.height})`),{width:1920,height:1080});
       report.regression[id+'Unchanged']=true;
     }
     await evaluate(`{window.__GAME__.scene.getScene('PrototypeScene').scene.start('TitleScene');void 0;}`);

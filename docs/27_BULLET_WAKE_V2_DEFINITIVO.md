@@ -1,5 +1,7 @@
 # IMPORTANTE — BULLET WAKE V2: IDENTIDADE, CAMPANHA E GAMEPLAY DEFINITIVOS
 
+> **Revisão vigente de HUD, potência e dificuldade (09/11/2026):** [Fase 1 — carbono e Normal](30_FASE1_NORMAL_FIRE_SHARK.md). Laterais pretas de carbono em tela cheia; cor repetida dá pontos, P evolui sozinho, S é velocidade e $ é pontuação. O modo de produção atual é Normal. Fácil, Difícil e Real são planos posteriores. Esta revisão prevalece sobre as descrições históricas conflitantes abaixo.
+
 > [!IMPORTANT]
 > **DIRETRIZ CANÔNICA PERMANENTE — BULLET WAKE V2 (PRIORIDADE MÁXIMA)**
 > Esta seção substitui todas as definições conflitantes anteriores e consolida a identidade definitiva do jogo.
@@ -21,12 +23,12 @@
 >    - **Energia Espiralada (`green`):** Feixes de energia verde concentrados e ondulantes (helicoidais/sinusoidais) que aumentam de quantidade e potência por nível (2 -> 3 -> 5 -> 7 ondas).
 >    - **Laser Rubro (`red` — ARMAMENTO ENERGÉTICO CONTÍNUO DE MULTIFEIXES EVOLUTIVOS):** Fluxo contínuo de energia vermelha intensa emitido enquanto `ESPAÇO` estiver pressionado, multiplicando suas colunas e adicionando varredura lateral e cobertura diagonal/traseira nos níveis superiores (LV1: 1 fluxo frontal concentrado; LV2: 2 fluxos paralelos; LV3: 4 fluxos com 2 laterais oscilantes; LV4 — **Asas de Energia**: 6 fluxos com 2 frontais + 2 asas laterais de varredura ampla + 2 feixes diagonais traseiros `rear-wing`). **Proibido representar como bolas vermelhas ou projéteis discretos.**
 > 6. **Sistema de Power-ups (`3 P` por Nível + Cápsulas de Cor Independentes):** Portadores alienígenas (ex: Casulos Marinhos) soltam cápsulas físicas no campo:
->    - `P` (Power): Aumenta a barra de poder (`MEDIDOR P: ■ □ □ [0/3]`). **Três itens `P` (`3 P`) aumentam 1 nível da arma atual** (`1 -> 2 -> 3 -> 4`). Item raro `P★` (`full_power`) eleva diretamente ao Nível 4.
+>    - `P` (Power): **Três P aumentam um nível** (`1 -> 2 -> 3 -> 4`), nove até NV4. No máximo, três P adicionais formam reserva para a próxima vida. P parcial sobrevive à perda de vida. `P★` fica exclusivamente no sandbox, fora do roteiro Normal.
 >    - `W` (Weapon Capsule): Cápsulas coloridas separadas (`AZUL` = Dispersão Azul, `VERDE` = Energia Espiralada, `RUBRO` = Laser Rubro) que trocam imediatamente a arma equipada mantendo o nível (`1..4`) e o progresso do medidor `P` (`0..2`), sem exigir maximizar uma cor antes de coletar outra.
 >    - `H` (Health): Recupera blindagem.
 >    - `B` (Bomb): Recupera bomba.
 >    - `M` (Missile): Reabastece mísseis.
->    - `S` (Score): Pontuação e multiplicadores.
+>    - `S` (Speed): Velocidade, até três incrementos; `$` representa pontos.
 >    - `E` (Special Energy): Recupera energia de especial.
 >    - *Nenhum coletável recupera dash.*
 > 7. **Primeira Fase Oficial (Escopo Atual):** `STAGE_01_PELAGIC` — **FENDA PELÁGICA** (Oceano terrestre sob invasão biológica alienígena). Miniboss: *Raia-Dente*. Boss Colossal: *Talassarca — O Devorador das Marés* (3 fases completas).
@@ -176,7 +178,7 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
   - **Não é necessário maximizar o azul para obter o verde, nem o verde para obter o vermelho.**
   - Cada item `P` coletado incrementa o Medidor `P` (`0/3 -> 1/3 -> 2/3 -> 3/3`). Três itens `P` aumentam 1 nível de potência, até 4 estados totais (`NV 1 -> NV 2 -> NV 3 -> NV 4`).
   - Troca de arma e evolução de potência são mecanismos independentes.
-  - O item raro `P★` vermelho (`full_power`) eleva imediatamente a arma equipada para o Nível 4 máximo, sem alterar a família da arma e sem ser confundido com a cápsula vermelha de troca de arma (`weapon_red`).
+  - P★ (`full_power`) existe somente para inspeção no sandbox; não integra os drops da campanha Normal. Cor repetida concede 5.000 pontos e nunca aumenta P. Nenhuma cápsula de arma é convertida em P no NV1.
 - **Nomes Canônicos das 5 Regiões V2:**
   - Fase 01: Fenda Pelágica (Chefe: *Talassarca — O Devorador das Marés*)
   - Fase 02: Bosque da Névoa Viva (Chefe: *Arborion — O Coração Vegetal*)
@@ -310,7 +312,7 @@ Esta lista substitui as declarações de campanha completa da versão horizontal
 2. **Fases 4 a 15:** construir conteúdo jogável, cenários, padrões inimigos, minibosses e chefes próprios; incluir Thalor, Morhiza e Prisma Órfão como variantes da Fase 15.
 3. **Seleção e progressão V2:** disponibilizar a escolha das três regiões iniciais quando seus conteúdos estiverem prontos, registrar a ordem das regiões e encadear as Fases 4–15. A seleção atual tem cinco cards e libera somente a Fase 1; os dados de fases terminam em 5.
 4. **Rotas e finais secretos:** implementar as condições das seis ordens iniciais, Fase 16 (Coração Telúrico), Fase 17 (Matriz Primordial em quatro fases) e os finais correspondentes.
-5. **Salvamento e vitória V2:** expandir o schema limitado às cinco fases antigas para a campanha canônica, migrar saves e registrar corretamente a fase concluída. O epílogo atual ainda chama `recordStageClear(5, ...)` após a vitória da Fase 1.
+5. **Salvamento e vitória V2:** expandir o schema limitado às cinco fases antigas para a campanha canônica e migrar saves. A revisão Normal removeu o registro falso de Fase 5 no epílogo; a cena de combate grava a fase realmente concluída.
 6. **Controles e distribuição planejados:** implementar suporte efetivo a gamepad, controles táteis completos para dash/bomba/especial/carga e empacotamento Android. A entrada atual cobre teclado e movimento/tiro por toque.
 
 ## 9. FASE 1 — ETAPA VISUAL DA RIVET (09/11/2026)
@@ -318,7 +320,7 @@ Esta lista substitui as declarações de campanha completa da versão horizontal
 Prioridade de produção: concluir e revisar visualmente a Fase 1 antes de avançar à Fase 2. Nesta etapa, apenas a nave de Nolan recebe novo acabamento de combate; Moth e Knuckle preservam suas implementações atuais.
 
 - **Cenário:** oceano e recifes alienígenas pintados em 2D, centro escuro livre e continuidade vertical sem emendas.
-- **HUD do Nolan:** retrato ilustrado e linguagem bordô/âmbar das telas iniciais, Oxanium/Rajdhani, informações nas laterais sem reduzir a arena.
+- **HUD do Nolan:** retrato ilustrado, Oxanium/Rajdhani e informações nas laterais sem reduzir a arena. A revisão seguinte substitui o bordô por preto/carbono com destruição discreta, preservando os acentos de telemetria.
 - **RIVET:** spritesheet de combate próprio em vista superior, branca/vermelha, três motores, voo e inclinações; framebuffer Full HD com coordenadas lógicas preservadas.
 - **Inimigos comuns:** sheets animados de Agulha Pelágica, Raia de Fenda, Parasita Abissal e Casulo Marinho, com voo e telegrafia de ataque.
 - **Tiros e itens:** Dispersão Azul visualmente renovada nos quatro níveis (3/5/7/9 direções), bomba pintada com expansão/dissipação, cápsulas de P/W/H/B/M/S/E identificáveis. Três P por nível, dano e colisões preservados.
@@ -341,3 +343,13 @@ Inventário, prompts, evidências e limites em [Fase 1 — revisão visual da RI
 
 
 
+
+## 11. FASE 1 — NORMAL E PROFUNDIDADE (09/11/2026)
+
+A diretriz atual está em [Carbono, progressão e combate Normal](30_FASE1_NORMAL_FIRE_SHARK.md): HUD preto opaco em tela cheia, vitória sem cortes, ícones distintos com legenda nas Opções, suprimentos roteirizados, nove bandos sem disparos e cinco organismos de superfície. P e cor são independentes; nove P para NV4, sem P★ no Normal. Corrigidos reserva e respawn.
+
+**Regras para os próximos biomas:** terra/mar terão ameaças ancoradas ao cenário; nuvens/espaço terão inimigos atirando do plano profundo, crescendo durante a aproximação e podendo investir ao alcançar o plano da nave. A origem e o corredor de aproximação devem ser anunciados; nenhum contato letal antes da transição de profundidade.
+
+**Dificuldades futuras:** Fácil, Normal, Difícil e Real. Nesta etapa somente Normal fica ativo. Real terá uma vida, dano por tipo de ataque e possibilidade de sobreviver com avarias até um reparo. Esses sistemas ainda serão implementados.
+
+**Pendências antes de avançar:** arte definitiva dos chefes da Fase 1 e efeitos auxiliares da RIVET, playtests do Normal e controles completos de outras plataformas. Os demais itens da seção 8.1 permanecem pendentes.

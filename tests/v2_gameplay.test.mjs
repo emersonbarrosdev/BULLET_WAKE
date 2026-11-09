@@ -133,7 +133,7 @@ test('V2 Medidor P (3 itens P por nível) & Troca de Cápsulas Coloridas sem res
   let weapons = createPlayerWeapons('nolan');
   assert.equal(weapons.weaponLevel, 1);
   assert.equal(weapons.powerMeter, 0);
-  assert.equal(weapons.weaponFamily, 'green');
+  assert.equal(weapons.weaponFamily, 'ion');
 
   // Coleta 1º e 2º item P -> permanece LV1, medidor P sobe para 1 e 2
   let p1 = collectPowerItem(weapons);
@@ -170,7 +170,7 @@ test('V2 Medidor P (3 itens P por nível) & Troca de Cápsulas Coloridas sem res
   const toLv4 = collectPowerItem(weapons);
   assert.equal(toLv4.levelIncreased, true);
   assert.equal(toLv4.state.weaponLevel, 4);
-  assert.equal(toLv4.state.powerMeter, 3);
+  assert.equal(toLv4.state.powerMeter, 0);
 });
 
 test('V2 Laser Rubro: Emissão contínua, varredura lateral (LV3/LV4) e ticks de dano independentes de FPS', () => {
