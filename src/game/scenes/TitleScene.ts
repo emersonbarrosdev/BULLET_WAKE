@@ -8,9 +8,9 @@ type TitleMode = 'attract' | 'main' | 'options' | 'controls';
 type TitleAction = 'pilots' | 'options' | 'music' | 'effects' | 'difficulty' | 'controls' | 'back';
 
 /**
- * Tela inicial independente da resolução lógica do gameplay.
- * A ilustração aprovada ocupa a janela em resolução nativa (cover, sem distorção).
- * Após PRESS START, o menu tem sua PRÓPRIA tela sem a aeronave.
+ * Abertura cinematográfica aprovada — somente apresentação e menu do jogo.
+ * A arte ocupa o viewport inteiro, sem reescalar o canvas lógico do gameplay.
+ * As interações ficam no DOM (nativas, acessíveis e nítidas em Full HD).
  */
 export class TitleScene extends Phaser.Scene {
   private mode: TitleMode = 'attract';
@@ -18,13 +18,12 @@ export class TitleScene extends Phaser.Scene {
   private root?: HTMLDivElement;
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
-    if (!this.root) return;
+    if (!this.root || event.altKey || event.ctrlKey || event.metaKey) return;
     const key = event.key.toLowerCase();
     if (!['enter', ' ', 'escape', 'arrowup', 'arrowdown', 'w', 's'].includes(key)) return;
-
-    // Evita rolagem da página e conflito com o listener de teclado do Phaser.
     event.preventDefault();
     event.stopPropagation();
+    if (event.repeat) return;
 
     if (this.mode === 'attract') {
       if (key === 'enter' || key === ' ') this.revealMenu();
@@ -38,13 +37,9 @@ export class TitleScene extends Phaser.Scene {
       return;
     }
 
-    if (key === 'arrowup' || key === 'w') {
-      this.moveSelection(-1);
-    } else if (key === 'arrowdown' || key === 's') {
-      this.moveSelection(1);
-    } else if (key === 'enter' || key === ' ') {
-      this.activateSelected();
-    }
+    if (key === 'arrowup' || key === 'w') this.moveSelection(-1);
+    else if (key === 'arrowdown' || key === 's') this.moveSelection(1);
+    else if (key === 'enter' || key === ' ') this.activateSelected();
   };
 
   constructor() {
@@ -55,11 +50,9 @@ export class TitleScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
     this.mode = 'attract';
     this.selectedIndex = 0;
-
-    // DOM separado do canvas de 768×432: a abertura fica nítida em 1080p,
-    // ultrawide e resoluções intermediárias sem mudar escala/hitboxes do jogo.
     this.root = document.createElement('div');
     this.root.id = 'bw-title-screen';
+    this.root.className = 'bw-title-screen';
     this.root.setAttribute('aria-label', 'BULLET WAKE — tela inicial');
     document.body.appendChild(this.root);
 
@@ -82,112 +75,103 @@ export class TitleScene extends Phaser.Scene {
     this.showMode('main');
   }
 
-  private showMode(mode: TitleMode): void {
-    this.mode = mode;
+  private showMode(next: TitleMode): void {
+    this.mode = next;
     this.selectedIndex = 0;
     this.renderMode();
   }
 
   private renderMode(): void {
     if (!this.root) return;
-    this.root.className = this.mode === 'attract' ? 'bw-title-screen bw-is-attract' : 'bw-title-screen bw-is-menu';
+    this.root.className = `bw-title-screen bw-mode-${this.mode}`;
 
     if (this.mode === 'attract') {
-      // O PRESS START faz parte da arte aprovada. Uma máscara obtida da
-      // própria ilustração alterna sua visibilidade, sem caixa ou botão sólido.
       this.root.innerHTML = `
-        <div class="bw-title-artwork" aria-hidden="true">
-          <div class="bw-title-press-mask"></div>
+        <div class="bw-art-frame bw-attract-art" aria-hidden="true">
+          <div class="bw-press-off-cover"></div>
         </div>
-        <button class="bw-title-start-area" type="button" aria-label="PRESS START — abrir menu principal"></button>
+        <button type="button" class="bw-press-activation" aria-label="PRESS START — abrir menu principal"></button>
       `;
-      const start = this.root.querySelector<HTMLButtonElement>('.bw-title-start-area');
-      start?.addEventListener('click', () => this.revealMenu());
+      this.root.querySelector<HTMLButtonElement>('.bw-press-activation')
+        ?.addEventListener('click', () => this.revealMenu());
       return;
     }
 
-    const title = this.mode === 'main' ? 'MENU PRINCIPAL' : this.mode === 'options' ? 'OPÇÕES' : 'CONTROLES';
-    const subtitle = this.mode === 'main'
-      ? 'SUA MISSÃO COMEÇA AQUI'
-      : this.mode === 'options'
-        ? 'PERSONALIZE SUA EXPERIÊNCIA'
-        : 'COMANDOS DE VOO';
+    if (this.mode === 'main') {
+      // O título, as duas opções e a assinatura do estúdio fazem parte
+      // da arte aprovada. Hotspots invisíveis preservam a composição.
+      this.root.innerHTML = `
+        <main class="bw-art-frame bw-main-art" aria-label="Menu principal">
+          <nav class="bw-visual-navigation" aria-label="Escolha uma opção">
+            <button type="button" class="bw-visual-choice bw-choice-pilot" data-index="0" data-action="pilots" aria-label="Selecionar piloto"><span class="bw-sr-only">Selecionar piloto</span></button>
+            <button type="button" class="bw-visual-choice bw-choice-options" data-index="1" data-action="options" aria-label="Opções"><span class="bw-sr-only">Opções</span></button>
+          </nav>
+          <span class="bw-choice-pointer" aria-hidden="true">▶</span>
+        </main>
+      `;
+      this.bindActions();
+      this.updateSelection(false);
+      return;
+    }
 
+    const controls = this.mode === 'controls';
     this.root.innerHTML = `
-      <div class="bw-menu-ambient" aria-hidden="true">
-        <div class="bw-menu-orbit bw-menu-orbit-one"></div>
-        <div class="bw-menu-orbit bw-menu-orbit-two"></div>
-      </div>
-      <main class="bw-menu-shell">
-        <div class="bw-menu-mark" aria-label="BULLET WAKE">
-          <span>BULLET</span><strong>WAKE</strong>
-        </div>
-        <div class="bw-menu-divider" aria-hidden="true"></div>
-        <div class="bw-menu-heading">
-          <p class="bw-menu-eyebrow">${subtitle}</p>
-          <h1>${title}</h1>
-        </div>
-        <nav class="bw-menu-options" aria-label="${title}">
+      <div class="bw-art-frame bw-submenu-art" aria-hidden="true"></div>
+      <div class="bw-submenu-shade" aria-hidden="true"></div>
+      <main class="bw-submenu-shell">
+        <h1>${controls ? 'CONTROLES' : 'OPÇÕES'}</h1>
+        <nav class="bw-submenu-list" aria-label="${controls ? 'Controles' : 'Opções'}">
           ${this.renderActions()}
         </nav>
-        <p class="bw-menu-help">${this.mode === 'controls' ? 'ESC OU ENTER PARA VOLTAR' : '↑ ↓ NAVEGAR  ·  ENTER SELECIONAR  ·  ESC VOLTAR'}</p>
+        <p class="bw-submenu-help">↑ ↓ NAVEGAR&nbsp;&nbsp; · &nbsp;&nbsp;ENTER SELECIONAR&nbsp;&nbsp; · &nbsp;&nbsp;ESC VOLTAR</p>
       </main>
-      <div class="bw-menu-studio">A GAME BY <strong>BOTAN STUDIO</strong></div>
     `;
     this.bindActions();
     this.updateSelection(false);
   }
 
   private renderActions(): string {
-    if (this.mode === 'main') {
-      return this.actionButton('pilots', 'SELECIONAR PILOTO', 0, true)
-        + this.actionButton('options', 'OPÇÕES', 1);
-    }
     if (this.mode === 'options') {
       const { settings } = saveSystem.getSaveData();
       const difficulty = settings.difficulty || 'normal';
-      const difficultyNames: Record<'normal' | 'hard' | 'arcade', string> = {
-        normal: 'NORMAL', hard: 'DIFÍCIL', arcade: 'ARCADE',
-      };
+      const difficultyNames = { normal: 'NORMAL', hard: 'DIFÍCIL', arcade: 'ARCADE' };
       return [
-        this.actionButton('music', `MÚSICA <em>${settings.musicVolume > 0 ? 'LIGADA' : 'DESLIGADA'}</em>`, 0),
-        this.actionButton('effects', `EFEITOS <em>${settings.sfxVolume > 0 ? 'LIGADOS' : 'DESLIGADOS'}</em>`, 1),
-        this.actionButton('difficulty', `DIFICULDADE <em>${difficultyNames[difficulty]}</em>`, 2),
-        this.actionButton('controls', 'CONTROLES', 3),
-        this.actionButton('back', 'VOLTAR', 4),
+        this.actionButton('music', 'MÚSICA', settings.musicVolume > 0 ? 'LIGADA' : 'DESLIGADA', 0),
+        this.actionButton('effects', 'EFEITOS', settings.sfxVolume > 0 ? 'LIGADOS' : 'DESLIGADOS', 1),
+        this.actionButton('difficulty', 'DIFICULDADE', difficultyNames[difficulty], 2),
+        this.actionButton('controls', 'CONTROLES', '', 3),
+        this.actionButton('back', 'VOLTAR', '', 4),
       ].join('');
     }
     return `
-      <div class="bw-controls-list" aria-label="Comandos de jogo">
-        <div><span>WASD / SETAS</span><strong>MOVIMENTAR</strong></div>
-        <div><span>ESPAÇO</span><strong>ATIRAR</strong></div>
-        <div><span>SHIFT</span><strong>DASH (3 POR FASE)</strong></div>
+      <div class="bw-controls-list">
+        <div><span>WASD / SETAS</span><strong>MOVIMENTO</strong></div>
+        <div><span>ESPAÇO</span><strong>DISPARAR</strong></div>
+        <div><span>SHIFT ESQUERDO</span><strong>DASH (3 POR FASE)</strong></div>
         <div><span>X</span><strong>BOMBA</strong></div>
         <div><span>V</span><strong>ESPECIAL</strong></div>
         <div><span>C</span><strong>CARREGAR (SE DISPONÍVEL)</strong></div>
-        <div><span>ESC</span><strong>PAUSAR</strong></div>
+        <div><span>ESC</span><strong>PAUSA</strong></div>
       </div>
-      ${this.actionButton('back', 'VOLTAR', 0)}
+      ${this.actionButton('back', 'VOLTAR', '', 0)}
     `;
   }
 
-  private actionButton(action: TitleAction, label: string, index: number, primary = false): string {
-    return `<button type="button" class="bw-nav-button${primary ? ' bw-nav-primary' : ''}" data-action="${action}" data-index="${index}" aria-selected="false"><span class="bw-nav-indicator" aria-hidden="true"></span><span class="bw-nav-label">${label}</span><span class="bw-nav-arrow" aria-hidden="true">›</span></button>`;
+  private actionButton(action: TitleAction, title: string, state: string, index: number): string {
+    return `<button class="bw-submenu-choice" type="button" data-action="${action}" data-index="${index}"><span class="bw-submenu-marker" aria-hidden="true">▶</span><span class="bw-submenu-label">${title}</span><span class="bw-submenu-state">${state}</span></button>`;
   }
 
   private bindActions(): void {
     if (!this.root) return;
-    this.root.querySelectorAll<HTMLButtonElement>('.bw-nav-button').forEach((btn) => {
-      const index = Number(btn.dataset.index);
-      btn.addEventListener('mouseenter', () => {
+    this.root.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((button) => {
+      const index = Number(button.dataset.index);
+      const select = (): void => {
         this.selectedIndex = index;
         this.updateSelection(false);
-      });
-      btn.addEventListener('focus', () => {
-        this.selectedIndex = index;
-        this.updateSelection(false);
-      });
-      btn.addEventListener('click', () => {
+      };
+      button.addEventListener('mouseenter', select);
+      button.addEventListener('focus', select);
+      button.addEventListener('click', () => {
         this.selectedIndex = index;
         this.activateSelected();
       });
@@ -195,7 +179,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private moveSelection(direction: number): void {
-    const total = this.root?.querySelectorAll('.bw-nav-button').length ?? 0;
+    const total = this.root?.querySelectorAll('[data-action]').length ?? 0;
     if (!total) return;
     this.selectedIndex = (this.selectedIndex + direction + total) % total;
     globalAudio.playShot('cora', 1);
@@ -203,23 +187,24 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private updateSelection(focus: boolean): void {
-    const rows = this.root?.querySelectorAll<HTMLButtonElement>('.bw-nav-button');
-    if (!rows) return;
-    rows.forEach((btn, index) => {
-      const selected = this.selectedIndex === index;
-      btn.classList.toggle('bw-nav-active', selected);
-      btn.setAttribute('aria-selected', String(selected));
+    if (!this.root) return;
+    this.root.classList.toggle('bw-selected-option', this.mode === 'main' && this.selectedIndex === 1);
+    const rows = this.root.querySelectorAll<HTMLButtonElement>('[data-action]');
+    rows.forEach((button, index) => {
+      const active = index === this.selectedIndex;
+      button.classList.toggle('bw-active', active);
+      button.setAttribute('aria-current', active ? 'true' : 'false');
     });
     if (focus) rows[this.selectedIndex]?.focus({ preventScroll: true });
   }
 
   private activateSelected(): void {
-    const action = this.root?.querySelectorAll<HTMLButtonElement>('.bw-nav-button')[this.selectedIndex]?.dataset.action as TitleAction | undefined;
+    const button = this.root?.querySelectorAll<HTMLButtonElement>('[data-action]')[this.selectedIndex];
+    const action = button?.dataset.action as TitleAction | undefined;
     if (!action) return;
     globalAudio.playPickup('upgrade');
     switch (action) {
       case 'pilots':
-        // A nave não aparece na tela intermediária; o piloto é escolhido na cena existente.
         this.cleanup();
         this.scene.start('PilotSelectScene', { stageNumber: 1 });
         return;
@@ -233,14 +218,14 @@ export class TitleScene extends Phaser.Scene {
         this.showMode(this.mode === 'controls' ? 'options' : 'main');
         return;
       case 'music': {
-        const on = saveSystem.getSaveData().settings.musicVolume > 0;
-        saveSystem.updateSettings({ musicVolume: on ? 0 : 1 });
-        if (on) globalAudio.stopMusic();
+        const enabled = saveSystem.getSaveData().settings.musicVolume > 0;
+        saveSystem.updateSettings({ musicVolume: enabled ? 0 : 1 });
+        if (enabled) globalAudio.stopMusic();
         break;
       }
       case 'effects': {
-        const on = saveSystem.getSaveData().settings.sfxVolume > 0;
-        saveSystem.updateSettings({ sfxVolume: on ? 0 : 1 });
+        const enabled = saveSystem.getSaveData().settings.sfxVolume > 0;
+        saveSystem.updateSettings({ sfxVolume: enabled ? 0 : 1 });
         break;
       }
       case 'difficulty': {
@@ -250,7 +235,6 @@ export class TitleScene extends Phaser.Scene {
         break;
       }
     }
-    // Recria somente os rótulos dinâmicos, mantendo o item selecionado.
     this.renderMode();
   }
 }
