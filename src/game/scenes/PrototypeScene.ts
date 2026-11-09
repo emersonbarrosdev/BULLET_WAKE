@@ -571,8 +571,8 @@ export class PrototypeScene extends Phaser.Scene {
         id: enemy.id,
         x: enemy.x,
         y: enemy.y,
-        radius: isSmall ? 20 : 28,
-        stopsBeam: false, // Feixes energéticos cortam através de esquadrões menores
+        radius: isSmall ? 18 : 25,
+        stopsBeam: !isSmall && this.weapons.weaponLevel < 3,
       });
     }
 
@@ -898,11 +898,15 @@ export class PrototypeScene extends Phaser.Scene {
     for (const p of this.pickups.pickups) {
       let node = this.pickupVisuals.get(p.id);
       if (!node) {
-        // Mapeia sprites, cores e insígnias para os tipos canônicos Fire Shark
+        const isWeaponCapsule =
+          p.type === 'weapon_ion' || p.type === 'weapon_green' || p.type === 'weapon_red';
+
         let key = 'pickup-upgrade';
         let label = 'P';
-        let badgeHex = '#facc15';
+        let centerSymbol = '';
+        let badgeHex = '#fde047';
         let ringColor = 0xfacc15;
+        let coreColor = 0xfef08a;
         let spriteTint: number | undefined;
 
         if (p.type === 'power') {
@@ -918,23 +922,23 @@ export class PrototypeScene extends Phaser.Scene {
           ringColor = 0xff1e42;
           spriteTint = 0xff1e42;
         } else if (p.type === 'weapon_ion') {
-          key = 'pickup-shield';
           label = 'AZUL';
+          centerSymbol = 'W';
           badgeHex = '#7dd3fc';
           ringColor = 0x00f0ff;
-          spriteTint = 0x38bdf8;
+          coreColor = 0xe0f2fe;
         } else if (p.type === 'weapon_green') {
-          key = 'pickup-upgrade';
           label = 'VERDE';
+          centerSymbol = 'W';
           badgeHex = '#86efac';
-          ringColor = 0x4ade80;
-          spriteTint = 0x4ade80;
+          ringColor = 0x22c55e;
+          coreColor = 0xdcfce7;
         } else if (p.type === 'weapon_red') {
-          key = 'pickup-bomb';
           label = 'RUBRO';
+          centerSymbol = 'W';
           badgeHex = '#fda4af';
           ringColor = 0xff1e42;
-          spriteTint = 0xff1e42;
+          coreColor = 0xffe4e6;
         } else if (p.type === 'health') {
           key = 'pickup-repair';
           label = 'HP';
@@ -958,20 +962,39 @@ export class PrototypeScene extends Phaser.Scene {
         }
 
         const halo = this.add.graphics();
-        halo.fillStyle(0x020617, 0.78);
+        halo.fillStyle(0x020617, 0.84);
         halo.fillCircle(0, -2, 13);
-        halo.lineStyle(1.8, ringColor, 0.92);
+        halo.lineStyle(2, ringColor, 0.95);
         halo.strokeCircle(0, -2, 13);
-        halo.fillStyle(0x020617, 0.9);
+        halo.fillStyle(0x020617, 0.92);
         halo.fillRoundedRect(-20, 9, 40, 13, 3);
-        halo.lineStyle(1, ringColor, 0.85);
+        halo.lineStyle(1, ringColor, 0.88);
         halo.strokeRoundedRect(-20, 9, 40, 13, 3);
 
-        const sprite = this.add.sprite(0, -2, key, 0).setScale(1.25);
-        if (spriteTint !== undefined) {
-          sprite.setTint(spriteTint);
+        const children: Phaser.GameObjects.GameObject[] = [halo];
+
+        if (isWeaponCapsule) {
+          // Cápsula de Troca de Arma Fire Shark (Orbe colorido com símbolo W — NUNCA usa a letra P!)
+          halo.fillStyle(ringColor, 0.35);
+          halo.fillCircle(0, -2, 10);
+          halo.lineStyle(1.5, coreColor, 0.9);
+          halo.strokeCircle(0, -2, 8);
+
+          const wGlyph = this.add.text(0, -2, centerSymbol, {
+            fontFamily: FONT_TECH,
+            fontSize: '12px',
+            fontStyle: 'bold',
+            color: '#ffffff',
+          }).setOrigin(0.5).setResolution(3);
+          children.push(wGlyph);
+        } else {
+          const sprite = this.add.sprite(0, -2, key, 0).setScale(1.25);
+          if (spriteTint !== undefined) {
+            sprite.setTint(spriteTint);
+          }
+          sprite.play(key + '-loop');
+          children.push(sprite);
         }
-        sprite.play(key + '-loop');
 
         const badge = this.add.text(0, 15.5, label, {
           fontFamily: FONT_TECH,
@@ -979,8 +1002,9 @@ export class PrototypeScene extends Phaser.Scene {
           fontStyle: 'bold',
           color: badgeHex,
         }).setOrigin(0.5).setResolution(3);
+        children.push(badge);
 
-        node = this.add.container(p.x, p.y, [halo, sprite, badge]).setDepth(14);
+        node = this.add.container(p.x, p.y, children).setDepth(14);
         this.pickupVisuals.set(p.id, node);
       } else {
         node.setPosition(p.x, p.y);
@@ -989,7 +1013,7 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private checkPickupCollisions(): void {
-    const collected = this.pickups.checkCollection(this.ship.x, this.ship.y, 28);
+    const collected = this.pickups.checkCollection(this.ship.x, this.ship.y, 24);
     for (const item of collected) {
       globalAudio.playPickup(item.type);
 
@@ -1011,17 +1035,38 @@ export class PrototypeScene extends Phaser.Scene {
         this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
         this.hud.flash('SUPER P★ COLETADO! POTÊNCIA MÁXIMA NV 4!', '#fde047', 1500);
       } else if (item.type === 'weapon_green') {
-        this.weapons = switchWeaponFamily(this.weapons, 'green');
-        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
-        this.hud.flash('ARMA: ENERGIA ESPIRALADA ATIVADA!', '#4ade80', 1200);
+        if (this.weapons.weaponFamily === 'green') {
+          const res = collectPowerItem(this.weapons);
+          this.weapons = res.state;
+          this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
+          this.hud.flash(`CÁPSULA VERDE (+1 P) [${this.weapons.powerMeter}/3]`, '#4ade80', 1100);
+        } else {
+          this.weapons = switchWeaponFamily(this.weapons, 'green');
+          this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
+          this.hud.flash('ARMA: ENERGIA ESPIRALADA ATIVADA!', '#4ade80', 1200);
+        }
       } else if (item.type === 'weapon_ion') {
-        this.weapons = switchWeaponFamily(this.weapons, 'ion');
-        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
-        this.hud.flash('ARMA: DISPERSÃO AZUL ATIVADA!', '#00f0ff', 1200);
+        if (this.weapons.weaponFamily === 'ion') {
+          const res = collectPowerItem(this.weapons);
+          this.weapons = res.state;
+          this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
+          this.hud.flash(`CÁPSULA AZUL (+1 P) [${this.weapons.powerMeter}/3]`, '#00f0ff', 1100);
+        } else {
+          this.weapons = switchWeaponFamily(this.weapons, 'ion');
+          this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
+          this.hud.flash('ARMA: DISPERSÃO AZUL ATIVADA!', '#00f0ff', 1200);
+        }
       } else if (item.type === 'weapon_red') {
-        this.weapons = switchWeaponFamily(this.weapons, 'red');
-        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
-        this.hud.flash('ARMA: LASER RUBRO ATIVADO!', '#ff1e42', 1200);
+        if (this.weapons.weaponFamily === 'red') {
+          const res = collectPowerItem(this.weapons);
+          this.weapons = res.state;
+          this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
+          this.hud.flash(`CÁPSULA RUBRA (+1 P) [${this.weapons.powerMeter}/3]`, '#ff1e42', 1100);
+        } else {
+          this.weapons = switchWeaponFamily(this.weapons, 'red');
+          this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
+          this.hud.flash('ARMA: LASER RUBRO ATIVADO!', '#ff1e42', 1200);
+        }
       } else if (item.type === 'health') {
         if (this.health.hp < 3) {
           this.health = { ...this.health, hp: this.health.hp + 1 };
@@ -1146,10 +1191,15 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private applyDamageToEnemy(enemyId: number, amount: number): void {
+    // Captura posição e tipo ANTES de `this.director.damage` remover o inimigo abatido da lista!
+    const targetBefore = this.director.enemies.find(e => e.id === enemyId);
+    const x = targetBefore ? targetBefore.x : this.ship.x;
+    const y = targetBefore ? targetBefore.y : this.ship.y - 120;
+    const dropKind = targetBefore
+      ? targetBefore.kind
+      : (amount >= 300 ? 'lancer' : 'scout');
+
     const hit = this.director.damage(enemyId, amount);
-    const enemy = this.director.enemies.find(e => e.id === enemyId);
-    const x = enemy ? enemy.x : this.ship.x;
-    const y = enemy ? enemy.y : this.ship.y - 120;
 
     if (hit.killed) {
       this.totalKills++;
@@ -1166,9 +1216,16 @@ export class PrototypeScene extends Phaser.Scene {
       this.weapons = addResonance(this.weapons, resGain);
       this.hud.setResonance(this.weapons.resonance);
 
-      // Drop de itens físicos
-      const dropKind = (hit.score >= 300) ? 'lancer' : (hit.score >= 250) ? 'cutter' : (hit.score >= 150) ? 'dart' : 'scout';
-      const dropType = determineEnemyDrop(dropKind, this.totalKills);
+      // Drop de itens físicos nas coordenadas reais do inimigo abatido:
+      // Enquanto o jogador estiver no Nível 1 (Tiro 1), portadores priorizam itens P
+      // para evoluir o tiro inicial antes de soltar cápsulas de troca de cor.
+      let dropType = determineEnemyDrop(dropKind, this.totalKills);
+      if (
+        this.weapons.weaponLevel === 1 &&
+        (dropType === 'weapon_green' || dropType === 'weapon_red' || dropType === 'weapon_ion')
+      ) {
+        dropType = 'power';
+      }
       if (dropType) {
         this.pickups.spawn(dropType, x, y);
       }
@@ -1200,16 +1257,17 @@ export class PrototypeScene extends Phaser.Scene {
 
       let collided = false;
 
-      // Colisão com inimigos alienígenas no corredor
+      // Colisão calibrada com inimigos alienígenas no corredor (escala de dano 0.36 evita one-shot no Nível 1)
       for (const enemy of this.director.enemies) {
         const isSmall = enemy.kind === 'scout' || enemy.kind === 'dart';
-        const hx = isSmall ? 18 : 26;
-        const hy = isSmall ? 18 : 26;
+        const hx = isSmall ? 13 : 19;
+        const hy = isSmall ? 13 : 19;
         if (
           Math.abs(shot.node.x - enemy.x) <= hx + shot.hitRadius &&
           Math.abs(shot.node.y - enemy.y) <= hy + shot.hitRadius
         ) {
-          this.applyDamageToEnemy(enemy.id, shot.damage);
+          const combatDamage = shot.piercing ? shot.damage * 0.5 : shot.damage * 0.36;
+          this.applyDamageToEnemy(enemy.id, combatDamage);
           collided = !shot.piercing;
           break;
         }
@@ -1219,10 +1277,10 @@ export class PrototypeScene extends Phaser.Scene {
       if (!collided && this.director.boss && this.director.boss.phase !== 'intro' && this.director.boss.phase !== 'defeated') {
         const boss = this.director.boss;
         if (
-          Math.abs(shot.node.x - boss.x) <= 110 &&
-          Math.abs(shot.node.y - boss.y) <= 80
+          Math.abs(shot.node.x - boss.x) <= 105 &&
+          Math.abs(shot.node.y - boss.y) <= 75
         ) {
-          this.applyBossDamage(shot.damage, shot.node.x, shot.node.y);
+          this.applyBossDamage(shot.damage * 0.34, shot.node.x, shot.node.y);
           collided = !shot.piercing;
         }
       }

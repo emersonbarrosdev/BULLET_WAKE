@@ -432,187 +432,187 @@ export function getPrimaryProjectiles(
     const anim = 'shot-rivet-loop';
 
     if (level === 1) {
-      // 2 ondas esmeralda espiraladas entrelaçadas em contrafase
+      // Nível 1: 2 filamentos esmeralda finos e próximos (baixa amplitude = 8px)
       return [
         {
           texture: tex,
           animation: anim,
-          x: originX - 5,
+          x: originX - 3,
           y: originY,
           velocityX: 0,
-          velocityY: -650,
-          damage: 1.25,
-          hitRadius: 9,
-          scale: 1.55,
-          waveAmplitude: 16,
-          waveFrequency: 0.02,
-          wavePhase: 0,
-        },
-        {
-          texture: tex,
-          animation: anim,
-          x: originX + 5,
-          y: originY,
-          velocityX: 0,
-          velocityY: -650,
-          damage: 1.25,
-          hitRadius: 9,
-          scale: 1.55,
-          waveAmplitude: 16,
-          waveFrequency: 0.02,
-          wavePhase: Math.PI,
-        },
-      ];
-    }
-    if (level === 2) {
-      // 3 ondas esmeralda concentradas (eixo central ondulante + dupla hélice lateral mais larga)
-      return [
-        {
-          texture: tex,
-          animation: anim,
-          x: originX,
-          y: originY - 3,
-          velocityX: 0,
-          velocityY: -670,
-          damage: 1.4,
-          hitRadius: 9,
-          scale: 1.65,
-          waveAmplitude: 10,
-          waveFrequency: 0.021,
-          wavePhase: Math.PI * 0.5,
-        },
-        {
-          texture: tex,
-          animation: anim,
-          x: originX - 9,
-          y: originY,
-          velocityX: -24,
-          velocityY: -660,
-          damage: 1.25,
-          hitRadius: 9,
-          scale: 1.55,
-          waveAmplitude: 22,
+          velocityY: -640,
+          damage: 1.05,
+          hitRadius: 6,
+          scale: 0.95,
+          waveAmplitude: 8,
           waveFrequency: 0.019,
           wavePhase: 0,
         },
         {
           texture: tex,
           animation: anim,
-          x: originX + 9,
+          x: originX + 3,
           y: originY,
-          velocityX: 24,
+          velocityX: 0,
+          velocityY: -640,
+          damage: 1.05,
+          hitRadius: 6,
+          scale: 0.95,
+          waveAmplitude: 8,
+          waveFrequency: 0.019,
+          wavePhase: Math.PI,
+        },
+      ];
+    }
+    if (level === 2) {
+      // Nível 2: 3 ondas esmeralda concentradas (eixo central + dupla hélice lateral média = 14px)
+      return [
+        {
+          texture: tex,
+          animation: anim,
+          x: originX,
+          y: originY - 2,
+          velocityX: 0,
           velocityY: -660,
-          damage: 1.25,
-          hitRadius: 9,
-          scale: 1.55,
-          waveAmplitude: 22,
+          damage: 1.2,
+          hitRadius: 7,
+          scale: 1.15,
+          waveAmplitude: 7,
+          waveFrequency: 0.02,
+          wavePhase: Math.PI * 0.5,
+        },
+        {
+          texture: tex,
+          animation: anim,
+          x: originX - 7,
+          y: originY,
+          velocityX: -18,
+          velocityY: -655,
+          damage: 1.1,
+          hitRadius: 7,
+          scale: 1.12,
+          waveAmplitude: 14,
+          waveFrequency: 0.019,
+          wavePhase: 0,
+        },
+        {
+          texture: tex,
+          animation: anim,
+          x: originX + 7,
+          y: originY,
+          velocityX: 18,
+          velocityY: -655,
+          damage: 1.1,
+          hitRadius: 7,
+          scale: 1.12,
+          waveAmplitude: 14,
           waveFrequency: 0.019,
           wavePhase: Math.PI,
         },
       ];
     }
     if (level === 3) {
-      // 5 ondas esmeralda espiraladas de alta densidade e largura útil ampliada
-      const offsets = [-16, -8, 0, 8, 16];
-      const vxs = [-58, -26, 0, 26, 58];
-      const amps = [30, 22, 11, 22, 30];
+      // Nível 3: 5 ondas esmeralda espiraladas (amplitude 21px, soma de dano ~6.0 para compatibilidade tática)
+      const offsets = [-13, -6, 0, 6, 13];
+      const vxs = [-46, -22, 0, 22, 46];
+      const amps = [21, 15, 8, 15, 21];
       return offsets.map((ox, i) => ({
         texture: tex,
         animation: anim,
         x: originX + ox,
-        y: originY - (i === 2 ? 4 : 0),
+        y: originY - (i === 2 ? 3 : 0),
         velocityX: vxs[i],
-        velocityY: -685,
-        damage: i === 2 ? 1.5 : 1.3,
-        hitRadius: 10,
-        scale: 1.7,
+        velocityY: -680,
+        damage: i === 2 ? 1.32 : 1.18,
+        hitRadius: 8,
+        scale: 1.35,
         waveAmplitude: amps[i],
         waveFrequency: 0.02,
         wavePhase: (i * Math.PI) / 2,
       }));
     }
     // Nível 4: 7 ondas esmeralda espiraladas em vórtice helicoidal de saturação concentrada
-    const offsetsLv4 = [-24, -16, -8, 0, 8, 16, 24];
-    const vxsLv4 = [-92, -60, -28, 0, 28, 60, 92];
-    const ampsLv4 = [38, 30, 22, 12, 22, 30, 38];
+    const offsetsLv4 = [-20, -13, -6, 0, 6, 13, 20];
+    const vxsLv4 = [-78, -50, -24, 0, 24, 50, 78];
+    const ampsLv4 = [29, 23, 16, 9, 16, 23, 29];
     return offsetsLv4.map((ox, i) => ({
       texture: tex,
       animation: anim,
       x: originX + ox,
-      y: originY - (i === 3 ? 5 : 0),
+      y: originY - (i === 3 ? 4 : 0),
       velocityX: vxsLv4[i],
       velocityY: -700,
-      damage: i === 3 ? 1.65 : 1.35,
-      hitRadius: 10,
-      scale: 1.8,
+      damage: i === 3 ? 1.45 : 1.25,
+      hitRadius: 9,
+      scale: 1.55,
       waveAmplitude: ampsLv4[i],
       waveFrequency: 0.021,
       wavePhase: (i * Math.PI) / 3,
     }));
   }
 
-  // 2. ARMA AZUL: DISPERSÃO AZUL (Blue Spread — Disparos convencionais em leque amplo em mais direções por nível)
+  // 2. ARMA AZUL: DISPERSÃO AZUL (Wide Shot — começa estreita e modesta no Nível 1 e abre o leque até o Nível 4)
   if (family === 'ion') {
     const tex = 'shot-moth';
     const anim = 'shot-moth-loop';
 
     if (level === 1) {
-      // 3 direções em leque frontal
-      const vxs = [-125, 0, 125];
+      // Nível 1: 3 direções frontais estreitas e discretas (tiro inicial contido)
+      const vxs = [-72, 0, 72];
       return vxs.map((vx, i) => ({
         texture: tex,
         animation: anim,
-        x: originX + (i - 1) * 5,
+        x: originX + (i - 1) * 4,
         y: originY - (i === 1 ? 2 : 0),
         velocityX: vx,
-        velocityY: -750,
-        damage: 1.15,
-        hitRadius: 8,
-        scale: 1.55,
+        velocityY: -720,
+        damage: 0.95,
+        hitRadius: 6,
+        scale: 0.95,
       }));
     }
     if (level === 2) {
-      // 5 direções em leque aberto
-      const vxs = [-220, -110, 0, 110, 220];
+      // Nível 2: 5 direções em leque médio
+      const vxs = [-156, -78, 0, 78, 156];
       return vxs.map((vx, i) => ({
         texture: tex,
         animation: anim,
-        x: originX + (i - 2) * 4,
+        x: originX + (i - 2) * 3.5,
         y: originY - (i === 2 ? 3 : 0),
         velocityX: vx,
-        velocityY: -765,
-        damage: 1.18,
-        hitRadius: 8,
-        scale: 1.6,
+        velocityY: -745,
+        damage: 1.0,
+        hitRadius: 7,
+        scale: 1.12,
       }));
     }
     if (level === 3) {
-      // 7 direções em leque panorâmico
-      const vxs = [-310, -205, -102, 0, 102, 205, 310];
+      // Nível 3: 7 direções em leque aberto
+      const vxs = [-246, -164, -82, 0, 82, 164, 246];
       return vxs.map((vx, i) => ({
         texture: tex,
         animation: anim,
-        x: originX + (i - 3) * 4,
+        x: originX + (i - 3) * 3.5,
         y: originY - (i === 3 ? 4 : 0),
         velocityX: vx,
-        velocityY: -780,
-        damage: i === 3 ? 1.3 : 1.18,
-        hitRadius: 9,
-        scale: 1.65,
+        velocityY: -765,
+        damage: i === 3 ? 1.12 : 1.02,
+        hitRadius: 8,
+        scale: 1.30,
       }));
     }
     // Nível 4: 9 direções de cobertura total do corredor
-    const vxsLv4 = [-390, -292, -195, -97, 0, 97, 195, 292, 390];
+    const vxsLv4 = [-336, -252, -168, -84, 0, 84, 168, 252, 336];
     return vxsLv4.map((vx, i) => ({
       texture: tex,
       animation: anim,
       x: originX + (i - 4) * 3.5,
       y: originY - (i === 4 ? 5 : 0),
       velocityX: vx,
-      velocityY: -795,
-      damage: i === 4 ? 1.4 : 1.22,
-      hitRadius: 9,
-      scale: 1.72,
+      velocityY: -785,
+      damage: i === 4 ? 1.22 : 1.08,
+      hitRadius: 8,
+      scale: 1.48,
     }));
   }
 

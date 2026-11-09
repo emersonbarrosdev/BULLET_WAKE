@@ -191,14 +191,14 @@ export class CrimsonLaserRenderer {
     for (let i = 0; i < shots.length; i++) {
       const shot = shots[i];
 
-      // 1. ARMA VERDE — ENERGIA ESPIRALADA (Fitas helicoidais ondulantes + anéis de fase)
+      // 1. ARMA VERDE — ENERGIA ESPIRALADA (Fitas helicoidais ondulantes + anéis de fase escalando do NV1 ao NV4)
       if (shot.waveAmplitude && shot.waveAmplitude > 0) {
         const freq = shot.waveFrequency ?? 0.019;
         const phase = shot.wavePhase ?? 0;
         const amp = shot.waveAmplitude;
         const ribbonPts: LaserPoint[] = [];
         const steps = 8;
-        const trailSpanMs = 78 + weaponLevel * 8;
+        const trailSpanMs = 28 + (weaponLevel - 1) * 18;
 
         for (let s = 0; s <= steps; s++) {
           const backMs = (s / steps) * trailSpanMs;
@@ -210,12 +210,12 @@ export class CrimsonLaserRenderer {
           ribbonPts.push({ x: wx, y: by });
         }
 
-        const outerW = 9 + weaponLevel * 1.2;
-        const midW = 5.2 + weaponLevel * 0.8;
-        const coreW = 2.4 + weaponLevel * 0.35;
+        const outerW = 4.2 + (weaponLevel - 1) * 1.8;
+        const midW = 2.4 + (weaponLevel - 1) * 1.1;
+        const coreW = 1.2 + (weaponLevel - 1) * 0.45;
 
         // Aura esmeralda externa da hélice
-        this.strokePolyline(g, ribbonPts, outerW, 0x059669, 0.38);
+        this.strokePolyline(g, ribbonPts, outerW, 0x059669, 0.36);
         // Fita espiralada verde-lima vibrante
         this.strokePolyline(g, ribbonPts, midW, 0x10b981, 0.82);
         // Filamento central incandescente
@@ -223,41 +223,46 @@ export class CrimsonLaserRenderer {
 
         // Anel energético espiralado na crista da onda
         const head = ribbonPts[0];
-        const ringPulse = 1 + 0.2 * Math.sin(phaseSec * 22 + i);
-        g.fillStyle(0x4ade80, 0.55);
-        g.fillCircle(head.x, head.y, (5.5 + weaponLevel * 0.7) * ringPulse);
+        const ringPulse = 1 + 0.16 * Math.sin(phaseSec * 22 + i);
+        g.fillStyle(0x4ade80, 0.52);
+        g.fillCircle(head.x, head.y, (3.0 + (weaponLevel - 1) * 0.9) * ringPulse);
         g.fillStyle(0xecfccb, 0.95);
-        g.fillCircle(head.x, head.y, 3.2 * ringPulse);
+        g.fillCircle(head.x, head.y, (1.7 + (weaponLevel - 1) * 0.4) * ringPulse);
       } else if (weaponFamily === 'ion') {
-        // 2. ARMA AZUL — DISPERSÃO (Lanças energéticas direcionais independentes em leque)
+        // 2. ARMA AZUL — DISPERSÃO (Wide Shot — começa compacto no NV1 e cresce em leque de lanças até o NV4)
         const speed = Math.hypot(shot.velocityX, shot.velocityY) || 1;
         const dirX = shot.velocityX / speed;
         const dirY = shot.velocityY / speed;
         const perpX = -dirY;
         const perpY = dirX;
-        const tailLen = 22 + weaponLevel * 2.5;
+        const tailLen = 8 + (weaponLevel - 1) * 5;
+        const tipLead = 3 + (weaponLevel - 1) * 1.2;
 
         const tailX = shot.x - dirX * tailLen;
         const tailY = shot.y - dirY * tailLen;
-        const tipX = shot.x + dirX * 7;
-        const tipY = shot.y + dirY * 7;
+        const tipX = shot.x + dirX * tipLead;
+        const tipY = shot.y + dirY * tipLead;
+
+        const sheathW = 3.2 + (weaponLevel - 1) * 1.2;
+        const coreW = 1.6 + (weaponLevel - 1) * 0.65;
+        const chevronHalfW = 2.0 + (weaponLevel - 1) * 1.1;
 
         // Bainha safira direcional
-        g.lineStyle(7.5, 0x0284c7, 0.42);
+        g.lineStyle(sheathW, 0x0284c7, 0.42);
         g.lineBetween(tailX, tailY, tipX, tipY);
 
         // Corpo ciano elétrico da lança
-        g.lineStyle(4.2, 0x00f0ff, 0.88);
-        g.lineBetween(tailX + dirX * 4, tailY + dirY * 4, tipX, tipY);
+        g.lineStyle(coreW, 0x00f0ff, 0.88);
+        g.lineBetween(tailX + dirX * 2, tailY + dirY * 2, tipX, tipY);
 
-        // Chevron energético frontal (ponta de lança direcional)
-        const wingBackX = shot.x - dirX * 4;
-        const wingBackY = shot.y - dirY * 4;
-        g.lineStyle(2.2, 0xe0f2fe, 0.95);
+        // Chevron energético frontal (ponta direcional proporcional ao nível)
+        const wingBackX = shot.x - dirX * (1.8 + (weaponLevel - 1) * 0.7);
+        const wingBackY = shot.y - dirY * (1.8 + (weaponLevel - 1) * 0.7);
+        g.lineStyle(1.4 + (weaponLevel - 1) * 0.3, 0xe0f2fe, 0.95);
         g.beginPath();
-        g.moveTo(wingBackX + perpX * 5.5, wingBackY + perpY * 5.5);
+        g.moveTo(wingBackX + perpX * chevronHalfW, wingBackY + perpY * chevronHalfW);
         g.lineTo(tipX, tipY);
-        g.lineTo(wingBackX - perpX * 5.5, wingBackY - perpY * 5.5);
+        g.lineTo(wingBackX - perpX * chevronHalfW, wingBackY - perpY * chevronHalfW);
         g.strokePath();
       }
     }

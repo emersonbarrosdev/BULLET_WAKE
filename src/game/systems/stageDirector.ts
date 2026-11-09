@@ -387,8 +387,8 @@ export class StageDirector {
           switch (enemy.phase) {
             case 'approach':
               enemy.y += (speed * dt) / 1000;
-              enemy.x += clamp(playerX - enemy.x, (-80 * dt) / 1000, (80 * dt) / 1000);
-              enemy.x = clamp(enemy.y, PLAYFIELD_X + 28, PLAYFIELD_RIGHT - 28);
+              enemy.x += clamp(playerX - enemy.x, (-45 * dt) / 1000, (45 * dt) / 1000);
+              enemy.x = clamp(enemy.x, PLAYFIELD_X + 28, PLAYFIELD_RIGHT - 28);
               if (enemy.y >= 105) {
                 enemy.phase = 'telegraph';
                 enemy.phaseMs = Math.round(CHARGE_MS.cutter * chargeMult);

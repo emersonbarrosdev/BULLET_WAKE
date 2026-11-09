@@ -61,15 +61,18 @@ export class PickupSystem {
       p.ageMs += dt;
 
       // Movimento de descida com oscilação horizontal senoidal suave
-      const sway = Math.sin(p.ageMs / 280) * 10;
+      const sway = Math.sin(p.ageMs / 280) * 8;
+      const isWeaponCapsule =
+        p.type === 'weapon_ion' || p.type === 'weapon_green' || p.type === 'weapon_red';
 
-      // Atração magnética quando a nave se aproxima
+      // No Fire Shark (Mega Drive), cápsulas de troca de arma NUNCA têm ímã magnético:
+      // o jogador só troca de arma se encostar intencionalmente na cápsula colorida!
       const dx = playerX - (p.baseX + sway);
       const dy = playerY - p.y;
       const dist = Math.hypot(dx, dy);
 
-      if (dist < PICKUP_MAGNET_RADIUS && dist > 1) {
-        const pull = (1 - dist / PICKUP_MAGNET_RADIUS) * 240;
+      if (!isWeaponCapsule && dist < PICKUP_MAGNET_RADIUS && dist > 1) {
+        const pull = (1 - dist / PICKUP_MAGNET_RADIUS) * 210;
         p.baseX += (dx / dist) * pull * (dt / 1000);
         p.y += (dy / dist) * pull * (dt / 1000);
       } else {
@@ -108,13 +111,23 @@ export function determineEnemyDrop(
   enemyKind: 'scout' | 'dart' | 'lancer' | 'cutter' | 'carrier' | 'miniboss' | 'boss',
   killCount: number,
 ): PickupType | null {
-  if (enemyKind === 'carrier' || enemyKind === 'cutter') {
-    // Casulos Marinhos portadores garantem power-up ou alternância de armas (Fire Shark)
+  if (enemyKind === 'carrier') {
     const r = killCount % 4;
     if (r === 0) return 'power';
     if (r === 1) return 'weapon_ion';
     if (r === 2) return 'weapon_red';
     return 'weapon_green';
+  }
+
+  if (enemyKind === 'cutter') {
+    // No início da fase (primeiros abates), Casulos Marinhos soltam itens P para o jogador
+    // evoluir a arma atual (3 P = +1 Nível) sem trocar prematuramente de cor no Tiro 1.
+    if (killCount <= 12) return 'power';
+    const r = killCount % 4;
+    if (r === 0) return 'power';
+    if (r === 1) return 'weapon_green';
+    if (r === 2) return 'weapon_red';
+    return 'weapon_ion';
   }
 
   if (enemyKind === 'lancer') {
@@ -124,13 +137,21 @@ export function determineEnemyDrop(
     return 'score';
   }
 
-  if (enemyKind === 'scout' || enemyKind === 'dart') {
+  if (enemyKind === 'dart') {
+    if (killCount % 2 === 0) return 'power';
     if (killCount % 7 === 3) return 'score';
     if (killCount % 11 === 5) return 'health';
+    return null;
+  }
+
+  if (enemyKind === 'scout') {
+    if (killCount % 7 === 3) return 'score';
+    if (killCount % 11 === 5) return 'health';
+    if (killCount % 3 === 2) return 'power';
   }
 
   if (enemyKind === 'miniboss') {
-    return 'power';
+    return 'full_power';
   }
 
   return null;

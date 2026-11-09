@@ -96,7 +96,7 @@ export const LASER_RUBRO_SPECS: Record<WeaponLevel, LaserLevelSpec> = {
     hasLateralSweep: false,
     hasRearCoverage: false,
     maxHorizontalSpreadPx: 10,
-    totalDps: 18,
+    totalDps: 8.5,
   },
   2: {
     level: 2,
@@ -105,7 +105,7 @@ export const LASER_RUBRO_SPECS: Record<WeaponLevel, LaserLevelSpec> = {
     hasLateralSweep: false,
     hasRearCoverage: false,
     maxHorizontalSpreadPx: 28,
-    totalDps: 27,
+    totalDps: 13,
   },
   3: {
     level: 3,
@@ -114,7 +114,7 @@ export const LASER_RUBRO_SPECS: Record<WeaponLevel, LaserLevelSpec> = {
     hasLateralSweep: true,
     hasRearCoverage: false,
     maxHorizontalSpreadPx: 122,
-    totalDps: 38,
+    totalDps: 18,
   },
   4: {
     level: 4,
@@ -123,7 +123,7 @@ export const LASER_RUBRO_SPECS: Record<WeaponLevel, LaserLevelSpec> = {
     hasLateralSweep: true,
     hasRearCoverage: true,
     maxHorizontalSpreadPx: 168,
-    totalDps: 50,
+    totalDps: 24,
   },
 };
 
@@ -169,53 +169,61 @@ export function computeLaserBeams(
 
   const buildFrontalPolyline = (
     offsetFn: (t: number) => { dx: number; dy?: number },
+    maxReachPx = spanY,
   ): LaserPoint[] => {
+    const reach = Math.min(spanY, maxReachPx);
     const pts: LaserPoint[] = [];
     for (let i = 0; i <= LASER_SEGMENTS; i++) {
       const t = i / LASER_SEGMENTS;
       const { dx, dy = 0 } = offsetFn(t);
       pts.push({
         x: clampPlayfieldX(shipX + dx),
-        y: clampPlayfieldY(emitterY - t * spanY + dy),
+        y: clampPlayfieldY(emitterY - t * reach + dy),
       });
     }
     return pts;
   };
 
   if (level === 1) {
-    // NÍVEL 1 — FLUXO INICIAL: 1 fluxo frontal contínuo de plasma rubro-alaranjado pulsante e ondulante
+    // NÍVEL 1 — FLUXO INICIAL: 1 fluxo frontal contido (~195px) de plasma rubro-alaranjado fino e pulsante
     beams.push({
       id: 'lv1-center',
       role: 'central',
-      points: buildFrontalPolyline((t) => ({
-        dx:
-          Math.sin(phaseSec * 16 - t * 9.5) * (3.2 * Math.sin(t * Math.PI)) +
-          Math.cos(phaseSec * 23 - t * 14) * (1.2 * t),
-      })),
-      outerWidth: 11.0 * scale,
-      midWidth: 6.4 * scale,
-      coreWidth: 2.8 * scale,
+      points: buildFrontalPolyline(
+        (t) => ({
+          dx:
+            Math.sin(phaseSec * 16 - t * 9.5) * (2.2 * Math.sin(t * Math.PI)) +
+            Math.cos(phaseSec * 23 - t * 14) * (0.9 * t),
+        }),
+        195,
+      ),
+      outerWidth: 6.4 * scale,
+      midWidth: 3.8 * scale,
+      coreWidth: 1.8 * scale,
       dpsPerBeam: LASER_RUBRO_SPECS[1].totalDps,
     });
     return beams;
   }
 
   if (level === 2) {
-    // NÍVEL 2 — FLUXO DUPLO: 2 fluxos energéticos frontais com emissores separados e pulsação própria
+    // NÍVEL 2 — FLUXO DUPLO: 2 fluxos energéticos frontais (~250px) com emissores separados e pulsação própria
     const perBeamDps = LASER_RUBRO_SPECS[2].totalDps / 2;
     for (const side of [-1, 1] as const) {
       const phaseOffset = side < 0 ? 0 : Math.PI * 0.85;
       beams.push({
         id: side < 0 ? 'lv2-left' : 'lv2-right',
         role: 'central',
-        points: buildFrontalPolyline((t) => ({
-          dx:
-            side * 11.5 +
-            Math.sin(phaseSec * 16 - t * 9.0 + phaseOffset) * (3.0 * Math.sin(t * Math.PI)),
-        })),
-        outerWidth: 11.8 * scale,
-        midWidth: 6.8 * scale,
-        coreWidth: 3.0 * scale,
+        points: buildFrontalPolyline(
+          (t) => ({
+            dx:
+              side * 10.5 +
+              Math.sin(phaseSec * 16 - t * 9.0 + phaseOffset) * (2.6 * Math.sin(t * Math.PI)),
+          }),
+          250,
+        ),
+        outerWidth: 8.2 * scale,
+        midWidth: 4.8 * scale,
+        coreWidth: 2.2 * scale,
         dpsPerBeam: perBeamDps,
       });
     }
@@ -224,7 +232,7 @@ export function computeLaserBeams(
 
   if (level === 3) {
     // NÍVEL 3 — EXPANSÃO LATERAL:
-    // 2 fluxos principais + 2 ramificações laterais que se abrem e retornam ciclicamente
+    // 2 fluxos principais (~305px) + 2 ramificações laterais (~225px) que se abrem e retornam ciclicamente
     const centralDps = (LASER_RUBRO_SPECS[3].totalDps * 0.56) / 2;
     const lateralDps = (LASER_RUBRO_SPECS[3].totalDps * 0.44) / 2;
 
@@ -233,14 +241,17 @@ export function computeLaserBeams(
       beams.push({
         id: side < 0 ? 'lv3-center-left' : 'lv3-center-right',
         role: 'central',
-        points: buildFrontalPolyline((t) => ({
-          dx:
-            side * 9.5 +
-            Math.sin(phaseSec * 17 - t * 8.5 + phaseOffset) * (2.6 * Math.sin(t * Math.PI)),
-        })),
-        outerWidth: 11.5 * scale,
-        midWidth: 6.6 * scale,
-        coreWidth: 2.9 * scale,
+        points: buildFrontalPolyline(
+          (t) => ({
+            dx:
+              side * 9.5 +
+              Math.sin(phaseSec * 17 - t * 8.5 + phaseOffset) * (2.6 * Math.sin(t * Math.PI)),
+          }),
+          305,
+        ),
+        outerWidth: 9.6 * scale,
+        midWidth: 5.5 * scale,
+        coreWidth: 2.5 * scale,
         dpsPerBeam: centralDps,
       });
     }
@@ -251,17 +262,20 @@ export function computeLaserBeams(
       beams.push({
         id: side < 0 ? 'lv3-sweep-left' : 'lv3-sweep-right',
         role: 'lateral-sweep',
-        points: buildFrontalPolyline((t) => {
-          const branchArch = Math.pow(t, 0.78) * (26 + openCycle * 88);
-          const plasmaRipple = Math.sin(phaseSec * 14 - t * 8.0) * (4.2 * t);
-          return {
-            dx: side * (14 + branchArch + plasmaRipple),
-            dy: t === 0 ? 6 : 0,
-          };
-        }),
-        outerWidth: 10.2 * scale,
-        midWidth: 5.8 * scale,
-        coreWidth: 2.5 * scale,
+        points: buildFrontalPolyline(
+          (t) => {
+            const branchArch = Math.pow(t, 0.78) * (24 + openCycle * 82);
+            const plasmaRipple = Math.sin(phaseSec * 14 - t * 8.0) * (3.8 * t);
+            return {
+              dx: side * (13 + branchArch + plasmaRipple),
+              dy: t === 0 ? 6 : 0,
+            };
+          },
+          225,
+        ),
+        outerWidth: 8.4 * scale,
+        midWidth: 4.8 * scale,
+        coreWidth: 2.1 * scale,
         dpsPerBeam: lateralDps,
       });
     }
@@ -269,8 +283,8 @@ export function computeLaserBeams(
   }
 
   // NÍVEL 4 — ASAS DE ENERGIA (Transformação Completa de Geometria):
-  // - 2 fluxos principais frontais aprimorados
-  // - 2 grandes ramificações laterais em arco que batem/abrem e fecham como asas luminosas
+  // - 2 fluxos principais frontais aprimorados (~355px)
+  // - 2 grandes ramificações laterais em arco (~290px) que batem/abrem e fecham como asas luminosas
   // - 2 fluxos de cobertura posterior/flanco balanceada que curvam para trás/lados da nave
   const coreDps = (LASER_RUBRO_SPECS[4].totalDps * 0.44) / 2;
   const wingDps = (LASER_RUBRO_SPECS[4].totalDps * 0.36) / 2;
@@ -285,14 +299,17 @@ export function computeLaserBeams(
     beams.push({
       id: side < 0 ? 'lv4-core-left' : 'lv4-core-right',
       role: 'central',
-      points: buildFrontalPolyline((t) => ({
-        dx:
-          side * 9.5 +
-          Math.sin(phaseSec * 18 - t * 9.0 + phaseOffset) * (3.2 * Math.sin(t * Math.PI)),
-      })),
-      outerWidth: 13.5 * scale,
-      midWidth: 7.8 * scale,
-      coreWidth: 3.6 * scale,
+      points: buildFrontalPolyline(
+        (t) => ({
+          dx:
+            side * 9.5 +
+            Math.sin(phaseSec * 18 - t * 9.0 + phaseOffset) * (3.2 * Math.sin(t * Math.PI)),
+        }),
+        355,
+      ),
+      outerWidth: 11.8 * scale,
+      midWidth: 6.8 * scale,
+      coreWidth: 3.1 * scale,
       dpsPerBeam: coreDps,
     });
 
@@ -300,18 +317,21 @@ export function computeLaserBeams(
     beams.push({
       id: side < 0 ? 'lv4-wing-left' : 'lv4-wing-right',
       role: 'lateral-sweep',
-      points: buildFrontalPolyline((t) => {
-        // Curva em forma de asa luminosa que abre amplamente na metade da coluna e varre o topo
-        const wingCurve = Math.sin(t * Math.PI * 0.72) * (54 + wingCycle * 98);
-        const plasmaWave = Math.sin(phaseSec * 15 - t * 7.5 + phaseOffset) * (5.5 * t);
-        return {
-          dx: side * (16 + wingCurve + plasmaWave),
-          dy: t === 0 ? 5 : Math.sin(t * Math.PI) * 14,
-        };
-      }),
-      outerWidth: 11.8 * scale,
-      midWidth: 6.6 * scale,
-      coreWidth: 2.9 * scale,
+      points: buildFrontalPolyline(
+        (t) => {
+          // Curva em forma de asa luminosa que abre amplamente na metade da coluna e varre o topo
+          const wingCurve = Math.sin(t * Math.PI * 0.72) * (54 + wingCycle * 98);
+          const plasmaWave = Math.sin(phaseSec * 15 - t * 7.5 + phaseOffset) * (5.5 * t);
+          return {
+            dx: side * (16 + wingCurve + plasmaWave),
+            dy: t === 0 ? 5 : Math.sin(t * Math.PI) * 14,
+          };
+        },
+        290,
+      ),
+      outerWidth: 10.2 * scale,
+      midWidth: 5.8 * scale,
+      coreWidth: 2.5 * scale,
       dpsPerBeam: wingDps,
     });
 
