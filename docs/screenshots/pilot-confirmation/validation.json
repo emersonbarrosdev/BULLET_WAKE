@@ -1,0 +1,218 @@
+{
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "initial": {
+        "root": {
+          "clientHeight": 768,
+          "scrollHeight": 768,
+          "clientWidth": 1366,
+          "scrollWidth": 1366
+        },
+        "page": {
+          "height": 768,
+          "width": 1366
+        },
+        "cards": [
+          {
+            "x": 40.96875,
+            "y": 178.671875,
+            "width": 417.546875,
+            "height": 399.359375,
+            "bottom": 578.03125,
+            "right": 458.515625
+          },
+          {
+            "x": 474.21875,
+            "y": 178.671875,
+            "width": 417.546875,
+            "height": 399.359375,
+            "bottom": 578.03125,
+            "right": 891.765625
+          },
+          {
+            "x": 907.46875,
+            "y": 178.671875,
+            "width": 417.546875,
+            "height": 399.359375,
+            "bottom": 578.03125,
+            "right": 1325.015625
+          }
+        ],
+        "profile": null,
+        "footer": {
+          "x": 40.96875,
+          "y": 694.96875,
+          "width": 1284.046875,
+          "height": 57.03125,
+          "bottom": 752,
+          "right": 1325.015625
+        },
+        "clipped": [],
+        "overflowing": []
+      },
+      "selected": {
+        "root": {
+          "clientHeight": 768,
+          "scrollHeight": 768,
+          "clientWidth": 1366,
+          "scrollWidth": 1366
+        },
+        "page": {
+          "height": 768,
+          "width": 1366
+        },
+        "cards": [
+          {
+            "x": 40.96875,
+            "y": 178.65625,
+            "width": 417.546875,
+            "height": 399.359375,
+            "bottom": 578.015625,
+            "right": 458.515625
+          },
+          {
+            "x": 474.21875,
+            "y": 178.65625,
+            "width": 417.546875,
+            "height": 399.359375,
+            "bottom": 578.015625,
+            "right": 891.765625
+          },
+          {
+            "x": 907.46875,
+            "y": 178.65625,
+            "width": 417.546875,
+            "height": 399.359375,
+            "bottom": 578.015625,
+            "right": 1325.015625
+          }
+        ],
+        "profile": null,
+        "footer": {
+          "x": 40.96875,
+          "y": 694.953125,
+          "width": 1284.046875,
+          "height": 57.046875,
+          "bottom": 752,
+          "right": 1325.015625
+        },
+        "clipped": [],
+        "overflowing": []
+      },
+      "cardGeometryPreserved": true,
+      "mouseKeyboardTouch": true,
+      "profilesDoNotChoose": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "initial": {
+        "root": {
+          "clientHeight": 1080,
+          "scrollHeight": 1080,
+          "clientWidth": 1920,
+          "scrollWidth": 1920
+        },
+        "page": {
+          "height": 1080,
+          "width": 1920
+        },
+        "cards": [
+          {
+            "x": 285,
+            "y": 310.015625,
+            "width": 436.65625,
+            "height": 440,
+            "bottom": 750.015625,
+            "right": 721.65625
+          },
+          {
+            "x": 741.65625,
+            "y": 310.015625,
+            "width": 436.671875,
+            "height": 440,
+            "bottom": 750.015625,
+            "right": 1178.328125
+          },
+          {
+            "x": 1198.328125,
+            "y": 310.015625,
+            "width": 436.65625,
+            "height": 440,
+            "bottom": 750.015625,
+            "right": 1634.984375
+          }
+        ],
+        "profile": null,
+        "footer": {
+          "x": 198,
+          "y": 993.40625,
+          "width": 1524,
+          "height": 65,
+          "bottom": 1058.40625,
+          "right": 1722
+        },
+        "clipped": [],
+        "overflowing": []
+      },
+      "selected": {
+        "root": {
+          "clientHeight": 1080,
+          "scrollHeight": 1080,
+          "clientWidth": 1920,
+          "scrollWidth": 1920
+        },
+        "page": {
+          "height": 1080,
+          "width": 1920
+        },
+        "cards": [
+          {
+            "x": 285,
+            "y": 310.015625,
+            "width": 436.65625,
+            "height": 440,
+            "bottom": 750.015625,
+            "right": 721.65625
+          },
+          {
+            "x": 741.65625,
+            "y": 310.015625,
+            "width": 436.671875,
+            "height": 440,
+            "bottom": 750.015625,
+            "right": 1178.328125
+          },
+          {
+            "x": 1198.328125,
+            "y": 310.015625,
+            "width": 436.65625,
+            "height": 440,
+            "bottom": 750.015625,
+            "right": 1634.984375
+          }
+        ],
+        "profile": null,
+        "footer": {
+          "x": 198,
+          "y": 993.40625,
+          "width": 1524,
+          "height": 65,
+          "bottom": 1058.40625,
+          "right": 1722
+        },
+        "clipped": [],
+        "overflowing": []
+      },
+      "cardGeometryPreserved": true,
+      "mouseKeyboardTouch": true,
+      "profilesDoNotChoose": true
+    }
+  ],
+  "regression": {
+    "title": true
+  },
+  "errors": []
+}

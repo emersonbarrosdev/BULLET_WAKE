@@ -9,6 +9,7 @@
   -webkit-font-smoothing: antialiased;
 }
 #bw-pilot-select * { box-sizing: border-box; }
+#bw-pilot-select [hidden] { display: none !important; }
 #bw-pilot-select .bw-pilot-backdrop {
   position: fixed; inset: -12px;
   background: url('/assets/title/title-apocalyptic-base-v3.webp') center center / cover no-repeat;
@@ -58,11 +59,39 @@
 }
 #bw-pilot-select .bw-pilot-card.bw-pilot-active,
 #bw-pilot-select .bw-pilot-card:hover,
-#bw-pilot-select .bw-pilot-card:focus-visible {
+#bw-pilot-select .bw-pilot-card:focus-within {
   outline: none; border-color: #ffb23e;
   box-shadow: 0 0 0 2px #ff591a,0 0 28px rgba(255,91,24,.48),inset 0 0 30px rgba(255,78,17,.1);
   background-color: rgba(42,8,11,.96);
 }
+#bw-pilot-select .bw-pilot-card > :not(button) { pointer-events: none; }
+#bw-pilot-select .bw-pilot-card-head,
+#bw-pilot-select .bw-pilot-card-role,
+#bw-pilot-select .bw-pilot-card-special,
+#bw-pilot-select .bw-pilot-card .bw-pilot-ship-row,
+#bw-pilot-select .bw-pilot-card .bw-pilot-stats { flex-shrink: 0; }
+#bw-pilot-select .bw-pilot-card-select {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  border: 0; border-radius: inherit; background: transparent; cursor: pointer;
+  touch-action: manipulation;
+}
+#bw-pilot-select .bw-pilot-card-select:focus-visible { outline: 2px solid #ffd38a; outline-offset: 4px; }
+#bw-pilot-select .bw-pilot-card-profile,
+#bw-pilot-select .bw-pilot-profile-choose {
+  position: relative; z-index: 1; flex: 0 0 auto; width: 100%;
+  border: 1px solid #b15c3288; border-radius: 2px; padding: 6px 12px;
+  background: linear-gradient(100deg,#4a1b1455,#20090d88); color: #ffd7b3;
+  font: 700 clamp(12px,1.02vw,16px)/1.1 'Rajdhani',sans-serif;
+  letter-spacing: .08em; cursor: pointer; touch-action: manipulation;
+}
+#bw-pilot-select .bw-pilot-card-profile span { float: right; }
+#bw-pilot-select .bw-pilot-card-profile:hover,
+#bw-pilot-select .bw-pilot-card-profile:focus-visible,
+#bw-pilot-select .bw-pilot-profile-choose:hover,
+#bw-pilot-select .bw-pilot-profile-choose:focus-visible { outline: 1px solid #ffb55c; border-color: #ffb55c; color: #fff0dc; background: #6a2b2355; }
+#bw-pilot-select .bw-pilot-card.bw-pilot-chosen { border-color: #ffd57d; box-shadow: 0 0 0 2px #ff922b,0 0 29px #ff8b244f,inset 0 0 30px #ff9d1615; }
+#bw-pilot-select .bw-pilot-profile-choose { width: auto; align-self: flex-start; padding: 9px 16px; }
+#bw-pilot-select .bw-pilot-awaiting { color: #d0a48b; font-size: clamp(12px,1.05vw,17px); letter-spacing: .06em; }
 #bw-pilot-select .bw-pilot-card-head { width: 100%; }
 #bw-pilot-select .bw-pilot-card-head strong {
   font: italic 800 clamp(19px, 1.85vw, 30px)/1.05 'Oxanium', sans-serif;
@@ -115,7 +144,7 @@
 }
 #bw-pilot-select .bw-pilot-help { color: #f3d4c3; font-size: clamp(12px, 1.12vw, 17px); letter-spacing: .035em; }
 #bw-pilot-select .bw-pilot-help span { color: #ff7935; padding: 0 7px; }
-#bw-pilot-select .bw-pilot-footer-actions { display: flex; align-items: center; gap: clamp(8px,1.3vw,20px); }
+#bw-pilot-select .bw-pilot-footer-actions { display: flex; align-items: center; gap: clamp(8px,1.3vw,20px); min-height: calc(28px + clamp(15px,1.25vw,21px)); }
 #bw-pilot-select .bw-pilot-info-action,
 #bw-pilot-select .bw-pilot-launch {
   color:#fff1e4; background:none; border:0; cursor:pointer;

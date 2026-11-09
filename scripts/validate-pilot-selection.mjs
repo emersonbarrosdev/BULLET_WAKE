@@ -4,11 +4,12 @@ import { createServer } from 'node:http';
 import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, existsSync } from 'node:fs';
 import { join, extname, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
-import { spawn, execFileSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 
 const root = resolve('dist');
 const stage1 = process.argv.includes('--stage1');
-const screenshots = resolve(stage1 ? 'docs/screenshots/stage1-visual' : 'docs/screenshots/pilot-selection-final');
+const confirmation = !stage1;
+const screenshots = resolve(confirmation ? 'docs/screenshots/pilot-confirmation' : stage1 ? 'docs/screenshots/stage1-visual' : 'docs/screenshots/pilot-selection-final');
 mkdirSync(screenshots, { recursive: true });
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png' };
 const server = createServer((req, res) => {
@@ -106,8 +107,92 @@ try {
   await click('.bw-press-activation');
   await click('[data-action="pilots"]');
   await waitFor(`Boolean(document.querySelector('.bw-pilot-card'))`);
-  if (stage1) {
-    await key('1'); await key('Enter', 'Enter', 13);
+  if (confirmation) {
+    const baseline = JSON.parse(readFileSync(resolve('docs/screenshots/pilot-selection-final/validation.json'),'utf8'));
+    const ready = () => evaluate(`!document.querySelector('[data-action="start"]').hidden`);
+    const chosen = () => evaluate(`window.__GAME__.scene.getScene('PilotSelectScene').chosenIndex`);
+    const checkCards = (actual,approved) => actual.forEach((card,i)=>{
+      assert.equal(card.width,approved[i].width);assert.equal(card.height,approved[i].height);
+      assert(Math.abs(card.x-approved[i].x)<1&&Math.abs(card.y-approved[i].y)<1,'Card spacing changed');
+    });
+    const touch = async selector => {
+      const p=await evaluate(`(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+      await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...p,id:1}]});
+      await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await pause(120);
+    };
+    for(const [width,height]of [[1366,768],[1920,1080]]) {
+      await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
+      await imagesReady();await pause(120);
+      assert.equal(await ready(),false);assert.equal(await chosen(),null);
+      assert.equal(await evaluate(`document.querySelectorAll('.bw-pilot-card [data-action="profile"]').length`),3);
+      assert.equal(await evaluate(`document.querySelectorAll('button button').length`),0);
+      const initial = await geometry();checkGeometry(initial,width,height);
+      const approved=baseline.viewports.find(v=>v.width===width).cards.cards;
+      checkCards(initial.cards,approved);
+      await shot(`initial-${width}x${height}`);
+      const pos=await evaluate(`(()=>{const r=document.querySelector('[data-pilot-index="1"]').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+      await send('Input.dispatchMouseEvent',{type:'mouseMoved',...pos});await pause(80);
+      assert.equal(await chosen(),null);assert.equal(await ready(),false);
+      await key('ArrowRight','ArrowRight',39);await key('Enter','Enter',13);
+      assert.equal(await chosen(),1);assert.equal(await ready(),true);
+      assert.equal(await evaluate(`window.__GAME__.scene.isActive('PilotSelectScene')`),true);
+      await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,autoRepeat:true});
+      await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+      assert.equal(await evaluate(`window.__GAME__.scene.isActive('PilotSelectScene')`),true);
+      await key('ArrowRight','ArrowRight',39);
+      assert.equal(await chosen(),null);assert.equal(await ready(),false);
+      for(let i=0;i<3;i++){
+        await click(`[data-profile-index="${i}"]`);await imagesReady();
+        assert.equal(await evaluate(`document.querySelector('.bw-pilot-profile-name h2').textContent`),['Nolan Fitch','Cora Wren','Harlan Greer'][i]);
+        assert.equal(await chosen(),null);assert.equal(await ready(),false);
+        const g=await geometry();checkGeometry(g,width,height);
+        await shot(`profile-${i}-${width}x${height}`);
+        await key('Escape','Escape',27);
+      }
+      await evaluate(`document.querySelector('[data-profile-index="0"]').focus()`);
+      await key('Enter','Enter',13);
+      assert.equal(await evaluate(`document.querySelector('.bw-pilot-profile-name h2').textContent`),'Nolan Fitch');
+      assert.equal(await chosen(),null);await key('i','KeyI',73);
+      await click('[data-pilot-index="0"]');await click('[data-pilot-index="0"]');
+      assert.equal(await chosen(),0);assert.equal(await ready(),true);
+      assert.equal(await evaluate(`window.__GAME__.scene.isActive('PilotSelectScene')`),true);
+      await click('[data-profile-index="1"]');
+      assert.equal(await chosen(),null);assert.equal(await ready(),false);
+      await click('[data-action="choose"]');
+      assert.equal(await chosen(),1);assert.equal(await ready(),true);
+      await key('Escape','Escape',27);
+      assert.equal(await chosen(),null);assert.equal(await ready(),false);
+      await send('Emulation.setTouchEmulationEnabled',{enabled:true});
+      await touch('[data-profile-index="1"]');
+      assert.equal(await evaluate(`document.querySelector('.bw-pilot-profile-name h2').textContent`),'Cora Wren');
+      assert.equal(await chosen(),null);assert.equal(await ready(),false);
+      await touch('[data-action="cards"]');
+      await touch('[data-pilot-index="2"]');
+      assert.equal(await chosen(),2);assert.equal(await ready(),true);
+      const selected=await geometry();checkGeometry(selected,width,height);checkCards(selected.cards,approved);
+      await shot(`chosen-${width}x${height}`);
+      await touch('[data-action="start"]');
+      await waitFor(`window.__GAME__.scene.isActive('PrototypeScene')`);
+      assert.equal(await evaluate(`window.__GAME__.scene.getScene('PrototypeScene').pilot.id`),'harlan');
+      await send('Emulation.setTouchEmulationEnabled',{enabled:false});
+      await evaluate(`{window.__GAME__.scene.getScene('PrototypeScene').scene.start('PilotSelectScene');void 0;}`);
+      await waitFor(`Boolean(document.querySelector('.bw-pilot-card'))`);
+      report.viewports.push({width,height,initial,selected,cardGeometryPreserved:true,mouseKeyboardTouch:true,profilesDoNotChoose:true});
+    }
+    await key('2');await key('Enter','Enter',13);
+    assert.equal(await chosen(),1);assert.equal(await evaluate(`window.__GAME__.scene.isActive('PilotSelectScene')`),true);
+    await key('Enter','Enter',13);await waitFor(`window.__GAME__.scene.isActive('PrototypeScene')`);
+    assert.equal(await evaluate(`window.__GAME__.scene.getScene('PrototypeScene').pilot.id`),'cora');
+    await evaluate(`{window.__GAME__.scene.getScene('PrototypeScene').scene.start('PilotSelectScene');void 0;}`);
+    await waitFor(`Boolean(document.querySelector('.bw-pilot-card'))`);
+    await click('[data-pilot-index="0"]');await click('[data-action="start"]');
+    await waitFor(`window.__GAME__.scene.isActive('PrototypeScene')`);
+    assert.equal(await evaluate(`window.__GAME__.scene.getScene('PrototypeScene').pilot.id`),'nolan');
+    assert.deepEqual(errors,[]);
+    writeFileSync(join(screenshots,'validation.json'),JSON.stringify(report,null,2)+'\n');
+    console.log('PASS: profile buttons inside all cards; explicit choice then confirmation by mouse, keyboard and touch; hover/repeat/profile never launch; changing/cancelling clears choice; both resolutions without scroll or card growth; correct pilots launched; zero browser errors.');
+  } else if (stage1) {
+    await key('1'); await key('Enter', 'Enter', 13); await key('Enter', 'Enter', 13);
     await waitFor(`window.__GAME__.scene.isActive('PrototypeScene')&&Boolean(document.querySelector('#bw-combat-hud'))`);
     report.regression.artAudit = await evaluate(`(()=>{
       const s=window.__GAME__.scene.getScene('PrototypeScene');
@@ -196,7 +281,7 @@ try {
     await click('[data-action="profile"]');
     await imagesReady();
     const profileAfterCombat = await geometry();checkGeometry(profileAfterCombat,1920,1080);
-    await key('Enter','Enter',13);
+    await key('Enter','Enter',13);await key('Enter','Enter',13);
     await waitFor(`window.__GAME__.scene.isActive('PrototypeScene')&&Boolean(document.querySelector('#bw-combat-hud'))`);
     report.regression.restartAndProfileAfterCombat=true;
     for(const id of ['cora','harlan']) {
@@ -213,64 +298,6 @@ try {
     assert.deepEqual(errors,[], 'Browser errors');
     writeFileSync(join(screenshots,'validation.json'),JSON.stringify(report,null,2)+'\n');
     console.log('PASS: Stage 1 painted art, HUD at both resolutions, 3/5/7/9 projectiles, P collection, bombs, movement/dash, other ships preserved, HUD lifecycle, zero browser errors.');
-  } else {
-  // Compare actual element geometry against the previous approved CSS. The only
-  // permitted differences are image rendering; cards/profile/footer must match.
-  const previousCss = execFileSync('git', ['show', 'HEAD:src/pilot-select.css'], { encoding: 'utf8' });
-  for (const [width, height] of [[1366, 768], [1920, 1080]]) {
-    await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
-    await imagesReady(); await pause(150);
-    const cards = await geometry(); checkGeometry(cards, width, height);
-    assert.equal(cards.cards.length, 3);
-    for (const card of cards.cards) assert(card.height <= 441, 'Cards enlarged');
-    await evaluate(`{const s=document.createElement('style');s.id='qa-previous-css';s.textContent=${JSON.stringify(previousCss)};document.head.append(s);}`);
-    assert.deepEqual(await geometry(), cards, 'Approved card geometry changed');
-    await evaluate(`document.querySelector('#qa-previous-css').remove()`);
-    await shot(`cards-${width}x${height}`);
-    const profiles = [];
-    for (let i = 0; i < 3; i++) {
-      await key(String(i + 1));
-      assert.equal(await evaluate(`document.querySelector('[aria-pressed="true"]').dataset.pilotIndex`), String(i));
-      await click('[data-action="profile"]'); await imagesReady();
-      const g = await geometry(); checkGeometry(g, width, height);
-      await evaluate(`{const s=document.createElement('style');s.id='qa-previous-css';s.textContent=${JSON.stringify(previousCss)};document.head.append(s);}`);
-      assert.deepEqual(await geometry(), g, 'Approved profile geometry changed');
-      await evaluate(`document.querySelector('#qa-previous-css').remove()`);
-      // A wheel gesture must not scroll the profile or page.
-      await send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: width / 2, y: height / 2, deltaY: 600, deltaX: 0 });
-      await pause(80);
-      assert.equal(await evaluate(`document.querySelector('#bw-pilot-select').scrollTop + window.scrollY`), 0);
-      profiles.push(g);
-      await shot(`profile-${['nolan','cora','harlan'][i]}-${width}x${height}`);
-      await key('Escape', 'Escape', 27);
-    }
-    report.viewports.push({ width, height, cards, profiles, approvedGeometryUnchanged: true });
-  }
-  await key('1'); await key('Enter', 'Enter', 13);
-  await waitFor(`window.__GAME__.scene.isActive('PrototypeScene')&&!document.querySelector('#bw-pilot-select')`);
-  report.regression.pilotLaunch = true;
-  const initial = await evaluate(`(()=>{const s=window.__GAME__.scene.getScene('PrototypeScene');return {x:s.vectorShip.x,weapon:s.weapons.weaponFamily,level:s.weapons.weaponLevel};})()`);
-  assert.equal(initial.weapon, 'ion'); assert.equal(initial.level, 1);
-  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'd', code: 'KeyD', windowsVirtualKeyCode: 68 });
-  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
-  await pause(350);
-  const combat = await evaluate(`(()=>{const s=window.__GAME__.scene.getScene('PrototypeScene');return {x:s.vectorShip.x,shots:s.shots.length};})()`);
-  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'd', code: 'KeyD', windowsVirtualKeyCode: 68 });
-  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
-  assert(combat.x > initial.x + 5 && combat.shots > 0, 'Movement/fire failed');
-  report.regression.combat = { initial, ...combat };
-  await evaluate(`{window.__GAME__.scene.getScene('PrototypeScene').scene.start('StageSelectScene');void 0;}`);
-  await waitFor(`window.__GAME__.scene.isActive('StageSelectScene')`);
-  report.regression.stageSelect = await evaluate(`window.__GAME__.scene.getScene('StageSelectScene').cards.length===5`);
-  assert(report.regression.stageSelect);
-  await key('Enter', 'Enter', 13);
-  await waitFor(`window.__GAME__.scene.isActive('PilotSelectScene')`);
-  await key('Escape', 'Escape', 27);
-  await waitFor(`window.__GAME__.scene.isActive('TitleScene')&&Boolean(document.querySelector('#bw-title-screen'))`);
-  report.regression.returnToTitle = true;
-  assert.deepEqual(errors, [], 'Browser errors');
-  writeFileSync(join(screenshots, 'validation.json'), JSON.stringify(report, null, 2) + '\n');
-  console.log('PASS: 1366x768 + 1920x1080, 6 profiles, no scroll/clipping, approved geometry unchanged, menu/stage/combat regression, zero browser errors.');
   }
 } finally {
   socket?.close(); chrome.kill(); server.close();

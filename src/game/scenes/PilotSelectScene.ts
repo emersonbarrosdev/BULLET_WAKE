@@ -15,6 +15,7 @@ const ship = (pilot: PilotDefinition): string => `/assets/pilot-selection/ship-$
  */
 export class PilotSelectScene extends Phaser.Scene {
   private selectedIndex = 0;
+  private chosenIndex: number | null = null;
   private stageNumber = 1;
   private view: PilotView = 'cards';
   private root?: HTMLDivElement;
@@ -29,11 +30,22 @@ export class PilotSelectScene extends Phaser.Scene {
 
     if (key === 'escape') {
       if (this.view === 'profile') this.setView('cards');
+      else if (this.chosenIndex !== null) {
+        this.chosenIndex = null;
+        this.updateSelection();
+      }
       else this.leaveSelection();
       return;
     }
     if (key === 'enter' || key === ' ') {
-      this.startGame();
+      const button = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>('button');
+      if (button && this.root.contains(button) && button.dataset.action !== undefined) {
+        this.activateAction(button);
+      } else if (this.chosenIndex === this.selectedIndex) {
+        this.startGame();
+      } else {
+        this.choose(this.selectedIndex);
+      }
       return;
     }
     if (key === 'i') {
@@ -57,6 +69,7 @@ export class PilotSelectScene extends Phaser.Scene {
     this.selectedIndex = Math.max(0, PILOTS.findIndex(pilot => pilot.id === data.selectedPilotId));
     this.stageNumber = data.stageNumber || 1;
     this.view = 'cards';
+    this.chosenIndex = null;
   }
 
   create(): void {
@@ -83,14 +96,37 @@ export class PilotSelectScene extends Phaser.Scene {
     this.view = next;
     globalAudio.playPickup('upgrade');
     this.render();
+    const focus = next === 'profile'
+      ? this.root?.querySelector<HTMLElement>('.bw-pilot-profile-name h2')
+      : this.root?.querySelector<HTMLElement>(`[data-pilot-index="${this.selectedIndex}"]`);
+    focus?.focus({ preventScroll: true });
   }
 
   private select(index: number): void {
     if (index < 0 || index >= PILOTS.length) return;
     if (index !== this.selectedIndex) globalAudio.playPickup('upgrade');
+    if (index !== this.selectedIndex) this.chosenIndex = null;
     this.selectedIndex = index;
     if (this.view === 'profile') this.render();
     else this.updateSelection();
+  }
+
+  private choose(index: number): void {
+    this.select(index);
+    this.chosenIndex = index;
+    globalAudio.playPickup('upgrade');
+    if (this.view === 'profile') this.setView('cards');
+    else this.updateSelection();
+  }
+
+  private activateAction(button: HTMLButtonElement): void {
+    const action = button.dataset.action;
+    if (action === 'start') this.startGame();
+    else if (action === 'profile') {
+      this.select(Number(button.dataset.profileIndex));
+      this.setView('profile');
+    } else if (action === 'cards') this.setView('cards');
+    else if (action === 'choose') this.choose(this.selectedIndex);
   }
 
   private render(): void {
@@ -107,10 +143,11 @@ export class PilotSelectScene extends Phaser.Scene {
         </header>
         ${this.view === 'cards' ? this.renderCards() : this.renderProfile(current)}
         <footer class="bw-pilot-footer">
-          <div class="bw-pilot-help">${this.view === 'cards' ? '[1 / 2 / 3] OU [← →] SELECIONAR' : '[← →] TROCAR PILOTO'} <span>·</span> [ESC] ${this.view === 'cards' ? 'VOLTAR' : 'FECHAR PERFIL'}</div>
+          <div class="bw-pilot-help"></div>
           <div class="bw-pilot-footer-actions">
-            <button type="button" class="bw-pilot-info-action" data-action="${this.view === 'cards' ? 'profile' : 'cards'}">${this.view === 'cards' ? 'VER PERFIL [I]' : 'VOLTAR À SELEÇÃO [I]'}</button>
-            <button type="button" class="bw-pilot-launch" data-action="start">INICIAR OPERAÇÃO <span>[ENTER]</span></button>
+            ${this.view === 'profile' ? '<button type="button" class="bw-pilot-info-action" data-action="cards">VOLTAR À SELEÇÃO [I]</button>' : ''}
+            <span class="bw-pilot-awaiting" aria-live="polite">ESCOLHA UM PILOTO PARA CONTINUAR</span>
+            <button type="button" class="bw-pilot-launch" data-action="start" hidden></button>
           </div>
         </footer>
       </main>
@@ -123,7 +160,8 @@ export class PilotSelectScene extends Phaser.Scene {
     return `
       <section class="bw-pilot-cards" aria-label="Pilotos disponíveis">
         ${PILOTS.map((pilot, index) => `
-          <button type="button" class="bw-pilot-card" data-pilot-index="${index}" aria-label="Selecionar ${pilot.name}" aria-pressed="false">
+          <article class="bw-pilot-card" data-card-index="${index}" aria-label="${pilot.name}">
+            <button type="button" class="bw-pilot-card-select" data-pilot-index="${index}" aria-label="Escolher ${pilot.name}" aria-pressed="false"></button>
             <div class="bw-pilot-card-head">
               <strong>${pilot.name}</strong>
               <small>${pilot.callsign}</small>
@@ -135,7 +173,8 @@ export class PilotSelectScene extends Phaser.Scene {
             <div class="bw-pilot-card-special">ESP: ${pilot.specialName}</div>
             <div class="bw-pilot-ship-row"><span>NAVE: <b>${pilot.shipName}</b></span><img src="${ship(pilot)}" alt="Nave ${pilot.shipName}" draggable="false" /></div>
             <div class="bw-pilot-stats">${this.renderStats(pilot)}</div>
-          </button>
+            <button type="button" class="bw-pilot-card-profile" data-action="profile" data-profile-index="${index}" aria-label="Ver perfil de ${pilot.name}">VER PERFIL <span aria-hidden="true">↗</span></button>
+          </article>
         `).join('')}
       </section>
       <section class="bw-pilot-brief" aria-live="polite">
@@ -150,11 +189,12 @@ export class PilotSelectScene extends Phaser.Scene {
       <section class="bw-pilot-profile" aria-label="Perfil de ${pilot.name}">
         <div class="bw-pilot-profile-art"><img src="${portrait(pilot)}" alt="Retrato de ${pilot.name}" /></div>
         <div class="bw-pilot-profile-content">
-          <div class="bw-pilot-profile-name"><small>PERFIL DO PILOTO</small><h2>${pilot.name}</h2><p>${pilot.callsign}</p></div>
+          <div class="bw-pilot-profile-name"><small>PERFIL DO PILOTO</small><h2 tabindex="-1">${pilot.name}</h2><p>${pilot.callsign}</p></div>
           <p class="bw-pilot-profile-bio">${pilot.bio}</p>
           <div class="bw-pilot-profile-ship"><span>NAVE: <b>${pilot.shipName}</b></span><img src="${ship(pilot)}" alt="Nave ${pilot.shipName}" /></div>
           <div class="bw-pilot-profile-special"><small>HABILIDADE ESPECIAL</small><strong>${pilot.specialName}</strong><p>${pilot.specialDescription}</p></div>
           <div class="bw-pilot-profile-stats">${this.renderStats(pilot)}</div>
+          ${this.chosenIndex !== this.selectedIndex ? '<button type="button" class="bw-pilot-profile-choose" data-action="choose">ESCOLHER ESTE PILOTO</button>' : ''}
         </div>
       </section>
     `;
@@ -177,16 +217,11 @@ export class PilotSelectScene extends Phaser.Scene {
     if (!this.root) return;
     this.root.querySelectorAll<HTMLButtonElement>('[data-pilot-index]').forEach(button => {
       const index = Number(button.dataset.pilotIndex);
-      button.addEventListener('mouseenter', () => this.select(index));
       button.addEventListener('focus', () => this.select(index));
-      button.addEventListener('click', () => this.select(index));
+      button.addEventListener('click', () => this.choose(index));
     });
     this.root.querySelectorAll<HTMLButtonElement>('[data-action]').forEach(button => {
-      button.addEventListener('click', () => {
-        const action = button.dataset.action;
-        if (action === 'start') this.startGame();
-        else if (action === 'profile' || action === 'cards') this.setView(action);
-      });
+      button.addEventListener('click', () => this.activateAction(button));
     });
   }
 
@@ -195,13 +230,30 @@ export class PilotSelectScene extends Phaser.Scene {
     const pilot = PILOTS[this.selectedIndex];
     this.root.querySelectorAll<HTMLButtonElement>('[data-pilot-index]').forEach((button, index) => {
       const selected = index === this.selectedIndex;
-      button.classList.toggle('bw-pilot-active', selected);
-      button.setAttribute('aria-pressed', String(selected));
+      const chosen = this.chosenIndex === index;
+      button.closest('.bw-pilot-card')?.classList.toggle('bw-pilot-active', selected);
+      button.closest('.bw-pilot-card')?.classList.toggle('bw-pilot-chosen', chosen);
+      button.setAttribute('aria-pressed', String(chosen));
     });
     const bio = this.root.querySelector<HTMLElement>('.bw-pilot-brief-bio');
     const detail = this.root.querySelector<HTMLElement>('.bw-pilot-brief-special');
     if (bio) bio.textContent = `${pilot.name} // ${pilot.bio}`;
     if (detail) detail.textContent = `HABILIDADE ESPECIAL: ${pilot.specialDescription} (100% RESSONÂNCIA)`;
+    const chosen = this.chosenIndex === this.selectedIndex;
+    const launch = this.root.querySelector<HTMLButtonElement>('[data-action="start"]');
+    if (launch) {
+      launch.hidden = !chosen;
+      launch.innerHTML = `CONFIRMAR ${pilot.name.split(' ')[0].toUpperCase()} <span>[ENTER]</span>`;
+      launch.setAttribute('aria-label', `Confirmar ${pilot.name} e iniciar operação`);
+    }
+    const awaiting = this.root.querySelector<HTMLElement>('.bw-pilot-awaiting');
+    if (awaiting) awaiting.hidden = chosen || this.view === 'profile';
+    const help = this.root.querySelector<HTMLElement>('.bw-pilot-help');
+    if (help) help.textContent = this.view === 'profile'
+      ? '[← →] TROCAR PILOTO · [ESC] FECHAR PERFIL'
+      : chosen
+        ? `${pilot.name.toUpperCase()} ESCOLHIDO · [ENTER] CONFIRMAR · [ESC] CANCELAR`
+        : '[← → / 1 2 3] NAVEGAR · [ENTER] ESCOLHER · [ESC] VOLTAR';
   }
 
   private leaveSelection(): void {
@@ -210,6 +262,7 @@ export class PilotSelectScene extends Phaser.Scene {
   }
 
   private startGame(): void {
+    if (this.chosenIndex !== this.selectedIndex) return;
     const pilot = PILOTS[this.selectedIndex];
     globalAudio.playPickup('upgrade');
     this.cleanup();

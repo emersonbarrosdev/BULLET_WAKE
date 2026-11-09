@@ -326,6 +326,17 @@ Prioridade de produção: concluir e revisar visualmente a Fase 1 antes de avan�
 
 Inventário, prompts, evidências e limites em [Fase 1 — revisão visual da RIVET](29_FASE_1_VISUAL_RIVET.md). Antes de considerar toda a arte da Fase 1 encerrada, ainda revisar Raia-Dente/Talassarca e as artes auxiliares de carga, mísseis e especial. A campanha além da Fase 1 permanece bloqueada.
 
+## 10. SELEÇÃO DE PILOTOS — ESCOLHER E CONFIRMAR (09/11/2026)
+
+- Cada card contém seu próprio botão **VER PERFIL**. Card e perfil são botões independentes, sem botões aninhados.
+- Ao abrir a seleção, nenhum piloto está confirmado e o botão de iniciar fica oculto. Setas e números navegam; hover apenas destaca visualmente, sem escolher.
+- Clique, toque ou primeiro Enter escolhe o piloto e revela **CONFIRMAR NOLAN/CORA/HARLAN [ENTER]**. A operação só começa por um segundo Enter ou ativação explícita desse botão.
+- Clique repetido no card e repetição automática da tecla não iniciam a operação. Mudar de candidato apaga a escolha pendente; Esc cancela a escolha antes de sair da tela.
+- Ver perfil não escolhe outro piloto automaticamente. O perfil oferece **ESCOLHER ESTE PILOTO**, que retorna aos cards com a confirmação disponível; a confirmação final continua separada.
+- Dimensões dos cards, paleta e tipografia preservadas; o espaço interno foi redistribuído para acomodar o botão. Perfis continuam sem scroll.
+- **Validação:** build/TypeScript aprovados, 125 testes aprovados, Chrome real em 1366×768 e 1920×1080 com mouse, teclado e eventos de toque; todos os perfis conferidos, confirmação bloqueada antes da escolha, pilotos corretos iniciados e zero erros de navegador. [Capturas e relatório](screenshots/pilot-confirmation/).
+- Reexecutar com `node scripts/validate-pilot-selection.mjs --confirmation` após o build. O modo padrão também verifica este fluxo; `--stage1` mantém a validação visual da Fase 1.
+
 
 
 
