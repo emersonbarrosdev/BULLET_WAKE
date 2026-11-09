@@ -45,7 +45,7 @@ export class StageCompleteOverlay extends Phaser.GameObjects.Container {
         fontStyle: 'bold',
         letterSpacing: 2,
       },
-    ).setOrigin(0.5, 0).setResolution(2);
+    ).setOrigin(0.5, 0).setResolution(3);
 
     const caption = scene.add.text(
       GAME_WIDTH / 2,
@@ -53,11 +53,12 @@ export class StageCompleteOverlay extends Phaser.GameObjects.Container {
       `FASE 0${stageNumber}: ${stageDef.title.toUpperCase()}  //  ${stageDef.bossName.toUpperCase()} NEUTRALIZADO`,
       {
         fontFamily: FONT_TECH,
-        fontSize: '12px',
+        fontSize: '13px',
+        fontStyle: 'bold',
         color: '#93c5fd',
         letterSpacing: 1,
       },
-    ).setOrigin(0.5, 0).setResolution(2);
+    ).setOrigin(0.5, 0).setResolution(3);
 
     const scoreText = scene.add.text(
       GAME_WIDTH / 2,
@@ -66,23 +67,24 @@ export class StageCompleteOverlay extends Phaser.GameObjects.Container {
       {
         fontFamily: FONT_HUD,
         fontSize: '20px',
-        color: '#ffd166',
+        color: '#fde047',
         fontStyle: 'bold',
         letterSpacing: 1,
       },
-    ).setOrigin(0.5, 0).setResolution(2);
+    ).setOrigin(0.5, 0).setResolution(3);
 
     const promptText = scene.add.text(
       GAME_WIDTH / 2,
       204,
-      'ROTA DE CONTENÇÃO ESTABILIZADA. PRÓXIMAS COORDENADAS DESBLOQUEADAS.',
+      'FENDA PELÁGICA CONTIDA. AMEAÇA ALIENÍGENA ABISSAL NEUTRALIZADA.',
       {
         fontFamily: FONT_TECH,
-        fontSize: '11px',
-        color: '#64748b',
-        letterSpacing: 1,
+        fontSize: '13px',
+        fontStyle: 'bold',
+        color: '#cbd5e1',
+        letterSpacing: 0.8,
       },
-    ).setOrigin(0.5, 0).setResolution(2);
+    ).setOrigin(0.5, 0).setResolution(3);
 
     // Botão Próxima Fase [ENTER]
     const nextBtn = scene.add.rectangle(

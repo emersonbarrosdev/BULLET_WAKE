@@ -268,39 +268,39 @@ export class CombatHud {
       color: '#93c5fd',
     }).setDepth(42).setResolution(3);
 
-    this.weaponTitleText = scene.add.text(rightX + 8, 94, 'DISPERSÃO AZUL', {
-      fontFamily: FONT_TITLE,
-      fontSize: '12.5px',
-      fontStyle: 'bold',
-      color: '#00f0ff',
-    }).setDepth(42).setResolution(3);
+      this.weaponTitleText = scene.add.text(rightX + 8, 94, 'DISPERSÃO AZUL', {
+        fontFamily: FONT_TITLE,
+        fontSize: '12.5px',
+        fontStyle: 'bold',
+        color: '#00f0ff',
+      }).setDepth(42).setResolution(3);
 
-    this.weaponLevelText = scene.add.text(rightX + 8, 118, 'POTÊNCIA: NV 1/4', {
-      fontFamily: FONT_HUD,
-      fontSize: '14px',
-      fontStyle: 'bold',
-      color: '#ffffff',
-    }).setDepth(42).setResolution(3);
+      this.weaponLevelText = scene.add.text(rightX + 8, 118, 'POTÊNCIA: NV 1/4', {
+        fontFamily: FONT_HUD,
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#ffffff',
+      }).setDepth(42).setResolution(3);
 
-    this.weaponPips = scene.add.text(rightX + 8, 139, '● ○ ○ ○', {
-      fontFamily: FONT_TITLE,
-      fontSize: '15px',
-      fontStyle: 'bold',
-      color: '#00f0ff',
-    }).setDepth(42).setResolution(3);
+      this.weaponPips = scene.add.text(rightX + 8, 139, '● ○ ○ ○', {
+        fontFamily: FONT_TITLE,
+        fontSize: '15px',
+        fontStyle: 'bold',
+        color: '#00f0ff',
+      }).setDepth(42).setResolution(3);
 
-    // Card 3: Progresso P 0/3 (Y: 172..236)
-    scene.add.rectangle(rightX + cardW / 2, 204, cardW, 60, 0x071422, 0.92)
-      .setStrokeStyle(1.5, 0x1e3a5f).setDepth(40);
+      // Card 3: Progresso P 0/3 (Y: 172..236)
+      scene.add.rectangle(rightX + cardW / 2, 204, cardW, 60, 0x071422, 0.92)
+        .setStrokeStyle(1.5, 0x1e3a5f).setDepth(40);
 
-    this.powerMeterText = scene.add.text(rightX + 8, 178, 'PROGRESSO P: 0/3', {
-      fontFamily: FONT_HUD,
-      fontSize: '14px',
-      fontStyle: 'bold',
-      color: '#facc15',
-    }).setDepth(42).setResolution(3);
+      this.powerMeterText = scene.add.text(rightX + 8, 178, 'PROGRESSO P: 0/3', {
+        fontFamily: FONT_HUD,
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#facc15',
+      }).setDepth(42).setResolution(3);
 
-    for (let i = 0; i < 3; i++) {
+      for(let i = 0; i< 3; i++) {
       const pSeg = scene.add.rectangle(rightX + 27 + i * 44, 214, 38, 12, 0x1e293b)
         .setStrokeStyle(1.5, 0x64748b).setDepth(42);
       this.powerSegments.push(pSeg);
@@ -333,24 +333,24 @@ export class CombatHud {
     scene.add.rectangle(rightX + cardW / 2, 384, cardW, 64, 0x071422, 0.92)
       .setStrokeStyle(1.5, 0x1e3a5f).setDepth(40);
 
-    this.heatText = scene.add.text(rightX + 8, 356, 'TIRO: ESPAÇO [AUTO]', {
-      fontFamily: FONT_HUD,
-      fontSize: '13px',
-      fontStyle: 'bold',
-      color: '#93c5fd',
-    }).setDepth(42).setResolution(3);
+      this.heatText = scene.add.text(rightX + 8, 356, 'TIRO: ESPAÇO [AUTO]', {
+        fontFamily: FONT_HUD,
+        fontSize: '13px',
+        fontStyle: 'bold',
+        color: '#93c5fd',
+      }).setDepth(42).setResolution(3);
 
-    this.fpsText = scene.add.text(rightX + 8, 382, '60 FPS', {
-      fontFamily: FONT_TITLE,
-      fontSize: '14px',
-      fontStyle: 'bold',
-      color: '#38bdf8',
-    }).setOrigin(0, 0).setDepth(42).setResolution(3);
-  }
+        this.fpsText = scene.add.text(rightX + 8, 382, '60 FPS', {
+          fontFamily: FONT_TITLE,
+          fontSize: '14px',
+          fontStyle: 'bold',
+          color: '#38bdf8',
+      }).setOrigin(0, 0).setDepth(42).setResolution(3);
+    }
 
   setPilot(pilotId: string, shipName: string): void {
-    const portraitKey = `portrait-${pilotId}`;
-    if (this.scene.textures.exists(portraitKey)) {
+      const portraitKey = `portrait-${pilotId}`;
+      if(this.scene.textures.exists(portraitKey)) {
       this.pilotPortrait.setTexture(portraitKey);
     }
     const nameUpper =
@@ -445,43 +445,43 @@ export class CombatHud {
     });
   }
 
-  setHeat(_heat: number, _isOverheated: boolean): void {
-    // Regra Canônica Fire Shark #9 e #10: Autofire contínuo sem bloqueio por superaquecimento na HUD
-    this.heatText.setText('TIRO: ESPAÇO [AUTO]').setColor('#93c5fd');
-  }
-
-  setBombs(bombs: number): void {
-    this.bombText.setText(`BOMBAS [X]: ${String(Math.max(0, bombs)).padStart(2, '0')}`);
-  }
-
-  setMissileReady(_ready: boolean): void {
-    // Mísseis continuam ativos via tecla M com aviso por toast
-  }
-
-  setProgress(_ratio: number): void {
-    // Telemetria de progresso reservada
-  }
-
-  setCharge(_chargeMs: number, _maxMs: number, isCharging: boolean): void {
-    if (isCharging) {
-      this.statusToast
-        .setText('CARREGANDO WAVE CANNON... [C]')
-        .setColor('#00f0ff')
-        .setVisible(true)
-        .setAlpha(0.95);
-      this.statusRemainingMs = 250;
+    setHeat(_heat: number, _isOverheated: boolean): void {
+      // Regra Canônica Fire Shark #9 e #10: Autofire contínuo sem bloqueio por superaquecimento na HUD
+      this.heatText.setText('TIRO: ESPAÇO [AUTO]').setColor('#93c5fd');
     }
-  }
 
-  setResonance(percent: number, specialActive = false): void {
-    const clamped = Math.max(0, Math.min(100, percent));
-    const width = Math.max(2, (126 * clamped) / 100);
-    this.specialBarFill.setSize(width, 8);
+    setBombs(bombs: number): void {
+      this.bombText.setText(`BOMBAS [X]: ${String(Math.max(0, bombs)).padStart(2, '0')}`);
+    }
 
-    if (specialActive) {
-      this.specialBarFill.setFillStyle(0x00f0ff);
-      this.specialText.setText('ESPECIAL: ATIVO!').setColor('#00f0ff');
-    } else if (clamped >= 100) {
+    setMissileReady(_ready: boolean): void {
+      // Mísseis continuam ativos via tecla M com aviso por toast
+    }
+
+    setProgress(_ratio: number): void {
+      // Telemetria de progresso reservada
+    }
+
+    setCharge(_chargeMs: number, _maxMs: number, isCharging: boolean): void {
+      if(isCharging) {
+        this.statusToast
+          .setText('CARREGANDO WAVE CANNON... [C]')
+          .setColor('#00f0ff')
+          .setVisible(true)
+          .setAlpha(0.95);
+        this.statusRemainingMs = 250;
+      }
+    }
+
+    setResonance(percent: number, specialActive = false): void {
+      const clamped = Math.max(0, Math.min(100, percent));
+      const width = Math.max(2, (126 * clamped) / 100);
+      this.specialBarFill.setSize(width, 8);
+
+      if(specialActive) {
+        this.specialBarFill.setFillStyle(0x00f0ff);
+        this.specialText.setText('ESPECIAL: ATIVO!').setColor('#00f0ff');
+      } else if(clamped >= 100) {
       this.specialBarFill.setFillStyle(0xd946ef);
       this.specialText.setText('ESPECIAL [V]: PRONTO!').setColor('#fef08a');
     } else {

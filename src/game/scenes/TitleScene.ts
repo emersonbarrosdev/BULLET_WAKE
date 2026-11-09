@@ -74,18 +74,18 @@ export class TitleScene extends Phaser.Scene {
       .setStrokeStyle(1, 0x00f0ff, 0.3).setDepth(10);
 
     // Efeito de brilho neon no título
-    this.titleGlow = this.add.text(GAME_WIDTH / 2, 34, 'BULLET WAKE', {
-      fontFamily: FONT_TITLE,
-      fontSize: '42px',
-      fontStyle: 'bold',
-      color: '#00f0ff',
+      this.titleGlow = this.add.text(GAME_WIDTH / 2, 34, 'BULLET WAKE', {
+        fontFamily: FONT_TITLE,
+        fontSize: '42px',
+        fontStyle: 'bold',
+        color: '#00f0ff',
     }).setOrigin(0.5, 0).setAlpha(0.35).setResolution(3).setDepth(11);
 
-    this.add.text(GAME_WIDTH / 2, 34, 'BULLET WAKE', {
-      fontFamily: FONT_TITLE,
-      fontSize: '42px',
-      fontStyle: 'bold',
-      color: '#ffffff',
+      this.add.text(GAME_WIDTH / 2, 34, 'BULLET WAKE', {
+        fontFamily: FONT_TITLE,
+        fontSize: '42px',
+        fontStyle: 'bold',
+        color: '#ffffff',
     }).setOrigin(0.5, 0).setStroke('#0a1d2e', 5).setResolution(3).setDepth(12);
 
     this.add.text(
@@ -180,270 +180,270 @@ export class TitleScene extends Phaser.Scene {
         },
       ).setResolution(3).setDepth(11);
 
-      if (item.badge) {
-        this.add.text(
-          GAME_WIDTH / 2 + width / 2 - 16,
-          y - (isPrimary ? 9 : 8),
-          item.badge,
-          {
-            fontFamily: FONT_HUD,
-            fontSize: '13px',
-            color: isPrimary ? '#fde047' : '#38bdf8',
-            fontStyle: 'bold',
-          },
+    if (item.badge) {
+      this.add.text(
+        GAME_WIDTH / 2 + width / 2 - 16,
+        y - (isPrimary ? 9 : 8),
+        item.badge,
+        {
+          fontFamily: FONT_HUD,
+          fontSize: '13px',
+          color: isPrimary ? '#fde047' : '#38bdf8',
+          fontStyle: 'bold',
+        },
         ).setOrigin(1, 0).setResolution(3).setDepth(11);
-      }
+    }
 
-      bg.on('pointerover', () => this.selectItem(index));
-      bg.on('pointerdown', () => this.activateItem(index));
+    bg.on('pointerover', () => this.selectItem(index));
+    bg.on('pointerdown', () => this.activateItem(index));
 
-      this.menuButtons.push({ bg, label, border, isPrimary });
-    });
+    this.menuButtons.push({ bg, label, border, isPrimary });
+  });
 
     // Rodapé de navegação e ajuda
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 16, GAME_WIDTH, 32, 0x050e18, 0.96).setDepth(10);
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 32, GAME_WIDTH, 1.5, 0x1f3c4d).setDepth(10);
-    this.add.text(
-      GAME_WIDTH / 2,
-      GAME_HEIGHT - 23,
-      'W / S / SETAS: NAVEGAR   ·   ENTER / ESPAÇO: CONFIRMAR   ·   P: PILOTOS   ·   C: OPÇÕES',
-      {
-        fontFamily: FONT_HUD,
-        fontSize: '13px',
-        fontStyle: 'bold',
-        color: '#cbd5e1',
-      },
+this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 32, GAME_WIDTH, 1.5, 0x1f3c4d).setDepth(10);
+this.add.text(
+  GAME_WIDTH / 2,
+  GAME_HEIGHT - 23,
+  'W / S / SETAS: NAVEGAR   ·   ENTER / ESPAÇO: CONFIRMAR   ·   P: PILOTOS   ·   C: OPÇÕES',
+  {
+    fontFamily: FONT_HUD,
+    fontSize: '13px',
+    fontStyle: 'bold',
+    color: '#cbd5e1',
+  },
     ).setOrigin(0.5, 0).setResolution(3).setDepth(11);
 
-    this.selectItem(0);
+this.selectItem(0);
 
-    // Controles de teclado
-    const kb = this.input.keyboard;
-    if (kb) {
-      kb.on('keydown-UP', () => this.navigate(-1));
-      kb.on('keydown-W', () => this.navigate(-1));
-      kb.on('keydown-DOWN', () => this.navigate(1));
-      kb.on('keydown-S', () => this.navigate(1));
-      kb.on('keydown-ENTER', () => this.onConfirm());
-      kb.on('keydown-SPACE', () => this.onConfirm());
-      kb.on('keydown-P', () => { if (!this.modalContainer) this.openPilotSelect(); });
-      kb.on('keydown-M', () => { if (!this.modalContainer) this.openStageSelect(); });
-      kb.on('keydown-C', () => { if (!this.modalContainer) this.openSettingsModal(); });
-      kb.on('keydown-H', () => { if (!this.modalContainer) this.openControlsModal(); });
-      kb.on('keydown-ESC', () => { if (this.modalContainer) this.closeModal(); });
-    }
+// Controles de teclado
+const kb = this.input.keyboard;
+if (kb) {
+  kb.on('keydown-UP', () => this.navigate(-1));
+  kb.on('keydown-W', () => this.navigate(-1));
+  kb.on('keydown-DOWN', () => this.navigate(1));
+  kb.on('keydown-S', () => this.navigate(1));
+  kb.on('keydown-ENTER', () => this.onConfirm());
+  kb.on('keydown-SPACE', () => this.onConfirm());
+  kb.on('keydown-P', () => { if (!this.modalContainer) this.openPilotSelect(); });
+  kb.on('keydown-M', () => { if (!this.modalContainer) this.openStageSelect(); });
+  kb.on('keydown-C', () => { if (!this.modalContainer) this.openSettingsModal(); });
+  kb.on('keydown-H', () => { if (!this.modalContainer) this.openControlsModal(); });
+  kb.on('keydown-ESC', () => { if (this.modalContainer) this.closeModal(); });
+}
   }
 
-  update(_time: number, delta: number): void {
-    this.previewDistance += Math.min(delta, 50) * 0.024;
-    this.backdrop.update(this.previewDistance);
+update(_time: number, delta: number): void {
+  this.previewDistance += Math.min(delta, 50) * 0.024;
+  this.backdrop.update(this.previewDistance);
 
-    // Pulso neon suave no título e no botão primário
-    this.glowTimer += delta * 0.003;
-    if (this.titleGlow) {
-      this.titleGlow.setAlpha(0.25 + Math.sin(this.glowTimer) * 0.15);
-    }
-    if (this.primaryGlow) {
-      this.primaryGlow.setAlpha(0.12 + Math.sin(this.glowTimer * 1.5) * 0.08);
-    }
+  // Pulso neon suave no título e no botão primário
+  this.glowTimer += delta * 0.003;
+  if(this.titleGlow) {
+  this.titleGlow.setAlpha(0.25 + Math.sin(this.glowTimer) * 0.15);
+}
+if (this.primaryGlow) {
+  this.primaryGlow.setAlpha(0.12 + Math.sin(this.glowTimer * 1.5) * 0.08);
+}
   }
 
   private navigate(dir: number): void {
-    if (this.modalContainer) return;
-    const total = this.menuItems.length;
-    this.selectItem((this.selectedIndex + dir + total) % total);
-    globalAudio.playShot('cora', 1);
-  }
+  if(this.modalContainer) return;
+  const total = this.menuItems.length;
+  this.selectItem((this.selectedIndex + dir + total) % total);
+  globalAudio.playShot('cora', 1);
+}
 
   private onConfirm(): void {
-    if (this.modalContainer) {
-      this.closeModal();
-      return;
-    }
-    this.activateItem(this.selectedIndex);
+  if(this.modalContainer) {
+  this.closeModal();
+  return;
+}
+this.activateItem(this.selectedIndex);
   }
 
   private selectItem(index: number): void {
-    this.selectedIndex = index;
-    this.menuButtons.forEach((btn, idx) => {
-      const isSelected = idx === index;
-      if (btn.isPrimary) {
-        btn.bg.setStrokeStyle(isSelected ? 2 : 1.5, isSelected ? 0x00f0ff : 0x0284c7);
-        btn.bg.setFillStyle(isSelected ? 0x14405a : 0x0d2838, 0.96);
-        btn.label.setColor('#ffffff');
-      } else {
-        btn.bg.setStrokeStyle(isSelected ? 1.5 : 1, isSelected ? 0x00f0ff : 0x1f3c4d);
-        btn.bg.setFillStyle(isSelected ? 0x122438 : 0x081320, 0.94);
-        btn.label.setColor(isSelected ? '#ffffff' : '#94a3b8');
-      }
-      btn.border.setVisible(isSelected);
-    });
-  }
+  this.selectedIndex = index;
+  this.menuButtons.forEach((btn, idx) => {
+    const isSelected = idx === index;
+    if (btn.isPrimary) {
+      btn.bg.setStrokeStyle(isSelected ? 2 : 1.5, isSelected ? 0x00f0ff : 0x0284c7);
+      btn.bg.setFillStyle(isSelected ? 0x14405a : 0x0d2838, 0.96);
+      btn.label.setColor('#ffffff');
+    } else {
+      btn.bg.setStrokeStyle(isSelected ? 1.5 : 1, isSelected ? 0x00f0ff : 0x1f3c4d);
+      btn.bg.setFillStyle(isSelected ? 0x122438 : 0x081320, 0.94);
+      btn.label.setColor(isSelected ? '#ffffff' : '#94a3b8');
+    }
+    btn.border.setVisible(isSelected);
+  });
+}
 
   private activateItem(index: number): void {
-    globalAudio.playPickup('upgrade');
-    this.menuItems[index].action();
-  }
+  globalAudio.playPickup('upgrade');
+  this.menuItems[index].action();
+}
 
   private startStage1(): void {
-    this.scene.start('PrototypeScene', { pilotId: 'nolan', stageNumber: 1 });
-  }
+  this.scene.start('PrototypeScene', { pilotId: 'nolan', stageNumber: 1 });
+}
 
   private openPilotSelect(): void {
-    this.scene.start('PilotSelectScene', { stageNumber: 1 });
-  }
+  this.scene.start('PilotSelectScene', { stageNumber: 1 });
+}
 
   private openStageSelect(): void {
-    this.scene.start('StageSelectScene');
-  }
+  this.scene.start('StageSelectScene');
+}
 
   private openSettingsModal(): void {
-    const data = saveSystem.getSaveData();
-    const currentSfx = data.settings.sfxVolume > 0;
-    const currentBgm = data.settings.musicVolume > 0;
-    const currentDiff = data.settings.difficulty || 'normal';
-    const diffLabels = {
-      normal: 'NORMAL (EQUILIBRADO ARCADE)',
-      hard: 'DIFÍCIL (ALTA DENSIDADE)',
-      arcade: 'ARCADE EXPERT (LEQUE QUÍNTUPLO)',
-    };
+  const data = saveSystem.getSaveData();
+  const currentSfx = data.settings.sfxVolume > 0;
+  const currentBgm = data.settings.musicVolume > 0;
+  const currentDiff = data.settings.difficulty || 'normal';
+  const diffLabels = {
+    normal: 'NORMAL (EQUILIBRADO ARCADE)',
+    hard: 'DIFÍCIL (ALTA DENSIDADE)',
+    arcade: 'ARCADE EXPERT (LEQUE QUÍNTUPLO)',
+  };
 
-    const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040a12, 0.88);
-    const box = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 520, 310, 0x081320)
-      .setStrokeStyle(1.5, 0x00f0ff);
+  const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040a12, 0.88);
+  const box = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 520, 310, 0x081320)
+    .setStrokeStyle(1.5, 0x00f0ff);
 
-    const title = this.add.text(GAME_WIDTH / 2, 80, 'CONFIGURAÇÕES DE ÁUDIO & DIFICULDADE', {
-      fontFamily: FONT_TITLE,
-      fontSize: '18px',
-      color: '#00f0ff',
-      letterSpacing: 2,
-    }).setOrigin(0.5, 0).setResolution(2);
+  const title = this.add.text(GAME_WIDTH / 2, 80, 'CONFIGURAÇÕES DE ÁUDIO & DIFICULDADE', {
+    fontFamily: FONT_TITLE,
+    fontSize: '18px',
+    color: '#00f0ff',
+    letterSpacing: 2,
+  }).setOrigin(0.5, 0).setResolution(2);
 
-    const sfxBtn = this.add.rectangle(GAME_WIDTH / 2, 130, 420, 30, 0x122438)
-      .setStrokeStyle(1, 0x1f3c4d).setInteractive({ useHandCursor: true });
-    const sfxLabel = this.add.text(GAME_WIDTH / 2, 130, `EFEITOS SONOROS (SFX): ${currentSfx ? 'ATIVADO' : 'MUTADO'}`, {
-      fontFamily: FONT_HUD,
-      fontSize: '12px',
-      color: '#ffffff',
-    }).setOrigin(0.5).setResolution(2);
+  const sfxBtn = this.add.rectangle(GAME_WIDTH / 2, 130, 420, 30, 0x122438)
+    .setStrokeStyle(1, 0x1f3c4d).setInteractive({ useHandCursor: true });
+  const sfxLabel = this.add.text(GAME_WIDTH / 2, 130, `EFEITOS SONOROS (SFX): ${currentSfx ? 'ATIVADO' : 'MUTADO'}`, {
+    fontFamily: FONT_HUD,
+    fontSize: '12px',
+    color: '#ffffff',
+  }).setOrigin(0.5).setResolution(2);
 
-    sfxBtn.on('pointerdown', () => {
-      const next = !saveSystem.getSaveData().settings.sfxVolume;
-      saveSystem.updateSettings({ sfxVolume: next ? 1 : 0 });
-      sfxLabel.setText(`EFEITOS SONOROS (SFX): ${next ? 'ATIVADO' : 'MUTADO'}`);
-    });
+  sfxBtn.on('pointerdown', () => {
+    const next = !saveSystem.getSaveData().settings.sfxVolume;
+    saveSystem.updateSettings({ sfxVolume: next ? 1 : 0 });
+    sfxLabel.setText(`EFEITOS SONOROS (SFX): ${next ? 'ATIVADO' : 'MUTADO'}`);
+  });
 
-    const bgmBtn = this.add.rectangle(GAME_WIDTH / 2, 170, 420, 30, 0x122438)
-      .setStrokeStyle(1, 0x1f3c4d).setInteractive({ useHandCursor: true });
-    const bgmLabel = this.add.text(GAME_WIDTH / 2, 170, `MÚSICA RETRO-SYNTH: ${currentBgm ? 'ATIVADO' : 'MUTADO'}`, {
-      fontFamily: FONT_HUD,
-      fontSize: '12px',
-      color: '#ffffff',
-    }).setOrigin(0.5).setResolution(2);
+  const bgmBtn = this.add.rectangle(GAME_WIDTH / 2, 170, 420, 30, 0x122438)
+    .setStrokeStyle(1, 0x1f3c4d).setInteractive({ useHandCursor: true });
+  const bgmLabel = this.add.text(GAME_WIDTH / 2, 170, `MÚSICA RETRO-SYNTH: ${currentBgm ? 'ATIVADO' : 'MUTADO'}`, {
+    fontFamily: FONT_HUD,
+    fontSize: '12px',
+    color: '#ffffff',
+  }).setOrigin(0.5).setResolution(2);
 
-    bgmBtn.on('pointerdown', () => {
-      const next = !saveSystem.getSaveData().settings.musicVolume;
-      saveSystem.updateSettings({ musicVolume: next ? 1 : 0 });
-      bgmLabel.setText(`MÚSICA RETRO-SYNTH: ${next ? 'ATIVADO' : 'MUTADO'}`);
-      if (!next) globalAudio.stopMusic();
-    });
+  bgmBtn.on('pointerdown', () => {
+    const next = !saveSystem.getSaveData().settings.musicVolume;
+    saveSystem.updateSettings({ musicVolume: next ? 1 : 0 });
+    bgmLabel.setText(`MÚSICA RETRO-SYNTH: ${next ? 'ATIVADO' : 'MUTADO'}`);
+    if (!next) globalAudio.stopMusic();
+  });
 
-    const diffBtn = this.add.rectangle(GAME_WIDTH / 2, 210, 420, 30, 0x162c45)
-      .setStrokeStyle(1, 0x38bdf8).setInteractive({ useHandCursor: true });
-    const diffLabel = this.add.text(GAME_WIDTH / 2, 210, `DIFICULDADE: ${diffLabels[currentDiff]}`, {
-      fontFamily: FONT_HUD,
-      fontSize: '12px',
-      color: '#ffd166',
-      fontStyle: 'bold',
-    }).setOrigin(0.5).setResolution(2);
+  const diffBtn = this.add.rectangle(GAME_WIDTH / 2, 210, 420, 30, 0x162c45)
+    .setStrokeStyle(1, 0x38bdf8).setInteractive({ useHandCursor: true });
+  const diffLabel = this.add.text(GAME_WIDTH / 2, 210, `DIFICULDADE: ${diffLabels[currentDiff]}`, {
+    fontFamily: FONT_HUD,
+    fontSize: '12px',
+    color: '#ffd166',
+    fontStyle: 'bold',
+  }).setOrigin(0.5).setResolution(2);
 
-    diffBtn.on('pointerdown', () => {
-      const cur = saveSystem.getSaveData().settings.difficulty || 'normal';
-      const order = ['normal', 'hard', 'arcade'] as const;
-      const nextIdx = (order.indexOf(cur as any) + 1) % order.length;
-      const nextDiff = order[nextIdx];
-      saveSystem.updateSettings({ difficulty: nextDiff });
-      diffLabel.setText(`DIFICULDADE: ${diffLabels[nextDiff]}`);
-      globalAudio.playPickup('upgrade');
-    });
+  diffBtn.on('pointerdown', () => {
+    const cur = saveSystem.getSaveData().settings.difficulty || 'normal';
+    const order = ['normal', 'hard', 'arcade'] as const;
+    const nextIdx = (order.indexOf(cur as any) + 1) % order.length;
+    const nextDiff = order[nextIdx];
+    saveSystem.updateSettings({ difficulty: nextDiff });
+    diffLabel.setText(`DIFICULDADE: ${diffLabels[nextDiff]}`);
+    globalAudio.playPickup('upgrade');
+  });
 
-    const fpsHint = this.add.text(
-      GAME_WIDTH / 2,
-      245,
-      'SUPORTE A TAXAS DE QUADROS DESBLOQUEADAS: 60Hz / 120Hz / 144Hz / 240Hz',
-      {
-        fontFamily: FONT_HUD,
-        fontSize: '11px',
-        color: '#38bdf8',
-      },
-    ).setOrigin(0.5, 0).setResolution(2);
-
-    const closeBtn = this.add.rectangle(GAME_WIDTH / 2, 280, 140, 26, 0x0e7490)
-      .setStrokeStyle(1, 0x00f0ff).setInteractive({ useHandCursor: true });
-    const closeLabel = this.add.text(GAME_WIDTH / 2, 280, 'FECHAR [ESC]', {
+  const fpsHint = this.add.text(
+    GAME_WIDTH / 2,
+    245,
+    'SUPORTE A TAXAS DE QUADROS DESBLOQUEADAS: 60Hz / 120Hz / 144Hz / 240Hz',
+    {
       fontFamily: FONT_HUD,
       fontSize: '11px',
-      color: '#ffffff',
-      fontStyle: 'bold',
-    }).setOrigin(0.5).setResolution(2);
-    closeBtn.on('pointerdown', () => this.closeModal());
+      color: '#38bdf8',
+    },
+  ).setOrigin(0.5, 0).setResolution(2);
 
-    this.modalContainer = this.add.container(0, 0, [
-      overlay, box, title, sfxBtn, sfxLabel, bgmBtn, bgmLabel, diffBtn, diffLabel, fpsHint, closeBtn, closeLabel,
-    ]).setDepth(50);
-  }
+  const closeBtn = this.add.rectangle(GAME_WIDTH / 2, 280, 140, 26, 0x0e7490)
+    .setStrokeStyle(1, 0x00f0ff).setInteractive({ useHandCursor: true });
+  const closeLabel = this.add.text(GAME_WIDTH / 2, 280, 'FECHAR [ESC]', {
+    fontFamily: FONT_HUD,
+    fontSize: '11px',
+    color: '#ffffff',
+    fontStyle: 'bold',
+  }).setOrigin(0.5).setResolution(2);
+  closeBtn.on('pointerdown', () => this.closeModal());
+
+  this.modalContainer = this.add.container(0, 0, [
+    overlay, box, title, sfxBtn, sfxLabel, bgmBtn, bgmLabel, diffBtn, diffLabel, fpsHint, closeBtn, closeLabel,
+  ]).setDepth(50);
+}
 
   private openControlsModal(): void {
-    const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040a12, 0.88);
-    const box = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 560, 310, 0x081320)
-      .setStrokeStyle(1.5, 0x00f0ff);
+  const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040a12, 0.88);
+  const box = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 560, 310, 0x081320)
+    .setStrokeStyle(1.5, 0x00f0ff);
 
-    const title = this.add.text(GAME_WIDTH / 2, 75, 'CONTROLES DE VOO & COMBATE', {
-      fontFamily: FONT_TITLE,
-      fontSize: '18px',
-      color: '#00f0ff',
-      letterSpacing: 2,
-    }).setOrigin(0.5, 0).setResolution(2);
+  const title = this.add.text(GAME_WIDTH / 2, 75, 'CONTROLES DE VOO & COMBATE', {
+    fontFamily: FONT_TITLE,
+    fontSize: '18px',
+    color: '#00f0ff',
+    letterSpacing: 2,
+  }).setOrigin(0.5, 0).setResolution(2);
 
-    const controls = this.add.text(
-      GAME_WIDTH / 2,
-      105,
-      '• MOVIMENTAÇÃO: W/A/S/D ou SETAS (Voo vertical top-down, diagonais normalizadas)\n' +
-      '• DISPARO PRINCIPAL: BARRA DE ESPAÇO (Contínuo mantendo ou burst com tapping)\n' +
-      '• DASH DE EMERGÊNCIA: SHIFT ESQUERDO (Exatamente 3 por fase, invulnerabilidade curta)\n' +
-      '• DISPARO CARREGADO (WAVE CANNON): TECLA C (Segurar e soltar feixe penetrante)\n' +
-      '• ARMA SECUNDÁRIA / MÍSSEIS: TECLA M\n' +
-      '• HABILIDADE ESPECIAL: TECLA V (Requer 100% de Ressonância)\n' +
-      '• BOMBA DEFENSIVA: TECLA X ou B (Limpa balas da tela e causa dano massivo)\n' +
-      '• REINICIAR: TECLA R    |    MENU / PAUSA: TECLA ESC\n\n' +
-      '※ NO PC: MOUSE ATIVO EXCLUSIVAMENTE NOS MENUS DE INTERFACE',
-      {
-        fontFamily: FONT_HUD,
-        fontSize: '11px',
-        color: '#e2e8f0',
-        lineSpacing: 3,
-      },
-    ).setOrigin(0.5, 0).setResolution(2);
-
-    const closeBtn = this.add.rectangle(GAME_WIDTH / 2, 312, 140, 28, 0x0e7490)
-      .setStrokeStyle(1, 0x00f0ff).setInteractive({ useHandCursor: true });
-    const closeLabel = this.add.text(GAME_WIDTH / 2, 312, 'FECHAR [ESC]', {
+  const controls = this.add.text(
+    GAME_WIDTH / 2,
+    105,
+    '• MOVIMENTAÇÃO: W/A/S/D ou SETAS (Voo vertical top-down, diagonais normalizadas)\n' +
+    '• DISPARO PRINCIPAL: BARRA DE ESPAÇO (Contínuo mantendo ou burst com tapping)\n' +
+    '• DASH DE EMERGÊNCIA: SHIFT ESQUERDO (Exatamente 3 por fase, invulnerabilidade curta)\n' +
+    '• DISPARO CARREGADO (WAVE CANNON): TECLA C (Segurar e soltar feixe penetrante)\n' +
+    '• ARMA SECUNDÁRIA / MÍSSEIS: TECLA M\n' +
+    '• HABILIDADE ESPECIAL: TECLA V (Requer 100% de Ressonância)\n' +
+    '• BOMBA DEFENSIVA: TECLA X ou B (Limpa balas da tela e causa dano massivo)\n' +
+    '• REINICIAR: TECLA R    |    MENU / PAUSA: TECLA ESC\n\n' +
+    '※ NO PC: MOUSE ATIVO EXCLUSIVAMENTE NOS MENUS DE INTERFACE',
+    {
       fontFamily: FONT_HUD,
-      fontSize: '12px',
-      color: '#ffffff',
-      fontStyle: 'bold',
-    }).setOrigin(0.5).setResolution(2);
-    closeBtn.on('pointerdown', () => this.closeModal());
+      fontSize: '11px',
+      color: '#e2e8f0',
+      lineSpacing: 3,
+    },
+  ).setOrigin(0.5, 0).setResolution(2);
 
-    this.modalContainer = this.add.container(0, 0, [
-      overlay, box, title, controls, closeBtn, closeLabel,
-    ]).setDepth(50);
-  }
+  const closeBtn = this.add.rectangle(GAME_WIDTH / 2, 312, 140, 28, 0x0e7490)
+    .setStrokeStyle(1, 0x00f0ff).setInteractive({ useHandCursor: true });
+  const closeLabel = this.add.text(GAME_WIDTH / 2, 312, 'FECHAR [ESC]', {
+    fontFamily: FONT_HUD,
+    fontSize: '12px',
+    color: '#ffffff',
+    fontStyle: 'bold',
+  }).setOrigin(0.5).setResolution(2);
+  closeBtn.on('pointerdown', () => this.closeModal());
+
+  this.modalContainer = this.add.container(0, 0, [
+    overlay, box, title, controls, closeBtn, closeLabel,
+  ]).setDepth(50);
+}
 
   private closeModal(): void {
-    if (this.modalContainer) {
-      this.modalContainer.destroy();
-      this.modalContainer = undefined;
-    }
+  if(this.modalContainer) {
+  this.modalContainer.destroy();
+  this.modalContainer = undefined;
+}
   }
 }

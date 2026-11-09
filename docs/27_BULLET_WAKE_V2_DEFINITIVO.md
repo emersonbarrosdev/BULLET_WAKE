@@ -16,13 +16,13 @@
 >    - `ESC`: Pausa / Menu.
 >    - **MOUSE NÃO ATIRA NO PC:** Cliques do mouse (esquerdo ou direito) e movimento do ponteiro são 100% desvinculados do voo durante o gameplay. O mouse serve unicamente para menus e interfaces.
 > 4. **Mecânica Oficial do Dash:** Exatamente **3 DASHES POR FASE** (`DASH: ◆ ◆ ◆`). Sem recarga temporal, sem recarga por abate, sem power-up de dash e sem recuperação ao morrer dentro da fase. Restauração exclusiva ao reiniciar a fase do zero ou iniciar nova fase.
-> 5. **Sistema de Armas (Estilo Fire Shark):** Três famílias com identidade visual e mecânica distinta, evoluindo dos Níveis 1 a 4:
->    - **Raio Esmeralda (`green`):** Feixes de energia verde concentrados e ondulantes (sinusoidais) que aumentam de quantidade e potência por nível (2 -> 3 -> 5 -> 7 ondas).
->    - **Dispersão Azul (`ion`):** Disparos convencionais em leque amplo que cobrem mais direções conforme o nível sobe (3 -> 5 -> 7 -> 9 direções).
->    - **Laser Rubro (`red` — ARMAMENTO ENERGÉTICO CONTÍNUO DE MULTIFEIXES EVOLUTIVOS):** Feixe contínuo de energia vermelha intensa emitido enquanto `ESPAÇO` estiver pressionado, multiplicando seus feixes e adicionando varredura lateral oscilante nos níveis superiores (LV1: 1 feixe frontal; LV2: 2 feixes paralelos; LV3: 4 feixes com 2 laterais oscilantes; LV4: 6 feixes sincronizados com varredura ampla). **Proibido representar como bolas vermelhas ou projéteis discretos.**
-> 6. **Sistema de Power-ups (`3 P` por Nível + Cápsulas de Cor):** Portadores alienígenas (ex: Casulos Marinhos) soltam cápsulas físicas no campo:
->    - `P` (Power): Aumenta a barra de poder (`MEDIDOR P: ■ □ □`). **Três itens `P` (`3 P`) aumentam 1 nível da arma atual** (`1 -> 2 -> 3 -> 4`).
->    - `W` (Weapon Capsule): Cápsulas coloridas separadas (Verde = Raio Esmeralda, Azul = Dispersão Azul, Vermelha = Laser Rubro) que trocam o tipo da arma mantendo o nível e o progresso do medidor `P`.
+> 5. **Sistema de Armas (Estilo Fire Shark — Separação Canônica):** Três famílias com identidade visual e mecânica distinta, evoluindo independentemente dos Níveis 1 a 4:
+>    - **Dispersão Azul (`ion` — ARMA INICIAL CANÔNICA):** O jogador inicia sempre equipado com Dispersão Azul Nível 1 (`0/3 P`). Disparos direcionais em leque amplo que cobrem mais direções conforme o nível sobe (3 -> 5 -> 7 -> 9 direções).
+>    - **Energia Espiralada (`green`):** Feixes de energia verde concentrados e ondulantes (helicoidais/sinusoidais) que aumentam de quantidade e potência por nível (2 -> 3 -> 5 -> 7 ondas).
+>    - **Laser Rubro (`red` — ARMAMENTO ENERGÉTICO CONTÍNUO DE MULTIFEIXES EVOLUTIVOS):** Fluxo contínuo de energia vermelha intensa emitido enquanto `ESPAÇO` estiver pressionado, multiplicando suas colunas e adicionando varredura lateral e cobertura diagonal/traseira nos níveis superiores (LV1: 1 fluxo frontal concentrado; LV2: 2 fluxos paralelos; LV3: 4 fluxos com 2 laterais oscilantes; LV4 — **Asas de Energia**: 6 fluxos com 2 frontais + 2 asas laterais de varredura ampla + 2 feixes diagonais traseiros `rear-wing`). **Proibido representar como bolas vermelhas ou projéteis discretos.**
+> 6. **Sistema de Power-ups (`3 P` por Nível + Cápsulas de Cor Independentes):** Portadores alienígenas (ex: Casulos Marinhos) soltam cápsulas físicas no campo:
+>    - `P` (Power): Aumenta a barra de poder (`MEDIDOR P: ■ □ □ [0/3]`). **Três itens `P` (`3 P`) aumentam 1 nível da arma atual** (`1 -> 2 -> 3 -> 4`). Item raro `P★` (`full_power`) eleva diretamente ao Nível 4.
+>    - `W` (Weapon Capsule): Cápsulas coloridas separadas (`AZUL` = Dispersão Azul, `VERDE` = Energia Espiralada, `RUBRO` = Laser Rubro) que trocam imediatamente a arma equipada mantendo o nível (`1..4`) e o progresso do medidor `P` (`0..2`), sem exigir maximizar uma cor antes de coletar outra.
 >    - `H` (Health): Recupera blindagem.
 >    - `B` (Bomb): Recupera bomba.
 >    - `M` (Missile): Reabastece mísseis.
@@ -31,7 +31,7 @@
 >    - *Nenhum coletável recupera dash.*
 > 7. **Primeira Fase Oficial (Escopo Atual):** `STAGE_01_PELAGIC` — **FENDA PELÁGICA** (Oceano terrestre sob invasão biológica alienígena). Miniboss: *Raia-Dente*. Boss Colossal: *Talassarca — O Devorador das Marés* (3 fases completas).
 > 8. **Campanha Completa Documentada:** 15 fases principais (1 a 3 selecionáveis; 4 a 15 sequenciais; 3 chefes finais na fase 15: Thalor, Morhiza e Prisma Órfão) + 2 Finais Secretos (Fase 16: Abismo Subterrâneo; Fase 17: Lua: Origem da Colmeia — Matriz Primordial). Somente a Fase 1 é implementada nesta versão.
-> 9. **Arquitetura de HUD:** Widescreen com corredor central de combate vertical (384px de largura) e painéis laterais de telemetria (192px cada), separando completamente as informações vitais do campo de tiro.
+> 9. **Arquitetura de HUD:** Widescreen com corredor central de combate vertical (`432px` de largura, `X: 168..600`) e painéis laterais de telemetria (`168px` cada), separando completamente as informações vitais do campo de tiro.
 > 10. **Tipografia Estrita:** Máximo de duas famílias legítimas carregadas:
 >     - **Oxanium** (600, 700, 800): Títulos, cabeçalhos, destaques, chefes e alertas.
 >     - **Rajdhani** (500, 600, 700): Menus, botões, labels, HUD e telemetria.
@@ -99,27 +99,27 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
 - **Regra de Não-Recarga:** Cargas **NUNCA** se regeneram por tempo, morte de inimigos ou power-ups. Apenas o reinício completo da fase restaura as 3 cargas.
 
 ### 2.2. As 3 Famílias de Armamentos e Sistema de Power-ups (Estilo Fire Shark)
-- **Raio Esmeralda (`green` — Emerald Ray):** Feixes de energia verde concentrados e ondulantes (sinusoidais) que sobem entrelaçados.
-  - *LV1:* 2 ondas esmeralda entrelaçadas em contrafase.
-  - *LV2:* 3 ondas esmeralda concentradas (eixo central + dupla hélice lateral).
-  - *LV3:* 5 ondas esmeralda de alta densidade.
-  - *LV4:* 7 ondas esmeralda sinusoidais de saturação concentrada.
-- **Dispersão Azul (`ion` — Blue Spread):** Disparos convencionais em leque amplo cobrindo mais direções conforme o nível aumenta.
+- **Dispersão Azul (`ion` — Wide Shot / Arma Inicial Canônica):** O jogador inicia sempre equipado com Dispersão Azul Nível 1 (`0/3 P`). Disparos direcionais azul-safira/ciano em leque amplo cobrindo mais direções conforme o nível aumenta.
   - *LV1:* 3 direções em leque frontal.
   - *LV2:* 5 direções em leque aberto.
   - *LV3:* 7 direções em leque panorâmico.
   - *LV4:* 9 direções de cobertura total do corredor.
+- **Energia Espiralada (`green` — Beam / Emerald Spiral):** Feixes de energia verde concentrados e ondulantes (helicoidais/sinusoidais) que sobem entrelaçados.
+  - *LV1:* 2 ondas esmeralda entrelaçadas em contrafase.
+  - *LV2:* 3 ondas esmeralda concentradas (eixo central + dupla hélice lateral).
+  - *LV3:* 5 ondas esmeralda de alta densidade.
+  - *LV4:* 7 ondas esmeralda sinusoidais de saturação concentrada.
 - **Laser Rubro (`red` — ARMAMENTO ENERGÉTICO CONTÍNUO DE MULTIFEIXES EVOLUTIVOS):**
-  - Inspirado diretamente no *Super Fire* do *Fire Shark* original (Toaplan), reinterpretado como **feixes energéticos vermelhos contínuos** com núcleo luminoso incandescente, bordas de plasma animadas e impacto contínuo.
+  - Inspirado diretamente no *Fire / Super Fire* do *Fire Shark* original (Toaplan), reinterpretado como **fluxos energéticos vermelhos contínuos** com núcleo luminoso incandescente, bordas de plasma animadas e impacto contínuo.
   - **Proibição Estrita:** Nunca representar como bolas vermelhas, projéteis discretos separados, explosões de fogo ou sprites estáticos.
-  - *LV1 — Laser Rubro Inicial:* 1 feixe frontal contínuo, fino e concentrado.
-  - *LV2 — Laser Rubro Duplo:* 2 feixes frontais paralelos contínuos próximos, com maior espessura energética e DPS.
-  - *LV3 — Laser Rubro Expandido:* 4 feixes contínuos (2 feixes frontais principais + 2 feixes laterais com movimento oscilante de varredura controlada).
-  - *LV4 — Laser Rubro Máximo:* 6 feixes contínuos sincronizados (2 feixes centrais pesados + 2 feixes intermediários ondulantes + 2 feixes externos de varredura lateral ampla que cobrem as alas da arena).
-- **Sistema de Coletáveis (`3 P` por Nível + Cápsulas de Cor):**
+  - *LV1 — Laser Rubro Inicial:* 1 fluxo frontal contínuo, fino e concentrado.
+  - *LV2 — Laser Rubro Duplo:* 2 fluxos frontais paralelos contínuos próximos, com maior espessura energética e DPS.
+  - *LV3 — Laser Rubro Expandido:* 4 fluxos contínuos (2 fluxos frontais principais + 2 fluxos laterais com movimento oscilante de varredura controlada).
+  - *LV4 — Asas de Energia:* 6 fluxos contínuos sincronizados (2 fluxos centrais pesados + 2 asas laterais de varredura ampla + 2 feixes diagonais traseiros `rear-wing` que protegem flancos e retaguarda da aeronave).
+- **Sistema de Coletáveis (`3 P` por Nível + Cápsulas de Cor Independentes):**
   - Casulos e transportadores deixam cair cápsulas físicas no cenário.
-  - `P` (Power): Aumenta o Medidor `P` (`MEDIDOR P: ■ □ □ [1/3]`). **Três itens `P` (`3 P`) aumentam 1 nível da arma atual** (`1 -> 2 -> 3 -> 4`). No nível 4, itens `P` adicionais concedem bônus de pontuação (`+400 PTS`).
-  - `W` (Cápsulas Coloridas): Cápsulas Verde (`Raio Esmeralda`), Azul (`Dispersão Azul`) e Vermelha (`Laser Rubro`) alternam o tipo da arma sem resetar o nível ou o medidor `P`.
+  - `P` (Power): Aumenta o Medidor `P` (`MEDIDOR P: ■ □ □ [1/3]`). **Três itens `P` (`3 P`) aumentam 1 nível da arma atual** (`1 -> 2 -> 3 -> 4`). Item raro `P★` (`full_power`) eleva diretamente ao Nível 4. No nível 4, itens `P` adicionais concedem bônus de pontuação (`+400 PTS`).
+  - `W` (Cápsulas Coloridas): Cápsulas Azul (`Dispersão Azul`), Verde (`Energia Espiralada`) e Vermelha (`Laser Rubro`) alternam imediatamente o tipo da arma sem resetar o nível ou o medidor `P`, e sem exigir maximizar uma cor antes de coletar outra.
   - `H` (Vida), `B` (Bomba), `M` (Míssil), `S` (Score), `E` (Especial).
   - *Nenhum coletável concede dash.*
 
@@ -142,9 +142,9 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
 
 ### Arquitetura Widescreen TATE / Arcade Bezel
 - Resolução lógica: 768 × 432 pixels.
-- **Painel Esquerdo (X: 0 a 192):** Telemetria do Piloto (retrato, callsign, blindagem/HP, vidas, pontuação, multiplicador de combo e os 3 indicadores do Dash `◆ ◆ ◆`).
-- **Campo de Combate Central (X: 192 a 576, Y: 0 a 432):** 384 pixels de largura vertical desobstruída para manobras, naves, projéteis e coletáveis.
-- **Painel Direito (X: 576 a 768):** Telemetria de Armamento (Arma ativa, Nível 1 a 4, Bombas `[X]`, Especial `[V]`, Mísseis, Radar de Fase e Barra de Vida do Chefe).
+- **Painel Esquerdo (X: 0 a 168):** Telemetria do Piloto (retrato, callsign, blindagem/HP, vidas, pontuação, multiplicador de combo e os 3 indicadores do Dash `◆ ◆ ◆`).
+- **Campo de Combate Central (X: 168 a 600, Y: 0 a 432):** 432 pixels de largura vertical desobstruída para manobras, naves, projéteis e coletáveis, com fundo oceânico abissal centralizado (`tilePositionX = 168`).
+- **Painel Direito (X: 600 a 768):** Telemetria de Armamento (Arma ativa, Nível `NV 1/4..4/4`, Medidor `P [0/3..MAX]`, Bombas `[X]`, Especial `[V]`, Radar de Fase e Barra de Vida do Chefe).
 
 ### Tipografia
 - **Família Display / Títulos:** `Oxanium` (Google Fonts: 600, 700, 800).

@@ -100,12 +100,15 @@ function drawPelagicLayer(
 
   if (layer === 'reefs') {
     // 2. Recifes Vivos Submarinos e Formações de Rocha Oceânica (Formas Orgânicas)
+    // Posicionados nas margens do corredor central (X ~ 175..265 e X ~ 495..590) para emoldurar o combate
     for (let i = 0; i < 8; i++) {
       const isLeft = i % 2 === 0;
       const baseY = i * 105 + 20;
-      const rx = isLeft ? 15 + pseudoRandom(i * 7) * 40 : W - 190 + pseudoRandom(i * 11) * 35;
-      const rw = 140 + pseudoRandom(i * 5) * 60;
-      const rh = 65 + pseudoRandom(i * 9) * 40;
+      const rx = isLeft
+        ? 172 + pseudoRandom(i * 7) * 32
+        : W - 172 - 145 - pseudoRandom(i * 11) * 30;
+      const rw = 125 + pseudoRandom(i * 5) * 45;
+      const rh = 65 + pseudoRandom(i * 9) * 38;
 
       // Base rochosa com contornos orgânicos
       ctx.save();
@@ -290,14 +293,24 @@ export class StageBackdrop {
     const centerY = GAME_HEIGHT / 2;
 
     // 2. Camadas de Tiling Vertical com profundidade negativa (-10 a -7)
+    // Alinha tilePositionX em PLAYFIELD_X quando em modo corredor para centralizar a fenda abissal e os recifes
+    const tileOffsetX = fullWidth ? 0 : PLAYFIELD_X;
+
     this.abyssTile = scene.add.tileSprite(centerX, centerY, width, GAME_HEIGHT, 'bg-pelagic-abyss-hd')
       .setDepth(-10);
+    this.abyssTile.tilePositionX = tileOffsetX;
+
     this.reefsTile = scene.add.tileSprite(centerX, centerY, width, GAME_HEIGHT, 'bg-pelagic-reefs-hd')
       .setDepth(-9);
+    this.reefsTile.tilePositionX = tileOffsetX;
+
     this.surfaceTile = scene.add.tileSprite(centerX, centerY, width, GAME_HEIGHT, 'bg-pelagic-surface-hd')
       .setDepth(-8);
+    this.surfaceTile.tilePositionX = tileOffsetX;
+
     this.mistTile = scene.add.tileSprite(centerX, centerY, width, GAME_HEIGHT, 'bg-pelagic-mist-hd')
       .setDepth(-7);
+    this.mistTile.tilePositionX = tileOffsetX;
 
     // 3. Molduras de painel lateral (Bezels Arcade Neo-Retro) - APENAS no gameplay
     if (showBezels) {

@@ -11,39 +11,40 @@ export class GameOverOverlay extends Phaser.GameObjects.Container {
     const panel = scene.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 460, 270, 0x0b1626, 0.94)
       .setStrokeStyle(2, 0xff4d6d);
 
-    const title = scene.add.text(GAME_WIDTH / 2, 110, 'SISTEMA COMPROMETIDO', {
+    const title = scene.add.text(GAME_WIDTH / 2, 108, 'SISTEMA COMPROMETIDO', {
       fontFamily: FONT_TITLE,
-      fontSize: '22px',
+      fontSize: '23px',
       color: '#ff4d6d',
       fontStyle: 'bold',
       letterSpacing: 2,
-    }).setOrigin(0.5, 0).setResolution(2);
+    }).setOrigin(0.5, 0).setResolution(3);
 
-    const subTitle = scene.add.text(GAME_WIDTH / 2, 142, '// NAVE DESTRUIDA //', {
+    const subTitle = scene.add.text(GAME_WIDTH / 2, 142, '// AERONAVE ABATIDA EM COMBATE //', {
       fontFamily: FONT_TECH,
-      fontSize: '12px',
-      color: '#ff85a1',
-      letterSpacing: 3,
-    }).setOrigin(0.5, 0).setResolution(2);
+      fontSize: '13px',
+      fontStyle: 'bold',
+      color: '#fda4af',
+      letterSpacing: 2,
+    }).setOrigin(0.5, 0).setResolution(3);
 
     const points = scene.add.text(GAME_WIDTH / 2, 175, 'SCORE FINAL: ' + score.toString().padStart(7, '0'), {
       fontFamily: FONT_HUD,
-      fontSize: '18px',
-      color: '#f8fafc',
+      fontSize: '19px',
+      color: '#ffffff',
       fontStyle: 'bold',
       letterSpacing: 1,
-    }).setOrigin(0.5, 0).setResolution(2);
+    }).setOrigin(0.5, 0).setResolution(3);
 
     // Botão Replay [R]
     const replay = scene.add.rectangle(GAME_WIDTH / 2, 235, 290, 38, 0x1e3a5f, 0.95)
-      .setStrokeStyle(1, 0x38bdf8).setInteractive({ useHandCursor: true });
+      .setStrokeStyle(1.5, 0x38bdf8).setInteractive({ useHandCursor: true });
     const replayText = scene.add.text(GAME_WIDTH / 2, 235, 'REINICIAR MISSÃO [R]', {
       fontFamily: FONT_HUD,
       fontSize: '14px',
       color: '#ffffff',
       fontStyle: 'bold',
       letterSpacing: 1,
-    }).setOrigin(0.5).setResolution(2);
+    }).setOrigin(0.5).setResolution(3);
 
     replay.on('pointerover', () => {
       replay.setFillStyle(0x2563eb);
@@ -51,20 +52,20 @@ export class GameOverOverlay extends Phaser.GameObjects.Container {
     });
     replay.on('pointerout', () => {
       replay.setFillStyle(0x1e3a5f);
-      replay.setStrokeStyle(1, 0x38bdf8);
+      replay.setStrokeStyle(1.5, 0x38bdf8);
     });
     replay.on('pointerdown', onRestart);
 
     // Botão Trocar Piloto [ESC]
     const change = scene.add.rectangle(GAME_WIDTH / 2, 285, 290, 38, 0x132338, 0.95)
-      .setStrokeStyle(1, 0x64748b).setInteractive({ useHandCursor: true });
+      .setStrokeStyle(1.5, 0x64748b).setInteractive({ useHandCursor: true });
     const changeText = scene.add.text(GAME_WIDTH / 2, 285, 'TROCAR PILOTO [ESC]', {
       fontFamily: FONT_HUD,
       fontSize: '14px',
-      color: '#94a3b8',
+      color: '#cbd5e1',
       fontStyle: 'bold',
       letterSpacing: 1,
-    }).setOrigin(0.5).setResolution(2);
+    }).setOrigin(0.5).setResolution(3);
 
     change.on('pointerover', () => {
       change.setFillStyle(0x1e293b);

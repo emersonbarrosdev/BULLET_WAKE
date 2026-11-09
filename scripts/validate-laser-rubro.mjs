@@ -443,6 +443,43 @@ async function main() {
     }
 
     // =========================================================================
+    // 3.5. CÁPSULAS COLORIDAS E ITENS P FÍSICOS NO CAMPO (AZUL, VERDE, RUBRO, P, P★)
+    // =========================================================================
+    const pickupsShowcase = await cdp.evalValue(`
+      (() => {
+        const s = window.__GAME__.scene.getScene('PrototypeScene');
+        s.director.enemies = [];
+        s.syncEnemyVisuals();
+        s.clearEnemyShots();
+        s.clearPlayerShots();
+        s.pickups.clear();
+        s.syncPickupVisuals();
+        s.inputManager.keys.SPACE.isDown = false;
+        s.vectorShip.setPosition(384, 345);
+        s.setTestWeapon('ion', 1, 1);
+        s.spawnShowcasePickups();
+        for (let i = 0; i < 6; i++) s.update(performance.now(), 16.67);
+        return {
+          pickupCount: s.pickups.pickups.length,
+          types: s.pickups.pickups.map(p => p.type),
+        };
+      })()
+    `);
+    console.log('[CÁPSULAS E ITENS P NO CORREDOR]:', JSON.stringify(pickupsShowcase));
+    if (pickupsShowcase.pickupCount !== 5) {
+      throw new Error('Falha na geração das 5 cápsulas canônicas: ' + JSON.stringify(pickupsShowcase));
+    }
+    await capturePng(cdp, 'pickups_capsulas_e_itens_p.png');
+    await cdp.evalValue(`
+      (() => {
+        const s = window.__GAME__.scene.getScene('PrototypeScene');
+        s.pickups.clear();
+        s.syncPickupVisuals();
+        return true;
+      })()
+    `);
+
+    // =========================================================================
     // 4. COMBATE REAL CONTRA MINIBOSS RAIA-DENTE + MÚLTIPLOS INIMIGOS
     //    E CAPTURAS REAIS EM 1920x1080 E 1366x768 (SEÇÃO 9.5)
     // =========================================================================

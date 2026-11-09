@@ -135,7 +135,7 @@ export class PrototypeScene extends Phaser.Scene {
   private shots: Projectile[] = [];
   private enemyShots: Projectile[] = [];
   private enemyVisuals = new Map<number, EnemyVisual>();
-  private pickupVisuals = new Map<number, Phaser.GameObjects.Sprite>();
+  private pickupVisuals = new Map<number, Phaser.GameObjects.Container>();
 
   private pickups = new PickupSystem();
   private director = new StageDirector(GAME_WIDTH, true, 1);
@@ -225,7 +225,13 @@ export class PrototypeScene extends Phaser.Scene {
 
   /**
    * Registra atalhos de teclado e métodos públicos para validação imediata
-   * dos 4 níveis do Laser Rubro e das 3 armas sem precisar jogar a fase inteira.
+   * dos 4 níveis das 3 armas e das cápsulas/itens P sem precisar jogar a fase inteira:
+   * - Teclas 1..4: seleciona Nível 1..4 da arma atual
+   * - Tecla 5: alterna ciclicamente entre Dispersão Azul, Energia Espiralada e Laser Rubro
+   * - Tecla 6: seleciona diretamente DISPERSÃO AZUL (mantém nível)
+   * - Tecla 7: seleciona diretamente ENERGIA ESPIRALADA (mantém nível)
+   * - Tecla 8: seleciona diretamente LASER RUBRO (mantém nível)
+   * - Tecla 9: gera no corredor as 5 cápsulas canônicas (AZUL, VERDE, RUBRO, P, P★)
    */
   private registerSandboxShortcuts(): void {
     const kb = this.input.keyboard;
@@ -237,13 +243,35 @@ export class PrototypeScene extends Phaser.Scene {
     kb.on('keydown-FOUR', () => this.setTestWeapon(this.weapons.weaponFamily, 4));
     kb.on('keydown-FIVE', () => {
       const nextFamily: WeaponFamily =
-        this.weapons.weaponFamily === 'red'
+        this.weapons.weaponFamily === 'ion'
           ? 'green'
           : this.weapons.weaponFamily === 'green'
-            ? 'ion'
-            : 'red';
+            ? 'red'
+            : 'ion';
       this.setTestWeapon(nextFamily, this.weapons.weaponLevel);
     });
+    kb.on('keydown-SIX', () => this.setTestWeapon('ion', this.weapons.weaponLevel));
+    kb.on('keydown-SEVEN', () => this.setTestWeapon('green', this.weapons.weaponLevel));
+    kb.on('keydown-EIGHT', () => this.setTestWeapon('red', this.weapons.weaponLevel));
+    kb.on('keydown-NINE', () => this.spawnShowcasePickups());
+  }
+
+  /** Gera no corredor as 5 cápsulas canônicas (AZUL, VERDE, RUBRO, P e P★) para inspeção e coleta */
+  public spawnShowcasePickups(): void {
+    const baseY = Math.max(96, this.vectorShip.y - 145);
+    const items: Array<{ type: 'weapon_ion' | 'weapon_green' | 'weapon_red' | 'power' | 'full_power'; dx: number }> = [
+      { type: 'weapon_ion', dx: -136 },
+      { type: 'weapon_green', dx: -68 },
+      { type: 'weapon_red', dx: 0 },
+      { type: 'power', dx: 68 },
+      { type: 'full_power', dx: 136 },
+    ];
+    const centerX = PLAYFIELD_X + PLAYFIELD_WIDTH / 2;
+    for (const item of items) {
+      this.pickups.spawn(item.type, centerX + item.dx, baseY);
+    }
+    this.syncPickupVisuals();
+    this.hud.flash('CÁPSULAS E ITENS P GERADOS NO CORREDOR', '#fde047', 1200);
   }
 
   /** Permite selecionar diretamente qualquer família e nível (1..4) para validação isolada */
@@ -379,111 +407,104 @@ export class PrototypeScene extends Phaser.Scene {
     this.shootCooldown = Math.max(0, this.shootCooldown - dt);
 
     if (this.weapons.weaponFamily !== 'red') {
-      // Regras Canônicas Fire Shark #9 e #10: Segurar ESPAÇO permite autofire contínuo sem bloqueio por superaquecimento
-      if (!this.weapons.isCharging) {
-        if (commands.firePrimaryTap && this.shootCooldown <= 0) {
-          this.firePrimary();
-          this.shootCooldown = specs.burstIntervalMs;
-        } else if (commands.firePrimary && this.shootCooldown <= 0) {
-          this.firePrimary();
-          this.shootCooldown = specs.autoIntervalMs;
+        // Regras Canônicas Fire Shark #9 e #10: Segurar ESPAÇO permite autofire contínuo sem bloqueio por superaquecimento
+        if (!this.weapons.isCharging) {
+          if (commands.firePrimaryTap && this.shootCooldown <= 0) {
+            this.firePrimary();
+            this.shootCooldown = specs.burstIntervalMs;
+          } else if (commands.firePrimary && this.shootCooldown <= 0) {
+            this.firePrimary();
+            this.shootCooldown = specs.autoIntervalMs;
+          }
         }
       }
-    }
 
-    // 3. Disparo Secundário / Mísseis (tecla M)
-    if (commands.missile && this.weapons.missileCooldownMs <= 0) {
-      this.fireSecondary();
-    }
-
-    // 4. Ativação do Especial de Ressonância (tecla V)
-    if (commands.special) {
-      this.triggerSpecial();
-    }
-
-    // 5. Bomba Defensiva de Emergência (tecla X ou B)
-    if (commands.bomb) {
-      this.detonateBomb();
-    }
-
-    // Tempestade Prismática ativa da Rivet (rajada contínua enquanto especial ativo)
-    if (this.weapons.specialType === 'prism' && this.weapons.specialActiveMs > 0) {
-      if (Math.floor(this.weapons.specialActiveMs / 100) % 2 === 0) {
-        this.emitPrismBurst();
+      // 3. Disparo Secundário / Mísseis (tecla M)
+      if (commands.missile && this.weapons.missileCooldownMs <= 0) {
+        this.fireSecondary();
       }
-    }
 
-    // Atualiza diretor da fase
-    const tick = this.director.update(dt, this.ship.x, this.ship.y);
-    this.backdrop.update(tick.scrollPx);
-    this.hud.setProgress(tick.progress);
-    if (tick.sectorChanged) this.hud.setSector(tick.sector);
-
-    for (const enemy of tick.spawned) this.makeEnemyVisual(enemy);
-    for (const event of tick.shots) this.spawnEnemyShot(event);
-    this.syncEnemyVisuals();
-
-    // Atualiza pickups físicos
-    this.pickups.update(dt, this.ship.x, this.ship.y);
-    this.syncPickupVisuals();
-    this.checkPickupCollisions();
-
-    // Atualiza chefe ou miniboss se ativo
-    if (tick.bossActive && this.director.boss) {
-      this.syncBossVisual(this.director.boss);
-      this.hud.showBossBar(this.director.boss.name, this.director.boss.hp, this.director.boss.maxHp);
-      globalAudio.startBossMusic();
-    } else {
-      if (this.bossVisual) {
-        this.bossVisual.container.destroy();
-        this.bossVisual = undefined;
-        this.hud.hideBossBar();
+      // 4. Ativação do Especial de Ressonância (tecla V)
+      if (commands.special) {
+        this.triggerSpecial();
       }
-    }
 
-    // Atualiza projéteis (ENERGIA ESPIRALADA / DISPERSÃO AZUL)
-    this.advancePlayerShots(dt);
+      // 5. Bomba Defensiva de Emergência (tecla X ou B)
+      if (commands.bomb) {
+        this.detonateBomb();
+      }
 
-    // Atualiza emissão contínua, varredura lateral, colisões e renderização HD das 3 armas
-    this.updateCrimsonLaser(dt, commands.firePrimary || commands.firePrimaryTap);
+      // Tempestade Prismática ativa da Rivet (rajada contínua enquanto especial ativo)
+      if (this.weapons.specialType === 'prism' && this.weapons.specialActiveMs > 0) {
+        if (Math.floor(this.weapons.specialActiveMs / 100) % 2 === 0) {
+          this.emitPrismBurst();
+        }
+      }
 
-    this.checkEnemyContacts();
-    if (this.health.gameOver) return;
+      // Atualiza diretor da fase
+      const tick = this.director.update(dt, this.ship.x, this.ship.y);
+      this.backdrop.update(tick.scrollPx);
+      this.hud.setProgress(tick.progress);
+      if (tick.sectorChanged) this.hud.setSector(tick.sector);
 
-    this.advanceEnemyShots(dt);
+      for (const enemy of tick.spawned) this.makeEnemyVisual(enemy);
+      for (const event of tick.shots) this.spawnEnemyShot(event);
+      this.syncEnemyVisuals();
 
-    // Verificação de conclusão da fase
-    if (tick.completed) {
-      this.completed = true;
-      this.crimsonLaserRenderer.clear();
-      this.clearEnemyShots();
-      this.clearPlayerShots();
-      this.hud.hideBossBar();
-      globalAudio.stopMusic();
+      // Atualiza pickups físicos
+      this.pickups.update(dt, this.ship.x, this.ship.y);
+      this.syncPickupVisuals();
+      this.checkPickupCollisions();
 
-      const bonusPoints = 5000 + this.health.lives * 1000 + this.health.hp * 500;
-      this.scoreCombo = addRawScore(this.scoreCombo, bonusPoints);
-      this.hud.setScore(this.scoreCombo.score);
-
-      saveSystem.recordStageClear(this.stageNumber, this.pilot.id, this.scoreCombo.score);
-
-      if (this.stageNumber >= 15) {
-        this.scene.start('EndingScene', {
-          pilotId: this.pilot.id,
-          score: this.scoreCombo.score,
-        });
+      // Atualiza chefe ou miniboss se ativo
+      if (tick.bossActive && this.director.boss) {
+        this.syncBossVisual(this.director.boss);
+        this.hud.showBossBar(this.director.boss.name, this.director.boss.hp, this.director.boss.maxHp);
+        globalAudio.startBossMusic();
       } else {
+        if (this.bossVisual) {
+          this.bossVisual.container.destroy();
+          this.bossVisual = undefined;
+          this.hud.hideBossBar();
+        }
+      }
+
+      // Atualiza projéteis (ENERGIA ESPIRALADA / DISPERSÃO AZUL)
+      this.advancePlayerShots(dt);
+
+      // Atualiza emissão contínua, varredura lateral, colisões e renderização HD das 3 armas
+      this.updateCrimsonLaser(dt, commands.firePrimary || commands.firePrimaryTap);
+
+      this.checkEnemyContacts();
+      if (this.health.gameOver) return;
+
+      this.advanceEnemyShots(dt);
+
+      // Verificação de conclusão da fase
+      if (tick.completed) {
+        this.completed = true;
+        this.crimsonLaserRenderer.clear();
+        this.clearEnemyShots();
+        this.clearPlayerShots();
+        this.hud.hideBossBar();
+        globalAudio.stopMusic();
+
+        const bonusPoints = 5000 + this.health.lives * 1000 + this.health.hp * 500;
+        this.scoreCombo = addRawScore(this.scoreCombo, bonusPoints);
+        this.hud.setScore(this.scoreCombo.score);
+
+        saveSystem.recordStageClear(this.stageNumber, this.pilot.id, this.scoreCombo.score);
+
         new StageCompleteOverlay(
           this,
           this.stageNumber,
           this.scoreCombo.score,
-          () => this.scene.start('PrototypeScene', { pilotId: this.pilot.id, stageNumber: this.stageNumber + 1 }),
+          () => this.scene.start('EndingScene', { pilotId: this.pilot.id, score: this.scoreCombo.score }),
           () => this.restart(),
           () => this.scene.start('StageSelectScene'),
         );
       }
     }
-  }
 
   private restart(): void {
     globalAudio.stopMusic();
@@ -658,8 +679,8 @@ export class PrototypeScene extends Phaser.Scene {
     const familyTint = this.weapons.weaponFamily === 'green'
       ? 0x4ade80
       : this.weapons.weaponFamily === 'ion'
-      ? 0x00f0ff
-      : 0xff4d6d;
+        ? 0x00f0ff
+        : 0xff4d6d;
     const defs = getPrimaryProjectiles(this.weapons.weaponFamily, this.weapons.weaponLevel, originX, originY);
     for (const def of defs) {
       this.createPlayerProjectile(def, familyTint);
@@ -686,8 +707,8 @@ export class PrototypeScene extends Phaser.Scene {
     const shotName = this.pilot.id === 'nolan'
       ? (chargeLevel === 2 ? 'FEIXE PRISMÁTICO MÁXIMO!' : 'FEIXE PENETRANTE')
       : this.pilot.id === 'cora'
-      ? (chargeLevel === 2 ? 'OVERDRIVE AGULHAS (VENTILADO)!' : 'RAJADA AGULHAS')
-      : (chargeLevel === 2 ? 'MEGA-CANHÃO CINÉTICO!' : 'IMPACTO PESADO');
+        ? (chargeLevel === 2 ? 'OVERDRIVE AGULHAS (VENTILADO)!' : 'RAJADA AGULHAS')
+        : (chargeLevel === 2 ? 'MEGA-CANHÃO CINÉTICO!' : 'IMPACTO PESADO');
 
     this.hud.flash(shotName, chargeLevel === 2 ? '#00f0ff' : '#ffd166', 800);
   }
@@ -869,34 +890,100 @@ export class PrototypeScene extends Phaser.Scene {
 
   private syncPickupVisuals(): void {
     const active = new Set(this.pickups.pickups.map(p => p.id));
-    for (const [id, sprite] of this.pickupVisuals) {
+    for (const [id, node] of this.pickupVisuals) {
       if (active.has(id)) continue;
-      sprite.destroy();
+      node.destroy();
       this.pickupVisuals.delete(id);
     }
     for (const p of this.pickups.pickups) {
-      let sprite = this.pickupVisuals.get(p.id);
-      if (!sprite) {
-        // Mapeia sprites para os tipos canônicos Fire Shark
+      let node = this.pickupVisuals.get(p.id);
+      if (!node) {
+        // Mapeia sprites, cores e insígnias para os tipos canônicos Fire Shark
         let key = 'pickup-upgrade';
-        if (p.type === 'power' || p.type === 'weapon_green') key = 'pickup-upgrade';
-        else if (p.type === 'full_power') key = 'pickup-resonance';
-        else if (p.type === 'weapon_ion') key = 'pickup-shield';
-        else if (p.type === 'weapon_red') key = 'pickup-bomb';
-        else if (p.type === 'health') key = 'pickup-repair';
-        else if (p.type === 'bomb') key = 'pickup-bomb';
-        else if (p.type === 'special') key = 'pickup-resonance';
-        else if (p.type === 'score') key = 'pickup-score';
+        let label = 'P';
+        let badgeHex = '#facc15';
+        let ringColor = 0xfacc15;
+        let spriteTint: number | undefined;
 
-        sprite = this.add.sprite(p.x, p.y, key, 0).setScale(1.25).setDepth(6);
-        if (p.type === 'full_power') sprite.setTint(0xff1e42);
-        else if (p.type === 'weapon_red') sprite.setTint(0xfb7185);
-        else if (p.type === 'weapon_ion') sprite.setTint(0x38bdf8);
-        else if (p.type === 'weapon_green') sprite.setTint(0x4ade80);
+        if (p.type === 'power') {
+          key = 'pickup-upgrade';
+          label = 'P';
+          badgeHex = '#fde047';
+          ringColor = 0xfacc15;
+          spriteTint = 0xfde047;
+        } else if (p.type === 'full_power') {
+          key = 'pickup-resonance';
+          label = 'P★';
+          badgeHex = '#fde047';
+          ringColor = 0xff1e42;
+          spriteTint = 0xff1e42;
+        } else if (p.type === 'weapon_ion') {
+          key = 'pickup-shield';
+          label = 'AZUL';
+          badgeHex = '#7dd3fc';
+          ringColor = 0x00f0ff;
+          spriteTint = 0x38bdf8;
+        } else if (p.type === 'weapon_green') {
+          key = 'pickup-upgrade';
+          label = 'VERDE';
+          badgeHex = '#86efac';
+          ringColor = 0x4ade80;
+          spriteTint = 0x4ade80;
+        } else if (p.type === 'weapon_red') {
+          key = 'pickup-bomb';
+          label = 'RUBRO';
+          badgeHex = '#fda4af';
+          ringColor = 0xff1e42;
+          spriteTint = 0xff1e42;
+        } else if (p.type === 'health') {
+          key = 'pickup-repair';
+          label = 'HP';
+          badgeHex = '#86efac';
+          ringColor = 0x4ade80;
+        } else if (p.type === 'bomb') {
+          key = 'pickup-bomb';
+          label = 'B';
+          badgeHex = '#fdba74';
+          ringColor = 0xf97316;
+        } else if (p.type === 'special') {
+          key = 'pickup-resonance';
+          label = 'ESP';
+          badgeHex = '#d8b4fe';
+          ringColor = 0xa855f7;
+        } else if (p.type === 'score') {
+          key = 'pickup-score';
+          label = 'PTS';
+          badgeHex = '#fde047';
+          ringColor = 0xeab308;
+        }
+
+        const halo = this.add.graphics();
+        halo.fillStyle(0x020617, 0.78);
+        halo.fillCircle(0, -2, 13);
+        halo.lineStyle(1.8, ringColor, 0.92);
+        halo.strokeCircle(0, -2, 13);
+        halo.fillStyle(0x020617, 0.9);
+        halo.fillRoundedRect(-20, 9, 40, 13, 3);
+        halo.lineStyle(1, ringColor, 0.85);
+        halo.strokeRoundedRect(-20, 9, 40, 13, 3);
+
+        const sprite = this.add.sprite(0, -2, key, 0).setScale(1.25);
+        if (spriteTint !== undefined) {
+          sprite.setTint(spriteTint);
+        }
         sprite.play(key + '-loop');
-        this.pickupVisuals.set(p.id, sprite);
+
+        const badge = this.add.text(0, 15.5, label, {
+          fontFamily: FONT_TECH,
+          fontSize: '10px',
+          fontStyle: 'bold',
+          color: badgeHex,
+        }).setOrigin(0.5).setResolution(3);
+
+        node = this.add.container(p.x, p.y, [halo, sprite, badge]).setDepth(14);
+        this.pickupVisuals.set(p.id, node);
       } else {
-        sprite.setPosition(p.x, p.y);
+        node.setPosition(p.x, p.y);
       }
     }
   }
@@ -970,7 +1057,7 @@ export class PrototypeScene extends Phaser.Scene {
       fontSize: '13px',
       fontStyle: 'bold',
       color,
-    }).setOrigin(0.5).setDepth(25);
+    }).setOrigin(0.5).setDepth(25).setResolution(3);
     this.tweens.add({
       targets: text,
       y: y - 32,
