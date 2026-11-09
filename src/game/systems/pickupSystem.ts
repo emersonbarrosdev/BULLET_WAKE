@@ -9,10 +9,11 @@
 import { PLAYFIELD_X, PLAYFIELD_RIGHT } from '../constants.ts';
 
 export type PickupType =
-  | 'power'         // P: Aumenta o nível da arma equipada (1 a 4)
-  | 'weapon_green'  // W: Troca para Pulso Verde
-  | 'weapon_ion'    // W: Troca para Laser de Íons
-  | 'weapon_red'    // W: Troca para Plasma Vermelho
+  | 'power'         // P: Avança 1/3 no medidor P (3 P = +1 nível de potência até LV4)
+  | 'full_power'    // P★: Item P Vermelho Raro — eleva imediatamente ao Nível 4 máximo (nunca troca a arma)
+  | 'weapon_green'  // Cápsula Verde: Troca para ENERGIA ESPIRALADA
+  | 'weapon_ion'    // Cápsula Azul: Troca para DISPERSÃO AZUL
+  | 'weapon_red'    // Cápsula Vermelha: Troca para LASER RUBRO
   | 'health'        // H: Recupera 1 ponto de vida
   | 'bomb'          // B: Concede 1 bomba (máx 4)
   | 'missile'       // M: Reabastece munição de mísseis

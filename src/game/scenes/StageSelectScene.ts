@@ -74,47 +74,49 @@ export class StageSelectScene extends Phaser.Scene {
         `FASE 0${stageDef.stageNumber}`,
         {
           fontFamily: FONT_TITLE,
-          fontSize: '13px',
-          color: unlocked ? '#00f0ff' : '#475569',
-          letterSpacing: 1,
+          fontSize: '14px',
+          fontStyle: 'bold',
+          color: unlocked ? '#00f0ff' : '#64748b',
         },
-      ).setOrigin(0.5, 0).setResolution(2).setDepth(11);
+      ).setOrigin(0.5, 0).setResolution(3).setDepth(11);
 
       const subtitle = this.add.text(
         x,
-        cardY - 48,
+        cardY - 46,
         stageDef.title.toUpperCase(),
         {
           fontFamily: FONT_TECH,
-          fontSize: '11px',
-          color: unlocked ? '#f8fafc' : '#334155',
+          fontSize: '12px',
+          color: unlocked ? '#ffffff' : '#475569',
           fontStyle: 'bold',
         },
-      ).setOrigin(0.5, 0).setResolution(2).setDepth(11);
+      ).setOrigin(0.5, 0).setResolution(3).setDepth(11);
 
       const bossText = this.add.text(
         x,
-        cardY - 10,
+        cardY - 12,
         unlocked ? `CHEFE:\n${stageDef.bossName}` : '[BLOQUEADA]',
         {
           fontFamily: FONT_TECH,
-          fontSize: '10px',
-          color: unlocked ? '#f59e0b' : '#64748b',
+          fontSize: '12px',
+          fontStyle: 'bold',
+          color: unlocked ? '#facc15' : '#64748b',
           align: 'center',
         },
-      ).setOrigin(0.5, 0).setResolution(2).setDepth(11);
+      ).setOrigin(0.5, 0).setResolution(3).setDepth(11);
 
       const scoreText = this.add.text(
         x,
-        cardY + 45,
+        cardY + 40,
         unlocked ? `RECORDE:\n${bestScore.toString().padStart(6, '0')}` : '---',
         {
           fontFamily: FONT_TECH,
-          fontSize: '10px',
-          color: unlocked ? '#10b981' : '#334155',
+          fontSize: '12px',
+          fontStyle: 'bold',
+          color: unlocked ? '#34d399' : '#475569',
           align: 'center',
         },
-      ).setOrigin(0.5, 0).setResolution(2).setDepth(11);
+      ).setOrigin(0.5, 0).setResolution(3).setDepth(11);
 
       panel.on('pointerdown', () => {
         if (unlocked) {

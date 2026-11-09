@@ -191,6 +191,13 @@ animations.push(
 );
 
 export function registerGameAnimations(scene: Phaser.Scene): void {
+  // Mantém filtragem nítida para spritesheets de arte enquanto Text e Graphics usam anti-aliasing HD
+  for (const sheet of SPRITE_SHEETS) {
+    if (scene.textures.exists(sheet.key)) {
+      scene.textures.get(sheet.key).setFilter(Phaser.Textures.FilterMode.NEAREST);
+    }
+  }
+
   for (const animation of animations) {
     // Não registrar animação apontando para __MISSING: quando o combate
     // pré-carregar o arquivo novamente, a animação poderá ser registrada.

@@ -16,13 +16,13 @@
 >    - `ESC`: Pausa / Menu.
 >    - **MOUSE NÃO ATIRA NO PC:** Cliques do mouse (esquerdo ou direito) e movimento do ponteiro são 100% desvinculados do voo durante o gameplay. O mouse serve unicamente para menus e interfaces.
 > 4. **Mecânica Oficial do Dash:** Exatamente **3 DASHES POR FASE** (`DASH: ◆ ◆ ◆`). Sem recarga temporal, sem recarga por abate, sem power-up de dash e sem recuperação ao morrer dentro da fase. Restauração exclusiva ao reiniciar a fase do zero ou iniciar nova fase.
-> 5. **Sistema de Armas (Estilo Fire Shark):** Três famílias com identidade visual e evolução real (Níveis 1 a 4):
->    - **Pulso Verde:** Ampla cobertura em leque (frontal duplo -> 3 vias -> 5 vias -> 7 vias).
->    - **Laser de Íons:** Feixe ciano concentrado de alta penetração em blindagens pesadas.
->    - **Plasma Vermelho:** Orbes pesados com impacto térmico concussivo e dano em área.
-> 6. **Coletáveis Físicos no Campo:** Portadores alienígenas (ex: Casulos Marinhos) soltam cápsulas físicas no campo:
->    - `P` (Power): Evolui a arma atual de 1 a 4.
->    - `W` (Weapon): Cápsula de troca (Verde, Ciano, Vermelho).
+> 5. **Sistema de Armas (Estilo Fire Shark):** Três famílias com identidade visual e mecânica distinta, evoluindo dos Níveis 1 a 4:
+>    - **Raio Esmeralda (`green`):** Feixes de energia verde concentrados e ondulantes (sinusoidais) que aumentam de quantidade e potência por nível (2 -> 3 -> 5 -> 7 ondas).
+>    - **Dispersão Azul (`ion`):** Disparos convencionais em leque amplo que cobrem mais direções conforme o nível sobe (3 -> 5 -> 7 -> 9 direções).
+>    - **Laser Rubro (`red` — ARMAMENTO ENERGÉTICO CONTÍNUO DE MULTIFEIXES EVOLUTIVOS):** Feixe contínuo de energia vermelha intensa emitido enquanto `ESPAÇO` estiver pressionado, multiplicando seus feixes e adicionando varredura lateral oscilante nos níveis superiores (LV1: 1 feixe frontal; LV2: 2 feixes paralelos; LV3: 4 feixes com 2 laterais oscilantes; LV4: 6 feixes sincronizados com varredura ampla). **Proibido representar como bolas vermelhas ou projéteis discretos.**
+> 6. **Sistema de Power-ups (`3 P` por Nível + Cápsulas de Cor):** Portadores alienígenas (ex: Casulos Marinhos) soltam cápsulas físicas no campo:
+>    - `P` (Power): Aumenta a barra de poder (`MEDIDOR P: ■ □ □`). **Três itens `P` (`3 P`) aumentam 1 nível da arma atual** (`1 -> 2 -> 3 -> 4`).
+>    - `W` (Weapon Capsule): Cápsulas coloridas separadas (Verde = Raio Esmeralda, Azul = Dispersão Azul, Vermelha = Laser Rubro) que trocam o tipo da arma mantendo o nível e o progresso do medidor `P`.
 >    - `H` (Health): Recupera blindagem.
 >    - `B` (Bomb): Recupera bomba.
 >    - `M` (Missile): Reabastece mísseis.
@@ -98,26 +98,28 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
 - **Rastro Visual:** Rastro translúcido ciano com partículas de plasma.
 - **Regra de Não-Recarga:** Cargas **NUNCA** se regeneram por tempo, morte de inimigos ou power-ups. Apenas o reinício completo da fase restaura as 3 cargas.
 
-### 2.2. As 3 Famílias de Armamentos e Coletáveis
-- **Pulso Verde (Green Pulse):** Arma equilibrada de cobertura.
-  - *LV1:* 2 projéteis paralelos frontais.
-  - *LV2:* 3 projéteis em leque suave (-10°, 0°, +10°).
-  - *LV3:* 5 projéteis em leque amplo (-20°, -10°, 0°, +10°, +20°).
-  - *LV4:* 7 projéteis de dispersão cobrindo o campo com alta cadência.
-- **Laser de Íons (Ion Laser):** Feixe concentrado ciano para alvos pesados.
-  - *LV1:* Feixe estreito frontal de perfuração contínua.
-  - *LV2:* Feixe duplo alargado com partículas iônicas.
-  - *LV3:* Feixe central pesado + 2 agulhas laterais de foco.
-  - *LV4:* Coluna iônica devastadora de dano focal massivo.
-- **Plasma Vermelho (Red Plasma):** Disparo pesado concussivo e controle de área.
-  - *LV1:* Orbe único pesado com pequena detonação no impacto.
-  - *LV2:* Orbes duplos com onda de choque de 25px.
-  - *LV3:* Disparo triplo frontal com dano térmico prolongado.
-  - *LV4:* Canhão devastador quádruplo com raio explosivo de 45px.
-- **Sistema de Coletáveis (Fire Shark):**
+### 2.2. As 3 Famílias de Armamentos e Sistema de Power-ups (Estilo Fire Shark)
+- **Raio Esmeralda (`green` — Emerald Ray):** Feixes de energia verde concentrados e ondulantes (sinusoidais) que sobem entrelaçados.
+  - *LV1:* 2 ondas esmeralda entrelaçadas em contrafase.
+  - *LV2:* 3 ondas esmeralda concentradas (eixo central + dupla hélice lateral).
+  - *LV3:* 5 ondas esmeralda de alta densidade.
+  - *LV4:* 7 ondas esmeralda sinusoidais de saturação concentrada.
+- **Dispersão Azul (`ion` — Blue Spread):** Disparos convencionais em leque amplo cobrindo mais direções conforme o nível aumenta.
+  - *LV1:* 3 direções em leque frontal.
+  - *LV2:* 5 direções em leque aberto.
+  - *LV3:* 7 direções em leque panorâmico.
+  - *LV4:* 9 direções de cobertura total do corredor.
+- **Laser Rubro (`red` — ARMAMENTO ENERGÉTICO CONTÍNUO DE MULTIFEIXES EVOLUTIVOS):**
+  - Inspirado diretamente no *Super Fire* do *Fire Shark* original (Toaplan), reinterpretado como **feixes energéticos vermelhos contínuos** com núcleo luminoso incandescente, bordas de plasma animadas e impacto contínuo.
+  - **Proibição Estrita:** Nunca representar como bolas vermelhas, projéteis discretos separados, explosões de fogo ou sprites estáticos.
+  - *LV1 — Laser Rubro Inicial:* 1 feixe frontal contínuo, fino e concentrado.
+  - *LV2 — Laser Rubro Duplo:* 2 feixes frontais paralelos contínuos próximos, com maior espessura energética e DPS.
+  - *LV3 — Laser Rubro Expandido:* 4 feixes contínuos (2 feixes frontais principais + 2 feixes laterais com movimento oscilante de varredura controlada).
+  - *LV4 — Laser Rubro Máximo:* 6 feixes contínuos sincronizados (2 feixes centrais pesados + 2 feixes intermediários ondulantes + 2 feixes externos de varredura lateral ampla que cobrem as alas da arena).
+- **Sistema de Coletáveis (`3 P` por Nível + Cápsulas de Cor):**
   - Casulos e transportadores deixam cair cápsulas físicas no cenário.
-  - `P` (Power): Evolui nível de 1 a 4. No nível 4, concede 1.000 pontos.
-  - `W` (Weapon): Alterna imediatamente a família de arma (Verde, Íon, Vermelho), mantendo o nível atual.
+  - `P` (Power): Aumenta o Medidor `P` (`MEDIDOR P: ■ □ □ [1/3]`). **Três itens `P` (`3 P`) aumentam 1 nível da arma atual** (`1 -> 2 -> 3 -> 4`). No nível 4, itens `P` adicionais concedem bônus de pontuação (`+400 PTS`).
+  - `W` (Cápsulas Coloridas): Cápsulas Verde (`Raio Esmeralda`), Azul (`Dispersão Azul`) e Vermelha (`Laser Rubro`) alternam o tipo da arma sem resetar o nível ou o medidor `P`.
   - `H` (Vida), `B` (Bomba), `M` (Míssil), `S` (Score), `E` (Especial).
   - *Nenhum coletável concede dash.*
 
@@ -168,8 +170,13 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
 - **Velocidade de Projéteis:** Calibrada entre 120 e 150 px/s (tempo de travessia do campo de ~3 segundos), permitindo esquiva deliberada e justa.
 
 ### 4.3. Progressão de Armamento e Nomes Canônicos
-- **Início Obrigatório:** Todos os operadores iniciam estritamente com **Pulso Verde Nível 1**. Nenhuma nave inicia com Plasma Vermelho ou Laser de Íons.
-- **Alternância de Armas:** Cápsulas físicas `W` caem de inimigos (como o Casulo Marinho) e alternam ciclicamente para Íon e Plasma preservando o nível conquistado.
+- **Início Obrigatório (Regra Canônica Fire Shark #1):** O jogador inicia equipado com **Wide Shot azul (`DISPERSÃO AZUL`, Nível 1, `powerMeter = 0`)**.
+- **Independência entre Troca de Arma e Potência (Regras Canônicas Fire Shark #2, #3, #4 e #5):**
+  - Cápsulas coloridas coletadas fisicamente alteram a arma equipada (Azul → `DISPERSÃO AZUL`, Verde → `ENERGIA ESPIRALADA`, Vermelha → `LASER RUBRO`).
+  - **Não é necessário maximizar o azul para obter o verde, nem o verde para obter o vermelho.**
+  - Cada item `P` coletado incrementa o Medidor `P` (`0/3 -> 1/3 -> 2/3 -> 3/3`). Três itens `P` aumentam 1 nível de potência, até 4 estados totais (`NV 1 -> NV 2 -> NV 3 -> NV 4`).
+  - Troca de arma e evolução de potência são mecanismos independentes.
+  - O item raro `P★` vermelho (`full_power`) eleva imediatamente a arma equipada para o Nível 4 máximo, sem alterar a família da arma e sem ser confundido com a cápsula vermelha de troca de arma (`weapon_red`).
 - **Nomes Canônicos das 5 Regiões V2:**
   - Fase 01: Fenda Pelágica (Chefe: *Talassarca — O Devorador das Marés*)
   - Fase 02: Bosque da Névoa Viva (Chefe: *Arborion — O Coração Vegetal*)
@@ -224,6 +231,69 @@ Nenhuma alteração estrutural ou visual pode ser considerada concluída sem cum
   - Validação automatizada via navegador headless (`node scripts/capture-verification-screenshots.mjs`) na porta `5173`: 0 erros de console, 0 exceções, navegação de menu funcional, 3 pilotos selecionáveis com naves em perfil, Fase 1 iniciando com Pulso Verde LV1, movimentação lateral e disparos destruindo inimigos em combate real.
 - **Tarefas Pendentes (Fora do Escopo Atual da Fase 1):**
   - Implementação jogável das Fases 2 a 15 e das 2 rotas secretas documentadas na Bíblia (mantidas bloqueadas conforme regra estrita de escopo da Fase 1 — Fenda Pelágica).
+
+---
+
+## 6. LASER RUBRO — ARMAMENTO ENERGÉTICO CONTÍNUO DE MULTIFEIXES EVOLUTIVOS
+
+> [!IMPORTANT]
+> **SUBSTITUIÇÃO DEFINITIVA NA BÍBLIA OFICIAL**
+> Ficam permanentemente revogadas todas as referências anteriores a "Plasma Vermelho", "Chama Rubra", bolas vermelhas, projéteis discretos ou explosões sequenciais para o armamento vermelho (`weaponFamily = 'red'`). O armamento vermelho oficial do BULLET WAKE é o **LASER RUBRO**.
+
+### 6.1. Definição e Comportamento Geral (`src/game/systems/crimsonLaserSystem.ts`)
+- **Emissão Contínua:** Ativado e mantido continuamente enquanto o jogador segurar `ESPAÇO` (`LASER_RAMP_UP_MS = 35ms`).
+- **Encerramento Imediato com Fade-Out Curto:** Ao soltar `ESPAÇO`, a emissão cessa imediatamente com decaimento visual curto (`LASER_DECAY_MS = 110ms`).
+- **Sem Lacunas e Sem Superaquecimento:** Feixes contínuos de polilinhas (`16` segmentos verticais por feixe) sem buracos entre segmentos e com `heatPerShot = 0` para nunca sofrer corte arbitrário durante o uso normal.
+- **Rastreamento Imediato:** Origem ancorada diretamente aos emissores frontais da nave (`vectorShip.x`, `vectorShip.y`), acompanhando instantaneamente movimentação lateral, diagonal e Dash.
+- **Dano por Tick Independente de FPS:** Acumulador determinístico (`LASER_DAMAGE_TICK_MS = 60ms`, ~16,67 ticks/s) que garante o mesmo DPS exato em 30 FPS, 60 FPS, 120 FPS ou 240 FPS.
+
+### 6.2. Os 4 Níveis Progressivos do Laser Rubro
+1. **Nível 1 — Fluxo Inicial (`beamCount = 1`):**
+   - 1 coluna energética frontal contínua de plasma rubro-alaranjado em movimento, com volumes luminosos conectados subindo rapidamente pelo fluxo, bordas irregulares animadas e núcleo incandescente (`totalDps = 18`).
+2. **Nível 2 — Fluxo Duplo (`beamCount = 2`):**
+   - 2 fluxos frontais visivelmente separados (`±11.5px`) com pulsação independente em contrafase, maior cobertura frontal e sensação clara de evolução (`totalDps = 27`).
+3. **Nível 3 — Expansão Lateral (`beamCount = 4`, `hasLateralSweep = true`, `hasRearCoverage = false`):**
+   - 2 fluxos principais frontais + 2 ramificações laterais que abrem para fora e retornam ciclicamente durante o disparo, criando varredura lateral orgânica (`totalDps = 38`).
+4. **Nível 4 — Asas de Energia (`beamCount = 6`, `hasLateralSweep = true`, `hasRearCoverage = true`):**
+   - Transformação geométrica completa: 2 fluxos principais frontais reforçados (`central`) + 2 ramificações laterais expressivas que abrem e fecham como asas luminosas de plasma (`lateral-sweep`) + **2 novos fluxos voltados para a diagonal traseira/flancos (`rear-wing`)**, protegendo contra ameaças laterais e próximas da retaguarda com comprimento e dano controlados (`totalDps = 50`).
+
+### 6.3. Renderização, Impactos e Legibilidade (`src/game/render/CrimsonLaserRenderer.ts`)
+- **Zero Alocação por Frame:** Utiliza um único `Phaser.GameObjects.Graphics` reutilizável em `depth = 8`.
+- **Camadas Visuais:** Bainha energética rubra-alaranjada externa com espessura variável por segmento (`0x991b1b` / `0xea580c`), fluxo principal de plasma rubro-alaranjado (`0xff1e42` / `0xf97316`), volumes luminosos conectados ascendentes (`0xff2a1f`, `0xfb923c`, `0xfef08a`), espinha dorsal incandescente contínua (`0xfff7ed`), coronas nos canhões da nave e centelhas rotativas nas coordenadas exatas de impacto (`LaserImpactPoint`).
+- **Legibilidade Absoluta de Projéteis Inimigos:** Projéteis hostis são renderizados em `depth = 18` (acima do Laser Rubro em `depth = 8` e da nave em `depth = 15`), garantindo leitura clara mesmo durante o Nível 4 máximo.
+- **Modo de Validação Rápida (Sandbox Teclas `1–5`):** Durante o gameplay na `PrototypeScene`, as teclas `1`, `2`, `3` e `4` selecionam imediatamente os Níveis 1 a 4 da arma ativa, e a tecla `5` alterna entre `LASER RUBRO`, `ENERGIA ESPIRALADA` e `DISPERSÃO AZUL`.
+
+---
+
+## 7. IMPORTANTE — REFERÊNCIA VISUAL FIRE SHARK E PROGRESSÃO DEFINITIVA DE ARMAMENTOS
+
+> [!IMPORTANT]
+> **SEPARAÇÃO RIGOROSA ENTRE AS REGRAS COMPROVADAS DE *FIRE SHARK* (TOAPLAN) E AS ADAPTAÇÕES PRÓPRIAS DO *BULLET WAKE***
+> Esta seção documenta separadamente os mecanismos comprovados da referência histórica (*Fire Shark*, Toaplan) e as adaptações autorais originais do *BULLET WAKE*, proibindo atribuir ao jogo original suposições não verificadas (como uma suposta progressão obrigatória `Azul N4 → Verde N4 → Vermelho`).
+
+### 7.1. Regras Confirmadas de *Fire Shark* (Reproduzidas Conceitualmente)
+1. **Arma Inicial Padrão:** O jogador inicia a partida equipado com o **Wide Shot azul** (`DISPERSÃO AZUL` / `'ion'` no Nível 1, com medidor `P` em `0/3`).
+2. **Troca por Cápsulas Coloridas:** Cápsulas coloridas coletadas fisicamente no campo de combate alteram imediatamente a arma equipada:
+   - Cápsula Azul (`weapon_ion`) → **DISPERSÃO AZUL**
+   - Cápsula Verde (`weapon_green`) → **ENERGIA ESPIRALADA**
+   - Cápsula Vermelha (`weapon_red`) → **LASER RUBRO**
+3. **Ausência de Trava Linear entre Cores:** **Não é necessário maximizar o azul para obter o verde, nem maximizar o verde para obter o vermelho.** Qualquer cápsula coletada ativa sua respectiva arma imediatamente.
+4. **Evolução por 3 Itens `P` (4 Estados de Potência):** Coletar **três itens `P`** (`0/3 → 1/3 → 2/3 → 3/3`) aumenta **1 nível de potência** da arma, até **quatro estados totais** (`Nível 1`, `Nível 2`, `Nível 3` e `Nível 4`).
+5. **Independência entre Troca de Arma e Evolução de Potência:** A troca de família de arma (cápsulas coloridas) e a evolução de nível de potência (itens `P`) são mecanismos **independentes**. Trocar de arma mantém o nível de potência atual e o progresso acumulado no medidor `P`.
+6. **Comportamento da Arma Azul (`DISPERSÃO AZUL`):** Dispara projéteis energéticos direcionais independentes em leque crescente conforme o nível de potência sobe (`3`, `5`, `7` e `9` direções), cobrindo progressivamente mais ângulos frontais e diagonais.
+7. **Comportamento da Arma Verde (`ENERGIA ESPIRALADA`):** Dispara feixes e ondas energéticas ondulantes/espiraladas concentradas (`2`, `3`, `5` e `7` ondas helicoidais com fitas luminosas e anéis de fase), com deslocamento ondulante real e foco frontal/semi-frontal.
+8. **Comportamento da Arma Vermelha (`LASER RUBRO`):** Utiliza fluxos contínuos de energia semelhantes a fogo/plasma em movimento contínuo (nunca projéteis avulsos ou linha reta estática), que se expandem por nível (`Fluxo Inicial` → `Fluxo Duplo` → `Expansão Lateral` cíclica → `Asas de Energia` no Nível 4 com cobertura lateral ampla e **2 fluxos posteriores/diagonais `rear-wing`**).
+9. **Autofire Contínuo:** Manter o comando de disparo (`ESPAÇO`) pressionado garante **autofire contínuo** em todas as armas.
+10. **Sem Superaquecimento no Disparo Principal:** Superaquecimento **não** faz parte do sistema principal documentado de *Fire Shark* e não interrompe nem bloqueia o autofire contínuo durante o combate no *BULLET WAKE*.
+
+### 7.2. Adaptações Originais Próprias do *BULLET WAKE*
+1. **Reinterpretação Visual Neo-Arcade HD 2D (*Laser Rubro*):** Enquanto o *Fire Shark* original apresenta o *Super Fire* com estética de chamas clássicas, o *BULLET WAKE* reinterpreta o ataque vermelho como **colunas vivas de plasma rubro-alaranjado em movimento** (`#ff1e42`, `#fb923c`, `#fef08a`, `#fff7ed`), com volumes luminosos conectados subindo pelo feixe, bordas irregulares animadas e asas energéticas curvas, sem copiar sprites ou assets da Toaplan.
+2. **Dash Tático de Emergência (`SHIFT Esquerdo`):** Sistema autoral do *BULLET WAKE* com exatamente **3 cargas fixas por fase** (`DASH 3/3`), janela curta de evasão (`130ms`) e zero recarga por tempo ou itens.
+3. **Controles Exclusivos de Teclado no PC:** Movimentação em 8 direções via `WASD`/Setas e disparo via `ESPAÇO`, com o mouse estritamente desabilitado para tiro ou movimentação da nave no PC.
+4. **Sistemas Táticos dos Operadores (Nolan, Cora, Harlan):** Habilidade Especial de Ressonância (`V`), Wave Cannon carregável (`C`) e Bomba Defensiva (`X`), além de balanceamento de DPS por tick determinístico (`60ms`) e alcance traseiro limitado nos fluxos `rear-wing` do Nível 4 para preservar o desafio do Miniboss *Raia-Dente* e do Chefe *Talassarca*.
+5. **HUD Widescreen de Alta Legibilidade (1366×768 e 1920×1080):** Corredor central expandido (`432px`, `X: 168..600`) ladeado por painéis táticos (`168px`) com carregamento explícito de `Oxanium` e `Rajdhani`, renderização `antialias: true` para textos/gráficos vetoriais (`FilterMode.NEAREST` restrito apenas às texturas de sprites) e eliminação total de textos ilegíveis de `10px/11px`.
+
+
 
 
 

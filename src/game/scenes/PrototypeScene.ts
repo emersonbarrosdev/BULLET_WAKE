@@ -31,7 +31,8 @@ import {
 } from '../systems/dashSystem.ts';
 import {
   createPlayerWeapons,
-  upgradeWeapon,
+  collectPowerItem,
+  collectFullPowerItem,
   switchWeaponFamily,
   addResonance,
   activateSpecial,
@@ -43,14 +44,23 @@ import {
   getPrimaryProjectiles,
   getSecondaryProjectiles,
   getChargedProjectiles,
-  recordPrimaryShot,
   updateWeaponCharge,
   releaseWeaponCharge,
   WEAPON_FAMILY_SPECS,
   MAX_CHARGE_MS,
   type PlayerWeaponsState,
   type ProjectileSpawnDef,
+  type WeaponFamily,
+  type WeaponLevel,
 } from '../systems/weaponSystem.ts';
+import {
+  LASER_RUBRO_SPECS,
+  createInitialCrimsonLaserState,
+  stepCrimsonLaser,
+  type CrimsonLaserState,
+  type LaserTargetCircle,
+} from '../systems/crimsonLaserSystem.ts';
+import { CrimsonLaserRenderer } from '../render/CrimsonLaserRenderer.ts';
 import { InputManager } from '../systems/inputSystem.ts';
 import { PickupSystem, determineEnemyDrop } from '../systems/pickupSystem.ts';
 import {
@@ -65,11 +75,16 @@ import { globalAudio } from '../audio/audioSystem.ts';
 
 interface Projectile {
   node: Phaser.GameObjects.Sprite;
+  baseX: number;
+  ageMs: number;
   velocityX: number;
   velocityY: number;
   damage: number;
   hitRadius: number;
   piercing?: boolean;
+  waveAmplitude?: number;
+  waveFrequency?: number;
+  wavePhase?: number;
 }
 
 interface EnemyVisual {
@@ -126,6 +141,10 @@ export class PrototypeScene extends Phaser.Scene {
   private director = new StageDirector(GAME_WIDTH, true, 1);
   private bossVisual?: BossVisual;
 
+  private crimsonLaserState: CrimsonLaserState = createInitialCrimsonLaserState(1);
+  private crimsonLaserRenderer!: CrimsonLaserRenderer;
+  private laserAudioTimerMs = 0;
+
   private shootCooldown = 0;
   private totalKills = 0;
   private completed = false;
@@ -152,7 +171,8 @@ export class PrototypeScene extends Phaser.Scene {
     this.prismPoseMs = 0;
     this.phantomDashTimerMs = 0;
 
-    this.weapons = createPlayerWeapons(this.pilot.id);
+    // Regra Canônica Fire Shark #1: O jogador inicia equipado com Wide Shot azul (DISPERSÃO AZUL, Nível 1, 0/3 P)
+    this.weapons = createPlayerWeapons(this.pilot.id, 'ion');
     this.scoreCombo = initialScoreCombo();
     this.health = initialPlayerHealth();
     this.dashState = createInitialDashState();
@@ -169,17 +189,18 @@ export class PrototypeScene extends Phaser.Scene {
     const difficulty = saveSystem.getSettings().difficulty || 'normal';
     this.director = new StageDirector(GAME_WIDTH, true, this.stageNumber, difficulty);
     this.shootCooldown = 0;
+    this.laserAudioTimerMs = 0;
 
     this.backdrop = new StageBackdrop(this, this.stageNumber, { fullWidth: false, showBezels: true });
     this.inputManager = new InputManager(this);
 
     this.hud = new CombatHud(this, () => this.restart());
-    this.hud.setPilot(this.pilot.shipName, this.pilot.callsign);
+    this.hud.setPilot(this.pilot.id, this.pilot.shipName);
     this.hud.setScore(0);
     this.hud.setHealth(this.health, false);
     this.hud.setDash(this.dashState.remainingDashes);
     this.hud.setProgress(0);
-    this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel);
+    this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
     this.hud.setBombs(this.weapons.bombs);
     this.hud.setResonance(0);
 
@@ -192,7 +213,59 @@ export class PrototypeScene extends Phaser.Scene {
     const initialShipY = 350;
     this.vectorShip = new VectorShip(this, initialShipX, initialShipY, this.pilot.id);
 
+    // Inicializa sistema e renderizador do Laser Rubro (multifeixes contínuos)
+    this.crimsonLaserState = createInitialCrimsonLaserState(this.weapons.weaponLevel);
+    this.crimsonLaserRenderer = new CrimsonLaserRenderer(this);
+
+    // Atalhos de Sandbox / Validação de Desenvolvimento (Teclas 1, 2, 3, 4 selecionam Laser Rubro LV1–LV4)
+    this.registerSandboxShortcuts();
+
     globalAudio.startStageMusic();
+  }
+
+  /**
+   * Registra atalhos de teclado e métodos públicos para validação imediata
+   * dos 4 níveis do Laser Rubro e das 3 armas sem precisar jogar a fase inteira.
+   */
+  private registerSandboxShortcuts(): void {
+    const kb = this.input.keyboard;
+    if (!kb) return;
+
+    kb.on('keydown-ONE', () => this.setTestWeapon(this.weapons.weaponFamily, 1));
+    kb.on('keydown-TWO', () => this.setTestWeapon(this.weapons.weaponFamily, 2));
+    kb.on('keydown-THREE', () => this.setTestWeapon(this.weapons.weaponFamily, 3));
+    kb.on('keydown-FOUR', () => this.setTestWeapon(this.weapons.weaponFamily, 4));
+    kb.on('keydown-FIVE', () => {
+      const nextFamily: WeaponFamily =
+        this.weapons.weaponFamily === 'red'
+          ? 'green'
+          : this.weapons.weaponFamily === 'green'
+            ? 'ion'
+            : 'red';
+      this.setTestWeapon(nextFamily, this.weapons.weaponLevel);
+    });
+  }
+
+  /** Permite selecionar diretamente qualquer família e nível (1..4) para validação isolada */
+  public setTestWeapon(family: WeaponFamily, level: WeaponLevel, powerMeter = 0): void {
+    this.weapons = {
+      ...this.weapons,
+      weaponFamily: family,
+      weaponLevel: level,
+      powerMeter,
+      heat: 0,
+      isOverheated: false,
+      overheatCooldownMs: 0,
+    };
+    this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
+    const label =
+      family === 'red'
+        ? `LASER RUBRO — NV ${level} (${LASER_RUBRO_SPECS[level].title})`
+        : family === 'green'
+          ? `ENERGIA ESPIRALADA — NÍVEL ${level}`
+          : `DISPERSÃO AZUL — NÍVEL ${level}`;
+    const color = family === 'red' ? '#ff1e42' : family === 'green' ? '#4ade80' : '#00f0ff';
+    this.hud.flash(label, color, 1100);
   }
 
   update(_time: number, delta: number): void {
@@ -237,7 +310,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.update(dt);
     this.hud.setHealth(this.health, this.weapons.hasShield);
     this.hud.setDash(this.dashState.remainingDashes);
-    this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel);
+    this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
     this.hud.setBombs(this.weapons.bombs);
     this.hud.setResonance(this.weapons.resonance, this.weapons.specialActiveMs > 0);
     this.hud.setScore(this.scoreCombo.score, this.scoreCombo.comboCount, getComboMultiplier(this.scoreCombo.comboCount));
@@ -298,21 +371,23 @@ export class PrototypeScene extends Phaser.Scene {
       }
     }
 
-    // 2. Disparos Primários: Tapping Rápido (Burst) vs Auto-Fire Contínuo (ESPAÇO no PC)
+    // 2. Disparos Primários:
+    // - Se LASER RUBRO ('red') estiver equipado, NUNCA dispara bolas/projéteis vermelhos avulsos!
+    //   A emissão contínua de feixes energéticos é processada por `updateCrimsonLaser(dt, commands)`.
+    // - Se RAIO ESMERALDA ('green') ou DISPERSÃO AZUL ('ion') estiver equipado, usa cadência de projéteis.
     const specs = WEAPON_FAMILY_SPECS[this.weapons.weaponFamily] || WEAPON_FAMILY_SPECS.green;
     this.shootCooldown = Math.max(0, this.shootCooldown - dt);
 
-    if (!this.weapons.isCharging && !this.weapons.isOverheated) {
-      if (commands.firePrimaryTap && this.shootCooldown <= 0) {
-        this.firePrimary();
-        this.shootCooldown = specs.burstIntervalMs;
-      } else if (commands.firePrimary && this.shootCooldown <= 0) {
-        this.firePrimary();
-        this.shootCooldown = specs.autoIntervalMs;
-      }
-    } else if (this.weapons.isOverheated && (commands.firePrimary || commands.firePrimaryTap)) {
-      if (Math.floor(this.weapons.overheatCooldownMs / 160) % 2 === 0) {
-        this.hud.flash('SUPER-AQUECIMENTO! RESFRIANDO...', '#ef4444', 300);
+    if (this.weapons.weaponFamily !== 'red') {
+      // Regras Canônicas Fire Shark #9 e #10: Segurar ESPAÇO permite autofire contínuo sem bloqueio por superaquecimento
+      if (!this.weapons.isCharging) {
+        if (commands.firePrimaryTap && this.shootCooldown <= 0) {
+          this.firePrimary();
+          this.shootCooldown = specs.burstIntervalMs;
+        } else if (commands.firePrimary && this.shootCooldown <= 0) {
+          this.firePrimary();
+          this.shootCooldown = specs.autoIntervalMs;
+        }
       }
     }
 
@@ -366,8 +441,12 @@ export class PrototypeScene extends Phaser.Scene {
       }
     }
 
-    // Atualiza projéteis
+    // Atualiza projéteis (ENERGIA ESPIRALADA / DISPERSÃO AZUL)
     this.advancePlayerShots(dt);
+
+    // Atualiza emissão contínua, varredura lateral, colisões e renderização HD das 3 armas
+    this.updateCrimsonLaser(dt, commands.firePrimary || commands.firePrimaryTap);
+
     this.checkEnemyContacts();
     if (this.health.gameOver) return;
 
@@ -376,6 +455,7 @@ export class PrototypeScene extends Phaser.Scene {
     // Verificação de conclusão da fase
     if (tick.completed) {
       this.completed = true;
+      this.crimsonLaserRenderer.clear();
       this.clearEnemyShots();
       this.clearPlayerShots();
       this.hud.hideBossBar();
@@ -436,12 +516,138 @@ export class PrototypeScene extends Phaser.Scene {
     node.play(def.animation);
     this.shots.push({
       node,
+      baseX: def.x,
+      ageMs: 0,
       velocityX: def.velocityX,
       velocityY: def.velocityY,
       damage: def.damage,
       hitRadius: def.hitRadius,
       piercing: def.piercing,
+      waveAmplitude: def.waveAmplitude,
+      waveFrequency: def.waveFrequency,
+      wavePhase: def.wavePhase,
     });
+  }
+
+  /**
+   * Processa a emissão contínua, oscilação lateral dos feixes (LV3 e LV4),
+   * colisão por polilinhas e aplicação de dano por ticks determinísticos do LASER RUBRO.
+   */
+  private updateCrimsonLaser(dt: number, isHoldingFire: boolean): void {
+    const isRubyEquipped = this.weapons.weaponFamily === 'red';
+    const canEmit =
+      isRubyEquipped &&
+      isHoldingFire &&
+      !this.weapons.isCharging &&
+      !this.health.gameOver &&
+      !this.completed;
+
+    // Constrói lista de alvos circulares ativos no corredor
+    const targets: LaserTargetCircle[] = [];
+    for (const enemy of this.director.enemies) {
+      const isSmall = enemy.kind === 'scout' || enemy.kind === 'dart';
+      targets.push({
+        id: enemy.id,
+        x: enemy.x,
+        y: enemy.y,
+        radius: isSmall ? 20 : 28,
+        stopsBeam: false, // Feixes energéticos cortam através de esquadrões menores
+      });
+    }
+
+    if (
+      this.director.boss &&
+      this.director.boss.phase !== 'intro' &&
+      this.director.boss.phase !== 'defeated'
+    ) {
+      targets.push({
+        id: 'boss',
+        x: this.director.boss.x,
+        y: this.director.boss.y,
+        radius: 82,
+        stopsBeam: true, // Feixes colidem e geram fagulhas intensas no casco blindado do chefe/miniboss
+      });
+    }
+
+    const originX = this.vectorShip.x;
+    const originY = this.vectorShip.y - this.vectorShip.halfHeight + 4;
+
+    const step = stepCrimsonLaser(this.crimsonLaserState, {
+      deltaMs: dt,
+      isHoldingFire: canEmit,
+      isRubyEquipped,
+      level: this.weapons.weaponLevel,
+      shipX: originX,
+      shipY: originY,
+      targets,
+    });
+
+    this.crimsonLaserState = step.state;
+    const shotTrails = this.shots.map((s) => ({
+      x: s.node.x,
+      y: s.node.y,
+      baseX: s.baseX,
+      ageMs: s.ageMs,
+      velocityX: s.velocityX,
+      velocityY: s.velocityY,
+      waveAmplitude: s.waveAmplitude,
+      waveFrequency: s.waveFrequency,
+      wavePhase: s.wavePhase,
+    }));
+    this.crimsonLaserRenderer.render(
+      this.crimsonLaserState,
+      shotTrails,
+      this.weapons.weaponFamily,
+      this.weapons.weaponLevel,
+      this.time.now,
+    );
+
+    if (this.crimsonLaserState.isEmitting) {
+      this.vectorShip.triggerMuzzleFlash();
+      this.laserAudioTimerMs -= dt;
+      if (this.laserAudioTimerMs <= 0) {
+        this.laserAudioTimerMs = 135;
+        globalAudio.playShot(this.pilot.id, this.weapons.weaponLevel);
+      }
+    } else {
+      this.laserAudioTimerMs = 0;
+    }
+
+    // Aplica eventos de dano gerados pelos ticks do Laser Rubro
+    for (const dmgEvent of step.damageEvents) {
+      if (typeof dmgEvent.targetId === 'number') {
+        const stillAlive = this.director.enemies.some((e) => e.id === dmgEvent.targetId);
+        if (stillAlive) {
+          this.applyDamageToEnemy(dmgEvent.targetId, dmgEvent.damage);
+        }
+      } else if (dmgEvent.targetId === 'boss' && this.director.boss) {
+        this.applyBossDamage(dmgEvent.damage, dmgEvent.hitX, dmgEvent.hitY);
+      }
+    }
+  }
+
+  private applyBossDamage(damage: number, hitX: number, hitY: number): void {
+    const boss = this.director.boss;
+    if (!boss || boss.phase === 'intro' || boss.phase === 'defeated') return;
+
+    const bossHit = this.director.damageBoss(damage, hitX, hitY);
+    if (bossHit.bossDamage > 0) {
+      this.playEffect(bossHit.killed ? 'explosion' : 'hit', hitX, hitY);
+      globalAudio.playHit();
+      this.hud.showBossBar(boss.name, boss.hp, boss.maxHp);
+      if (bossHit.moduleDestroyed) {
+        this.playEffect('explosion', hitX, hitY);
+        globalAudio.playExplosion(true);
+        this.cameras.main.shake(260, 0.012);
+        this.hud.flash(`PARTE DESTRUÍDA: ${bossHit.moduleDestroyed.toUpperCase()}`, '#ffd488', 1200);
+      }
+      if (bossHit.killed) {
+        this.playEffect('explosion', boss.x, boss.y);
+        globalAudio.playExplosion(true);
+        this.cameras.main.shake(450, 0.02);
+        this.hud.flash(`${boss.name.toUpperCase()} ELIMINADO!`, '#a3ffb8', 2500);
+      }
+    }
   }
 
   private firePrimary(): void {
@@ -457,14 +663,6 @@ export class PrototypeScene extends Phaser.Scene {
     const defs = getPrimaryProjectiles(this.weapons.weaponFamily, this.weapons.weaponLevel, originX, originY);
     for (const def of defs) {
       this.createPlayerProjectile(def, familyTint);
-    }
-
-    const result = recordPrimaryShot(this.weapons);
-    this.weapons = result.state;
-    if (result.overheatedNow) {
-      globalAudio.playOverheat();
-      this.hud.flash('ARMA SUPER-AQUECIDA! RESFRIANDO...', '#ef4444', 900);
-      this.cameras.main.shake(120, 0.005);
     }
 
     this.playEffect('muzzle', originX, originY);
@@ -682,6 +880,7 @@ export class PrototypeScene extends Phaser.Scene {
         // Mapeia sprites para os tipos canônicos Fire Shark
         let key = 'pickup-upgrade';
         if (p.type === 'power' || p.type === 'weapon_green') key = 'pickup-upgrade';
+        else if (p.type === 'full_power') key = 'pickup-resonance';
         else if (p.type === 'weapon_ion') key = 'pickup-shield';
         else if (p.type === 'weapon_red') key = 'pickup-bomb';
         else if (p.type === 'health') key = 'pickup-repair';
@@ -689,7 +888,11 @@ export class PrototypeScene extends Phaser.Scene {
         else if (p.type === 'special') key = 'pickup-resonance';
         else if (p.type === 'score') key = 'pickup-score';
 
-        sprite = this.add.sprite(p.x, p.y, key, 0).setScale(1.2).setDepth(6);
+        sprite = this.add.sprite(p.x, p.y, key, 0).setScale(1.25).setDepth(6);
+        if (p.type === 'full_power') sprite.setTint(0xff1e42);
+        else if (p.type === 'weapon_red') sprite.setTint(0xfb7185);
+        else if (p.type === 'weapon_ion') sprite.setTint(0x38bdf8);
+        else if (p.type === 'weapon_green') sprite.setTint(0x4ade80);
         sprite.play(key + '-loop');
         this.pickupVisuals.set(p.id, sprite);
       } else {
@@ -704,22 +907,34 @@ export class PrototypeScene extends Phaser.Scene {
       globalAudio.playPickup(item.type);
 
       if (item.type === 'power') {
-        const res = upgradeWeapon(this.weapons);
+        const res = collectPowerItem(this.weapons);
         this.weapons = res.state;
-        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel);
-        this.hud.flash(`PODER DE ARMA +1! (LV.${this.weapons.weaponLevel})`, '#22c55e', 1100);
+        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
+        if (res.levelIncreased) {
+          this.hud.flash(`UPGRADE DE ARMA! NÍVEL ${this.weapons.weaponLevel} [3/3 P]`, '#facc15', 1400);
+        } else if (this.weapons.weaponLevel >= 4) {
+          this.scoreCombo = addRawScore(this.scoreCombo, 400);
+          this.hud.flash('ARMA EM POTÊNCIA MÁXIMA (+400 PTS)', '#fbbf24', 1000);
+        } else {
+          this.hud.flash(`ITEM P COLETADO [${this.weapons.powerMeter}/3]`, '#fde047', 950);
+        }
+      } else if (item.type === 'full_power') {
+        const res = collectFullPowerItem(this.weapons);
+        this.weapons = res.state;
+        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
+        this.hud.flash('SUPER P★ COLETADO! POTÊNCIA MÁXIMA NV 4!', '#fde047', 1500);
       } else if (item.type === 'weapon_green') {
         this.weapons = switchWeaponFamily(this.weapons, 'green');
-        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel);
-        this.hud.flash('ARMA: PULSO VERDE ATIVADO!', '#22c55e', 1200);
+        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
+        this.hud.flash('ARMA: ENERGIA ESPIRALADA ATIVADA!', '#4ade80', 1200);
       } else if (item.type === 'weapon_ion') {
         this.weapons = switchWeaponFamily(this.weapons, 'ion');
-        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel);
-        this.hud.flash('ARMA: LASER DE ÍONS ATIVADO!', '#06b6d4', 1200);
+        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
+        this.hud.flash('ARMA: DISPERSÃO AZUL ATIVADA!', '#00f0ff', 1200);
       } else if (item.type === 'weapon_red') {
         this.weapons = switchWeaponFamily(this.weapons, 'red');
-        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel);
-        this.hud.flash('ARMA: PLASMA VERMELHO ATIVADO!', '#ef4444', 1200);
+        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
+        this.hud.flash('ARMA: LASER RUBRO ATIVADO!', '#ff1e42', 1200);
       } else if (item.type === 'health') {
         if (this.health.hp < 3) {
           this.health = { ...this.health, hp: this.health.hp + 1 };
@@ -781,16 +996,16 @@ export class PrototypeScene extends Phaser.Scene {
       let core: Phaser.GameObjects.Sprite | undefined;
 
       if (boss.name === 'RAIA-DENTE') {
-        // Miniboss da Fase 1: Raia-Dente
-        main = this.add.sprite(0, 0, 'boss-interceptor-chassis', 0).setScale(1.6).play('boss-interceptor-chassis-flight');
-        sub1 = this.add.sprite(-40, 5, 'boss-interceptor-wing', 0).setScale(1.5).play('boss-interceptor-wing-spark');
-        sub2 = this.add.sprite(40, 5, 'boss-interceptor-wing', 0).setScale(1.5).play('boss-interceptor-wing-spark');
+        // Miniboss da Fase 1: Raia-Dente (orientado para o Sul +Y)
+        main = this.add.sprite(0, 0, 'boss-interceptor-chassis', 0).setScale(1.6).setAngle(-90).play('boss-interceptor-chassis-flight');
+        sub1 = this.add.sprite(-42, -8, 'boss-interceptor-wing', 0).setScale(1.5).setAngle(-90).play('boss-interceptor-wing-spark');
+        sub2 = this.add.sprite(42, -8, 'boss-interceptor-wing', 0).setScale(1.5).setAngle(-90).setFlipY(true).play('boss-interceptor-wing-spark');
         parts.push(sub1, sub2, main);
       } else if (boss.name === 'TALASSARCA') {
-        // Chefe Colossal da Fase 1: Talassarca
-        main = this.add.sprite(0, 0, 'boss-fortress-chassis', 0).setScale(1.8).play('boss-fortress-chassis-loop');
-        sub1 = this.add.sprite(-85, 10, 'boss-interceptor-wing', 0).setScale(1.6).play('boss-interceptor-wing-spark');
-        sub2 = this.add.sprite(85, 10, 'boss-interceptor-wing', 0).setScale(1.6).play('boss-interceptor-wing-spark');
+        // Chefe Colossal da Fase 1: Talassarca (orientado para o Sul +Y)
+        main = this.add.sprite(0, 0, 'boss-fortress-chassis', 0).setScale(1.8).setAngle(-90).play('boss-fortress-chassis-loop');
+        sub1 = this.add.sprite(-85, 10, 'boss-interceptor-wing', 0).setScale(1.6).setAngle(-90).play('boss-interceptor-wing-spark');
+        sub2 = this.add.sprite(85, 10, 'boss-interceptor-wing', 0).setScale(1.6).setAngle(-90).setFlipY(true).play('boss-interceptor-wing-spark');
         core = this.add.sprite(0, 15, 'boss-mesh_core-heart', 0).setScale(1.5).play('boss-mesh_core-heart-pulse');
         parts.push(main, sub1, sub2, core);
       } else {
@@ -826,11 +1041,14 @@ export class PrototypeScene extends Phaser.Scene {
 
   private spawnEnemyShot(event: EnemyShotEvent): void {
     if (this.enemyShots.length >= 84) return;
+    // Depth 18 garante que projéteis inimigos fiquem sempre visíveis e legíveis sobre os feixes do Laser Rubro (depth 8)
     const bullet = this.add.sprite(event.x, event.y, 'shot-enemy', 0)
-      .setScale(1.55).setDepth(10);
+      .setScale(1.55).setDepth(18);
     bullet.play('shot-enemy-loop');
     this.enemyShots.push({
       node: bullet,
+      baseX: event.x,
+      ageMs: 0,
       velocityX: event.velocityX,
       velocityY: event.velocityY,
       damage: 1,
@@ -877,8 +1095,22 @@ export class PrototypeScene extends Phaser.Scene {
   private advancePlayerShots(dt: number): void {
     for (let i = this.shots.length - 1; i >= 0; i--) {
       const shot = this.shots[i];
-      shot.node.x += (shot.velocityX * dt) / 1000;
+      shot.ageMs += dt;
+      shot.baseX += (shot.velocityX * dt) / 1000;
       shot.node.y += (shot.velocityY * dt) / 1000;
+
+      if (shot.waveAmplitude && shot.waveAmplitude > 0) {
+        const freq = shot.waveFrequency ?? 0.017;
+        const phase = shot.wavePhase ?? 0;
+        const angleArg = shot.ageMs * freq + phase;
+        shot.node.x = shot.baseX + Math.sin(angleArg) * shot.waveAmplitude;
+        // Orienta tangente à onda sinusoidal esmeralda
+        const instVx = shot.velocityX + Math.cos(angleArg) * shot.waveAmplitude * freq * 1000;
+        shot.node.setRotation(Math.atan2(shot.velocityY, instVx));
+      } else {
+        shot.node.x = shot.baseX;
+      }
+
       let collided = false;
 
       // Colisão com inimigos alienígenas no corredor
@@ -903,24 +1135,7 @@ export class PrototypeScene extends Phaser.Scene {
           Math.abs(shot.node.x - boss.x) <= 110 &&
           Math.abs(shot.node.y - boss.y) <= 80
         ) {
-          const bossHit = this.director.damageBoss(shot.damage, shot.node.x, shot.node.y);
-          if (bossHit.bossDamage > 0) {
-            this.playEffect(bossHit.killed ? 'explosion' : 'hit', shot.node.x, shot.node.y);
-            globalAudio.playHit();
-            this.hud.showBossBar(boss.name, boss.hp, boss.maxHp);
-            if (bossHit.moduleDestroyed) {
-              this.playEffect('explosion', shot.node.x, shot.node.y);
-              globalAudio.playExplosion(true);
-              this.cameras.main.shake(260, 0.012);
-              this.hud.flash(`PARTE DESTRUÍDA: ${bossHit.moduleDestroyed.toUpperCase()}`, '#ffd488', 1200);
-            }
-            if (bossHit.killed) {
-              this.playEffect('explosion', boss.x, boss.y);
-              globalAudio.playExplosion(true);
-              this.cameras.main.shake(450, 0.02);
-              this.hud.flash(`${boss.name.toUpperCase()} ELIMINADO!`, '#a3ffb8', 2500);
-            }
-          }
+          this.applyBossDamage(shot.damage, shot.node.x, shot.node.y);
           collided = !shot.piercing;
         }
       }
@@ -1034,7 +1249,9 @@ export class PrototypeScene extends Phaser.Scene {
       globalAudio.playExplosion(true);
       this.cameras.main.shake(320, 0.015);
       this.weapons = resetWeaponsOnRespawn(this.weapons);
-      this.hud.setWeapon(this.weapons.weaponFamily, 1);
+      this.crimsonLaserState = createInitialCrimsonLaserState(1);
+      this.crimsonLaserRenderer.clear();
+      this.hud.setWeapon(this.weapons.weaponFamily, 1, 0);
       this.hud.setResonance(this.weapons.resonance);
       this.hud.flash('REINICIANDO CAÇA...', '#38bdf8', 1400);
 
@@ -1051,6 +1268,7 @@ export class PrototypeScene extends Phaser.Scene {
       globalAudio.playExplosion(true);
       globalAudio.stopMusic();
       this.cameras.main.shake(500, 0.025);
+      this.crimsonLaserRenderer.clear();
       this.clearEnemyShots();
       this.clearPlayerShots();
       this.hud.hideBossBar();

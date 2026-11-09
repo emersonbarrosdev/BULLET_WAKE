@@ -11,12 +11,20 @@ import { EndingScene } from './game/scenes/EndingScene';
 (window as unknown as { Phaser: typeof Phaser }).Phaser = Phaser;
 
 async function bootGame(): Promise<void> {
-  // Aguarda o carregamento completo das fontes web (Oxanium e Rajdhani) antes de iniciar as cenas
+  // Força o download e ativação real das fontes Oxanium e Rajdhani antes de iniciar as cenas Phaser
   if (typeof document !== 'undefined' && 'fonts' in document) {
     try {
+      await Promise.allSettled([
+        document.fonts.load('600 18px "Oxanium"'),
+        document.fonts.load('700 24px "Oxanium"'),
+        document.fonts.load('800 32px "Oxanium"'),
+        document.fonts.load('500 16px "Rajdhani"'),
+        document.fonts.load('600 18px "Rajdhani"'),
+        document.fonts.load('700 20px "Rajdhani"'),
+      ]);
       await document.fonts.ready;
     } catch {
-      // Fallback gracioso
+      // Fallback gracioso caso offline
     }
   }
 
@@ -31,7 +39,12 @@ async function bootGame(): Promise<void> {
     backgroundColor: GAME_BACKGROUND,
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
-    render: { pixelArt: true },
+    render: {
+      antialias: true,
+      antialiasGL: true,
+      pixelArt: false,
+      roundPixels: false,
+    },
     fps: {
       min: 30,
       target: 240, // Permite rodar acima de 60fps (120Hz, 144Hz, 240Hz)

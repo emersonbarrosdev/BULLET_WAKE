@@ -1,10 +1,11 @@
 /**
- * BULLET WAKE V2 — Sistema Canônico de Armamentos (Estilo Fire Shark)
- * 
- * Três famílias distintas com identidade visual e evolução real (Níveis 1 a 4):
- * - Pulso Verde: Ampla cobertura em leque de energia esmeralda.
- * - Laser de Íons: Feixe ciano concentrado de alta penetração em blindagens pesadas.
- * - Plasma Vermelho: Dano pesado de impacto térmico concussivo e controle de área.
+ * BULLET WAKE V2 — Sistema Canônico de Armamentos (Inspirado em Fire Shark / Toaplan)
+ *
+ * Três famílias distintas com identidade visual e mecânica real (Níveis 1 a 4):
+ * - VERDE (Raio Esmeralda): Feixes energéticos ondulantes concentrados com aumento de ondas e potência.
+ * - AZUL (Dispersão Azul): Tiros em leque crescente com mais direções conforme o nível aumenta.
+ * - VERMELHO (Laser Rubro): Feixes energéticos vermelhos contínuos com multiplicação (1, 2, 4, 6 feixes)
+ *   e varredura lateral sincronizada nos níveis avançados (gerenciado em tempo real por CrimsonLaserSystem).
  */
 import { getPilot, type PilotId } from '../data/pilots.ts';
 
@@ -23,12 +24,22 @@ export interface ProjectileSpawnDef {
   hitRadius: number;
   scale: number;
   piercing?: boolean;
+  /** Amplitude em pixels para oscilação senoidal do Raio Esmeralda */
+  waveAmplitude?: number;
+  /** Frequência em rad/ms para oscilação senoidal do Raio Esmeralda */
+  waveFrequency?: number;
+  /** Fase inicial em radianos da onda */
+  wavePhase?: number;
+  /** Indica descritor de feixe contínuo (Laser Rubro) */
+  isContinuousBeam?: boolean;
 }
 
 export interface PlayerWeaponsState {
   pilotId: PilotId;
   weaponFamily: WeaponFamily;
   weaponLevel: WeaponLevel;
+  /** Medidor de potência P (0 a 3): 3 itens P aumentam 1 nível de arma */
+  powerMeter: number;
   bombs: number;
   hasShield: boolean;
   resonance: number; // 0 a 100
@@ -49,6 +60,7 @@ export interface PlayerWeaponsState {
 }
 
 export const MAX_WEAPON_LEVEL: WeaponLevel = 4;
+export const POWER_ITEMS_PER_LEVEL = 3;
 export const MAX_BOMBS = 4;
 export const START_BOMBS = 2;
 export const MAX_RESONANCE = 100;
@@ -74,21 +86,21 @@ export const WEAPON_FAMILY_SPECS: Record<WeaponFamily, WeaponSpecs> = {
     burstIntervalMs: 90,
     heatPerShot: 7,
     coolingRatePerSec: 45,
-    displayName: 'PULSO VERDE',
+    displayName: 'ENERGIA ESPIRALADA',
   },
   ion: {
     autoIntervalMs: 140,
     burstIntervalMs: 100,
     heatPerShot: 8,
     coolingRatePerSec: 50,
-    displayName: 'LASER DE ÍONS',
+    displayName: 'DISPERSÃO AZUL',
   },
   red: {
-    autoIntervalMs: 185,
-    burstIntervalMs: 135,
-    heatPerShot: 13,
-    coolingRatePerSec: 38,
-    displayName: 'PLASMA VERMELHO',
+    autoIntervalMs: 60,
+    burstIntervalMs: 60,
+    heatPerShot: 0, // O Laser Rubro contínuo nunca é interrompido arbitrariamente por calor
+    coolingRatePerSec: 65,
+    displayName: 'LASER RUBRO',
   },
 };
 
@@ -112,14 +124,14 @@ export function createPlayerWeapons(pilotId: PilotId = 'nolan', initialFamily: W
   const specialType: SpecialType =
     pilot.id === 'cora' ? 'phantom' : pilot.id === 'harlan' ? 'nova' : 'prism';
 
-  // Arma inicial canônica da Fase 1: TODOS os pilotos iniciam estritamente com Pulso Verde Nível 1.
-  // Laser de Íons e Plasma Vermelho devem ser conquistados através de coleta de cápsulas W.
+  // Arma inicial canônica da Fase 1: TODOS os pilotos iniciam no Nível 1 com medidor P zerado.
   const family: WeaponFamily = initialFamily;
 
   return {
     pilotId: pilot.id,
     weaponFamily: family,
     weaponLevel: 1,
+    powerMeter: 0,
     bombs: START_BOMBS,
     hasShield: false,
     resonance: 0,
@@ -136,26 +148,86 @@ export function createPlayerWeapons(pilotId: PilotId = 'nolan', initialFamily: W
   };
 }
 
-/** Troca a família de arma (Verde, Íon, Vermelho) mantendo o nível atual */
+/** Troca a família de arma (Verde, Azul/Íon, Laser Rubro) mantendo o nível e o medidor P atuais */
 export function switchWeaponFamily(state: PlayerWeaponsState, newFamily: WeaponFamily): PlayerWeaponsState {
   return {
     ...state,
     weaponFamily: newFamily,
+    isOverheated: newFamily === 'red' ? false : state.isOverheated,
+    heat: newFamily === 'red' ? 0 : state.heat,
   };
 }
 
-/** Evolui o nível da arma equipada (1 a 4) */
+/** Coleta 1 item P: a cada 3 itens P completos, aumenta 1 nível de potência (até o Nível 4) */
+export function collectPowerItem(state: PlayerWeaponsState): {
+  state: PlayerWeaponsState;
+  meterIncreased: boolean;
+  levelIncreased: boolean;
+} {
+  if (state.weaponLevel >= MAX_WEAPON_LEVEL) {
+    return {
+      state: { ...state, powerMeter: POWER_ITEMS_PER_LEVEL },
+      meterIncreased: false,
+      levelIncreased: false,
+    };
+  }
+
+  const nextMeter = state.powerMeter + 1;
+  if (nextMeter >= POWER_ITEMS_PER_LEVEL) {
+    const nextLevel = (state.weaponLevel + 1) as WeaponLevel;
+    return {
+      state: {
+        ...state,
+        weaponLevel: nextLevel,
+        powerMeter: nextLevel >= MAX_WEAPON_LEVEL ? POWER_ITEMS_PER_LEVEL : 0,
+      },
+      meterIncreased: true,
+      levelIncreased: true,
+    };
+  }
+
+  return {
+    state: {
+      ...state,
+      powerMeter: nextMeter,
+    },
+    meterIncreased: true,
+    levelIncreased: false,
+  };
+}
+
+/** Evolui diretamente 1 nível da arma equipada (1 a 4) */
 export function upgradeWeapon(state: PlayerWeaponsState): {
   state: PlayerWeaponsState;
   upgraded: boolean;
 } {
   if (state.weaponLevel >= MAX_WEAPON_LEVEL) {
-    return { state, upgraded: false };
+    return { state: { ...state, powerMeter: POWER_ITEMS_PER_LEVEL }, upgraded: false };
   }
   const nextLevel = (state.weaponLevel + 1) as WeaponLevel;
   return {
-    state: { ...state, weaponLevel: nextLevel },
+    state: {
+      ...state,
+      weaponLevel: nextLevel,
+      powerMeter: nextLevel >= MAX_WEAPON_LEVEL ? POWER_ITEMS_PER_LEVEL : 0,
+    },
     upgraded: true,
+  };
+}
+
+/** Item P Vermelho Raro (P★ Full Power): eleva a arma equipada diretamente à Potência Máxima (Nível 4) sem trocar a família da arma */
+export function collectFullPowerItem(state: PlayerWeaponsState): {
+  state: PlayerWeaponsState;
+  upgradedToMax: boolean;
+} {
+  const alreadyMax = state.weaponLevel >= MAX_WEAPON_LEVEL;
+  return {
+    state: {
+      ...state,
+      weaponLevel: MAX_WEAPON_LEVEL,
+      powerMeter: POWER_ITEMS_PER_LEVEL,
+    },
+    upgradedToMax: !alreadyMax,
   };
 }
 
@@ -239,6 +311,7 @@ export function resetWeaponsOnRespawn(state: PlayerWeaponsState): PlayerWeaponsS
   return {
     ...state,
     weaponLevel: 1,
+    powerMeter: 0,
     hasShield: false,
     specialActiveMs: 0,
     missileCooldownMs: 0,
@@ -353,13 +426,13 @@ export function getPrimaryProjectiles(
     family = 'red';
   }
 
-  // 1. ARMA A: PULSO VERDE (Green Pulse — Cobertura em leque crescente LV1-4)
+  // 1. ARMA VERDE: ENERGIA ESPIRALADA (Feixes de energia ondulantes/espiralados concentrados LV1-4)
   if (family === 'green') {
     const tex = 'shot-rivet';
     const anim = 'shot-rivet-loop';
 
     if (level === 1) {
-      // Disparo duplo frontal paralelo
+      // 2 ondas esmeralda espiraladas entrelaçadas em contrafase
       return [
         {
           texture: tex,
@@ -367,10 +440,13 @@ export function getPrimaryProjectiles(
           x: originX - 5,
           y: originY,
           velocityX: 0,
-          velocityY: -620,
-          damage: 1.1,
-          hitRadius: 8,
-          scale: 1.4,
+          velocityY: -650,
+          damage: 1.25,
+          hitRadius: 9,
+          scale: 1.55,
+          waveAmplitude: 16,
+          waveFrequency: 0.02,
+          wavePhase: 0,
         },
         {
           texture: tex,
@@ -378,360 +454,251 @@ export function getPrimaryProjectiles(
           x: originX + 5,
           y: originY,
           velocityX: 0,
-          velocityY: -620,
-          damage: 1.1,
-          hitRadius: 8,
-          scale: 1.4,
+          velocityY: -650,
+          damage: 1.25,
+          hitRadius: 9,
+          scale: 1.55,
+          waveAmplitude: 16,
+          waveFrequency: 0.02,
+          wavePhase: Math.PI,
         },
       ];
     }
     if (level === 2) {
-      // 3 vias: centro reto e 2 diagonais suaves
+      // 3 ondas esmeralda concentradas (eixo central ondulante + dupla hélice lateral mais larga)
       return [
         {
           texture: tex,
           animation: anim,
           x: originX,
-          y: originY - 2,
+          y: originY - 3,
           velocityX: 0,
-          velocityY: -630,
-          damage: 1.15,
-          hitRadius: 8,
-          scale: 1.45,
+          velocityY: -670,
+          damage: 1.4,
+          hitRadius: 9,
+          scale: 1.65,
+          waveAmplitude: 10,
+          waveFrequency: 0.021,
+          wavePhase: Math.PI * 0.5,
         },
         {
           texture: tex,
           animation: anim,
-          x: originX - 8,
+          x: originX - 9,
           y: originY,
-          velocityX: -100,
-          velocityY: -620,
-          damage: 1.1,
-          hitRadius: 8,
-          scale: 1.4,
+          velocityX: -24,
+          velocityY: -660,
+          damage: 1.25,
+          hitRadius: 9,
+          scale: 1.55,
+          waveAmplitude: 22,
+          waveFrequency: 0.019,
+          wavePhase: 0,
         },
         {
           texture: tex,
           animation: anim,
-          x: originX + 8,
+          x: originX + 9,
           y: originY,
-          velocityX: 100,
-          velocityY: -620,
-          damage: 1.1,
-          hitRadius: 8,
-          scale: 1.4,
+          velocityX: 24,
+          velocityY: -660,
+          damage: 1.25,
+          hitRadius: 9,
+          scale: 1.55,
+          waveAmplitude: 22,
+          waveFrequency: 0.019,
+          wavePhase: Math.PI,
         },
       ];
     }
     if (level === 3) {
-      // 5 vias em leque amplo
-      const angles = [-200, -100, 0, 100, 200];
-      return angles.map((vx, i) => ({
+      // 5 ondas esmeralda espiraladas de alta densidade e largura útil ampliada
+      const offsets = [-16, -8, 0, 8, 16];
+      const vxs = [-58, -26, 0, 26, 58];
+      const amps = [30, 22, 11, 22, 30];
+      return offsets.map((ox, i) => ({
         texture: tex,
         animation: anim,
-        x: originX + (i - 2) * 5,
-        y: originY - (i === 2 ? 3 : 0),
-        velocityX: vx,
-        velocityY: -640,
-        damage: i === 2 ? 1.25 : 1.15,
-        hitRadius: 8,
-        scale: 1.5,
+        x: originX + ox,
+        y: originY - (i === 2 ? 4 : 0),
+        velocityX: vxs[i],
+        velocityY: -685,
+        damage: i === 2 ? 1.5 : 1.3,
+        hitRadius: 10,
+        scale: 1.7,
+        waveAmplitude: amps[i],
+        waveFrequency: 0.02,
+        wavePhase: (i * Math.PI) / 2,
       }));
     }
-    // Nível 4: 7 vias para cobertura total do campo
-    const anglesLv4 = [-280, -190, -95, 0, 95, 190, 280];
-    return anglesLv4.map((vx, i) => ({
+    // Nível 4: 7 ondas esmeralda espiraladas em vórtice helicoidal de saturação concentrada
+    const offsetsLv4 = [-24, -16, -8, 0, 8, 16, 24];
+    const vxsLv4 = [-92, -60, -28, 0, 28, 60, 92];
+    const ampsLv4 = [38, 30, 22, 12, 22, 30, 38];
+    return offsetsLv4.map((ox, i) => ({
       texture: tex,
       animation: anim,
-      x: originX + (i - 3) * 4,
-      y: originY - (i === 3 ? 4 : 0),
-      velocityX: vx,
-      velocityY: -650,
-      damage: i === 3 ? 1.35 : 1.2,
-      hitRadius: 9,
-      scale: 1.6,
+      x: originX + ox,
+      y: originY - (i === 3 ? 5 : 0),
+      velocityX: vxsLv4[i],
+      velocityY: -700,
+      damage: i === 3 ? 1.65 : 1.35,
+      hitRadius: 10,
+      scale: 1.8,
+      waveAmplitude: ampsLv4[i],
+      waveFrequency: 0.021,
+      wavePhase: (i * Math.PI) / 3,
     }));
   }
 
-  // 2. ARMA B: LASER DE ÍONS (Ion Laser — Feixe ciano concentrado perfurante)
+  // 2. ARMA AZUL: DISPERSÃO AZUL (Blue Spread — Disparos convencionais em leque amplo em mais direções por nível)
   if (family === 'ion') {
     const tex = 'shot-moth';
     const anim = 'shot-moth-loop';
 
     if (level === 1) {
-      return [{
+      // 3 direções em leque frontal
+      const vxs = [-125, 0, 125];
+      return vxs.map((vx, i) => ({
         texture: tex,
         animation: anim,
-        x: originX,
-        y: originY,
-        velocityX: 0,
-        velocityY: -760,
-        damage: 2.0,
+        x: originX + (i - 1) * 5,
+        y: originY - (i === 1 ? 2 : 0),
+        velocityX: vx,
+        velocityY: -750,
+        damage: 1.15,
         hitRadius: 8,
-        scale: 1.7,
-        piercing: true,
-      }];
+        scale: 1.55,
+      }));
     }
     if (level === 2) {
-      return [
-        {
-          texture: tex,
-          animation: anim,
-          x: originX - 6,
-          y: originY,
-          velocityX: 0,
-          velocityY: -780,
-          damage: 1.8,
-          hitRadius: 9,
-          scale: 1.8,
-          piercing: true,
-        },
-        {
-          texture: tex,
-          animation: anim,
-          x: originX + 6,
-          y: originY,
-          velocityX: 0,
-          velocityY: -780,
-          damage: 1.8,
-          hitRadius: 9,
-          scale: 1.8,
-          piercing: true,
-        },
-      ];
+      // 5 direções em leque aberto
+      const vxs = [-220, -110, 0, 110, 220];
+      return vxs.map((vx, i) => ({
+        texture: tex,
+        animation: anim,
+        x: originX + (i - 2) * 4,
+        y: originY - (i === 2 ? 3 : 0),
+        velocityX: vx,
+        velocityY: -765,
+        damage: 1.18,
+        hitRadius: 8,
+        scale: 1.6,
+      }));
     }
     if (level === 3) {
-      return [
-        {
-          texture: tex,
-          animation: anim,
-          x: originX,
-          y: originY - 4,
-          velocityX: 0,
-          velocityY: -810,
-          damage: 2.6,
-          hitRadius: 10,
-          scale: 2.0,
-          piercing: true,
-        },
-        {
-          texture: tex,
-          animation: anim,
-          x: originX - 10,
-          y: originY,
-          velocityX: -40,
-          velocityY: -790,
-          damage: 1.4,
-          hitRadius: 8,
-          scale: 1.6,
-          piercing: true,
-        },
-        {
-          texture: tex,
-          animation: anim,
-          x: originX + 10,
-          y: originY,
-          velocityX: 40,
-          velocityY: -790,
-          damage: 1.4,
-          hitRadius: 8,
-          scale: 1.6,
-          piercing: true,
-        },
-      ];
+      // 7 direções em leque panorâmico
+      const vxs = [-310, -205, -102, 0, 102, 205, 310];
+      return vxs.map((vx, i) => ({
+        texture: tex,
+        animation: anim,
+        x: originX + (i - 3) * 4,
+        y: originY - (i === 3 ? 4 : 0),
+        velocityX: vx,
+        velocityY: -780,
+        damage: i === 3 ? 1.3 : 1.18,
+        hitRadius: 9,
+        scale: 1.65,
+      }));
     }
-    // Nível 4: Coluna Iônica Devastadora (5 feixes de penetração massiva)
-    return [
-      {
-        texture: tex,
-        animation: anim,
-        x: originX,
-        y: originY - 6,
-        velocityX: 0,
-        velocityY: -840,
-        damage: 3.5,
-        hitRadius: 12,
-        scale: 2.4,
-        piercing: true,
-      },
-      {
-        texture: tex,
-        animation: anim,
-        x: originX - 8,
-        y: originY - 2,
-        velocityX: -25,
-        velocityY: -820,
-        damage: 1.8,
-        hitRadius: 9,
-        scale: 1.8,
-        piercing: true,
-      },
-      {
-        texture: tex,
-        animation: anim,
-        x: originX + 8,
-        y: originY - 2,
-        velocityX: 25,
-        velocityY: -820,
-        damage: 1.8,
-        hitRadius: 9,
-        scale: 1.8,
-        piercing: true,
-      },
-      {
-        texture: tex,
-        animation: anim,
-        x: originX - 16,
-        y: originY,
-        velocityX: -60,
-        velocityY: -800,
-        damage: 1.5,
-        hitRadius: 8,
-        scale: 1.6,
-        piercing: true,
-      },
-      {
-        texture: tex,
-        animation: anim,
-        x: originX + 16,
-        y: originY,
-        velocityX: 60,
-        velocityY: -800,
-        damage: 1.5,
-        hitRadius: 8,
-        scale: 1.6,
-        piercing: true,
-      },
-    ];
+    // Nível 4: 9 direções de cobertura total do corredor
+    const vxsLv4 = [-390, -292, -195, -97, 0, 97, 195, 292, 390];
+    return vxsLv4.map((vx, i) => ({
+      texture: tex,
+      animation: anim,
+      x: originX + (i - 4) * 3.5,
+      y: originY - (i === 4 ? 5 : 0),
+      velocityX: vx,
+      velocityY: -795,
+      damage: i === 4 ? 1.4 : 1.22,
+      hitRadius: 9,
+      scale: 1.72,
+    }));
   }
 
-  // 3. ARMA C: PLASMA VERMELHO (Red Plasma — Disparo pesado concussivo com impacto térmico)
+  // 3. ARMA VERMELHA: LASER RUBRO (Continuous Crimson Energy Multi-Beam — Fire Shark Super Fire style)
+  // Nota: Em gameplay real, o Laser Rubro é emitido continuamente por `crimsonLaserSystem.ts`
+  // enquanto SPACE estiver pressionado, NUNCA instanciando bolas/projéteis vermelhos avulsos.
+  // Os descritores abaixo representam os feixes contínuos de cada nível (1, 2, 4, 6 feixes) para inspeção e testes.
   const texRed = 'shot-knuckle';
   const animRed = 'shot-knuckle-loop';
 
   if (level === 1) {
-    return [{
-      texture: texRed,
-      animation: animRed,
-      x: originX,
-      y: originY,
-      velocityX: 0,
-      velocityY: -520,
-      damage: 3.2,
-      hitRadius: 16,
-      scale: 1.7,
-    }];
-  }
-  if (level === 2) {
-    return [
-      {
-        texture: texRed,
-        animation: animRed,
-        x: originX - 9,
-        y: originY,
-        velocityX: -20,
-        velocityY: -530,
-        damage: 2.8,
-        hitRadius: 17,
-        scale: 1.8,
-      },
-      {
-        texture: texRed,
-        animation: animRed,
-        x: originX + 9,
-        y: originY,
-        velocityX: 20,
-        velocityY: -530,
-        damage: 2.8,
-        hitRadius: 17,
-        scale: 1.8,
-      },
-    ];
-  }
-  if (level === 3) {
+    // Nível 1 — Laser Rubro Inicial: 1 feixe frontal contínuo
     return [
       {
         texture: texRed,
         animation: animRed,
         x: originX,
-        y: originY - 4,
+        y: originY,
         velocityX: 0,
-        velocityY: -550,
-        damage: 3.8,
-        hitRadius: 20,
-        scale: 2.0,
-      },
-      {
-        texture: texRed,
-        animation: animRed,
-        x: originX - 12,
-        y: originY,
-        velocityX: -60,
-        velocityY: -530,
-        damage: 2.5,
-        hitRadius: 16,
-        scale: 1.7,
-      },
-      {
-        texture: texRed,
-        animation: animRed,
-        x: originX + 12,
-        y: originY,
-        velocityX: 60,
-        velocityY: -530,
-        damage: 2.5,
-        hitRadius: 16,
-        scale: 1.7,
+        velocityY: -1200,
+        damage: 1.35,
+        hitRadius: 11,
+        scale: 1.6,
+        piercing: true,
+        isContinuousBeam: true,
       },
     ];
   }
-  // Nível 4: Quádruplo Devastador de Plasma Concussivo
+  if (level === 2) {
+    // Nível 2 — Laser Rubro Duplo: 2 feixes frontais paralelos contínuos
+    return [-9, 9].map((ox) => ({
+      texture: texRed,
+      animation: animRed,
+      x: originX + ox,
+      y: originY,
+      velocityX: 0,
+      velocityY: -1200,
+      damage: 1.15,
+      hitRadius: 12,
+      scale: 1.75,
+      piercing: true,
+      isContinuousBeam: true,
+    }));
+  }
+  if (level === 3) {
+    // Nível 3 — Laser Rubro Expandido: 2 feixes centrais + 2 feixes laterais com varredura oscilante (4 feixes)
+    return [
+      { ox: -8, vx: 0, dmg: 1.15 },
+      { ox: 8, vx: 0, dmg: 1.15 },
+      { ox: -22, vx: -180, dmg: 0.95 },
+      { ox: 22, vx: 180, dmg: 0.95 },
+    ].map((b) => ({
+      texture: texRed,
+      animation: animRed,
+      x: originX + b.ox,
+      y: originY,
+      velocityX: b.vx,
+      velocityY: -1200,
+      damage: b.dmg,
+      hitRadius: 14,
+      scale: 1.9,
+      piercing: true,
+      isContinuousBeam: true,
+    }));
+  }
+  // Nível 4 — Laser Rubro Máximo: 6 feixes contínuos sincronizados com varredura lateral ampla
   return [
-    {
-      texture: texRed,
-      animation: animRed,
-      x: originX - 6,
-      y: originY - 4,
-      velocityX: -20,
-      velocityY: -570,
-      damage: 3.5,
-      hitRadius: 22,
-      scale: 2.1,
-    },
-    {
-      texture: texRed,
-      animation: animRed,
-      x: originX + 6,
-      y: originY - 4,
-      velocityX: 20,
-      velocityY: -570,
-      damage: 3.5,
-      hitRadius: 22,
-      scale: 2.1,
-    },
-    {
-      texture: texRed,
-      animation: animRed,
-      x: originX - 16,
-      y: originY,
-      velocityX: -80,
-      velocityY: -540,
-      damage: 2.8,
-      hitRadius: 18,
-      scale: 1.9,
-    },
-    {
-      texture: texRed,
-      animation: animRed,
-      x: originX + 16,
-      y: originY,
-      velocityX: 80,
-      velocityY: -540,
-      damage: 2.8,
-      hitRadius: 18,
-      scale: 1.9,
-    },
-  ];
+    { ox: -8, vx: 0, dmg: 1.25 },
+    { ox: 8, vx: 0, dmg: 1.25 },
+    { ox: -18, vx: -130, dmg: 1.0 },
+    { ox: 18, vx: 130, dmg: 1.0 },
+    { ox: -28, vx: -280, dmg: 1.05 },
+    { ox: 28, vx: 280, dmg: 1.05 },
+  ].map((b) => ({
+    texture: texRed,
+    animation: animRed,
+    x: originX + b.ox,
+    y: originY,
+    velocityX: b.vx,
+    velocityY: -1200,
+    damage: b.dmg,
+    hitRadius: 15,
+    scale: 2.1,
+    piercing: true,
+    isContinuousBeam: true,
+  }));
 }
 
 /** Retorna definições de armas carregáveis (Wave Cannon - tecla C) disparando para o norte (-Y) */

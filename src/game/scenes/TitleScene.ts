@@ -53,61 +53,66 @@ export class TitleScene extends Phaser.Scene {
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040b15, 0.48).setDepth(8);
 
     // Barra superior de status da operação militar
-    this.add.rectangle(GAME_WIDTH / 2, 10, GAME_WIDTH, 20, 0x050e18, 0.9).setDepth(10);
+    this.add.rectangle(GAME_WIDTH / 2, 12, GAME_WIDTH, 24, 0x050e18, 0.92).setDepth(10);
     this.add.text(
       GAME_WIDTH / 2,
       4,
-      'COMANDO DE DEFESA ORBITAL  //  PROTOCOLO WAKE INICIADO  //  SETOR 01: FENDA PELÁGICA',
-      {
-        fontFamily: FONT_HUD,
-        fontSize: '10px',
-        color: '#64748b',
-        letterSpacing: 2,
-      },
-    ).setOrigin(0.5, 0).setResolution(2).setDepth(11);
-
-    // Moldura cibernética do Título com linhas duplas
-    this.add.rectangle(GAME_WIDTH / 2, 75, 620, 94, 0x071322, 0.92)
-      .setStrokeStyle(1.5, 0x1f3c4d).setDepth(10);
-    this.add.rectangle(GAME_WIDTH / 2, 75, 628, 102, 0x00f0ff, 0.1)
-      .setStrokeStyle(1, 0x00f0ff, 0.3).setDepth(10);
-
-    // Efeito de brilho neon no título
-    this.titleGlow = this.add.text(GAME_WIDTH / 2, 38, 'BULLET WAKE', {
-      fontFamily: FONT_TITLE,
-      fontSize: '40px',
-      color: '#00f0ff',
-    }).setOrigin(0.5, 0).setAlpha(0.35).setDepth(11);
-
-    this.add.text(GAME_WIDTH / 2, 38, 'BULLET WAKE', {
-      fontFamily: FONT_TITLE,
-      fontSize: '40px',
-      color: '#ffffff',
-    }).setOrigin(0.5, 0).setStroke('#0a1d2e', 5).setDepth(12);
-
-    this.add.text(
-      GAME_WIDTH / 2,
-      88,
-      'EVERY SHOT LEAVES A TRACE',
+      'COMANDO DE DEFESA ORBITAL  //  SETOR 01: FENDA PELÁGICA',
       {
         fontFamily: FONT_HUD,
         fontSize: '13px',
-        color: '#00f0ff',
-        letterSpacing: 4,
+        fontStyle: 'bold',
+        color: '#93c5fd',
+        letterSpacing: 1.5,
       },
-    ).setOrigin(0.5, 0).setDepth(12);
+    ).setOrigin(0.5, 0).setResolution(3).setDepth(11);
+
+    // Moldura cibernética do Título com linhas duplas
+    this.add.rectangle(GAME_WIDTH / 2, 78, 620, 98, 0x071322, 0.94)
+      .setStrokeStyle(1.5, 0x1f3c4d).setDepth(10);
+    this.add.rectangle(GAME_WIDTH / 2, 78, 628, 106, 0x00f0ff, 0.1)
+      .setStrokeStyle(1, 0x00f0ff, 0.3).setDepth(10);
+
+    // Efeito de brilho neon no título
+    this.titleGlow = this.add.text(GAME_WIDTH / 2, 34, 'BULLET WAKE', {
+      fontFamily: FONT_TITLE,
+      fontSize: '42px',
+      fontStyle: 'bold',
+      color: '#00f0ff',
+    }).setOrigin(0.5, 0).setAlpha(0.35).setResolution(3).setDepth(11);
+
+    this.add.text(GAME_WIDTH / 2, 34, 'BULLET WAKE', {
+      fontFamily: FONT_TITLE,
+      fontSize: '42px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+    }).setOrigin(0.5, 0).setStroke('#0a1d2e', 5).setResolution(3).setDepth(12);
 
     this.add.text(
       GAME_WIDTH / 2,
-      107,
-      'FASE 01: FENDA PELÁGICA  //  INVASÃO ALIENÍGENA ABISSAL',
+      86,
+      'EVERY SHOT LEAVES A TRACE',
       {
         fontFamily: FONT_HUD,
-        fontSize: '10px',
-        color: '#94a3b8',
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#00f0ff',
+        letterSpacing: 3,
+      },
+    ).setOrigin(0.5, 0).setResolution(3).setDepth(12);
+
+    this.add.text(
+      GAME_WIDTH / 2,
+      106,
+      'FASE 01: FENDA PELÁGICA  ·  INVASÃO ALIENÍGENA ABISSAL',
+      {
+        fontFamily: FONT_HUD,
+        fontSize: '13px',
+        fontStyle: 'bold',
+        color: '#e2e8f0',
         letterSpacing: 1,
       },
-    ).setOrigin(0.5, 0).setDepth(12);
+    ).setOrigin(0.5, 0).setResolution(3).setDepth(12);
 
     // Itens de Menu (com ação principal em destaque absoluto)
     this.menuItems = [
@@ -164,28 +169,29 @@ export class TitleScene extends Phaser.Scene {
 
       const label = this.add.text(
         GAME_WIDTH / 2 - width / 2 + 18,
-        y - (isPrimary ? 8 : 7),
+        y - (isPrimary ? 9 : 8),
         item.text,
         {
           fontFamily: isPrimary ? FONT_TITLE : FONT_HUD,
-          fontSize: isPrimary ? '13px' : '12px',
-          color: isPrimary ? '#ffffff' : '#94a3b8',
-          letterSpacing: 1,
+          fontSize: isPrimary ? '15px' : '14px',
+          fontStyle: 'bold',
+          color: isPrimary ? '#ffffff' : '#cbd5e1',
+          letterSpacing: 0.8,
         },
-      ).setResolution(2).setDepth(11);
+      ).setResolution(3).setDepth(11);
 
       if (item.badge) {
         this.add.text(
           GAME_WIDTH / 2 + width / 2 - 16,
-          y - (isPrimary ? 8 : 7),
+          y - (isPrimary ? 9 : 8),
           item.badge,
           {
             fontFamily: FONT_HUD,
-            fontSize: isPrimary ? '12px' : '11px',
-            color: isPrimary ? '#ffd166' : '#38bdf8',
+            fontSize: '13px',
+            color: isPrimary ? '#fde047' : '#38bdf8',
             fontStyle: 'bold',
           },
-        ).setOrigin(1, 0).setResolution(2).setDepth(11);
+        ).setOrigin(1, 0).setResolution(3).setDepth(11);
       }
 
       bg.on('pointerover', () => this.selectItem(index));
@@ -199,14 +205,15 @@ export class TitleScene extends Phaser.Scene {
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 32, GAME_WIDTH, 1.5, 0x1f3c4d).setDepth(10);
     this.add.text(
       GAME_WIDTH / 2,
-      GAME_HEIGHT - 22,
-      'W / S / SETAS: NAVEGAR   |   ENTER / ESPAÇO: CONFIRMAR   |   P: PILOTOS   |   C: CONFIGURAÇÕES',
+      GAME_HEIGHT - 23,
+      'W / S / SETAS: NAVEGAR   ·   ENTER / ESPAÇO: CONFIRMAR   ·   P: PILOTOS   ·   C: OPÇÕES',
       {
         fontFamily: FONT_HUD,
-        fontSize: '11px',
-        color: '#64748b',
+        fontSize: '13px',
+        fontStyle: 'bold',
+        color: '#cbd5e1',
       },
-    ).setOrigin(0.5, 0).setResolution(2).setDepth(11);
+    ).setOrigin(0.5, 0).setResolution(3).setDepth(11);
 
     this.selectItem(0);
 
