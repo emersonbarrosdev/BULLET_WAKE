@@ -25,7 +25,7 @@
   background-size: 100% 100%;
 }
 #bw-title-screen .bw-attract-art {
-  background-image: url('/assets/title/title-apocalyptic-clean.webp');
+  background-image: url('/assets/title/title-apocalyptic-base-v3.webp');
   pointer-events: none;
 }
 #bw-title-screen .bw-press-on {
@@ -34,7 +34,7 @@
   left: 29.6053%; top: 70.6695%;
   width: 41.6866%; height: 14.0276%;
   /* Text AND all pre-rendered glow are in this one layer. They blink together. */
-  background: url('/assets/title/title-press-on.webp') center / 100% 100% no-repeat;
+  background: url('/assets/title/title-press-all-v3.webp') center / 100% 100% no-repeat;
   animation: bw-press-blink 1.15s steps(1, end) infinite;
 }
 @keyframes bw-press-blink {
