@@ -1,449 +1,290 @@
 import Phaser from 'phaser';
-import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH, FONT_TITLE, FONT_HUD } from '../constants';
-import { StageBackdrop } from './StageBackdrop';
-import { loadGameSprites, registerGameAnimations } from '../assets/spriteAssets';
-import { globalAudio } from '../audio/audioSystem.ts';
+import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH, FONT_HUD, FONT_TITLE } from '../constants';
 import { saveSystem } from '../systems/saveSystem.ts';
-
-interface MenuItem {
-  text: string;
-  badge?: string;
-  isPrimary?: boolean;
-  action: () => void;
-}
+import { globalAudio } from '../audio/audioSystem.ts';
 
 /**
- * Menu principal tático do BULLET WAKE (docs/24_DIRETRIZ_UI_HUD_MENUS.md).
- * Transmite atmosfera de ficção militar, centro de operações e arcade premium.
- * Destaque visual evidente para a ação principal e estados de interação limpos.
+ * Tela-título aprovada: arte cinematográfica do BULLET WAKE + fluxo arcade.
+ * Primeiro gesto: PRESS START -> SELECIONAR PILOTO / OPÇÕES.
+ * Não modifica regras, cenas ou controles da gameplay.
  */
 export class TitleScene extends Phaser.Scene {
-  private backdrop!: StageBackdrop;
-  private previewDistance = 0;
+  private mode: 'attract' | 'main' | 'options' | 'controls' = 'attract';
+  private elapsedMs = 0;
   private selectedIndex = 0;
-  private menuItems: MenuItem[] = [];
-  private menuButtons: {
-    bg: Phaser.GameObjects.Rectangle;
-    label: Phaser.GameObjects.Text;
-    border: Phaser.GameObjects.Rectangle;
-    isPrimary?: boolean;
-  }[] = [];
-  private modalContainer?: Phaser.GameObjects.Container;
-  private glowTimer = 0;
-  private titleGlow!: Phaser.GameObjects.Text;
-  private primaryGlow?: Phaser.GameObjects.Rectangle;
+  private promptCover!: Phaser.GameObjects.Image;
+  private mainGroup!: Phaser.GameObjects.Container;
+  private optionsGroup!: Phaser.GameObjects.Container;
+  private controlsGroup!: Phaser.GameObjects.Container;
+  private mainRows: { background: Phaser.GameObjects.Rectangle; label: Phaser.GameObjects.Text }[] = [];
+  private optionRows: { background: Phaser.GameObjects.Rectangle; label: Phaser.GameObjects.Text }[] = [];
+  private keys?: Record<'up' | 'down' | 'w' | 's' | 'enter' | 'space' | 'esc', Phaser.Input.Keyboard.Key>;
 
   constructor() {
     super({ key: 'TitleScene' });
   }
 
   preload(): void {
-    loadGameSprites(this);
+    // Arte aprovada pelo criador. O logo, a nave e a assinatura do estúdio
+    // fazem parte da ilustração original e NÃO são redesenhados por CSS/texto.
+    this.load.image('bw-approved-title', 'assets/title/bulletwake-title-approved.webp');
+    this.load.image('bw-title-prompt-cover', 'assets/title/bulletwake-title-prompt-cover.webp');
   }
 
   create(): void {
-    registerGameAnimations(this);
-    this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
-    this.backdrop = new StageBackdrop(this, 1, { fullWidth: true, showBezels: false });
-    this.previewDistance = 0;
+    this.mode = 'attract';
+    this.elapsedMs = 0;
     this.selectedIndex = 0;
-    this.menuButtons = [];
+    this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
+    // A gameplay mantém pixel art; somente a arte cinematográfica do título
+    // usa filtragem linear, evitando serrilhados por redimensionamento.
+    this.textures.get('bw-approved-title').setFilter(Phaser.Textures.FilterMode.LINEAR);
+    this.textures.get('bw-title-prompt-cover').setFilter(Phaser.Textures.FilterMode.LINEAR);
 
-    // Fundo de vinheta de centro de comando
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040b15, 0.48).setDepth(8);
+    this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'bw-approved-title')
+      .setDisplaySize(GAME_WIDTH, GAME_HEIGHT).setDepth(0);
 
-    // Barra superior de status da operação militar
-    this.add.rectangle(GAME_WIDTH / 2, 12, GAME_WIDTH, 24, 0x050e18, 0.92).setDepth(10);
-    this.add.text(
-      GAME_WIDTH / 2,
-      4,
-      'COMANDO DE DEFESA ORBITAL  //  SETOR 01: FENDA PELÁGICA',
-      {
-        fontFamily: FONT_HUD,
-        fontSize: '13px',
-        fontStyle: 'bold',
-        color: '#93c5fd',
-        letterSpacing: 1.5,
-      },
-    ).setOrigin(0.5, 0).setResolution(3).setDepth(11);
+    // A camada foi extraída da mesma imagem aprovada, com somente o texto
+    // PRESS START reconstruído ao fundo. Permite piscar sem uma caixa preta.
+    // Coordenadas derivadas do enquadramento original 1672 × 941.
+    const scaleX = GAME_WIDTH / 1672;
+    const scaleY = GAME_HEIGHT / 941;
+    this.promptCover = this.add.image(
+      ((430 + 1240) / 2) * scaleX,
+      ((657 + 812) / 2) * scaleY,
+      'bw-title-prompt-cover',
+    ).setDisplaySize((1240 - 430) * scaleX, (812 - 657) * scaleY)
+      .setAlpha(0).setDepth(1);
 
-    // Moldura cibernética do Título com linhas duplas
-    this.add.rectangle(GAME_WIDTH / 2, 78, 620, 98, 0x071322, 0.94)
-      .setStrokeStyle(1.5, 0x1f3c4d).setDepth(10);
-    this.add.rectangle(GAME_WIDTH / 2, 78, 628, 106, 0x00f0ff, 0.1)
-      .setStrokeStyle(1, 0x00f0ff, 0.3).setDepth(10);
+    this.createMainMenu();
+    this.createOptions();
+    this.createControls();
+    this.showMode('attract');
 
-    // Efeito de brilho neon no título
-      this.titleGlow = this.add.text(GAME_WIDTH / 2, 34, 'BULLET WAKE', {
-        fontFamily: FONT_TITLE,
-        fontSize: '42px',
-        fontStyle: 'bold',
-        color: '#00f0ff',
-    }).setOrigin(0.5, 0).setAlpha(0.35).setResolution(3).setDepth(11);
+    const keyboard = this.input.keyboard;
+    if (keyboard) {
+      const codes = Phaser.Input.Keyboard.KeyCodes;
+      this.keys = {
+        up: keyboard.addKey(codes.UP),
+        down: keyboard.addKey(codes.DOWN),
+        w: keyboard.addKey(codes.W),
+        s: keyboard.addKey(codes.S),
+        enter: keyboard.addKey(codes.ENTER),
+        space: keyboard.addKey(codes.SPACE),
+        esc: keyboard.addKey(codes.ESC),
+      };
+    }
 
-      this.add.text(GAME_WIDTH / 2, 34, 'BULLET WAKE', {
-        fontFamily: FONT_TITLE,
-        fontSize: '42px',
-        fontStyle: 'bold',
-        color: '#ffffff',
-    }).setOrigin(0.5, 0).setStroke('#0a1d2e', 5).setResolution(3).setDepth(12);
+    // Mouse exclusivamente na interface. O primeiro clique revela o menu.
+    this.input.on('pointerdown', () => {
+      if (this.mode === 'attract') this.revealMenu();
+    });
+  }
 
-    this.add.text(
-      GAME_WIDTH / 2,
-      86,
-      'EVERY SHOT LEAVES A TRACE',
-      {
-        fontFamily: FONT_HUD,
-        fontSize: '14px',
-        fontStyle: 'bold',
-        color: '#00f0ff',
-        letterSpacing: 3,
-      },
-    ).setOrigin(0.5, 0).setResolution(3).setDepth(12);
+  update(_time: number, delta: number): void {
+    this.elapsedMs += Math.min(delta, 100);
+    // ~0,6 s aceso / ~0,6 s apagado, como nos menus de arcade.
+    this.promptCover.setAlpha(this.mode === 'attract'
+      ? (Math.floor(this.elapsedMs / 620) % 2 === 0 ? 0 : 1)
+      : 1);
 
-    this.add.text(
-      GAME_WIDTH / 2,
-      106,
-      'FASE 01: FENDA PELÁGICA  ·  INVASÃO ALIENÍGENA ABISSAL',
-      {
-        fontFamily: FONT_HUD,
-        fontSize: '13px',
-        fontStyle: 'bold',
-        color: '#e2e8f0',
-        letterSpacing: 1,
-      },
-    ).setOrigin(0.5, 0).setResolution(3).setDepth(12);
+    if (!this.keys) return;
+    const justDown = Phaser.Input.Keyboard.JustDown;
+    const confirm = justDown(this.keys.enter) || justDown(this.keys.space);
+    const escape = justDown(this.keys.esc);
+    const up = justDown(this.keys.up) || justDown(this.keys.w);
+    const down = justDown(this.keys.down) || justDown(this.keys.s);
 
-    // Itens de Menu (com ação principal em destaque absoluto)
-    this.menuItems = [
-      {
-        text: 'INICIAR MISSÃO: FENDA PELÁGICA',
-        badge: '[ESPAÇO / ENTER]',
-        isPrimary: true,
-        action: () => this.startStage1(),
-      },
-      {
-        text: 'SELEÇÃO DE PILOTOS DE COMBATE',
-        badge: '[P]',
-        action: () => this.openPilotSelect(),
-      },
-      {
-        text: 'COORDENADAS DE FASES & CAMPANHA',
-        badge: '[M]',
-        action: () => this.openStageSelect(),
-      },
-      {
-        text: 'CONFIGURAÇÕES DE ÁUDIO & DIFICULDADE',
-        badge: '[C]',
-        action: () => this.openSettingsModal(),
-      },
-      {
-        text: 'CONTROLES DE VOO & MANUAL TÁTICO',
-        badge: '[H]',
-        action: () => this.openControlsModal(),
-      },
+    if (this.mode === 'attract') {
+      if (confirm) this.revealMenu();
+      return;
+    }
+    if (escape) {
+      if (this.mode === 'controls') this.showMode('options');
+      else if (this.mode === 'options') this.showMode('main');
+      else this.showMode('attract');
+      return;
+    }
+    if (this.mode === 'controls') {
+      if (confirm) this.showMode('options');
+      return;
+    }
+    if (up) this.select((this.selectedIndex + this.rowCount() - 1) % this.rowCount());
+    if (down) this.select((this.selectedIndex + 1) % this.rowCount());
+    if (confirm) this.activateSelected();
+  }
+
+  private revealMenu(): void {
+    if (this.mode !== 'attract') return;
+    globalAudio.unlock();
+    globalAudio.playPickup('upgrade');
+    this.showMode('main');
+  }
+
+  private showMode(mode: 'attract' | 'main' | 'options' | 'controls'): void {
+    this.mode = mode;
+    this.selectedIndex = 0;
+    this.mainGroup.setVisible(mode === 'main');
+    this.optionsGroup.setVisible(mode === 'options');
+    this.controlsGroup.setVisible(mode === 'controls');
+    this.refreshFocus();
+  }
+
+  private createMainMenu(): void {
+    this.mainGroup = this.add.container(0, 0).setDepth(6);
+    const panel = this.add.rectangle(GAME_WIDTH / 2, 331, 332, 91, 0x031421, 0.87)
+      .setStrokeStyle(1, 0x42dfff, 0.27);
+    this.mainGroup.add(panel);
+    this.mainRows = [
+      this.menuRow(this.mainGroup, 'SELECIONAR PILOTO', 314, () => this.openPilotSelect(), true),
+      this.menuRow(this.mainGroup, 'OPÇÕES', 348, () => this.showMode('options')),
     ];
+  }
 
-    const startY = 168;
-
-    this.menuItems.forEach((item, index) => {
-      const isPrimary = Boolean(item.isPrimary);
-      const y = isPrimary ? startY : startY + 44 + (index - 1) * 34;
-      const width = isPrimary ? 480 : 440;
-      const height = isPrimary ? 38 : 28;
-
-      if (isPrimary) {
-        this.primaryGlow = this.add
-          .rectangle(GAME_WIDTH / 2, y, width + 6, height + 6, 0x00f0ff, 0.15)
-          .setStrokeStyle(1.5, 0x00f0ff, 0.6).setDepth(10);
+  private menuRow(
+    container: Phaser.GameObjects.Container,
+    text: string,
+    y: number,
+    action: () => void,
+    primary = false,
+  ): { background: Phaser.GameObjects.Rectangle; label: Phaser.GameObjects.Text } {
+    const background = this.add.rectangle(GAME_WIDTH / 2, y, 303, 31, 0x082538, 0.83)
+      .setStrokeStyle(1, 0x3e8ca8, 0.55)
+      .setInteractive({ useHandCursor: true });
+    const label = this.add.text(GAME_WIDTH / 2, y, text, {
+      fontFamily: primary ? FONT_TITLE : FONT_HUD,
+      fontSize: primary ? '18px' : '20px',
+      fontStyle: 'bold',
+      color: '#eafaff',
+      letterSpacing: 2,
+      align: 'center',
+    }).setOrigin(0.5).setResolution(3);
+    container.add([background, label]);
+    background.on('pointerover', () => {
+      this.selectedIndex = this.mode === 'options'
+        ? this.optionRows.findIndex(row => row.background === background)
+        : this.mainRows.findIndex(row => row.background === background);
+      this.refreshFocus();
+    });
+    background.on('pointerdown', () => {
+      if (this.mode === 'main' || this.mode === 'options') {
+        globalAudio.playPickup('upgrade');
+        action();
       }
+    });
+    return { background, label };
+  }
 
-      const bg = this.add
-        .rectangle(GAME_WIDTH / 2, y, width, height, isPrimary ? 0x0d2838 : 0x081320, 0.94)
-        .setStrokeStyle(isPrimary ? 2 : 1, isPrimary ? 0x00f0ff : 0x1f3c4d)
-        .setInteractive({ useHandCursor: true }).setDepth(10);
+  private createOptions(): void {
+    this.optionsGroup = this.add.container(0, 0).setDepth(7);
+    this.optionsGroup.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x020a14, 0.85));
+    this.optionsGroup.add(this.add.text(GAME_WIDTH / 2, 91, 'OPÇÕES', {
+      fontFamily: FONT_TITLE, fontSize: '34px', color: '#e9f8ff',
+      fontStyle: 'bold', letterSpacing: 4,
+    }).setOrigin(0.5).setResolution(3));
 
-      const border = this.add
-        .rectangle(GAME_WIDTH / 2 - width / 2 + 3, y, 3.5, height - 6, isPrimary ? 0x00f0ff : 0x38bdf8)
-        .setVisible(index === 0).setDepth(11);
+    this.optionRows = [
+      this.menuRow(this.optionsGroup, '', 153, () => this.toggleMusic()),
+      this.menuRow(this.optionsGroup, '', 194, () => this.toggleSfx()),
+      this.menuRow(this.optionsGroup, '', 235, () => this.cycleDifficulty()),
+      this.menuRow(this.optionsGroup, 'CONTROLES', 276, () => this.showMode('controls')),
+      this.menuRow(this.optionsGroup, 'VOLTAR', 333, () => this.showMode('main')),
+    ];
+    this.refreshSettingsLabels();
+  }
 
-      const label = this.add.text(
-        GAME_WIDTH / 2 - width / 2 + 18,
-        y - (isPrimary ? 9 : 8),
-        item.text,
-        {
-          fontFamily: isPrimary ? FONT_TITLE : FONT_HUD,
-          fontSize: isPrimary ? '15px' : '14px',
-          fontStyle: 'bold',
-          color: isPrimary ? '#ffffff' : '#cbd5e1',
-          letterSpacing: 0.8,
-        },
-      ).setResolution(3).setDepth(11);
+  private createControls(): void {
+    this.controlsGroup = this.add.container(0, 0).setDepth(8);
+    this.controlsGroup.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x020a14, 0.9));
+    this.controlsGroup.add(this.add.text(GAME_WIDTH / 2, 82, 'CONTROLES', {
+      fontFamily: FONT_TITLE, fontSize: '32px', fontStyle: 'bold', color: '#e9f8ff',
+    }).setOrigin(0.5).setResolution(3));
+    this.controlsGroup.add(this.add.text(GAME_WIDTH / 2, 183,
+      'WASD / SETAS     MOVIMENTAR\n' +
+      'ESPAÇO             ATIRAR\n' +
+      'SHIFT                DASH (3 POR FASE)\n' +
+      'X                        BOMBA\n' +
+      'V                        ESPECIAL\n' +
+      'C                        CARREGAR (SE DISPONÍVEL)\n' +
+      'ESC                   PAUSAR', {
+        fontFamily: FONT_HUD, fontSize: '19px', fontStyle: 'bold',
+        color: '#cfe8f5', lineSpacing: 7, align: 'left',
+      }).setOrigin(0.5).setResolution(3));
+    const back = this.add.text(GAME_WIDTH / 2, 360, 'ENTER / ESC — VOLTAR', {
+      fontFamily: FONT_HUD, fontSize: '18px', fontStyle: 'bold', color: '#62e7ff',
+    }).setOrigin(0.5).setResolution(3).setInteractive({ useHandCursor: true });
+    back.on('pointerdown', () => this.showMode('options'));
+    this.controlsGroup.add(back);
+  }
 
-    if (item.badge) {
-      this.add.text(
-        GAME_WIDTH / 2 + width / 2 - 16,
-        y - (isPrimary ? 9 : 8),
-        item.badge,
-        {
-          fontFamily: FONT_HUD,
-          fontSize: '13px',
-          color: isPrimary ? '#fde047' : '#38bdf8',
-          fontStyle: 'bold',
-        },
-        ).setOrigin(1, 0).setResolution(3).setDepth(11);
+  private rowCount(): number {
+    return this.mode === 'options' ? this.optionRows.length : this.mainRows.length;
+  }
+
+  private select(index: number): void {
+    this.selectedIndex = index;
+    this.refreshFocus();
+    globalAudio.playShot('cora', 1);
+  }
+
+  private refreshFocus(): void {
+    const rows = this.mode === 'options' ? this.optionRows : this.mainRows;
+    rows.forEach((row, i) => {
+      const active = i === this.selectedIndex;
+      row.background.setFillStyle(active ? 0x15526c : 0x082538, active ? 0.92 : 0.83)
+        .setStrokeStyle(active ? 2 : 1, active ? 0x67edff : 0x3e8ca8, active ? 0.98 : 0.55);
+      row.label.setColor(active ? '#ffffff' : '#b7d9ea');
+    });
+  }
+
+  private activateSelected(): void {
+    globalAudio.playPickup('upgrade');
+    if (this.mode === 'main') {
+      if (this.selectedIndex === 0) this.openPilotSelect();
+      else this.showMode('options');
+    } else if (this.mode === 'options') {
+      if (this.selectedIndex === 0) this.toggleMusic();
+      else if (this.selectedIndex === 1) this.toggleSfx();
+      else if (this.selectedIndex === 2) this.cycleDifficulty();
+      else if (this.selectedIndex === 3) this.showMode('controls');
+      else this.showMode('main');
     }
-
-    bg.on('pointerover', () => this.selectItem(index));
-    bg.on('pointerdown', () => this.activateItem(index));
-
-    this.menuButtons.push({ bg, label, border, isPrimary });
-  });
-
-    // Rodapé de navegação e ajuda
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 16, GAME_WIDTH, 32, 0x050e18, 0.96).setDepth(10);
-this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 32, GAME_WIDTH, 1.5, 0x1f3c4d).setDepth(10);
-this.add.text(
-  GAME_WIDTH / 2,
-  GAME_HEIGHT - 23,
-  'W / S / SETAS: NAVEGAR   ·   ENTER / ESPAÇO: CONFIRMAR   ·   P: PILOTOS   ·   C: OPÇÕES',
-  {
-    fontFamily: FONT_HUD,
-    fontSize: '13px',
-    fontStyle: 'bold',
-    color: '#cbd5e1',
-  },
-    ).setOrigin(0.5, 0).setResolution(3).setDepth(11);
-
-this.selectItem(0);
-
-// Controles de teclado
-const kb = this.input.keyboard;
-if (kb) {
-  kb.on('keydown-UP', () => this.navigate(-1));
-  kb.on('keydown-W', () => this.navigate(-1));
-  kb.on('keydown-DOWN', () => this.navigate(1));
-  kb.on('keydown-S', () => this.navigate(1));
-  kb.on('keydown-ENTER', () => this.onConfirm());
-  kb.on('keydown-SPACE', () => this.onConfirm());
-  kb.on('keydown-P', () => { if (!this.modalContainer) this.openPilotSelect(); });
-  kb.on('keydown-M', () => { if (!this.modalContainer) this.openStageSelect(); });
-  kb.on('keydown-C', () => { if (!this.modalContainer) this.openSettingsModal(); });
-  kb.on('keydown-H', () => { if (!this.modalContainer) this.openControlsModal(); });
-  kb.on('keydown-ESC', () => { if (this.modalContainer) this.closeModal(); });
-}
   }
-
-update(_time: number, delta: number): void {
-  this.previewDistance += Math.min(delta, 50) * 0.024;
-  this.backdrop.update(this.previewDistance);
-
-  // Pulso neon suave no título e no botão primário
-  this.glowTimer += delta * 0.003;
-  if(this.titleGlow) {
-  this.titleGlow.setAlpha(0.25 + Math.sin(this.glowTimer) * 0.15);
-}
-if (this.primaryGlow) {
-  this.primaryGlow.setAlpha(0.12 + Math.sin(this.glowTimer * 1.5) * 0.08);
-}
-  }
-
-  private navigate(dir: number): void {
-  if(this.modalContainer) return;
-  const total = this.menuItems.length;
-  this.selectItem((this.selectedIndex + dir + total) % total);
-  globalAudio.playShot('cora', 1);
-}
-
-  private onConfirm(): void {
-  if(this.modalContainer) {
-  this.closeModal();
-  return;
-}
-this.activateItem(this.selectedIndex);
-  }
-
-  private selectItem(index: number): void {
-  this.selectedIndex = index;
-  this.menuButtons.forEach((btn, idx) => {
-    const isSelected = idx === index;
-    if (btn.isPrimary) {
-      btn.bg.setStrokeStyle(isSelected ? 2 : 1.5, isSelected ? 0x00f0ff : 0x0284c7);
-      btn.bg.setFillStyle(isSelected ? 0x14405a : 0x0d2838, 0.96);
-      btn.label.setColor('#ffffff');
-    } else {
-      btn.bg.setStrokeStyle(isSelected ? 1.5 : 1, isSelected ? 0x00f0ff : 0x1f3c4d);
-      btn.bg.setFillStyle(isSelected ? 0x122438 : 0x081320, 0.94);
-      btn.label.setColor(isSelected ? '#ffffff' : '#94a3b8');
-    }
-    btn.border.setVisible(isSelected);
-  });
-}
-
-  private activateItem(index: number): void {
-  globalAudio.playPickup('upgrade');
-  this.menuItems[index].action();
-}
-
-  private startStage1(): void {
-  this.scene.start('PrototypeScene', { pilotId: 'nolan', stageNumber: 1 });
-}
 
   private openPilotSelect(): void {
-  this.scene.start('PilotSelectScene', { stageNumber: 1 });
-}
+    this.scene.start('PilotSelectScene', { stageNumber: 1 });
+  }
 
-  private openStageSelect(): void {
-  this.scene.start('StageSelectScene');
-}
+  private refreshSettingsLabels(): void {
+    const s = saveSystem.getSaveData().settings;
+    const difficulty = s.difficulty || 'normal';
+    const difficultyText: Record<'normal' | 'hard' | 'arcade', string> = {
+      normal: 'NORMAL', hard: 'DIFÍCIL', arcade: 'ARCADE',
+    };
+    if (this.optionRows.length < 3) return;
+    this.optionRows[0].label.setText(`MÚSICA: ${s.musicVolume > 0 ? 'LIGADA' : 'DESLIGADA'}`);
+    this.optionRows[1].label.setText(`EFEITOS: ${s.sfxVolume > 0 ? 'LIGADOS' : 'DESLIGADOS'}`);
+    this.optionRows[2].label.setText(`DIFICULDADE: ${difficultyText[difficulty]}`);
+  }
 
-  private openSettingsModal(): void {
-  const data = saveSystem.getSaveData();
-  const currentSfx = data.settings.sfxVolume > 0;
-  const currentBgm = data.settings.musicVolume > 0;
-  const currentDiff = data.settings.difficulty || 'normal';
-  const diffLabels = {
-    normal: 'NORMAL (EQUILIBRADO ARCADE)',
-    hard: 'DIFÍCIL (ALTA DENSIDADE)',
-    arcade: 'ARCADE EXPERT (LEQUE QUÍNTUPLO)',
-  };
+  private toggleMusic(): void {
+    const enabled = saveSystem.getSaveData().settings.musicVolume > 0;
+    saveSystem.updateSettings({ musicVolume: enabled ? 0 : 1 });
+    if (enabled) globalAudio.stopMusic();
+    this.refreshSettingsLabels();
+  }
 
-  const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040a12, 0.88);
-  const box = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 520, 310, 0x081320)
-    .setStrokeStyle(1.5, 0x00f0ff);
+  private toggleSfx(): void {
+    const enabled = saveSystem.getSaveData().settings.sfxVolume > 0;
+    saveSystem.updateSettings({ sfxVolume: enabled ? 0 : 1 });
+    this.refreshSettingsLabels();
+  }
 
-  const title = this.add.text(GAME_WIDTH / 2, 80, 'CONFIGURAÇÕES DE ÁUDIO & DIFICULDADE', {
-    fontFamily: FONT_TITLE,
-    fontSize: '18px',
-    color: '#00f0ff',
-    letterSpacing: 2,
-  }).setOrigin(0.5, 0).setResolution(2);
-
-  const sfxBtn = this.add.rectangle(GAME_WIDTH / 2, 130, 420, 30, 0x122438)
-    .setStrokeStyle(1, 0x1f3c4d).setInteractive({ useHandCursor: true });
-  const sfxLabel = this.add.text(GAME_WIDTH / 2, 130, `EFEITOS SONOROS (SFX): ${currentSfx ? 'ATIVADO' : 'MUTADO'}`, {
-    fontFamily: FONT_HUD,
-    fontSize: '12px',
-    color: '#ffffff',
-  }).setOrigin(0.5).setResolution(2);
-
-  sfxBtn.on('pointerdown', () => {
-    const next = !saveSystem.getSaveData().settings.sfxVolume;
-    saveSystem.updateSettings({ sfxVolume: next ? 1 : 0 });
-    sfxLabel.setText(`EFEITOS SONOROS (SFX): ${next ? 'ATIVADO' : 'MUTADO'}`);
-  });
-
-  const bgmBtn = this.add.rectangle(GAME_WIDTH / 2, 170, 420, 30, 0x122438)
-    .setStrokeStyle(1, 0x1f3c4d).setInteractive({ useHandCursor: true });
-  const bgmLabel = this.add.text(GAME_WIDTH / 2, 170, `MÚSICA RETRO-SYNTH: ${currentBgm ? 'ATIVADO' : 'MUTADO'}`, {
-    fontFamily: FONT_HUD,
-    fontSize: '12px',
-    color: '#ffffff',
-  }).setOrigin(0.5).setResolution(2);
-
-  bgmBtn.on('pointerdown', () => {
-    const next = !saveSystem.getSaveData().settings.musicVolume;
-    saveSystem.updateSettings({ musicVolume: next ? 1 : 0 });
-    bgmLabel.setText(`MÚSICA RETRO-SYNTH: ${next ? 'ATIVADO' : 'MUTADO'}`);
-    if (!next) globalAudio.stopMusic();
-  });
-
-  const diffBtn = this.add.rectangle(GAME_WIDTH / 2, 210, 420, 30, 0x162c45)
-    .setStrokeStyle(1, 0x38bdf8).setInteractive({ useHandCursor: true });
-  const diffLabel = this.add.text(GAME_WIDTH / 2, 210, `DIFICULDADE: ${diffLabels[currentDiff]}`, {
-    fontFamily: FONT_HUD,
-    fontSize: '12px',
-    color: '#ffd166',
-    fontStyle: 'bold',
-  }).setOrigin(0.5).setResolution(2);
-
-  diffBtn.on('pointerdown', () => {
-    const cur = saveSystem.getSaveData().settings.difficulty || 'normal';
-    const order = ['normal', 'hard', 'arcade'] as const;
-    const nextIdx = (order.indexOf(cur as any) + 1) % order.length;
-    const nextDiff = order[nextIdx];
-    saveSystem.updateSettings({ difficulty: nextDiff });
-    diffLabel.setText(`DIFICULDADE: ${diffLabels[nextDiff]}`);
-    globalAudio.playPickup('upgrade');
-  });
-
-  const fpsHint = this.add.text(
-    GAME_WIDTH / 2,
-    245,
-    'SUPORTE A TAXAS DE QUADROS DESBLOQUEADAS: 60Hz / 120Hz / 144Hz / 240Hz',
-    {
-      fontFamily: FONT_HUD,
-      fontSize: '11px',
-      color: '#38bdf8',
-    },
-  ).setOrigin(0.5, 0).setResolution(2);
-
-  const closeBtn = this.add.rectangle(GAME_WIDTH / 2, 280, 140, 26, 0x0e7490)
-    .setStrokeStyle(1, 0x00f0ff).setInteractive({ useHandCursor: true });
-  const closeLabel = this.add.text(GAME_WIDTH / 2, 280, 'FECHAR [ESC]', {
-    fontFamily: FONT_HUD,
-    fontSize: '11px',
-    color: '#ffffff',
-    fontStyle: 'bold',
-  }).setOrigin(0.5).setResolution(2);
-  closeBtn.on('pointerdown', () => this.closeModal());
-
-  this.modalContainer = this.add.container(0, 0, [
-    overlay, box, title, sfxBtn, sfxLabel, bgmBtn, bgmLabel, diffBtn, diffLabel, fpsHint, closeBtn, closeLabel,
-  ]).setDepth(50);
-}
-
-  private openControlsModal(): void {
-  const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x040a12, 0.88);
-  const box = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 560, 310, 0x081320)
-    .setStrokeStyle(1.5, 0x00f0ff);
-
-  const title = this.add.text(GAME_WIDTH / 2, 75, 'CONTROLES DE VOO & COMBATE', {
-    fontFamily: FONT_TITLE,
-    fontSize: '18px',
-    color: '#00f0ff',
-    letterSpacing: 2,
-  }).setOrigin(0.5, 0).setResolution(2);
-
-  const controls = this.add.text(
-    GAME_WIDTH / 2,
-    105,
-    '• MOVIMENTAÇÃO: W/A/S/D ou SETAS (Voo vertical top-down, diagonais normalizadas)\n' +
-    '• DISPARO PRINCIPAL: BARRA DE ESPAÇO (Contínuo mantendo ou burst com tapping)\n' +
-    '• DASH DE EMERGÊNCIA: SHIFT ESQUERDO (Exatamente 3 por fase, invulnerabilidade curta)\n' +
-    '• DISPARO CARREGADO (WAVE CANNON): TECLA C (Segurar e soltar feixe penetrante)\n' +
-    '• ARMA SECUNDÁRIA / MÍSSEIS: TECLA M\n' +
-    '• HABILIDADE ESPECIAL: TECLA V (Requer 100% de Ressonância)\n' +
-    '• BOMBA DEFENSIVA: TECLA X ou B (Limpa balas da tela e causa dano massivo)\n' +
-    '• REINICIAR: TECLA R    |    MENU / PAUSA: TECLA ESC\n\n' +
-    '※ NO PC: MOUSE ATIVO EXCLUSIVAMENTE NOS MENUS DE INTERFACE',
-    {
-      fontFamily: FONT_HUD,
-      fontSize: '11px',
-      color: '#e2e8f0',
-      lineSpacing: 3,
-    },
-  ).setOrigin(0.5, 0).setResolution(2);
-
-  const closeBtn = this.add.rectangle(GAME_WIDTH / 2, 312, 140, 28, 0x0e7490)
-    .setStrokeStyle(1, 0x00f0ff).setInteractive({ useHandCursor: true });
-  const closeLabel = this.add.text(GAME_WIDTH / 2, 312, 'FECHAR [ESC]', {
-    fontFamily: FONT_HUD,
-    fontSize: '12px',
-    color: '#ffffff',
-    fontStyle: 'bold',
-  }).setOrigin(0.5).setResolution(2);
-  closeBtn.on('pointerdown', () => this.closeModal());
-
-  this.modalContainer = this.add.container(0, 0, [
-    overlay, box, title, controls, closeBtn, closeLabel,
-  ]).setDepth(50);
-}
-
-  private closeModal(): void {
-  if(this.modalContainer) {
-  this.modalContainer.destroy();
-  this.modalContainer = undefined;
-}
+  private cycleDifficulty(): void {
+    const current = saveSystem.getSaveData().settings.difficulty || 'normal';
+    const values = ['normal', 'hard', 'arcade'] as const;
+    const next = values[(values.indexOf(current) + 1) % values.length];
+    saveSystem.updateSettings({ difficulty: next });
+    this.refreshSettingsLabels();
   }
 }
