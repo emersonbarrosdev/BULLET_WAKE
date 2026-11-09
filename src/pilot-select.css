@@ -1,0 +1,187 @@
+/* BULLET WAKE — cinematic pilot selection; isolated from gameplay canvas. */
+#bw-pilot-select.bw-pilot-select {
+  position: fixed; inset: 0; z-index: 8;
+  width: 100vw; height: 100vh; height: 100dvh;
+  background: #120608; color: #fff0e2;
+  font: 600 18px/1.15 'Rajdhani', 'Segoe UI', sans-serif;
+  overflow-y: auto; overflow-x: hidden;
+  isolation: isolate;
+  -webkit-font-smoothing: antialiased;
+}
+#bw-pilot-select * { box-sizing: border-box; }
+#bw-pilot-select .bw-pilot-backdrop {
+  position: fixed; inset: -12px;
+  background: url('/assets/title/title-apocalyptic-base-v3.webp') center center / cover no-repeat;
+  filter: blur(3px) brightness(.46) saturate(1.25);
+  pointer-events: none;
+}
+#bw-pilot-select .bw-pilot-vignette {
+  position: fixed; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(9,1,5,.56), rgba(15,1,4,.2) 22%,rgba(9,0,3,.20) 78%,rgba(8,0,5,.64)),
+              linear-gradient(180deg, rgba(10,0,3,.42),rgba(13,0,4,.74) 48%, rgba(10,1,5,.92));
+}
+#bw-pilot-select .bw-pilot-ui {
+  position: relative; z-index: 1; min-height: 100%;
+  width: min(96vw, 1560px); margin: auto;
+  display: flex; flex-direction: column;
+  padding: clamp(8px, 1vh, 14px) clamp(10px, 1vw, 18px) clamp(8px, 1vh, 14px);
+}
+#bw-pilot-select .bw-pilot-header { text-align: center; flex: 0 0 auto; }
+#bw-pilot-select .bw-pilot-brand {
+  font: italic 900 clamp(26px, 3.15vw, 48px)/.95 'Oxanium', sans-serif;
+  letter-spacing: .04em; color: #fff6ed;
+  text-shadow: 2px 3px 0 #140809, 0 0 13px #fc4b1a;
+}
+#bw-pilot-select .bw-pilot-brand em { color: #ff8824; font-style: italic; }
+#bw-pilot-select .bw-pilot-header h1 {
+  margin: 5px 0 3px; font: italic 800 clamp(21px, 2.05vw, 31px)/1 'Oxanium', sans-serif;
+  letter-spacing: .11em; color: #ffd8b7; text-shadow: 0 0 18px rgba(255,65,19,.7);
+}
+#bw-pilot-select .bw-pilot-header p {
+  margin: 0 0 8px; font-size: clamp(13px, 1.2vw, 17px); letter-spacing: .15em; color: #ffb56e;
+}
+#bw-pilot-select .bw-pilot-cards {
+  width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(9px, 1.15vw, 20px); flex: 1 1 auto; min-height: 0;
+}
+#bw-pilot-select .bw-pilot-card {
+  color: #fff0e2; text-align: center; min-width: 0;
+  position: relative; display: flex; flex-direction: column;
+  align-items: center; gap: clamp(4px, .6vh, 9px);
+  padding: clamp(12px, 1.3vw, 23px) clamp(8px, 1.05vw, 18px) clamp(8px, 1vh, 16px);
+  background: linear-gradient(165deg,rgba(38,9,12,.90),rgba(10,2,7,.95) 57%,rgba(32,6,8,.91));
+  border: 1px solid rgba(250,90,48,.50); border-radius: 5px;
+  box-shadow: inset 0 0 30px rgba(255,50,8,.065),0 8px 40px rgba(0,0,0,.25);
+  cursor: pointer; transition: border-color .16s,box-shadow .16s,background-color .16s,transform .16s;
+  font-family: 'Rajdhani', sans-serif;
+}
+#bw-pilot-select .bw-pilot-card.bw-pilot-active,
+#bw-pilot-select .bw-pilot-card:hover,
+#bw-pilot-select .bw-pilot-card:focus-visible {
+  outline: none; border-color: #ffb23e;
+  box-shadow: 0 0 0 2px #ff591a,0 0 28px rgba(255,91,24,.48),inset 0 0 30px rgba(255,78,17,.1);
+  background-color: rgba(42,8,11,.96);
+}
+#bw-pilot-select .bw-pilot-card-head { width: 100%; }
+#bw-pilot-select .bw-pilot-card-head strong {
+  font: italic 800 clamp(19px, 1.85vw, 30px)/1.05 'Oxanium', sans-serif;
+  display: block; text-shadow: 0 2px 7px #100307; white-space: nowrap;
+}
+#bw-pilot-select .bw-pilot-card-head small {
+  display: block; margin-top: 4px; color: #ffa942;
+  font: italic 700 clamp(12px, 1.12vw, 17px)/1.1 'Oxanium', sans-serif;
+  letter-spacing: .06em;
+}
+#bw-pilot-select .bw-pilot-portrait-wrap {
+  width: min(62%, 220px); flex: 1 1 auto; min-height: 100px; max-height: min(32vh, 255px);
+  overflow: hidden; border: 1px solid rgba(251,98,45,.34);
+  border-radius: 5px; background: #19070e;
+  box-shadow: inset 0 0 12px rgba(242,63,19,.2);
+}
+#bw-pilot-select .bw-pilot-portrait-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: center 12%; display: block; }
+#bw-pilot-select .bw-pilot-card-role { font-size: clamp(15px,1.45vw,23px); font-weight: 800; }
+#bw-pilot-select .bw-pilot-card-special {
+  font-size: clamp(14px,1.25vw,20px); font-weight: 800; color: #ffd04a;
+  text-transform: uppercase; white-space: nowrap;
+}
+#bw-pilot-select .bw-pilot-ship-row {
+  width: 100%; min-height: clamp(55px, 9vh, 91px);
+  display: flex; align-items: center; justify-content: space-between;
+  text-align: left; gap: 5px;
+  padding: 3px 8px; border: 1px solid rgba(255,88,31,.35);
+  background: linear-gradient(90deg,rgba(24,3,7,.95),rgba(12,2,6,.70));
+}
+#bw-pilot-select .bw-pilot-ship-row span { white-space: nowrap; font-size: clamp(13px,1.2vw,19px); font-weight: 700; }
+#bw-pilot-select .bw-pilot-ship-row b { color: #ffd9b0; }
+#bw-pilot-select .bw-pilot-ship-row img { width: 56%; max-height: 80px; object-fit: contain; }
+#bw-pilot-select .bw-pilot-stats,
+#bw-pilot-select .bw-pilot-profile-stats { display: flex; justify-content: space-around; gap: 8px; width: 100%; }
+#bw-pilot-select .bw-pilot-stat { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+#bw-pilot-select .bw-pilot-stat b { font-size: clamp(13px,1.1vw,18px); font-weight: 800; }
+#bw-pilot-select .bw-pilot-stat-bars { display: inline-flex; gap: 2px; }
+#bw-pilot-select .bw-pilot-stat-bars i { width: clamp(6px,.72vw,12px); height: clamp(10px,1vw,15px); transform: skew(-9deg); border:1px solid #613d35; background: #2a1f25; }
+#bw-pilot-select .bw-pilot-stat-bars i.bw-lit { background: linear-gradient(#fff091,#ff9e19 60%,#e3430d); border-color: #ff9c22; box-shadow: 0 0 5px #dc5511; }
+#bw-pilot-select .bw-pilot-brief {
+  flex: 0 0 auto; margin-top: 12px; padding: clamp(8px, 1.1vh, 15px);
+  text-align: center; border: 1px solid rgba(244,94,47,.55); background: rgba(16,2,6,.86);
+  box-shadow: inset 0 0 21px rgba(227,44,14,.12);
+}
+#bw-pilot-select .bw-pilot-brief p { margin: 2px 0; font-size: clamp(14px,1.17vw,18px); }
+#bw-pilot-select .bw-pilot-brief-special { color: #ffd15d; font-weight: 800; }
+#bw-pilot-select .bw-pilot-footer {
+  padding: 9px 0 2px; display: flex; justify-content: space-between;
+  align-items: center; gap: 10px; flex: 0 0 auto;
+}
+#bw-pilot-select .bw-pilot-help { color: #f3d4c3; font-size: clamp(12px, 1.12vw, 17px); letter-spacing: .035em; }
+#bw-pilot-select .bw-pilot-help span { color: #ff7935; padding: 0 7px; }
+#bw-pilot-select .bw-pilot-footer-actions { display: flex; align-items: center; gap: clamp(8px,1.3vw,20px); }
+#bw-pilot-select .bw-pilot-info-action,
+#bw-pilot-select .bw-pilot-launch {
+  color:#fff1e4; background:none; border:0; cursor:pointer;
+  font: italic 800 clamp(15px,1.25vw,21px)/1 'Oxanium',sans-serif;
+  white-space: nowrap; text-shadow: 0 0 7px rgba(255,82,20,.75);
+  padding: 10px 13px; transition:color .15s, text-shadow .15s;
+}
+#bw-pilot-select .bw-pilot-launch {
+  color: #fff1d1; border: 2px solid #ff8520;
+  transform: skew(-11deg); padding: 12px clamp(12px,1.7vw,25px);
+  box-shadow: 0 0 13px rgba(255,94,22,.52), inset 0 0 18px rgba(255,61,8,.12);
+}
+#bw-pilot-select .bw-pilot-launch span { font-size: .77em; color: #ffcf89; }
+#bw-pilot-select .bw-pilot-info-action:hover,
+#bw-pilot-select .bw-pilot-launch:hover,
+#bw-pilot-select .bw-pilot-info-action:focus-visible,
+#bw-pilot-select .bw-pilot-launch:focus-visible {
+  outline: none; color: #ffb44f; text-shadow: 0 0 13px #ff6026;
+}
+#bw-pilot-select .bw-pilot-profile {
+  flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(220px, 36%) 1fr;
+  gap: clamp(15px, 3vw, 48px); align-items: stretch;
+  border: 1px solid rgba(252,98,48,.6);
+  background: linear-gradient(110deg,rgba(38,6,12,.81),rgba(12,2,6,.97));
+  padding: clamp(12px, 2vw, 25px); box-shadow: inset 0 0 35px rgba(255,62,14,.1);
+}
+#bw-pilot-select .bw-pilot-profile-art { position: relative; overflow:hidden; min-height: 280px; }
+#bw-pilot-select .bw-pilot-profile-art::after { position:absolute;content:'';inset:0;background:linear-gradient(0deg,#180508,transparent 35%);pointer-events:none; }
+#bw-pilot-select .bw-pilot-profile-art img {display:block;width:100%;height:100%;object-fit:cover;object-position:center 12%;}
+#bw-pilot-select .bw-pilot-profile-content {min-width:0;display:flex;flex-direction:column;gap:clamp(10px,1.8vh,18px);justify-content:center;}
+#bw-pilot-select .bw-pilot-profile-name small,
+#bw-pilot-select .bw-pilot-profile-special small {display:block;color:#ffb886;letter-spacing:.14em;font-size:clamp(13px,1.1vw,18px);font-weight:800;}
+#bw-pilot-select .bw-pilot-profile-name h2 {margin:4px 0;font:italic 900 clamp(27px,3vw,48px)/1.1 'Oxanium',sans-serif;text-transform:uppercase;}
+#bw-pilot-select .bw-pilot-profile-name p {margin:4px 0;color:#ffad39;font:italic 700 clamp(18px,1.65vw,26px)/1.1 'Oxanium',sans-serif;}
+#bw-pilot-select .bw-pilot-profile-bio {margin:0;font-size:clamp(18px,1.6vw,26px);line-height:1.2;}
+#bw-pilot-select .bw-pilot-profile-ship {display:flex;align-items:center;gap:20px;padding:8px 16px;border:1px solid rgba(253,90,38,.43);background:rgba(12,1,5,.7);font-size:clamp(18px,1.5vw,24px);}
+#bw-pilot-select .bw-pilot-profile-ship b {color:#ffbc5a;text-transform:uppercase;}
+#bw-pilot-select .bw-pilot-profile-ship img {width:min(53%,340px);max-height:130px;object-fit:contain;margin-left:auto;}
+#bw-pilot-select .bw-pilot-profile-special strong {font:italic 800 clamp(20px,1.75vw,29px)/1.1 'Oxanium',sans-serif;color:#ffc24f;display:block;margin:4px 0;}
+#bw-pilot-select .bw-pilot-profile-special p {font-size:clamp(17px,1.45vw,23px);margin:5px 0;}
+#bw-pilot-select .bw-pilot-profile-stats {justify-content:flex-start;gap:clamp(22px,3vw,60px);margin-top:auto;}
+@media (max-height: 650px) {
+  #bw-pilot-select .bw-pilot-ui {padding-top:5px;padding-bottom:5px;}
+  #bw-pilot-select .bw-pilot-header h1 {font-size:22px;margin:0 0 2px;}
+  #bw-pilot-select .bw-pilot-header p {margin:0 0 5px;font-size:12px;}
+  #bw-pilot-select .bw-pilot-brand {font-size:25px;}
+  #bw-pilot-select .bw-pilot-card {gap:3px;padding:8px;}
+  #bw-pilot-select .bw-pilot-portrait-wrap {max-height:23vh;min-height:75px;width:min(53%,150px);}
+  #bw-pilot-select .bw-pilot-ship-row {min-height:48px;}
+  #bw-pilot-select .bw-pilot-ship-row img {max-height:45px;}
+  #bw-pilot-select .bw-pilot-brief {margin-top:6px;padding:5px;}
+  #bw-pilot-select .bw-pilot-footer {padding-top:4px;}
+  #bw-pilot-select .bw-pilot-launch {padding:8px 13px;}
+}
+@media (max-width: 950px) {
+  #bw-pilot-select .bw-pilot-card-head strong {font-size:17px;}
+  #bw-pilot-select .bw-pilot-card-special {font-size:11px;}
+  #bw-pilot-select .bw-pilot-stat-bars i {width:5px;height:9px;}
+  #bw-pilot-select .bw-pilot-stat b {font-size:12px;}
+  #bw-pilot-select .bw-pilot-ship-row {padding:3px;}
+  #bw-pilot-select .bw-pilot-ship-row span {font-size:12px;}
+  #bw-pilot-select .bw-pilot-help {max-width:40%;font-size:11px;}
+  #bw-pilot-select .bw-pilot-profile {grid-template-columns:30% 1fr;gap:12px;}
+}
+@media (max-width: 690px) {
+  #bw-pilot-select .bw-pilot-ui {min-width:650px;}
+}
+@media (prefers-reduced-motion: reduce) {
+  #bw-pilot-select *, #bw-pilot-select *::before, #bw-pilot-select *::after {transition:none !important;}
+}
