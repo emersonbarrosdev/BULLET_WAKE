@@ -259,26 +259,15 @@
   #bw-pilot-select .bw-pilot-ui-profile .bw-pilot-footer {margin-top:auto;}
 }
 
-/* All three ship images share one menu treatment. The RIVET keeps its approved
-   white/red triple-engine silhouette, but the painted scene around it is faded
-   so it no longer looks like a cut-out from the cinematic title artwork. */
+/* Shared menu treatment. RIVET is a dedicated transparent illustration with
+   the same three-quarter framing as Moth and Knuckle, without a title-art mask. */
 #bw-pilot-select .bw-pilot-ship-row img,
 #bw-pilot-select .bw-pilot-profile-ship img {
   object-fit: contain;
   mix-blend-mode: screen;
   filter: saturate(.93) contrast(1.10);
 }
-#bw-pilot-select img[src$="ship-nolan.webp"] {
-  -webkit-mask-image: radial-gradient(ellipse 68% 66% at 50% 50%, #000 66%, transparent 100%);
-  mask-image: radial-gradient(ellipse 68% 66% at 50% 50%, #000 66%, transparent 100%);
-}
-
-/* Approved 2D promotional-illustration treatment: subtle flattening of the
-   specular highlights, while preserving the characters' original identity. */
-#bw-pilot-select .bw-pilot-portrait-wrap img,
-#bw-pilot-select .bw-pilot-profile-art img {
-  filter: contrast(1.06) saturate(.89);
-}
+/* Portraits carry their matte, hand-painted shading in the assets themselves. */
 
 /* Compact landscape devices retain controlled page scrolling rather than
    clipping important controls. Full desktop screens do not need to scroll. */

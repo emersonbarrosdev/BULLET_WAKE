@@ -201,7 +201,7 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
 Nenhuma alteração estrutural ou visual pode ser considerada concluída sem cumprir integralmente os 8 critérios:
 1. **TypeScript válido:** `npm run typecheck` com zero erros.
 2. **Build funcional:** `npm run build` gerando artefatos limpos em `dist/`.
-3. **Testes automatizados aplicáveis:** `npm test` com 100% de aprovação (124/124 testes).
+3. **Testes automatizados aplicáveis:** `npm test` com 100% de aprovação (125/125 na validação de 09/11/2026).
 4. **Abertura da aplicação no navegador:** Verificação real contra o servidor ativo (`http://localhost:5173` / `http://127.0.0.1:4174`).
 5. **Ausência de erros críticos no console:** Monitoramento via Chrome DevTools Protocol (`Runtime.exceptionThrown`, `Runtime.consoleAPICalled` error, `Log.entryAdded` error) exigindo zero erros.
 6. **Teste real da funcionalidade modificada:** Simulação de navegação, seleção, movimentação e disparo em tempo de execução.
@@ -292,6 +292,26 @@ Nenhuma alteração estrutural ou visual pode ser considerada concluída sem cum
 3. **Controles Exclusivos de Teclado no PC:** Movimentação em 8 direções via `WASD`/Setas e disparo via `ESPAÇO`, com o mouse estritamente desabilitado para tiro ou movimentação da nave no PC.
 4. **Sistemas Táticos dos Operadores (Nolan, Cora, Harlan):** Habilidade Especial de Ressonância (`V`), Wave Cannon carregável (`C`) e Bomba Defensiva (`X`), além de balanceamento de DPS por tick determinístico (`60ms`) e alcance traseiro limitado nos fluxos `rear-wing` do Nível 4 para preservar o desafio do Miniboss *Raia-Dente* e do Chefe *Talassarca*.
 5. **HUD Widescreen de Alta Legibilidade (1366×768 e 1920×1080):** Corredor central expandido (`432px`, `X: 168..600`) ladeado por painéis táticos (`168px`) com carregamento explícito de `Oxanium` e `Rajdhani`, renderização `antialias: true` para textos/gráficos vetoriais (`FilterMode.NEAREST` restrito apenas às texturas de sprites) e eliminação total de textos ilegíveis de `10px/11px`.
+
+## 8. SELEÇÃO DE PILOTOS — CORREÇÃO FINAL DOS ASSETS (09/11/2026)
+
+- **RIVET de menu:** ilustração independente com transparência real; casco branco, detalhes vermelhos, três propulsores e silhueta agressiva. Vista elevada em três quartos, com frente voltada à esquerda/baixo, escala e iluminação compatíveis com Moth e Knuckle. Nenhum pixel da key art foi usado como recorte. A máscara radial que disfarçava o cenário promocional foi removida.
+- **Nolan, Cora e Harlan:** retratos repintados em concept art 2D/2.5D, com pinceladas visíveis, pele fosca e sombras gráficas. Identidades, cicatrizes, cabelos, trajes e cores individuais preservados. O acabamento vem dos arquivos, sem filtro CSS simulando pintura.
+- **Layout aprovado preservado:** mesma paleta da UI, tipografia, estrutura, dimensões dos cards e espaçamentos. Comparação automatizada das medidas reais com o CSS anterior: nenhuma mudança em cards, perfis ou rodapé.
+- **Validação:** TypeScript e build aprovados; 125/125 testes; Chrome real em 1366×768 e 1920×1080; os três perfis sem scroll, cortes ou sobreposição em ambas as resoluções; roda do mouse sem deslocamento; seleção, abertura/fechamento de perfil, início de operação, movimento/disparo, seleção de fases e retorno à abertura funcionando; zero erros de console/runtime.
+- **Inspeção visual:** RIVET sem fundo ou moldura promocional, três naves no mesmo conjunto de menu, retratos claramente ilustrados e espaço livre preservado.
+- **Rastreabilidade:** [assets e prompts](28_CORRECAO_FINAL_PILOTOS.md), [capturas](screenshots/pilot-selection-final/) e [medidas da validação](screenshots/pilot-selection-final/validation.json). Reexecutar com `node scripts/validate-pilot-selection.mjs` após `npm run build`.
+
+### 8.1. Pendências reais da campanha V2
+
+Esta lista substitui as declarações de campanha completa da versão horizontal no roadmap antigo. A Fase 1 é o único setor jogável liberado na versão atual; definições de nomes ou chefes herdados não equivalem à implementação das fases canônicas.
+
+1. **Fases 2 e 3:** implementar Bosque da Névoa Viva e Metrópole do Silêncio com cenários, inimigos, minibosses e chefes canônicos Arborion e Catedral de Vidro. As classes antigas Serpent/Fortress ainda usadas pela fábrica não representam esses chefes.
+2. **Fases 4 a 15:** construir conteúdo jogável, cenários, padrões inimigos, minibosses e chefes próprios; incluir Thalor, Morhiza e Prisma Órfão como variantes da Fase 15.
+3. **Seleção e progressão V2:** disponibilizar a escolha das três regiões iniciais quando seus conteúdos estiverem prontos, registrar a ordem das regiões e encadear as Fases 4–15. A seleção atual tem cinco cards e libera somente a Fase 1; os dados de fases terminam em 5.
+4. **Rotas e finais secretos:** implementar as condições das seis ordens iniciais, Fase 16 (Coração Telúrico), Fase 17 (Matriz Primordial em quatro fases) e os finais correspondentes.
+5. **Salvamento e vitória V2:** expandir o schema limitado às cinco fases antigas para a campanha canônica, migrar saves e registrar corretamente a fase concluída. O epílogo atual ainda chama `recordStageClear(5, ...)` após a vitória da Fase 1.
+6. **Controles e distribuição planejados:** implementar suporte efetivo a gamepad, controles táteis completos para dash/bomba/especial/carga e empacotamento Android. A entrada atual cobre teclado e movimento/tiro por toque.
 
 
 
