@@ -15,11 +15,11 @@ export const PICKUP_GUIDE: Record<PickupType, PickupGuideEntry> = {
   speed: { letter: 'S', label: 'VELOCIDADE', color: '#a5b7ff', shape: 'M3 15 32 5 61 15 50 50 32 59 14 50Z', glyph: 'M13 39 32 20 51 39M19 48 32 35 45 48', description: 'Aumenta o movimento em 8%, até 3 incrementos. Reinicia ao usar Continue. Não recarrega dash.' },
   score: { letter: '$', label: 'PONTOS', color: '#36e2d4', shape: 'M32 3A29 29 0 1 0 32 61 29 29 0 1 0 32 3Z', glyph: 'M32 13 37 25 50 27 40 36 42 49 32 43 22 49 24 36 14 27 27 25Z', description: '+500 pontos. O símbolo $ distingue pontuação do S de velocidade.' },
   missile: { letter: 'M', label: 'MÍSSIL', color: '#a5d0ed', shape: 'M32 3 52 18V52L32 61 12 52V18Z', glyph: 'M32 12 39 25V41H25V25ZM25 33 17 45H25M39 33 47 45H39M29 46V54M35 46V54', description: 'Deixa o míssil secundário pronto para disparar com M. Não troca a arma principal.' },
-  special: { letter: 'E', label: 'RESSONÂNCIA', color: '#d080ff', shape: 'M21 3H43L57 32 43 61H21L7 32Z', glyph: 'M32 12 44 32 32 52 20 32ZM20 32H44M32 12V52', description: '+25% de ressonância. Ao completar 100%, V ativa a habilidade do piloto.' },
+  special: { letter: 'E', label: 'ESPECIAL', color: '#d080ff', shape: 'M21 3H43L57 32 43 61H21L7 32Z', glyph: 'M32 12 44 32 32 52 20 32ZM20 32H44M32 12V52', description: 'Repõe uma carga de especial. Inicia com 2, máximo 3. V ou X ativa a mesma habilidade, limpa projéteis e protege durante o efeito.' },
   full_power: { letter: 'P★', label: 'P MÁXIMO · SANDBOX', color: '#ff83b8', shape: 'M32 2 40 19 59 20 46 34 50 55 32 45 14 55 18 34 5 20 24 19Z', glyph: 'M27 43V22H35C47 22 47 35 35 35H27', description: 'Somente para validação no sandbox. Não aparece no roteiro Normal e não acelera a campanha.' },
 };
 
-export const NORMAL_GUIDE_ITEMS = (Object.keys(PICKUP_GUIDE) as PickupType[]).filter(type => type !== 'full_power');
+export const NORMAL_GUIDE_ITEMS = (Object.keys(PICKUP_GUIDE) as PickupType[]).filter(type => type !== 'full_power' && type !== 'bomb');
 
 export function pickupSvg(type: PickupType): string {
   const e = PICKUP_GUIDE[type];

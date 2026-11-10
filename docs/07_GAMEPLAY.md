@@ -1,5 +1,7 @@
 # 07 — Manual de gameplay e progressão
 
+> **Regras vigentes da Fase 1:** [diretriz 33](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md). Uma barra contínua 0–100 de integridade; sem vidas extras automáticas. Especial único V/X, duas cargas iniciais/máximo três, E repõe uma, sem bomba separada ou ressonância. Cor de arma e potência P independentes. O texto legado abaixo não substitui essa diretriz.
+
 ## Controle e sobrevivência
 Movimento de nave em oito direções, câmera horizontal, fogo básico repetível. Deslocamento pelo deltaTime, diagonal normalizada. **3 vidas por partida; 3 pontos de integridade por vida.** Ao sofrer dano, -1 HP, i-frames propostos de 1,5 s; ao morrer, perde 1 vida, animação de destruição, respawn seguro no checkpoint com 3 HP e i-frame inicial de 2 s (hipóteses). Hits simultâneos não causam dano duplicado. No fim das vidas, Continue limitado ou Game Over.
 

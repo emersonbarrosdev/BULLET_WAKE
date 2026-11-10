@@ -3,19 +3,16 @@ import test from 'node:test';
 import {
   createPlayerWeapons,
   upgradeWeapon,
-  addResonance,
+  collectSpecialCharge,
   canActivateSpecial,
   activateSpecial,
-  useBomb,
-  addBomb,
   setShield,
   advanceWeapons,
   resetWeaponsOnRespawn,
   getPrimaryProjectiles,
   getSecondaryProjectiles,
   MAX_WEAPON_LEVEL,
-  MAX_BOMBS,
-  MAX_RESONANCE,
+  MAX_SPECIAL_CHARGES,
 } from '../src/game/systems/weaponSystem.ts';
 import {
   PickupSystem,
@@ -29,11 +26,10 @@ import {
   COMBO_WINDOW_MS,
 } from '../src/game/systems/scoreComboSystem.ts';
 
-test('weapons start at LV1 with 3 bombs and 0 resonance', () => {
+test('weapons start at LV1 with two special charges', () => {
   const w = createPlayerWeapons('nolan');
   assert.equal(w.weaponLevel, 1);
-  assert.equal(w.bombs, 3);
-  assert.equal(w.resonance, 0);
+  assert.equal(w.specialCharges, 2);
   assert.equal(w.hasShield, false);
   assert.equal(w.specialActiveMs, 0);
   assert.equal(w.specialType, 'prism');
@@ -58,35 +54,23 @@ test('weapons upgrade up to LV4 and no further', () => {
   assert.equal(u4.state.weaponLevel, MAX_WEAPON_LEVEL);
 });
 
-test('resonance accumulates up to 100 and enables special', () => {
-  let w = createPlayerWeapons('cora');
-  assert.equal(w.specialType, 'phantom');
-  assert.equal(canActivateSpecial(w), false);
-
-  w = addResonance(w, 50);
-  assert.equal(w.resonance, 50);
-  assert.equal(canActivateSpecial(w), false);
-
-  w = addResonance(w, 60);
-  assert.equal(w.resonance, MAX_RESONANCE);
+test('special consumes one charge, cannot retrigger active, caps at three, and empties', () => {
+  let w = createPlayerWeapons('nolan');
   assert.equal(canActivateSpecial(w), true);
-
-  const act = activateSpecial(w);
-  assert.equal(act.activated, true);
-  assert.equal(act.state.resonance, 0);
-  assert.ok(act.state.specialActiveMs > 0);
-  assert.equal(canActivateSpecial(act.state), false);
-});
-
-test('bomb stock starts at three, reaches zero, and caps at three', () => {
-  let w = createPlayerWeapons('harlan');
-  assert.equal(w.bombs, 3);
-  for (let i = 0; i < 3; i++) { const r = useBomb(w); assert.equal(r.used, true); w = r.state; }
-  assert.equal(w.bombs, 0);
-  assert.equal(useBomb(w).used, false);
-  for (let i = 0; i < 15; i++) w = addBomb(w);
-  assert.equal(w.bombs, MAX_BOMBS);
-  assert.equal(MAX_BOMBS, 3);
+  w = collectSpecialCharge(w);
+  for (let i=0;i<15;i++) w = collectSpecialCharge(w);
+  assert.equal(w.specialCharges, MAX_SPECIAL_CHARGES);
+  assert.equal(MAX_SPECIAL_CHARGES,3);
+  for(let i=3;i>0;i--){
+    const activation=activateSpecial(w);
+    assert.equal(activation.activated,true);
+    assert.equal(activation.state.specialCharges,i-1);
+    assert.equal(activateSpecial(activation.state).activated,false);
+    w=advanceWeapons(activation.state,4000);
+  }
+  assert.equal(w.specialCharges,0);
+  assert.equal(activateSpecial(w).activated,false);
+  assert.equal(resetWeaponsOnRespawn(w).specialCharges,0,'Continue cannot farm charges');
 });
 
 test('primary projectiles scale with weapon levels for all three pilots', () => {
@@ -121,14 +105,14 @@ test('reset on respawn restores weapon to LV1 and removes shield', () => {
   w = upgradeWeapon(w).state;
   w = upgradeWeapon(w).state;
   w = setShield(w, true);
-  w = addResonance(w, 80);
+  w = { ...w, specialCharges: 1 };
   assert.equal(w.weaponLevel, 3);
   assert.equal(w.hasShield, true);
 
   const reset = resetWeaponsOnRespawn(w);
   assert.equal(reset.weaponLevel, 1);
   assert.equal(reset.hasShield, false);
-  assert.equal(reset.resonance, 40); // 50% conservada
+  assert.equal(reset.specialCharges, 1);
 });
 
 test('pickup system spawns, drifts, and collects power-ups', () => {
@@ -163,7 +147,7 @@ test('regular kills cannot farm power or weapon changes', () => {
       assert.ok(!['power', 'full_power', 'weapon_ion', 'weapon_red', 'weapon_green'].includes(determineEnemyDrop(kind, kill)));
     }
   }
-  assert.equal(determineEnemyDrop('miniboss', 100), 'health');
+  assert.equal(determineEnemyDrop('miniboss', 100), null);
 });
 
 test('score combo system multiplies consecutive kills and decays after window', () => {

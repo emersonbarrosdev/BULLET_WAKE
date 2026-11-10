@@ -246,7 +246,7 @@ export class PilotSelectScene extends Phaser.Scene {
     const bio = this.root.querySelector<HTMLElement>('.bw-pilot-brief-bio');
     const detail = this.root.querySelector<HTMLElement>('.bw-pilot-brief-special');
     if (bio) bio.textContent = `${pilot.name} // ${pilot.bio}`;
-    if (detail) detail.textContent = `HABILIDADE ESPECIAL: ${pilot.specialDescription} (100% RESSONÂNCIA)`;
+    if (detail) detail.textContent = `HABILIDADE ESPECIAL: ${pilot.specialDescription} (2 CARGAS INICIAIS · MÁX. 3)`;
     const chosen = this.chosenIndex === this.selectedIndex;
     this.root.querySelectorAll<HTMLButtonElement>('[data-confirm-index]').forEach((launch, index) => {
       launch.hidden = !chosen || index !== this.selectedIndex;

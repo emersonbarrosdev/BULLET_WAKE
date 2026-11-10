@@ -42,7 +42,7 @@ export class CombatHud {
   private readonly shipModelText: Phaser.GameObjects.Text;
   private readonly scoreText: Phaser.GameObjects.Text;
   private readonly comboText: Phaser.GameObjects.Text;
-  private readonly healthSegments: Phaser.GameObjects.Rectangle[] = [];
+  private readonly healthFill: Phaser.GameObjects.Rectangle;
   private readonly shieldBadge: Phaser.GameObjects.Text;
   private readonly livesText: Phaser.GameObjects.Text;
   private readonly dashCountText: Phaser.GameObjects.Text;
@@ -139,13 +139,10 @@ export class CombatHud {
       color: '#93c5fd',
     }).setDepth(42).setResolution(3);
 
-    for (let i = 0; i < MAX_HP; i++) {
-      const seg = scene.add.rectangle(leftX + 27 + i * 44, 200, 38, 12, 0x10b981)
-        .setStrokeStyle(1.5, 0x6ee7b7).setDepth(42);
-      this.healthSegments.push(seg);
-    }
+    scene.add.rectangle(leftX+8,200,cardW-16,14,0x222025).setOrigin(0,.5).setStrokeStyle(1,0x77604b).setDepth(42);
+    this.healthFill=scene.add.rectangle(leftX+9,200,cardW-18,12,0x78bc72).setOrigin(0,.5).setDepth(43);
 
-    this.livesText = scene.add.text(leftX + 8, 222, 'VIDAS: 3', {
+    this.livesText = scene.add.text(leftX + 8, 222, 'VIDA: 100 / 100', {
       fontFamily: FONT_TITLE,
       fontSize: '15px',
       fontStyle: 'bold',
@@ -373,12 +370,8 @@ export class CombatHud {
   }
 
   setHealth(state: PlayerHealth, hasShield = false): void {
-    this.healthSegments.forEach((seg, index) => {
-      const active = index < state.hp;
-      seg.setFillStyle(active ? 0x10b981 : 0x1e293b);
-      seg.setStrokeStyle(1.5, active ? 0x6ee7b7 : 0x475569);
-    });
-    this.livesText.setText(`VIDAS: ${state.lives}`);
+    this.healthFill.setScale(Math.max(0,state.hp/MAX_HP),1);
+    this.livesText.setText(`VIDA: ${Math.ceil(state.hp)} / ${MAX_HP}`);
     this.shieldBadge.setVisible(hasShield);
   }
 

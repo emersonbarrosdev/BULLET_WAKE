@@ -97,9 +97,9 @@ test('V2 Armas: Três famílias distintas (Raio Esmeralda, Dispersão Azul, Lase
   const g4 = getPrimaryProjectiles('green', 4, 384, 350);
 
   assert.equal(g1.length, 2, 'Raio Esmeralda LV1: 2 ondas entrelaçadas');
-  assert.equal(g2.length, 3, 'Raio Esmeralda LV2: 3 ondas');
-  assert.equal(g3.length, 5, 'Raio Esmeralda LV3: 5 ondas');
-  assert.equal(g4.length, 7, 'Raio Esmeralda LV4: 7 ondas sinusoidais');
+  assert.equal(g2.length, 4);
+  assert.equal(g3.length, 6);
+  assert.equal(g4.length, 8);
   assert.ok((g1[0].waveAmplitude ?? 0) > 0, 'Raio Esmeralda possui modulação ondulante');
 
   for (const shot of [...g1, ...g2, ...g3, ...g4]) {
@@ -340,55 +340,18 @@ test('V2 Coletáveis: Itens físicos caem verticalmente e jamais concedem dash',
 // ============================================================================
 // 5. REQUISITO V2: CHEFES DA FENDA PELÁGICA (MINIBOSS RAIA-DENTE & TALASSARCA)
 // ============================================================================
-test('V2 Chefes: Miniboss Raia-Dente (45 HP) e Boss Talassarca (160 HP, 3 fases)', () => {
-  // 1. Miniboss Raia-Dente
-  const miniboss = new MinibossRaiaDente();
-  assert.equal(miniboss.name, 'RAIA-DENTE');
-  assert.equal(miniboss.hp, 45);
-  assert.equal(miniboss.phase, 'intro');
-
-  // Avança além da introdução
-  miniboss.update(1500, 384, 350);
-  assert.equal(miniboss.phase, 'active');
-
-  // Disparos do miniboss descem em direção ao jogador (velocityY > 0)
-  const tickMini = miniboss.update(1100, 384, 350);
-  assert.ok(tickMini.shots.length > 0);
-  for (const s of tickMini.shots) {
-    assert.ok(s.velocityY > 0, 'Tiros do miniboss descem para o Sul');
-  }
-
-  // 2. Chefe Colossal Talassarca
-  const boss = new BossTalassarca();
-  assert.equal(boss.name, 'TALASSARCA');
-  assert.equal(boss.hp, 160);
-  assert.equal(boss.phase, 'intro');
-  assert.equal(boss.modules.length, 3, 'Asa esquerda, asa direita e núcleo');
-
-  // Avança além da intro para Fase 1 (Asas e Pinças)
-  boss.update(2000, 384, 350);
-  assert.equal(boss.phase, 'wings');
-
-  // Dano nas asas laterais
-  const hitWingL = boss.damage(35, boss.x - 85, boss.y + 10);
-  assert.equal(hitWingL.moduleDestroyed, 'Asa Esquerda');
-  assert.equal(boss.modules[0].destroyed, true);
-
-  // Destruição da segunda asa
-  const hitWingR = boss.damage(35, boss.x + 85, boss.y + 10);
-  assert.equal(hitWingR.moduleDestroyed, 'Asa Direita');
-  assert.equal(boss.modules[1].destroyed, true);
-
-  // Boss avança para Fase 2 (Tentáculos)
-  boss.update(50, 384, 350);
-  assert.equal(boss.phase, 'tentacles');
-
-  // Dano reduz HP para <= 55 e expõe o núcleo central na Fase 3
-  boss.damage(35, boss.x, boss.y);
-  boss.update(50, 384, 350);
-  assert.equal(boss.phase, 'core');
-
-  // Dano ao núcleo central exposto recebe bônus de 1.5x de dano crítico
-  const coreHit = boss.damage(10, boss.x, boss.y + 15);
-  assert.equal(coreHit.bossDamage, 15, 'Dano crítico de 1.5x aplicado ao núcleo exposto');
+test('phase one bosses: Raia-Dente remains distinct; Talassarca has two complete layers', () => {
+  const mini=new MinibossRaiaDente();mini.update(1500,384,350);
+  assert.equal(mini.hp,45);assert.equal(mini.phase,'active');
+  const boss=new BossTalassarca();boss.update(1800,384,350);
+  assert.equal(boss.hp,600);assert.equal(boss.phase,'shell');
+  for(let i=0;i<4;i++)assert.equal(boss.damage(120).killed,false);
+  assert.equal(boss.hp,120);
+  const crack=boss.damage(120);
+  assert.equal(crack.killed,false);assert.equal(boss.phase,'metamorphosis');
+  assert.equal(boss.damage(9999).bossDamage,0);
+  boss.update(2399,384,350);assert.equal(boss.phase,'metamorphosis');
+  boss.update(1,384,350);assert.equal(boss.phase,'inner');assert.equal(boss.hp,360);
+  assert.equal(boss.damage(120).killed,false);assert.equal(boss.damage(120).killed,false);
+  assert.equal(boss.damage(120).killed,true);assert.equal(boss.phase,'defeated');
 });

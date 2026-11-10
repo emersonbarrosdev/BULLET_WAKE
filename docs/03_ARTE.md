@@ -1,5 +1,7 @@
 # 03 — Bíblia de arte: pixel art 16-bit moderno
 
+> **Direção vigente da Fase 1:** [organismos alienígenas e oceano vivo](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md) e [prompts de produção](34_FASE1_PROMPTS_POLIMENTO.md). Ilustração painterly 2.5D; criaturas de quitina e membranas, sem caças mecânicos, enguias ou máquinas MALHA. Este capítulo abaixo registra a direção histórica anterior.
+
 ## Direção
 A arte deve parecer um arcade premium, **não uma colagem de estilos**. Pixels deliberados, paleta contida, sprites com silhuetas fortes, ambientes densos ao fundo, contraste alto no combate e efeitos modernos discretos.
 

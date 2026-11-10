@@ -163,10 +163,10 @@ test('TESTE D: Tecla Shift Esquerdo aciona dashTrigger com precisão instantâne
 // ============================================================================
 // TESTE E: Cadência, Tapping Manual e Sistema Térmico (Calor e Sobreaquecimento)
 // ============================================================================
-test('TESTE E: Disparo manual e contínuo compartilham cadência; calor legado resfria', () => {
+test('TESTE E: Disparo manual mais rápido e contínuo compartilham cadência; calor legado resfria', () => {
   const specs = PILOT_WEAPON_SPECS.nolan;
-  assert.equal(specs.burstIntervalMs, specs.autoIntervalMs, 'Tapping não contorna a cadência');
-  assert.equal(specs.autoIntervalMs, 125);
+  assert.ok(specs.burstIntervalMs < specs.autoIntervalMs);
+  assert.equal(specs.autoIntervalMs, 380);
   assert.equal(specs.burstIntervalMs, 125);
 
   let w = createPlayerWeapons('nolan');

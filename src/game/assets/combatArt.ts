@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
 import { loadReviewArt, registerReviewArt } from './reviewArt';
+import { loadPolishArt, registerPolishArt } from './polishArt';
 
 /** Hand-painted combat art is separate from legacy pixel sheets and menu assets. */
 export const COMBAT_SHEETS = ['rivet', 'scout', 'dart', 'lancer', 'cutter', 'bomb'] as const;
 
 export function loadCombatArt(scene: Phaser.Scene, base: string): void {
   loadReviewArt(scene,base);
+  loadPolishArt(scene,base);
   for (const name of COMBAT_SHEETS) {
     if (!scene.textures.exists(`hd-${name}`)) {
       scene.load.spritesheet(`hd-${name}`, `${base}/assets/combat-hd/${name}.webp`, { frameWidth: 256, frameHeight: 256 });
@@ -21,6 +23,7 @@ export function loadCombatArt(scene: Phaser.Scene, base: string): void {
 
 export function registerCombatArt(scene: Phaser.Scene): void {
   registerReviewArt(scene);
+  registerPolishArt(scene);
   for (const name of [...COMBAT_SHEETS, 'ocean', 'capsule', 'portrait-nolan']) {
     scene.textures.get(`hd-${name}`).setFilter(Phaser.Textures.FilterMode.LINEAR);
   }

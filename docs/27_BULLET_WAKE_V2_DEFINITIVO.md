@@ -1,5 +1,7 @@
 # IMPORTANTE — BULLET WAKE V2: IDENTIDADE, CAMPANHA E GAMEPLAY DEFINITIVOS
 
+> **Diretriz vigente — 10/11/2026:** [Fase 1: alienígenas, camadas e oceano vivo](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md). Somente organismos alienígenas; sem bombas separadas ou recarga por ressonância. Dois especiais iniciais, máximo três, reposição física E. Chefes colossais com casca de cinco especiais, metamorfose e forma interna de três, preservando tiros convencionais e área de esquiva. Oceano calmo → invasão/turbulência/destroços → fenda antes do chefe. Esta diretriz prevalece sobre números e descrições históricas abaixo. Apenas Talassarca recebeu as duas camadas; futuros chefes, biomas e modos dependem da aprovação da Fase 1. [Pendências reais](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md#o-que-ainda-falta) e [prompts dos assets](34_FASE1_PROMPTS_POLIMENTO.md).
+
 > **Revisão vigente da Fase 1:** [Combate, arte e confirmação](31_FASE1_REVISAO_COMBATE.md). Barra única de integridade com Continue explícito; ícones raster sem legendas; fundo de superfície em movimento; chefes e especial próprios; confirmação sobre o card. Esta revisão substitui as definições conflitantes abaixo e do documento 30. Fase 2 depende de aprovação explícita da Fase 1.
 
 > **Revisão vigente de HUD, potência e dificuldade (09/11/2026):** [Fase 1 — carbono e Normal](30_FASE1_NORMAL_FIRE_SHARK.md). Laterais pretas de carbono em tela cheia; cor repetida dá pontos, P evolui sozinho, S é velocidade e $ é pontuação. O modo de produção atual é Normal. Fácil, Difícil e Real são planos posteriores. Esta revisão prevalece sobre as descrições históricas conflitantes abaixo.
@@ -9,31 +11,29 @@
 > Esta seção substitui todas as definições conflitantes anteriores e consolida a identidade definitiva do jogo.
 >
 > 1. **Gênero e Orientação:** Shoot 'em up 2D de visão superior (TOP-DOWN) com rolagem vertical estrita. A visão lateral foi totalmente revogada.
-> 2. **Tema Estrito:** Invasão extraterrestre à Terra. Combate exclusivo contra frotas alienígenas, monstros voadores, organismos biomecânicos e entidades colossais. É proibido combate contra tanques ou forças militares humanas terrestres convencionais.
+> 2. **Tema Estrito:** Invasão extraterrestre à Terra por organismos alienígenas, monstros voadores e entidades colossais. Na Fase 1, inimigos são criaturas vivas; proibidos caças convencionais, tanques, dirigíveis mecânicos e máquinas da campanha horizontal anterior. Quitina e órgãos biológicos não devem parecer fuselagem, cockpit ou propulsores.
 > 3. **Controles Oficiais no PC:**
 >    - `WASD` ou `Setas`: Movimentação da nave (diagonais normalizadas).
 >    - `ESPAÇO`: Disparo principal (contínuo segurando, manual tapando).
 >    - `SHIFT Esquerdo`: Dash / Propulsão de emergência (exatamente 3 por fase).
 >    - `C`: Carregar arma (Wave Cannon / Carga quando aplicável).
->    - `X`: Bomba defensiva.
->    - `V`: Especial de ressonância do piloto.
+>    - `V` ou `X`: Mesmo especial do piloto; duas cargas iniciais, máximo três, sem ressonância.
 >    - `ESC`: Pausa / Menu.
 >    - **MOUSE NÃO ATIRA NO PC:** Cliques do mouse (esquerdo ou direito) e movimento do ponteiro são 100% desvinculados do voo durante o gameplay. O mouse serve unicamente para menus e interfaces.
 > 4. **Mecânica Oficial do Dash:** Exatamente **3 DASHES POR FASE** (`DASH: ◆ ◆ ◆`). Sem recarga temporal, sem recarga por abate, sem power-up de dash e sem recuperação ao morrer dentro da fase. Restauração exclusiva ao reiniciar a fase do zero ou iniciar nova fase.
 > 5. **Sistema de Armas (Estilo Fire Shark — Separação Canônica):** Três famílias com identidade visual e mecânica distinta, evoluindo independentemente dos Níveis 1 a 4:
->    - **Dispersão Azul (`ion` — ARMA INICIAL CANÔNICA):** O jogador inicia sempre equipado com Dispersão Azul Nível 1 (`0/3 P`). Disparos direcionais em leque amplo que cobrem mais direções conforme o nível sobe (3 -> 5 -> 7 -> 9 direções).
->    - **Energia Espiralada (`green`):** Feixes de energia verde concentrados e ondulantes (helicoidais/sinusoidais) que aumentam de quantidade e potência por nível (2 -> 3 -> 5 -> 7 ondas).
+>    - **Dispersão Azul (`ion` — ARMA INICIAL CANÔNICA):** Começa no NV1, 0/3 P. Projéteis individuais em leque crescente; quatro estados de potência. O máximo de 16 disparos é descrito no manual Mega Drive. Parâmetros atuais e limites de equivalência estão na diretriz 33.
+>    - **Energia Espiralada (`green`):** Componentes de energia entrelaçados com movimento helicoidal e rastro contínuo, crescendo em quatro estados; não bolinhas ou laser reto estático. Contagens internas são calibração, não medidas da ROM.
 >    - **Laser Rubro (`red` — ARMAMENTO ENERGÉTICO CONTÍNUO DE MULTIFEIXES EVOLUTIVOS):** Fluxo contínuo de energia vermelha intensa emitido enquanto `ESPAÇO` estiver pressionado, multiplicando suas colunas e adicionando varredura lateral e cobertura diagonal/traseira nos níveis superiores (LV1: 1 fluxo frontal concentrado; LV2: 2 fluxos paralelos; LV3: 4 fluxos com 2 laterais oscilantes; LV4 — **Asas de Energia**: 6 fluxos com 2 frontais + 2 asas laterais de varredura ampla + 2 feixes diagonais traseiros `rear-wing`). **Proibido representar como bolas vermelhas ou projéteis discretos.**
 > 6. **Sistema de Power-ups (`3 P` por Nível + Cápsulas de Cor Independentes):** Portadores alienígenas (ex: Casulos Marinhos) soltam cápsulas físicas no campo:
 >    - `P` (Power): **Três P aumentam um nível** (`1 -> 2 -> 3 -> 4`), nove até NV4. No máximo, três P adicionais formam reserva para a próxima vida. P parcial sobrevive à perda de vida. `P★` fica exclusivamente no sandbox, fora do roteiro Normal.
 >    - `W` (Weapon Capsule): Cápsulas coloridas separadas (`AZUL` = Dispersão Azul, `VERDE` = Energia Espiralada, `RUBRO` = Laser Rubro) que trocam imediatamente a arma equipada mantendo o nível (`1..4`) e o progresso do medidor `P` (`0..2`), sem exigir maximizar uma cor antes de coletar outra.
 >    - `H` (Health): Recupera blindagem.
->    - `B` (Bomb): Recupera bomba.
 >    - `M` (Missile): Reabastece mísseis.
 >    - `S` (Speed): Velocidade, até três incrementos; `$` representa pontos.
->    - `E` (Special Energy): Recupera energia de especial.
+>    - `E` (Special): Repõe uma carga do especial, máximo três; substitui a bomba separada e a antiga barra de energia.
 >    - *Nenhum coletável recupera dash.*
-> 7. **Primeira Fase Oficial (Escopo Atual):** `STAGE_01_PELAGIC` — **FENDA PELÁGICA** (Oceano terrestre sob invasão biológica alienígena). Miniboss: *Raia-Dente*. Boss Colossal: *Talassarca — O Devorador das Marés* (3 fases completas).
+> 7. **Primeira Fase Oficial (Escopo Atual):** `STAGE_01_PELAGIC` — **FENDA PELÁGICA**. Voo baixo sobre oceano inicialmente calmo, invasão/turbulência/destroços crescentes e fenda revelada antes do chefe. Miniboss: *Raia-Dente*. Chefe: *Talassarca*, casca e forma interna com barras completas separadas por metamorfose.
 > 8. **Campanha Completa Documentada:** 15 fases principais (1 a 3 selecionáveis; 4 a 15 sequenciais; 3 chefes finais na fase 15: Thalor, Morhiza e Prisma Órfão) + 2 Finais Secretos (Fase 16: Abismo Subterrâneo; Fase 17: Lua: Origem da Colmeia — Matriz Primordial). Somente a Fase 1 é implementada nesta versão.
 > 9. **Arquitetura de HUD:** Widescreen com corredor central de combate vertical (`432px` de largura, `X: 168..600`) e painéis laterais de telemetria (`168px` cada), separando completamente as informações vitais do campo de tiro.
 > 10. **Tipografia Estrita:** Máximo de duas famílias legítimas carregadas:
@@ -49,7 +49,7 @@
    - *Ambiente:* Oceano profundo, recifes submarinos alienígenas e abismo bioluminescente.
    - *Inimigos:* Agulha Pelágica, Raia de Fenda, Parasita Abissal, Casulo Marinho.
    - *Miniboss:* Raia-Dente (grande criatura biomecânica alada com disparos em arco).
-   - *Boss Colossal:* **TALASSARCA — O DEVORADOR DAS MARÉS** (3 fases: asas com leques, tentáculos energéticos destrutíveis e núcleo exposto vulnerável a dano crítico).
+   - *Boss Colossal:* **TALASSARCA — O DEVORADOR DAS MARÉS**: casulo/casca, metamorfose anatômica e forma interna mais agressiva. Referência de cinco especiais na casca e três na segunda camada, sem obrigar o uso exclusivo de especiais. Tamanho máximo de 80%/100% da largura do corredor e região inferior para esquiva.
 2. **Fase 02 — Bosque da Névoa Viva (Floresta Tropical):**
    - *Ambiente:* Dossel vegetal denso infestado por esporos alienígenas luminosos.
    - *Inimigos:* Vespas de Ruptura, Polinizadores Negros, Mímicos de Folhagem, Tecelões.
@@ -106,13 +106,11 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
 - **Dispersão Azul (`ion` — Wide Shot / Arma Inicial Canônica):** O jogador inicia sempre equipado com Dispersão Azul Nível 1 (`0/3 P`). Disparos direcionais azul-safira/ciano em leque amplo cobrindo mais direções conforme o nível aumenta.
   - *LV1:* 3 direções em leque frontal.
   - *LV2:* 5 direções em leque aberto.
-  - *LV3:* 7 direções em leque panorâmico.
-  - *LV4:* 9 direções de cobertura total do corredor.
+  - *LV3:* Leque mais preenchido, nove projéteis no modelo atual.
+  - *LV4:* Cobertura máxima, dezesseis projéteis no modelo atual. Ver limites de medição da diretriz 33.
 - **Energia Espiralada (`green` — Beam / Emerald Spiral):** Feixes de energia verde concentrados e ondulantes (helicoidais/sinusoidais) que sobem entrelaçados.
   - *LV1:* 2 ondas esmeralda entrelaçadas em contrafase.
-  - *LV2:* 3 ondas esmeralda concentradas (eixo central + dupla hélice lateral).
-  - *LV3:* 5 ondas esmeralda de alta densidade.
-  - *LV4:* 7 ondas esmeralda sinusoidais de saturação concentrada.
+  - *LV2–4:* Mais componentes helicoidais pareados, com cobertura crescente. Modelo atual 4/6/8 componentes; calibração interna, sem afirmar equivalência exata da ROM.
 - **Laser Rubro (`red` — ARMAMENTO ENERGÉTICO CONTÍNUO DE MULTIFEIXES EVOLUTIVOS):**
   - Inspirado diretamente no *Fire / Super Fire* do *Fire Shark* original (Toaplan), reinterpretado como **fluxos energéticos vermelhos contínuos** com núcleo luminoso incandescente, bordas de plasma animadas e impacto contínuo.
   - **Proibição Estrita:** Nunca representar como bolas vermelhas, projéteis discretos separados, explosões de fogo ou sprites estáticos.
@@ -122,13 +120,13 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
   - *LV4 — Asas de Energia:* 6 fluxos contínuos sincronizados (2 fluxos centrais pesados + 2 asas laterais de varredura ampla + 2 feixes diagonais traseiros `rear-wing` que protegem flancos e retaguarda da aeronave).
 - **Sistema de Coletáveis (`3 P` por Nível + Cápsulas de Cor Independentes):**
   - Casulos e transportadores deixam cair cápsulas físicas no cenário.
-  - `P` (Power): Aumenta o Medidor `P` (`MEDIDOR P: ■ □ □ [1/3]`). **Três itens `P` (`3 P`) aumentam 1 nível da arma atual** (`1 -> 2 -> 3 -> 4`). Item raro `P★` (`full_power`) eleva diretamente ao Nível 4. No nível 4, itens `P` adicionais concedem bônus de pontuação (`+400 PTS`).
+  - `P`: três coletas por nível, nove do NV1 ao NV4. No máximo, até três P de reserva; P parcial permanece no Continue. P★ fica no sandbox, fora do Normal. Não se apresenta o P vermelho raro como regra confirmada.
   - `W` (Cápsulas Coloridas): Cápsulas Azul (`Dispersão Azul`), Verde (`Energia Espiralada`) e Vermelha (`Laser Rubro`) alternam imediatamente o tipo da arma sem resetar o nível ou o medidor `P`, e sem exigir maximizar uma cor antes de coletar outra.
-  - `H` (Vida), `B` (Bomba), `M` (Míssil), `S` (Score), `E` (Especial).
+  - `H` (Reparo), `M` (Míssil), `S` (Velocidade), `$` (Pontos), `E` (+1 carga de especial, máximo três). Bomba separada removida.
   - *Nenhum coletável concede dash.*
 
 ### 2.3. Inimigos da Fenda Pelágica
-1. **Agulha Pelágica (Pelagic Needle):** Caça alienígena pequeno, esquadrões em V, mergulhos rápidos e rajadas frontais curtas.
+1. **Agulha Pelágica (Pelagic Needle):** Pequeno organismo voador de quitina rubi, membranas e mandíbulas; não é um caça mecânico. Cardumes frágeis seguem rotas coordenadas sem disparar; indivíduos combatentes anunciam suas salvas.
 2. **Raia de Fenda (Rift Ray):** Criatura biomecânica alada, movimentos sinusoidais suaves, leques laterais de 3 projéteis.
 3. **Parasita Abissal (Abyssal Parasite):** Organismo alienígena luminescente, lança esporos ácidos lentos que cobrem corredores.
 4. **Casulo Marinho (Sea Cocoon):** Portador blindado de alta resistência. Ao ser destruído, eclode liberando drones ou cápsulas de power-up.
@@ -136,9 +134,9 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
 ### 2.4. Miniboss e Boss Colossal
 - **Miniboss (Raia-Dente):** Emerge no meio da fase; alterna salvas de asas, arcos de projéteis com aberturas de esquiva e investidas laterais. Possui barra de HP dedicada no topo do HUD.
 - **Boss Colossal (Talassarca — O Devorador das Marés):**
-  - *Fase 1 (Asas e Pincers):* 140 HP. Salvas intercaladas das extensões laterais e leques quíntuplos.
-  - *Fase 2 (Tentáculos e Brocas):* Emissão de tentáculos bioelétricos e disparo focado telegrafado; destruição das partes laterais.
-  - *Fase 3 (Núcleo Vulnerável):* O núcleo central abre-se e emite anéis com corredores seguros de passagem. Recebe 1.5x de dano crítico. Derrota cinematográfica em cadeia de explosões.
+  - *Casca:* 600 HP, cinco especiais de referência, leques alternados e aviso legível.
+  - *Metamorfose:* placas se rompem e desprendem, membranas se desdobram, projéteis são limpos; dano excedente não passa à camada seguinte.
+  - *Forma interna:* nova barra completa de 360 HP, três especiais de referência; mais pressão com corredores de esquiva. Só esta derrota encerra a fase. Mesma regra documentada para futuros chefes, ainda não produzidos.
 
 ---
 
@@ -146,9 +144,9 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
 
 ### Arquitetura Widescreen TATE / Arcade Bezel
 - Resolução lógica: 768 × 432 pixels.
-- **Painel Esquerdo (X: 0 a 168):** Telemetria do Piloto (retrato, callsign, blindagem/HP, vidas, pontuação, multiplicador de combo e os 3 indicadores do Dash `◆ ◆ ◆`).
+- **Painel Esquerdo (X: 0 a 168):** Piloto, única barra contínua 0–100 de integridade, pontuação, combo e os três indicadores do Dash. Sem três vidas ou três segmentos de HP.
 - **Campo de Combate Central (X: 168 a 600, Y: 0 a 432):** 432 pixels de largura vertical desobstruída para manobras, naves, projéteis e coletáveis, com fundo oceânico abissal centralizado (`tilePositionX = 168`).
-- **Painel Direito (X: 600 a 768):** Telemetria de Armamento (Arma ativa, Nível `NV 1/4..4/4`, Medidor `P [0/3..MAX]`, Bombas `[X]`, Especial `[V]`, Radar de Fase e Barra de Vida do Chefe).
+- **Painel Direito (X: 600 a 768):** Arma, NV1–4, progresso P em três círculos identificados, estoque único de especiais V/X, progresso da fase e barra do chefe identificando a camada. Sem barra de ressonância.
 
 ### Tipografia
 - **Família Display / Títulos:** `Oxanium` (Google Fonts: 600, 700, 800).
@@ -189,7 +187,7 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
   - Fase 05: Cânion das Sombras (Chefe: *Mandíbula do Horizonte*)
 
 ### 4.4. Direção Visual do Oceano Alienígena (HD 2D)
-- **Fundo Marinho:** Fenda tectônica escura com falhas hidrotermais bioluminescentes ciano/esmeralda e silhueta em trânsito de um leviatã marinho colossal.
+- **Superfície oceânica:** voo baixo sobre água viva, com ondas e espuma animadas. Começa relativamente calma, recebe turbulência, biomassa e estruturas destruídas; só na aproximação do chefe surge a fenda profunda bioluminescente. A nave não está submersa; spritesheets e partículas continuam animados com a rolagem parada.
 - **Recifes Submersos:** Formações rochosas orgânicas com gradientes de profundidade, colônias de cianobactérias brilhantes e arcos biomecânicos ancestrais.
 - **Superfície e Wake:** Malha de reflexos e cáusticas de luz solar submarina, ondulação suave e partículas de espuma marinha.
 - **Rolagem Estável:** Sincronização direta de scroll `tilePositionY = -scrollPx * fator` que elimina qualquer aceleração descontrolada de cenário.

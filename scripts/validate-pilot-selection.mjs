@@ -7,9 +7,9 @@ import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 
 const root = resolve('dist');
-const review = ['--review','--normal','--stage1'].some(flag=>process.argv.includes(flag));
+const review = ['--review','--normal','--stage1','--polish'].some(flag=>process.argv.includes(flag));
 const confirmation = !review;
-const screenshots = resolve(review ? 'docs/screenshots/phase1-review' : 'docs/screenshots/pilot-confirmation');
+const screenshots = resolve(review ? (process.argv.includes('--polish') ? 'docs/screenshots/phase1-polish' : 'docs/screenshots/phase1-review') : 'docs/screenshots/pilot-confirmation');
 mkdirSync(screenshots, { recursive: true });
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png' };
 const server = createServer((req, res) => {
@@ -109,10 +109,10 @@ try {
   await click('[data-action="pilots"]');
   await waitFor(`Boolean(document.querySelector('.bw-pilot-card'))`);
   if (review) {
-    const {runPhase1Review}=await import('./phase1-review-checks.mjs');
+    const {runPhase1Review}=await import(process.argv.includes('--polish')?'./phase1-polish-checks.mjs':'./phase1-review-checks.mjs');
     await runPhase1Review({send,evaluate,waitFor,key,click,shot,report,errors});
     writeFileSync(join(screenshots,'validation.json'),JSON.stringify(report,null,2)+'\n');
-    console.log('PASS: card-local confirmation; animated raster art; real ocean pixel motion; continuous integrity; nose/contact collisions; pulse vs special; original bosses; continue in Phase 1; no shake or browser errors.');
+    if(!process.argv.includes('--polish'))console.log('PASS: phase-one review checks; both desktop viewports; zero browser errors.');
   } else if (confirmation) {
     const baseline = JSON.parse(readFileSync(resolve('docs/screenshots/pilot-selection-final/validation.json'),'utf8'));
     const ready = () => evaluate("document.querySelectorAll('[data-confirm-index]:not([hidden])').length === 1");

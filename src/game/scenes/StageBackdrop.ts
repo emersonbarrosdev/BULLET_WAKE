@@ -267,6 +267,13 @@ export interface StageBackdropOptions {
  */
 export class StageBackdrop {
   private readonly paintedPanels: Phaser.GameObjects.Image[] = [];
+  private readonly waveBlendPanels: Phaser.GameObjects.Image[] = [];
+  private readonly invasionPanels: Phaser.GameObjects.Image[] = [];
+  private readonly invasionBlendPanels: Phaser.GameObjects.Image[] = [];
+  private readonly riftPanels: Phaser.GameObjects.Image[] = [];
+  private readonly riftBlendPanels: Phaser.GameObjects.Image[] = [];
+  private readonly spray: Phaser.GameObjects.Graphics;
+  private waterTimeMs = 0;
   private paintedHeight = 0;
   private readonly abyssTile: Phaser.GameObjects.TileSprite;
   private readonly reefsTile: Phaser.GameObjects.TileSprite;
@@ -274,6 +281,7 @@ export class StageBackdrop {
   private readonly mistTile: Phaser.GameObjects.TileSprite;
 
   constructor(scene: Phaser.Scene, _stageNumber = 1, options: StageBackdropOptions = {}) {
+    this.spray = scene.add.graphics().setDepth(-6);
     const fullWidth = Boolean(options.fullWidth);
     const showBezels = options.showBezels ?? !fullWidth;
     const painted = scene.textures.exists('hd-ocean') && !fullWidth;
@@ -327,9 +335,19 @@ export class StageBackdrop {
       .setDepth(-7);
     this.mistTile.tilePositionX = tileOffsetX;
     if (painted) {
-      if(scene.textures.exists('review-ocean')) {
-        this.paintedHeight = width * 3;
-        for(let i=0;i<2;i++)this.paintedPanels.push(scene.add.image(centerX,i*this.paintedHeight,'review-ocean').setOrigin(.5,0).setDisplaySize(width,this.paintedHeight).setFlipY(i===1).setDepth(-10));
+      if(scene.textures.exists('polish-ocean')) {
+        this.paintedHeight = width * 2;
+        for(let i=0;i<2;i++) {
+          this.paintedPanels.push(scene.add.image(centerX,i*this.paintedHeight,'polish-ocean',0).setOrigin(.5,0).setDisplaySize(width,this.paintedHeight).setFlipY(i===1).setDepth(-10));
+          this.waveBlendPanels.push(scene.add.image(centerX,i*this.paintedHeight,'polish-ocean',1).setOrigin(.5,0).setDisplaySize(width,this.paintedHeight).setFlipY(i===1).setDepth(-9));
+          for(const[key,panels,blends,depth]of [
+            ['polish-turbulent',this.invasionPanels,this.invasionBlendPanels,-8],
+            ['polish-rift',this.riftPanels,this.riftBlendPanels,-7],
+          ] as const){
+            panels.push(scene.add.image(centerX,i*this.paintedHeight,key,0).setOrigin(.5,0).setDisplaySize(width,this.paintedHeight).setFlipY(i===1).setAlpha(0).setDepth(depth));
+            blends.push(scene.add.image(centerX,i*this.paintedHeight,key,1).setOrigin(.5,0).setDisplaySize(width,this.paintedHeight).setFlipY(i===1).setAlpha(0).setDepth(depth+.1));
+          }
+        }
         this.abyssTile.setVisible(false);
       }
       this.reefsTile.setVisible(false);
@@ -358,8 +376,35 @@ export class StageBackdrop {
    * Atualiza o deslocamento vertical das camadas do oceano com base no scrollPx cumulativo.
    * Atribuição direta (=) e NÃO incremento (-=), garantindo velocidade constante e sem aberração.
    */
-  update(scrollPx: number): void {
-    for(const[ i,panel]of this.paintedPanels.entries())panel.y=((scrollPx*.9+i*this.paintedHeight)%(2*this.paintedHeight))-this.paintedHeight;
+  update(scrollPx: number, deltaMs = 16.667): void {
+    this.waterTimeMs += Math.max(0,deltaMs);
+    const phase = this.waterTimeMs / 150;
+    const frame = Math.floor(phase) % 8, blend = phase % 1;
+    const ramp = (start:number,end:number):number => {
+      const t=Phaser.Math.Clamp((scrollPx-start)/(end-start),0,1);return t*t*(3-2*t);
+    };
+    const invasion=ramp(1100,2400),rift=ramp(3150,4100);
+    for(const[i,panel]of this.paintedPanels.entries()) {
+      const y=((scrollPx*.9+i*this.paintedHeight)%(2*this.paintedHeight))-this.paintedHeight;
+      panel.setY(y).setFrame(frame);
+      this.waveBlendPanels[i].setY(y).setFrame((frame+1)%8).setAlpha(blend);
+      this.invasionPanels[i].setY(y).setFrame(frame).setAlpha(invasion);
+      this.invasionBlendPanels[i].setY(y).setFrame((frame+1)%8).setAlpha(invasion*blend);
+      const riftY=-360+Math.min(320,Math.max(0,scrollPx-3150)*.3)+i*this.paintedHeight;
+      this.riftPanels[i].setY(riftY).setFlipY(false).setFrame(frame).setAlpha(rift);
+      this.riftBlendPanels[i].setY(riftY).setFlipY(false).setFrame((frame+1)%8).setAlpha(rift*blend);
+    }
+    // Near-surface flecks have independent trajectories, not a scrolling photograph.
+    this.spray.clear();
+    if(this.paintedPanels.length){
+      for(let i=0;i<42;i++){
+        const x=PLAYFIELD_X+8+((i*97+Math.sin(this.waterTimeMs/1300+i)*9)% (PLAYFIELD_WIDTH-16));
+        const y=((i*71+scrollPx*.9+this.waterTimeMs*.008)%(GAME_HEIGHT+24))-12;
+        const alpha=(.035+invasion*.08+rift*.025)*( .6+.4*Math.sin(this.waterTimeMs/700+i));
+        this.spray.lineStyle(.6,0xb3e4df,alpha);
+        this.spray.beginPath();this.spray.moveTo(x,y);this.spray.lineTo(x+2+invasion*3,y+3);this.spray.strokePath();
+      }
+    }
     this.abyssTile.tilePositionY = -scrollPx * 0.72 / this.abyssTile.tileScaleY;
     this.reefsTile.tilePositionY = -scrollPx * 0.55;
     this.surfaceTile.tilePositionY = -scrollPx * 1.0;

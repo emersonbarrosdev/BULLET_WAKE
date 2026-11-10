@@ -1,5 +1,7 @@
 # Fase 1 — revisão de combate, arte e confirmação
 
+> **Revisão histórica:** as regras conflitantes deste registro foram substituídas pela [diretriz 33](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md): organismos sem enguia, casulo transportador, especial por estoque, chefe em duas camadas e spritesheets do oceano. Não usar as descrições antigas de bomba/ressonância como estado atual.
+
 Revisão de 09/11/2026. **Esta é a revisão vigente da bíblia para a Fase 1.** Substitui os trechos conflitantes dos documentos 27–30 sobre vidas, hitbox, itens com legendas, arte de chefes, fundo e cadência. A Fase 2 permanece bloqueada até aprovação explícita da Fase 1 pelo usuário. O foco de produção continua sendo Nolan/RIVET; a arte de Moth e Knuckle foi preservada.
 
 ## Resultado implementado

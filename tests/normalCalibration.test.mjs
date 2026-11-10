@@ -32,12 +32,12 @@ test('nine P reach max; three additional P build a real reserve for the next lif
     assert.equal(state.weaponLevel, 4);
   }
   assert.equal(collectPowerItem(state).meterIncreased, false);
-  const reset = resetWeaponsOnRespawn({ ...state, speedLevel: 3, bombs: 0 });
+  const reset = resetWeaponsOnRespawn({ ...state, speedLevel: 3, specialCharges: 0 });
   assert.equal(reset.weaponLevel, 2);
   assert.equal(reset.powerMeter, 0);
   assert.equal(reset.weaponFamily, 'ion');
   assert.equal(reset.speedLevel, 0);
-  assert.equal(reset.bombs, 3);
+  assert.equal(reset.specialCharges, 0);
   const partial = resetWeaponsOnRespawn({ ...state, powerMeter: 2 });
   assert.equal(partial.powerMeter, 2);
   assert.equal(partial.weaponLevel, 1);
@@ -45,12 +45,12 @@ test('nine P reach max; three additional P build a real reserve for the next lif
 
 test('Normal supply progression cannot reach level two in the opening seconds', () => {
   const powers = SUPPLY_EVENTS.filter(e => e.drop === 'power');
-  assert.equal(powers.length, 9);
+  assert.equal(powers.length, 6);
   assert.ok(powers[2].distance / SCROLL_SPEED > 20);
   assert.ok(powers[5].distance / SCROLL_SPEED > 40);
-  assert.ok(powers[8].distance / SCROLL_SPEED > 60);
+  assert.ok(powers[5].distance / SCROLL_SPEED > 100);
   assert.ok(!STAGE_EVENTS.some(e => e.drop === 'full_power'));
-  for (const family of ['ion', 'green']) assert.equal(WEAPON_FAMILY_SPECS[family].autoIntervalMs, WEAPON_FAMILY_SPECS[family].burstIntervalMs);
+  for (const family of ['ion', 'green']) assert.ok(WEAPON_FAMILY_SPECS[family].autoIntervalMs > WEAPON_FAMILY_SPECS[family].burstIntervalMs);
 });
 
 test('a coordinated flock follows one curved route, is fragile, exits, and never fires', () => {

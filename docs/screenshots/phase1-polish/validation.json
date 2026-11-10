@@ -1,0 +1,486 @@
+{
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "art": [
+        {
+          "name": "scout",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 2
+        },
+        {
+          "name": "dart",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 2
+        },
+        {
+          "name": "lancer",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "cutter",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "carrier",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "surface",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        },
+        {
+          "name": "ambush",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        },
+        {
+          "name": "raia",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        },
+        {
+          "name": "talassarca",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        },
+        {
+          "name": "inner",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "metamorphosis",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        },
+        {
+          "name": "special",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "blue",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "green",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "fire",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "explosion",
+          "frames": 16,
+          "variants": 16,
+          "cornerMax": 2
+        },
+        {
+          "name": "ocean",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        },
+        {
+          "name": "turbulent",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        },
+        {
+          "name": "rift",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        }
+      ],
+      "hull": {
+        "bars": 1,
+        "fill": "70%",
+        "value": "70 / 100",
+        "stock": "2 / 3",
+        "resonance": false,
+        "bombs": false
+      },
+      "confirmation": {
+        "inside": true,
+        "count": 1
+      },
+      "weapons": [
+        {
+          "family": "ion",
+          "level": 1,
+          "beams": 0,
+          "ribbons": 0
+        },
+        {
+          "family": "ion",
+          "level": 2,
+          "beams": 0,
+          "ribbons": 0
+        },
+        {
+          "family": "ion",
+          "level": 3,
+          "beams": 0,
+          "ribbons": 0
+        },
+        {
+          "family": "ion",
+          "level": 4,
+          "beams": 0,
+          "ribbons": 0
+        },
+        {
+          "family": "green",
+          "level": 1,
+          "beams": 0,
+          "ribbons": 6
+        },
+        {
+          "family": "green",
+          "level": 2,
+          "beams": 0,
+          "ribbons": 12
+        },
+        {
+          "family": "green",
+          "level": 3,
+          "beams": 0,
+          "ribbons": 18
+        },
+        {
+          "family": "green",
+          "level": 4,
+          "beams": 0,
+          "ribbons": 24
+        },
+        {
+          "family": "red",
+          "level": 1,
+          "beams": 1,
+          "ribbons": 0
+        },
+        {
+          "family": "red",
+          "level": 2,
+          "beams": 2,
+          "ribbons": 0
+        },
+        {
+          "family": "red",
+          "level": 3,
+          "beams": 4,
+          "ribbons": 0
+        },
+        {
+          "family": "red",
+          "level": 4,
+          "beams": 6,
+          "ribbons": 0
+        }
+      ],
+      "liveAnimation": {
+        "beforeFrames": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "afterFrames": [
+          3,
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      "waterAnimatesWithFixedScroll": true,
+      "special": {
+        "charges": 1,
+        "hp": 480,
+        "key": "polish-special"
+      },
+      "particles": 14,
+      "victory": {
+        "inside": true,
+        "noScroll": true,
+        "warm": "rgb(255, 154, 66)"
+      },
+      "defeat": {
+        "inside": true,
+        "noScroll": true,
+        "warm": "rgb(255, 115, 77)"
+      }
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "art": [
+        {
+          "name": "scout",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 2
+        },
+        {
+          "name": "dart",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 2
+        },
+        {
+          "name": "lancer",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "cutter",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "carrier",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "surface",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        },
+        {
+          "name": "ambush",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        },
+        {
+          "name": "raia",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        },
+        {
+          "name": "talassarca",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        },
+        {
+          "name": "inner",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "metamorphosis",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        },
+        {
+          "name": "special",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "blue",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "green",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "fire",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 1
+        },
+        {
+          "name": "explosion",
+          "frames": 16,
+          "variants": 16,
+          "cornerMax": 2
+        },
+        {
+          "name": "ocean",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        },
+        {
+          "name": "turbulent",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        },
+        {
+          "name": "rift",
+          "frames": 8,
+          "variants": 8,
+          "cornerMax": 0
+        }
+      ],
+      "hull": {
+        "bars": 1,
+        "fill": "70%",
+        "value": "70 / 100",
+        "stock": "2 / 3",
+        "resonance": false,
+        "bombs": false
+      },
+      "confirmation": {
+        "inside": true,
+        "count": 1
+      },
+      "weapons": [
+        {
+          "family": "ion",
+          "level": 1,
+          "beams": 0,
+          "ribbons": 0
+        },
+        {
+          "family": "ion",
+          "level": 2,
+          "beams": 0,
+          "ribbons": 0
+        },
+        {
+          "family": "ion",
+          "level": 3,
+          "beams": 0,
+          "ribbons": 0
+        },
+        {
+          "family": "ion",
+          "level": 4,
+          "beams": 0,
+          "ribbons": 0
+        },
+        {
+          "family": "green",
+          "level": 1,
+          "beams": 0,
+          "ribbons": 6
+        },
+        {
+          "family": "green",
+          "level": 2,
+          "beams": 0,
+          "ribbons": 12
+        },
+        {
+          "family": "green",
+          "level": 3,
+          "beams": 0,
+          "ribbons": 18
+        },
+        {
+          "family": "green",
+          "level": 4,
+          "beams": 0,
+          "ribbons": 24
+        },
+        {
+          "family": "red",
+          "level": 1,
+          "beams": 1,
+          "ribbons": 0
+        },
+        {
+          "family": "red",
+          "level": 2,
+          "beams": 2,
+          "ribbons": 0
+        },
+        {
+          "family": "red",
+          "level": 3,
+          "beams": 4,
+          "ribbons": 0
+        },
+        {
+          "family": "red",
+          "level": 4,
+          "beams": 6,
+          "ribbons": 0
+        }
+      ],
+      "liveAnimation": {
+        "beforeFrames": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "afterFrames": [
+          3,
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      "waterAnimatesWithFixedScroll": true,
+      "special": {
+        "charges": 1,
+        "hp": 480,
+        "key": "polish-special"
+      },
+      "particles": 14,
+      "victory": {
+        "inside": true,
+        "noScroll": true,
+        "warm": "rgb(255, 154, 66)"
+      },
+      "defeat": {
+        "inside": true,
+        "noScroll": true,
+        "warm": "rgb(255, 115, 77)"
+      }
+    }
+  ],
+  "regression": {
+    "title": true
+  },
+  "errors": []
+}

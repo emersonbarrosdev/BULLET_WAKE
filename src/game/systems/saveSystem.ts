@@ -8,6 +8,7 @@ export interface GameSettings {
   musicVolume: number;
   isMuted: boolean;
   difficulty: 'normal' | 'hard' | 'arcade';
+  rapidFire: boolean;
 }
 
 export interface StageScoreRecord {
@@ -40,6 +41,7 @@ export function defaultSaveData(): SaveData {
       musicVolume: 0.55,
       isMuted: false,
       difficulty: 'normal',
+      rapidFire: false,
     },
   };
 }

@@ -32,7 +32,7 @@ export class PremiumCombatHud {
           <div><small>OPERADOR</small><strong data-field="name">NOLAN FITCH</strong><b data-field="ship">RIVET</b></div>
         </section>
         <section class="bw-combat-panel"><small>PONTUAÇÃO <i data-field="combo"></i></small><strong class="bw-combat-score" data-field="score">000000</strong></section>
-        <section class="bw-combat-panel"><small>BLINDAGEM <i data-field="shield"></i></small><div class="bw-hull-bar" role="progressbar" aria-label="Integridade do casco" aria-valuemin="0" aria-valuemax="100"><i data-field="health"></i></div><div class="bw-combat-line"><span>INTEGRIDADE</span><b data-field="integrity">100%</b></div></section>
+        <section class="bw-combat-panel bw-combat-health"><small>VIDA / INTEGRIDADE <i data-field="shield"></i></small><div class="bw-hull-bar" role="progressbar" aria-label="Vida da nave" aria-valuemin="0" aria-valuemax="100"><i data-field="health"></i><b data-field="integrity">100 / 100</b></div><span class="bw-combat-hint">INTEGRIDADE DO CASCO</span></section>
         <section class="bw-combat-panel"><small>PROPULSÃO DE EMERGÊNCIA</small><strong data-field="dash">◆ ◆ ◆</strong><div class="bw-combat-line"><span>DASH <b data-field="dash-count">3/3</b></span><kbd>SHIFT ESQ</kbd></div></section>
         <div class="bw-combat-bottom"><button type="button" data-action="restart">REINICIAR <kbd>R</kbd></button><small>RIVET // VANGUARD SQUADRON</small></div>
       </aside>
@@ -43,9 +43,9 @@ export class PremiumCombatHud {
       <aside class="bw-combat-side bw-combat-right" aria-label="Telemetria de armamento">
         <div class="bw-combat-mission"><small>OPERAÇÃO PELÁGICA</small><strong>FENDA PELÁGICA</strong><span data-field="sector">ÁGUAS COSTEIRAS</span></div>
         <section class="bw-combat-panel"><small>ARMA EQUIPADA</small><strong class="bw-combat-weapon" data-field="weapon">DISPERSÃO AZUL</strong><div class="bw-combat-line"><span>POTÊNCIA</span><b data-field="level">NV 1/4</b></div><div class="bw-combat-pips" data-field="pips"><i></i><i></i><i></i><i></i></div></section>
-        <section class="bw-combat-panel"><small>PROGRESSO DE POTÊNCIA</small><div class="bw-combat-line"><strong class="bw-combat-power-icon">P</strong><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i></i><i></i><i></i></div><span class="bw-combat-hint">3 ITENS P = +1 NÍVEL</span></section>
-        <section class="bw-combat-panel"><div class="bw-combat-line"><small>PULSO DEFENSIVO <kbd>X</kbd></small><strong data-field="bombs">02</strong></div><small class="bw-combat-special-label">RESSONÂNCIA <kbd>V</kbd><b data-field="special">0%</b></small><div class="bw-combat-bar"><i data-field="special-fill"></i></div></section>
-        <div class="bw-combat-bottom"><div class="bw-combat-line"><span>DISPARO CONTÍNUO</span><kbd>ESPAÇO</kbd></div><span class="bw-combat-hint" data-field="charge">C CARREGAR · ESC MENU</span><div class="bw-combat-progress"><i data-field="progress"></i></div><small><span class="bw-combat-live-dot"></span> SISTEMA ATIVO <b data-field="fps">— FPS</b></small></div>
+        <section class="bw-combat-panel"><small>EVOLUÇÃO DA ARMA · ITENS P</small><div class="bw-combat-line"><strong class="bw-combat-power-icon">P</strong><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i>P</i><i>P</i><i>P</i></div><span class="bw-combat-hint">3 COLETAS P = +1 NÍVEL</span></section>
+        <section class="bw-combat-panel"><small>ESPECIAL DO PILOTO <kbd>V / X</kbd></small><div class="bw-combat-line"><strong data-field="special-stock">2 / 3</strong><b data-field="special">PRONTO</b></div><span class="bw-combat-hint">E REPÕE UMA CARGA · MÁX. 3</span></section>
+        <div class="bw-combat-bottom"><div class="bw-combat-line"><span>DISPARO PRINCIPAL</span><kbd>ESPAÇO</kbd></div><span class="bw-combat-hint" data-field="charge">C CARREGAR · ESC MENU</span><div class="bw-combat-progress"><i data-field="progress"></i></div><small><span class="bw-combat-live-dot"></span> SISTEMA ATIVO <b data-field="fps">— FPS</b></small></div>
       </aside>`;
     this.root.querySelectorAll<HTMLElement>('[data-field]').forEach(node => this.fields.set(node.dataset.field!, node));
     document.body.append(this.root);
@@ -77,7 +77,7 @@ export class PremiumCombatHud {
     this.text('combo', comboCount > 1 ? `×${multiplier.toFixed(1)}` : '');
   }
   setHealth(state: PlayerHealth, shield = false): void {
-    const percent=Math.max(0,Math.min(100,state.hp/MAX_HP*100)); this.field('health').style.width=percent+'%';this.field('health').parentElement!.setAttribute('aria-valuenow',String(percent));this.text('integrity',Math.ceil(percent)+'%'); this.text('shield', shield ? 'ESCUDO' : '');
+    const percent=Math.max(0,Math.min(100,state.hp/MAX_HP*100)); this.field('health').style.width=percent+'%';this.field('health').parentElement!.setAttribute('aria-valuenow',String(percent));this.text('integrity',Math.ceil(state.hp)+' / '+MAX_HP); this.text('shield', shield ? 'ESCUDO' : '');
   }
   setDash(remaining: number, max = 3): void {
     const n = Math.max(0, Math.min(max, remaining));
@@ -93,14 +93,10 @@ export class PremiumCombatHud {
     this.text('power', level >= 4 ? `RESERVA ${Math.max(0, Math.min(3, meter))}/3` : `${Math.max(0, Math.min(3, meter))} / 3`); this.segments('power-segments', meter);
   }
   setHeat(_heat: number, _isOverheated: boolean): void { /* Autofire never blocks for heat. */ }
-  setBombs(n: number): void { this.text('bombs', String(Math.max(0, n)).padStart(2, '0')); }
+  setSpecialStock(n: number, active=false): void { this.text('special-stock', `${Math.max(0,Math.min(3,n))} / 3`); this.text('special', active?'ATIVO':n>0?'PRONTO':'VAZIO'); }
   setMissileReady(_ready: boolean): void { /* M keeps its existing binding. */ }
   setProgress(ratio: number): void { this.field('progress').style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`; }
   setCharge(_ms: number, _max: number, charging: boolean): void { this.text('charge', charging ? 'CARREGANDO WAVE CANNON…' : 'C CARREGAR · ESC MENU'); }
-  setResonance(percent: number, active = false): void {
-    const n = Math.max(0, Math.min(100, percent)); this.field('special-fill').style.width = `${n}%`;
-    this.text('special', active ? 'ATIVO' : n >= 100 ? 'PRONTO' : `${Math.floor(n)}%`);
-  }
   setSector(sector: SectorId): void { this.text('sector', sectors[sector]); this.flash(`SETOR: ${sectors[sector]}`, '#ffbd79', 650); }
   showBossBar(name: string, hp: number, max: number): void {
     this.root.querySelector<HTMLElement>('.bw-combat-boss')!.hidden = false;

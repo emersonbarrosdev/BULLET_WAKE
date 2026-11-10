@@ -6,7 +6,7 @@ import { globalAudio } from '../audio/audioSystem.ts';
 import { NORMAL_GUIDE_ITEMS, PICKUP_GUIDE } from '../data/pickupGuide';
 
 type TitleMode = 'attract' | 'main' | 'options' | 'controls' | 'guide';
-type TitleAction = 'pilots' | 'options' | 'music' | 'effects' | 'difficulty' | 'controls' | 'guide' | 'back';
+type TitleAction = 'pilots' | 'options' | 'music' | 'effects' | 'difficulty' | 'rapid' | 'controls' | 'guide' | 'back';
 
 /**
  * Abertura cinematográfica aprovada — somente apresentação e menu do jogo.
@@ -150,7 +150,8 @@ export class TitleScene extends Phaser.Scene {
         this.actionButton('difficulty', 'DIFICULDADE', 'NORMAL · EM AJUSTE', 2),
         this.actionButton('controls', 'CONTROLES', '', 3),
         this.actionButton('guide', 'GUIA DE ITENS E ARMAS', '', 4),
-        this.actionButton('back', 'VOLTAR', '', 5),
+        this.actionButton('rapid', 'RAPID · DISPARO AUTOMÁTICO', settings.rapidFire ? 'LIGADO' : 'DESLIGADO', 5),
+        this.actionButton('back', 'VOLTAR', '', 6),
       ].join('');
     }
     return `
@@ -158,8 +159,7 @@ export class TitleScene extends Phaser.Scene {
         <div><span>WASD / SETAS</span><strong>MOVIMENTO</strong></div>
         <div><span>ESPAÇO</span><strong>DISPARAR</strong></div>
         <div><span>SHIFT ESQUERDO</span><strong>DASH (3 POR FASE)</strong></div>
-        <div><span>X</span><strong>BOMBA</strong></div>
-        <div><span>V</span><strong>ESPECIAL</strong></div>
+        <div><span>V / X</span><strong>ESPECIAL · 2 INICIAIS / MÁX. 3</strong></div>
         <div><span>C</span><strong>CARREGAR (SE DISPONÍVEL)</strong></div>
         <div><span>ESC</span><strong>PAUSA</strong></div>
       </div>
@@ -243,6 +243,10 @@ export class TitleScene extends Phaser.Scene {
       }
       case 'difficulty': {
         saveSystem.updateSettings({ difficulty: 'normal' });
+        break;
+      }
+      case 'rapid': {
+        saveSystem.updateSettings({rapidFire: !saveSystem.getSaveData().settings.rapidFire});
         break;
       }
     }

@@ -56,6 +56,11 @@ export interface StageBoss {
   readonly maxHp: number;
   phase: string;
   isTelegraphing: boolean;
+  layer?: 'shell' | 'inner';
+  metamorphosisMs?: number;
+  readonly bodyRadiusX?: number;
+  readonly bodyRadiusY?: number;
+  readonly displayWidth?: number;
   modules?: BossModule[];
   update(dt: number, playerX: number, playerY: number): BossTick;
   damage(amount: number, hitX: number, hitY: number): BossHitResult;

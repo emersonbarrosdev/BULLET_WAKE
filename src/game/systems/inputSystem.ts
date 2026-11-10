@@ -72,9 +72,9 @@ export interface PlayerActionCommands {
   chargeHeld: boolean;
   /** Momento em que a carga é liberada (C solto) */
   chargeReleased: boolean;
-  /** Lançamento de bomba (X) */
+  /** Legacy command name: X/B now shares the pilot special stock with V. */
   bomb: boolean;
-  /** Ativação do especial de ressonância do piloto (V) */
+  /** Ativação do especial por carga do piloto (V). */
   special: boolean;
   /** Disparo de mísseis secundários (M) */
   missile: boolean;
@@ -130,7 +130,7 @@ export function processInputFrame(input: RawInputFrame): PlayerActionCommands {
   const chargeHeld = Boolean(input.keyC);
   const chargeReleased = Boolean(input.keyCJustUp);
 
-  // 7. Bomba (X ou B) e Especial (V)
+  // 7. X/B and V are aliases for the same special stock in the combat scene.
   const bomb = Boolean(input.keyXJustDown || input.keyBJustDown);
   const special = Boolean(input.keyVJustDown);
 

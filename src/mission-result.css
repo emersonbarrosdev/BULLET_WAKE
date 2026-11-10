@@ -1,16 +1,17 @@
-.bw-mission-result {position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:clamp(16px,4vw,72px);background:radial-gradient(ellipse at 50% 35%,#10212ae8,#030507f5 75%);color:#eaf2f5;font:600 clamp(15px,1.35vw,23px)/1.45 'Rajdhani',sans-serif;overflow:auto;}
-.bw-result-panel {width:min(100%,1080px);padding:clamp(22px,4vw,64px);text-align:center;border:1px solid #4c6871;background:linear-gradient(135deg,#12191ff5,#070a0ff5);box-shadow:0 24px 100px #0009;}
-.bw-result-eyebrow {color:#9cabb2;font-size:.72em;letter-spacing:.22em;margin:0 0 24px;}
-.bw-mission-result h1 {font:800 clamp(25px,3.5vw,57px)/1.2 'Oxanium',sans-serif;letter-spacing:.06em;color:#58e2ea;margin:0 0 22px;overflow-wrap:anywhere;}
-.bw-result-caption {color:#9ac5dc;margin:0 auto;max-width:800px;overflow-wrap:anywhere;}
+.bw-mission-result {position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:clamp(16px,4vw,72px);background:linear-gradient(110deg,#0b0206ee,#210a06df),url('/assets/title/title-apocalyptic-base-v3.webp') center/cover;color:#fce9d4;font:600 clamp(15px,1.35vw,23px)/1.45 'Rajdhani',sans-serif;overflow:auto;}
+.bw-result-panel {position:relative;width:min(100%,1080px);padding:clamp(22px,4vw,64px);text-align:center;border:1px solid #a74a26;background:linear-gradient(130deg,#230d0cf2,#090407f5);box-shadow:0 24px 100px #000c,inset 0 1px #ffad5a50;}
+.bw-result-panel::before {content:'';position:absolute;top:0;left:8%;right:8%;height:3px;background:linear-gradient(90deg,transparent,#ff8d35,transparent);box-shadow:0 0 24px #ff7d2544;}
+.bw-result-eyebrow {color:#c79775;font-size:.72em;letter-spacing:.22em;margin:0 0 24px;}
+.bw-mission-result h1 {font:800 italic clamp(25px,3.5vw,57px)/1.2 'Oxanium',sans-serif;letter-spacing:.04em;color:#ff9a42;margin:0 0 22px;overflow-wrap:anywhere;text-shadow:0 3px #50150e,0 0 28px #ef55202a;}
+.bw-result-caption {color:#efbd8c;margin:0 auto;max-width:800px;overflow-wrap:anywhere;}
 .bw-result-score {display:flex;flex-direction:column;gap:6px;margin:clamp(22px,4vh,48px) 0;color:#ffcd6f;letter-spacing:.08em;}
 .bw-result-score span {font-size:.72em;}
 .bw-result-score strong {font:800 clamp(28px,3vw,48px)/1.2 'Oxanium',sans-serif;}
-.bw-result-message {max-width:720px;margin:0 auto 34px;color:#c0c9ce;}
+.bw-result-message {max-width:720px;margin:0 auto 34px;color:#dcc6b9;}
 .bw-mission-result nav {display:flex;justify-content:center;flex-wrap:wrap;gap:12px;}
-.bw-mission-result button {flex:1 1 180px;min-height:54px;padding:14px 18px;border:1px solid #45535e;background:#161f28;color:#e3eaf0;font:700 clamp(14px,1.1vw,19px) 'Oxanium',sans-serif;cursor:pointer;}
-.bw-mission-result button:first-child {background:#103b48;border-color:#61d8ea;}
-.bw-mission-result button:hover,.bw-mission-result button:focus-visible {outline:2px solid #ffbd72;outline-offset:3px;background:#25343e;}
+.bw-mission-result button {flex:1 1 180px;min-height:54px;padding:14px 18px;border:1px solid #994222;background:#200b09;color:#ffe9d5;font:800 italic clamp(14px,1.1vw,19px) 'Oxanium',sans-serif;cursor:pointer;}
+.bw-mission-result button:first-child {background:linear-gradient(125deg,#622716,#2a0c09);border-color:#ff9b41;box-shadow:0 0 16px #ff6b1922;}
+.bw-mission-result button:hover,.bw-mission-result button:focus-visible {outline:2px solid #ffd18e;outline-offset:3px;background:#77311b;box-shadow:0 0 20px #ff7b2633;}
 .bw-mission-result kbd {font:600 .85em 'Rajdhani',sans-serif;white-space:nowrap;}
-.bw-result-defeat h1 {color:#ff6b82;}
+.bw-result-defeat h1 {color:#ff734d;}
 @media(max-height:600px) {.bw-result-panel {padding:20px;}.bw-result-eyebrow,.bw-result-message {margin-bottom:14px;}.bw-result-score {margin:16px 0;}.bw-mission-result h1 {margin-bottom:12px;}}

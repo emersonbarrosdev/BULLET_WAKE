@@ -24,15 +24,15 @@ test('progression advances continuously by distance and does not label waves', (
 
 test('first passage spawns a formation and then a Lancer once', () => {
   const director = new StageDirector();
-  const first = advance(director, 4700);
+  const first = advance(director, 9400);
   assert.deepEqual(first.spawned.map(e => e.kind), ['scout', 'scout', 'scout']);
-  const later = advance(director, 2600);
+  const later = advance(director, 5200);
   assert.equal(later.spawned.filter(e => e.kind === 'lancer').length, 1);
 });
 
 test('Scout and Lancer announce attacks before releasing aimed shots', () => {
   const director = new StageDirector();
-  advance(director, 2250);
+  advance(director, 4500);
   const scout = director.enemies[0];
   assert.ok(scout);
   const shots = advance(director, 3900).shots;
@@ -42,7 +42,7 @@ test('Scout and Lancer announce attacks before releasing aimed shots', () => {
 
 test('Lancer has 3 HP; only elimination awards points', () => {
   const director = new StageDirector();
-  advance(director, 8200);
+  advance(director, 16400);
   const lancer = director.enemies.find(e => e.kind === 'lancer');
   assert.ok(lancer);
   assert.deepEqual(director.damage(lancer.id, 1), { killed: false, score: 0 });
@@ -55,13 +55,13 @@ test('a replay does not happen inside one stage; stage events occur exactly once
   const director = new StageDirector();
   let spawned = 0;
   let completed = false;
-  for (let i = 0; i < 4800; i++) {
+  for (let i = 0; i < 6000; i++) {
     const tick = director.update(25, 135, 216);
     spawned += tick.spawned.length;
     completed ||= tick.completed;
   }
   assert.equal(spawned, STAGE_EVENTS.length);
-  assert.ok(Math.abs(director.scrollPx - SCROLL_SPEED * 120) < 0.01);
+  assert.ok(Math.abs(director.scrollPx - SCROLL_SPEED * 150) < 0.01);
   assert.ok(completed);
   assert.equal(director.update(25, 135, 216).spawned.length, 0);
 });
@@ -76,7 +76,7 @@ test('sectors advance in scripted order', () => {
 
 test('damage to removed enemy never scores twice', () => {
   const director = new StageDirector();
-  advance(director, 2000);
+  advance(director, 4000);
   const scout = director.enemies[0];
   assert.equal(director.damage(scout.id, 1).score, 100);
   assert.equal(director.damage(scout.id, 1).score, 0);

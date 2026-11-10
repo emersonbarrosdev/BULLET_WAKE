@@ -1,5 +1,7 @@
 # 04 — Bíblia de sprites, sheets e animações
 
+> **Fase 1 atual:** [catálogo e prompts dos spritesheets](34_FASE1_PROMPTS_POLIMENTO.md), com oito poses anatômicas por espécie, água em oito frames, metamorfose própria e explosão em dezesseis frames. Não usar escala pulsante do corpo como substituto de animação. [Regras vigentes](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md).
+
 ## Contrato de renderização
 Spritesheets PNG RGBA autorais, sem fundo embutido, grid fixo, pixels sem anti-aliasing na escala de exibição. Resolução lógica inicial sugerida **384×216** (16:9); ampliação nearest-neighbor com letterbox. Frames de nave sugeridos **48×24px**, pivô (24,12), frente à direita. Fonte editável + arquivo PNG + manifesto de animação + preview GIF/MP4 de teste.
 

@@ -1,5 +1,7 @@
 # 06 — Catálogo MALHA: inimigos e bosses
 
+> **Catálogo vigente da Fase 1:** [alienígenas, casulos e chefes com camadas](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md). Só organismos vivos: quitina, membranas, mandíbulas e órgãos luminosos. Não criar naves ou máquinas com base no catálogo MALHA histórico abaixo. Casulo transportador biológico libera um item; comuns não geram ícones. Colossais futuros seguem a referência de cinco especiais na casca e três na forma interna, com metamorfose; somente Talassarca está adaptado.
+
 ## Origem
 A MALHA adapta equipamentos de extração, manutenção, transporte, suporte e defesa. Cada inimigo deve ter papel claro e traços de sua função anterior; nada de drones iguais com cores diferentes.
 

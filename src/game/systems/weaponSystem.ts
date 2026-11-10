@@ -30,6 +30,7 @@ export interface ProjectileSpawnDef {
   waveFrequency?: number;
   /** Fase inicial em radianos da onda */
   wavePhase?: number;
+  waveVerticalAmplitude?: number;
   /** Indica descritor de feixe contínuo (Laser Rubro) */
   isContinuousBeam?: boolean;
 }
@@ -41,9 +42,8 @@ export interface PlayerWeaponsState {
   /** Medidor de potência P (0 a 3): 3 itens P aumentam 1 nível de arma */
   powerMeter: number;
   speedLevel: number;
-  bombs: number;
+  specialCharges: number;
   hasShield: boolean;
-  resonance: number; // 0 a 100
   specialActiveMs: number;
   specialDurationMs: number;
   specialType: SpecialType;
@@ -62,9 +62,8 @@ export interface PlayerWeaponsState {
 
 export const MAX_WEAPON_LEVEL: WeaponLevel = 4;
 export const POWER_ITEMS_PER_LEVEL = 3;
-export const MAX_BOMBS = 3;
-export const START_BOMBS = 3;
-export const MAX_RESONANCE = 100;
+export const MAX_SPECIAL_CHARGES = 3;
+export const START_SPECIAL_CHARGES = 2;
 export const MISSILE_COOLDOWN_MS = 1500;
 
 export const MAX_HEAT = 100;
@@ -83,14 +82,14 @@ export interface WeaponSpecs {
 
 export const WEAPON_FAMILY_SPECS: Record<WeaponFamily, WeaponSpecs> = {
   green: {
-    autoIntervalMs: 150,
+    autoIntervalMs: 420,
     burstIntervalMs: 150,
     heatPerShot: 7,
     coolingRatePerSec: 45,
     displayName: 'ENERGIA ESPIRALADA',
   },
   ion: {
-    autoIntervalMs: 125,
+    autoIntervalMs: 380,
     burstIntervalMs: 125,
     heatPerShot: 8,
     coolingRatePerSec: 50,
@@ -134,9 +133,8 @@ export function createPlayerWeapons(pilotId: PilotId = 'nolan', initialFamily: W
     weaponLevel: 1,
     powerMeter: 0,
     speedLevel: 0,
-    bombs: START_BOMBS,
+    specialCharges: START_SPECIAL_CHARGES,
     hasShield: false,
-    resonance: 0,
     specialActiveMs: 0,
     specialDurationMs: SPECIAL_DURATIONS[specialType],
     specialType,
@@ -246,13 +244,12 @@ export function collectFullPowerItem(state: PlayerWeaponsState): {
   };
 }
 
-export function addResonance(state: PlayerWeaponsState, amount: number): PlayerWeaponsState {
-  const next = Math.max(0, Math.min(MAX_RESONANCE, state.resonance + Math.max(0, amount)));
-  return { ...state, resonance: next };
+export function collectSpecialCharge(state: PlayerWeaponsState): PlayerWeaponsState {
+  return { ...state, specialCharges: Math.min(MAX_SPECIAL_CHARGES, state.specialCharges + 1) };
 }
 
 export function canActivateSpecial(state: PlayerWeaponsState): boolean {
-  return state.resonance >= MAX_RESONANCE && state.specialActiveMs <= 0;
+  return state.specialCharges > 0 && state.specialActiveMs <= 0;
 }
 
 export function activateSpecial(state: PlayerWeaponsState): {
@@ -265,32 +262,11 @@ export function activateSpecial(state: PlayerWeaponsState): {
   return {
     state: {
       ...state,
-      resonance: 0,
+      specialCharges: state.specialCharges - 1,
       specialActiveMs: state.specialDurationMs,
     },
     activated: true,
   };
-}
-
-export function canUseBomb(state: PlayerWeaponsState): boolean {
-  return state.bombs > 0;
-}
-
-export function useBomb(state: PlayerWeaponsState): {
-  state: PlayerWeaponsState;
-  used: boolean;
-} {
-  if (!canUseBomb(state)) {
-    return { state, used: false };
-  }
-  return {
-    state: { ...state, bombs: state.bombs - 1 },
-    used: true,
-  };
-}
-
-export function addBomb(state: PlayerWeaponsState): PlayerWeaponsState {
-  return { ...state, bombs: Math.min(MAX_BOMBS, state.bombs + 1) };
 }
 
 export function setShield(state: PlayerWeaponsState, active: boolean): PlayerWeaponsState {
@@ -330,7 +306,6 @@ export function resetWeaponsOnRespawn(state: PlayerWeaponsState): PlayerWeaponsS
     weaponLevel: reserveReady ? 2 : 1,
     powerMeter: reserveReady ? 0 : state.powerMeter,
     speedLevel: 0,
-    bombs: START_BOMBS,
     hasShield: false,
     specialActiveMs: 0,
     missileCooldownMs: 0,
@@ -340,7 +315,6 @@ export function resetWeaponsOnRespawn(state: PlayerWeaponsState): PlayerWeaponsS
     overheatCooldownMs: 0,
     chargeMs: 0,
     isCharging: false,
-    resonance: Math.floor(state.resonance * 0.5),
   };
 }
 
@@ -445,128 +419,16 @@ export function getPrimaryProjectiles(
     family = 'red';
   }
 
-  // 1. ARMA VERDE: ENERGIA ESPIRALADA (Feixes de energia ondulantes/espiralados concentrados LV1-4)
+  // Paired, phase-shifted wave components form the forward Shark Beam.
+  // World-unit timings are Bullet Wake calibration, not claimed ROM constants.
   if (family === 'green') {
-    const tex = 'shot-rivet';
-    const anim = 'shot-rivet-loop';
-
-    if (level === 1) {
-      // Nível 1: 2 filamentos esmeralda finos e próximos (baixa amplitude = 8px)
-      return [
-        {
-          texture: tex,
-          animation: anim,
-          x: originX - 3,
-          y: originY,
-          velocityX: 0,
-          velocityY: -640,
-          damage: 1.05,
-          hitRadius: 6,
-          scale: 0.95,
-          waveAmplitude: 8,
-          waveFrequency: 0.019,
-          wavePhase: 0,
-        },
-        {
-          texture: tex,
-          animation: anim,
-          x: originX + 3,
-          y: originY,
-          velocityX: 0,
-          velocityY: -640,
-          damage: 1.05,
-          hitRadius: 6,
-          scale: 0.95,
-          waveAmplitude: 8,
-          waveFrequency: 0.019,
-          wavePhase: Math.PI,
-        },
-      ];
-    }
-    if (level === 2) {
-      // Nível 2: 3 ondas esmeralda concentradas (eixo central + dupla hélice lateral média = 14px)
-      return [
-        {
-          texture: tex,
-          animation: anim,
-          x: originX,
-          y: originY - 2,
-          velocityX: 0,
-          velocityY: -660,
-          damage: 1.2,
-          hitRadius: 7,
-          scale: 1.15,
-          waveAmplitude: 7,
-          waveFrequency: 0.02,
-          wavePhase: Math.PI * 0.5,
-        },
-        {
-          texture: tex,
-          animation: anim,
-          x: originX - 7,
-          y: originY,
-          velocityX: -18,
-          velocityY: -655,
-          damage: 1.1,
-          hitRadius: 7,
-          scale: 1.12,
-          waveAmplitude: 14,
-          waveFrequency: 0.019,
-          wavePhase: 0,
-        },
-        {
-          texture: tex,
-          animation: anim,
-          x: originX + 7,
-          y: originY,
-          velocityX: 18,
-          velocityY: -655,
-          damage: 1.1,
-          hitRadius: 7,
-          scale: 1.12,
-          waveAmplitude: 14,
-          waveFrequency: 0.019,
-          wavePhase: Math.PI,
-        },
-      ];
-    }
-    if (level === 3) {
-      // Nível 3: 5 ondas esmeralda espiraladas (amplitude 21px, soma de dano ~6.0 para compatibilidade tática)
-      const offsets = [-13, -6, 0, 6, 13];
-      const vxs = [-46, -22, 0, 22, 46];
-      const amps = [21, 15, 8, 15, 21];
-      return offsets.map((ox, i) => ({
-        texture: tex,
-        animation: anim,
-        x: originX + ox,
-        y: originY - (i === 2 ? 3 : 0),
-        velocityX: vxs[i],
-        velocityY: -680,
-        damage: i === 2 ? 1.32 : 1.18,
-        hitRadius: 8,
-        scale: 1.35,
-        waveAmplitude: amps[i],
-        waveFrequency: 0.02,
-        wavePhase: (i * Math.PI) / 2,
-      }));
-    }
-    // Nível 4: 7 ondas esmeralda espiraladas em vórtice helicoidal de saturação concentrada
-    const offsetsLv4 = [-20, -13, -6, 0, 6, 13, 20];
-    const vxsLv4 = [-78, -50, -24, 0, 24, 50, 78];
-    const ampsLv4 = [29, 23, 16, 9, 16, 23, 29];
-    return offsetsLv4.map((ox, i) => ({
-      texture: tex,
-      animation: anim,
-      x: originX + ox,
-      y: originY - (i === 3 ? 4 : 0),
-      velocityX: vxsLv4[i],
-      velocityY: -700,
-      damage: i === 3 ? 1.45 : 1.25,
-      hitRadius: 9,
-      scale: 1.55,
-      waveAmplitude: ampsLv4[i],
-      waveFrequency: 0.021,
-      wavePhase: (i * Math.PI) / 3,
+    const components = level * 2;
+    return Array.from({length:components},(_,i)=>({
+      texture:'shot-rivet', animation:'shot-rivet-loop',
+      x:originX, y:originY, velocityX:0, velocityY:-460,
+      damage:1.05+level*.08, hitRadius:4, scale:1,
+      waveAmplitude:16+level*8, waveVerticalAmplitude:9+level*5,
+      waveFrequency:.014, wavePhase:i*Math.PI*2/components,
     }));
   }
 
@@ -577,7 +439,7 @@ export function getPrimaryProjectiles(
 
     if (level === 1) {
       // Nível 1: 3 direções frontais estreitas e discretas (tiro inicial contido)
-      const vxs = [-12,0,12].map(a=>640*Math.sin(a*Math.PI/180));
+      const vxs = [-45,0,45].map(a=>640*Math.sin(a*Math.PI/180));
       return vxs.map((vx) => ({
         texture: tex,
         animation: anim,
@@ -592,7 +454,7 @@ export function getPrimaryProjectiles(
     }
     if (level === 2) {
       // Nível 2: 5 direções em leque médio
-      const vxs = [-24,-12,0,12,24].map(a=>640*Math.sin(a*Math.PI/180));
+      const vxs = [-45,-22.5,0,22.5,45].map(a=>640*Math.sin(a*Math.PI/180));
       return vxs.map((vx) => ({
         texture: tex,
         animation: anim,

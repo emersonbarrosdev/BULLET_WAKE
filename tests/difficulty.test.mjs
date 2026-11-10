@@ -4,14 +4,14 @@ import { StageDirector, STAGE_EVENTS, DEMO_DISTANCE } from '../src/game/systems/
 import { BossKrm17 } from '../src/game/systems/bossKrm17.ts';
 import { getPrimaryProjectiles } from '../src/game/systems/weaponSystem.ts';
 
-test('Anti-Camping: Player standing still is threatened by aimed shots and spreads within 5 seconds', () => {
+test('Anti-Camping: Player standing still is threatened by aimed shots and spreads within 10 seconds', () => {
   const director = new StageDirector(768);
   let shotsTargetingPlayer = 0;
   const playerX = 135;
   const playerY = 216;
 
   // Simula 5 segundos de jogo com jogador parado
-  for (let t = 0; t < 5000; t += 25) {
+  for (let t = 0; t < 10000; t += 25) {
     const tick = director.update(25, playerX, playerY);
     for (const shot of tick.shots) {
       // Projétil que se move em direção à metade esquerda da tela (onde o jogador está)
@@ -34,7 +34,7 @@ test('Threat Geometry: Lancers emit triple fan spreads to eliminate naive micro-
   const shotVelocitiesY = new Set();
 
   // Avança até o primeiro Lancer (em ~7.5s)
-  for (let t = 0; t < 9500; t += 25) {
+  for (let t = 0; t < 19000; t += 25) {
     const tick = director.update(25, playerX, playerY);
     for (const shot of tick.shots) {
       shotVelocitiesY.add(Math.round(shot.velocityY));
@@ -122,12 +122,12 @@ test('Weapon Upgrades: Scaling increases volume of fire without trivializing bos
   const lv4 = getPrimaryProjectiles('nolan', 4, 100, 200);
 
   assert.equal(lv1.length, 2, 'LV1 tem 2 projéteis paralelos');
-  assert.equal(lv2.length, 3, 'LV2 tem 3 projéteis em leque');
-  assert.equal(lv3.length, 5, 'LV3 tem 5 projéteis em leque');
-  assert.equal(lv4.length, 7, 'LV4 tem 7 projéteis de ampla cobertura');
+  assert.equal(lv2.length, 4);
+  assert.equal(lv3.length, 6);
+  assert.equal(lv4.length, 8);
 
   const totalDmgLv3 = lv3.reduce((sum, p) => sum + p.damage, 0);
-  assert.ok(totalDmgLv3 >= 5.0 && totalDmgLv3 <= 7.0, 'Dano LV3 amplia cobertura sem quebrar a escala');
+  assert.ok(totalDmgLv3 >= 5.0 && totalDmgLv3 <= 9.0, 'Dano LV3 amplia cobertura sem quebrar a escala');
 });
 
 test('Difficulty Modes: Arcade mode scales bullet velocity and expands Lancer spread to 5-way', () => {

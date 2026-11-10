@@ -7,6 +7,7 @@
  * - Coleta por contato, sem atração magnética ou troca involuntária de arma.
  */
 import { PLAYFIELD_X, PLAYFIELD_RIGHT } from '../constants.ts';
+import { circleHitsHull } from './hullCollision.ts';
 
 export type PickupType =
   | 'power'         // P: Avança 1/3 no medidor P (3 P = +1 nível de potência até LV4)
@@ -78,18 +79,18 @@ export class PickupSystem {
       p.x = Math.max(PLAYFIELD_X + 16, Math.min(PLAYFIELD_RIGHT - 16, p.baseX + sway));
 
       // Remove se ultrapassar a borda inferior da tela ou se coletado
-      if (p.y > 450 || p.y < -50 || p.collected) {
+      if (p.y > 450 || p.y < -50 || p.ageMs > 10000 || p.collected) {
         this.pickups.splice(i, 1);
       }
     }
   }
 
-  checkCollection(playerX: number, playerY: number, collectRadius = 5): PickupModel[] {
+  checkCollection(playerX: number, playerY: number, collectRadius = 5, visibleHull = false): PickupModel[] {
     const collected: PickupModel[] = [];
     for (const p of this.pickups) {
       if (p.collected) continue;
       const dist = Math.hypot(playerX - p.x, playerY - p.y);
-      if (dist <= collectRadius + PICKUP_RADIUS) {
+      if (visibleHull ? circleHitsHull(p.x,p.y,PICKUP_RADIUS,playerX,playerY) : dist <= collectRadius + PICKUP_RADIUS) {
         p.collected = true;
         collected.push(p);
       }
@@ -107,11 +108,7 @@ export function determineEnemyDrop(
   enemyKind: 'scout' | 'dart' | 'lancer' | 'cutter' | 'carrier' | 'miniboss' | 'boss',
   killCount: number,
 ): PickupType | null {
-  // Power and weapon capsules belong to scripted carriers, not kill-count farming.
-  if (enemyKind === 'miniboss') return 'health';
-  if (enemyKind === 'boss') return null;
-  if (killCount % 17 === 0) return 'special';
-  if (killCount % 23 === 0) return 'health';
-  if (killCount % 7 === 0) return 'score';
+  // Only the stage's explicit cargo carriers release items. No kill-counter rewards.
+  void enemyKind; void killCount;
   return null;
 }

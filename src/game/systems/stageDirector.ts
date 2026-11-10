@@ -31,7 +31,10 @@ export interface EnemyModel {
   secondShotFired: boolean;
   flight?: 'sweep-left' | 'sweep-right';
   layer?: 'surface';
-  swimmer?: boolean;
+  carrier?: boolean;
+  surfaceVariant?: 'turret' | 'ambush';
+  submerged?: boolean;
+  animationFrame?: number;
   spawnScroll?: number;
   drop?: PickupType | null;
 }
@@ -57,12 +60,12 @@ export interface StageTick {
   bossActive?: boolean;
 }
 
-export const SCROLL_SPEED = 68; // pixels lógicos/s (cenário permanece avançando)
+export const SCROLL_SPEED = 34; // Slower traversal gives each encounter and supply carrier room.
 export const DEMO_DISTANCE = 4250; // distância total até a arena do chefe
 
 // Roteiro por posição percorrida. Combinações táticas de passagem contínua.
 // Nenhum evento reaparece como round de arena.
-interface StageEvent { distance: number; kind: EnemyKind; y: number; flight?: EnemyModel['flight']; layer?: 'surface'; swimmer?: boolean; drop?: PickupType | null; }
+interface StageEvent { distance: number; kind: EnemyKind; y: number; flight?: EnemyModel['flight']; layer?: 'surface'; surfaceVariant?: 'turret'|'ambush'; carrier?: boolean; drop?: PickupType | null; }
 const SOLO_EVENTS: StageEvent[] = [
   // --- SETOR 1: EVACUAÇÃO (0m - 1000m) ---
   { distance: 125, kind: 'scout', y: 125 },
@@ -115,21 +118,21 @@ const SOLO_EVENTS: StageEvent[] = [
   { distance: 4050, kind: 'cutter', y: 216 },
 ];
 
-// Nine P across the entire approach: no instant-max reward or power from flocks.
+// Supplies belong exclusively to recognizable aerostats. One cargo per carrier.
+// Three P give one upgrade; Phase 1 no longer hands out maximum power in a minute.
 export const SUPPLY_EVENTS: StageEvent[] = [
-  ...[450, 900, 1400, 1900, 2400, 2900, 3400, 3800, 4150].map((distance, i) => ({ distance, kind: 'cutter' as const, y: 115 + (i % 3) * 80, drop: 'power' as const })),
-  ...(['weapon_ion', 'weapon_green', 'weapon_red', 'weapon_ion', 'weapon_green', 'weapon_red'] as const).map((drop, i) => ({ distance: [650, 1150, 1750, 2550, 3250, 3900][i], kind: 'cutter' as const, y: 150 + (i % 2) * 95, drop })),
-  ...(['speed', 'health', 'bomb', 'speed', 'health', 'bomb'] as const).map((drop, i) => ({ distance: [700, 1300, 2050, 2650, 3500, 4000][i], kind: 'cutter' as const, y: 100 + (i % 3) * 90, drop })),
+  ...(['power','speed','power','weapon_green','weapon_red','power','health','power','weapon_ion','power','special','power'] as const).map((drop,i)=>({distance:[360,690,1020,1350,1650,2050,2390,2720,3050,3380,3720,4050][i],kind:'cutter' as const,y:145+(i%2)*100,carrier:true,drop})),
+  { distance: 1540, kind: 'cutter', y: 270, carrier: true, drop: 'special' },
 ];
 const FLOCK_EVENTS: StageEvent[] = [360, 740, 1100, 1450, 2050, 2450, 2850, 3200, 3650].flatMap((distance, group) =>
   Array.from({ length: group < 2 ? 5 : 6 }, (_, i) => ({ distance: distance + i * 15, kind: 'scout' as const, y: 100, flight: group % 2 ? 'sweep-right' as const : 'sweep-left' as const, drop: null })));
 const SURFACE_EVENTS: StageEvent[] = [820, 1550, 2250, 3050, 3720].map((distance, i) => ({ distance, kind: 'lancer', y: i % 2 ? 105 : 290, layer: 'surface', drop: null }));
-const SWIMMER_EVENTS: StageEvent[] = [1250,2650,3600].map((distance,i)=>({distance,kind:'dart',y:i%2?135:270,layer:'surface',swimmer:true,drop:null}));
-export const STAGE_EVENTS: readonly StageEvent[] = [...SOLO_EVENTS, ...SUPPLY_EVENTS, ...FLOCK_EVENTS, ...SURFACE_EVENTS, ...SWIMMER_EVENTS].sort((a, b) => a.distance - b.distance);
+const AMBUSH_EVENTS: StageEvent[] = [1250,2650,3600].map((distance,i)=>({distance,kind:'dart',y:i%2?135:270,layer:'surface',surfaceVariant:'ambush',drop:null}));
+export const STAGE_EVENTS: readonly StageEvent[] = [...SOLO_EVENTS, ...SUPPLY_EVENTS, ...FLOCK_EVENTS, ...SURFACE_EVENTS, ...AMBUSH_EVENTS].sort((a, b) => a.distance - b.distance);
 export const SURFACE_SCROLL_FACTOR = 0.9;
 
 export function enemyBodyRadius(enemy:EnemyModel):number {
-  return enemy.flight?10:enemy.layer?14:enemy.kind==='scout'?13:enemy.kind==='dart'?16:18;
+  return enemy.carrier?24:enemy.flight?10:enemy.layer?14:enemy.kind==='scout'?13:enemy.kind==='dart'?16:18;
 }
 
 const SPEED: Readonly<Record<EnemyKind, number>> = {
@@ -270,7 +273,8 @@ export class StageDirector {
         secondShotFired: false,
         flight: event.flight,
         layer: event.layer,
-        swimmer: event.swimmer,
+        carrier: event.carrier,
+        surfaceVariant: event.surfaceVariant,
         spawnScroll: this.scrollPx,
         drop: event.drop,
       };
@@ -283,6 +287,17 @@ export class StageDirector {
 
     for (const enemy of this.enemies) {
       enemy.ageMs += dt;
+      if (enemy.carrier) {
+        enemy.y += dt * (enemy.ageMs < 1700 ? .065 : enemy.ageMs > 7200 ? .12 : .018);
+        enemy.x = enemy.baseX + Math.sin(enemy.ageMs / 1100) * 18;
+        enemy.phase = enemy.ageMs > 7200 ? 'exit' : 'approach';
+        // Slow carrier has one readable aimed shot per passage.
+        if (enemy.ageMs > 3500 && !enemy.secondShotFired) {
+          shots.push(this.aim(enemy, playerX, playerY, 100));
+          enemy.secondShotFired = true;
+        }
+        continue;
+      }
       if (enemy.flight) {
         const t = enemy.ageMs / 3400;
         const left = PLAYFIELD_X - 24;
@@ -293,16 +308,16 @@ export class StageDirector {
         continue; // Fast, fragile formations never fire.
       }
       if (enemy.layer === 'surface') {
-        if(enemy.swimmer) {
-          enemy.y += dt * .085;
-          enemy.x = clamp(enemy.baseX+Math.sin(enemy.ageMs/360)*24,PLAYFIELD_X+24,PLAYFIELD_RIGHT-24);
-        } else enemy.y = -35 + (this.scrollPx - (enemy.spawnScroll ?? 0)) * SURFACE_SCROLL_FACTOR;
-        enemy.phaseMs -= dt;
-        if (enemy.y >= 25 && enemy.y <= 320 && enemy.phaseMs <= 0) {
-          if (enemy.phase === 'telegraph') {
-            for (const angle of [-0.12, 0.12]) shots.push({ ...this.aim(enemy, playerX, playerY, 125, angle), sourceLayer: 'surface' });
-            enemy.phase = 'recover'; enemy.phaseMs = 2100;
-          } else { enemy.phase = 'telegraph'; enemy.phaseMs = 750; }
+        enemy.y = -35 + (this.scrollPx - (enemy.spawnScroll ?? 0)) * SURFACE_SCROLL_FACTOR;
+        const cycle = enemy.ageMs % 6800;
+        enemy.submerged = cycle < 1400 || cycle >= 5400;
+        enemy.animationFrame = cycle < 1400 ? 0 : cycle < 1900 ? 1 : cycle < 2400 ? 2 : cycle < 3100 ? 3 : cycle < 3450 ? 4 : cycle < 4600 ? 5 : cycle < 5100 ? 6 : 7;
+        enemy.phase = cycle >= 2400 && cycle < 3100 ? 'telegraph' : cycle >= 3100 && cycle < 4600 ? 'attack' : 'recover';
+        enemy.phaseMs = Math.max(0, 3100 - cycle);
+        if (cycle < 3100) enemy.secondShotFired = false;
+        if (cycle >= 3100 && cycle < 3450 && !enemy.secondShotFired && enemy.y > 25 && enemy.y < 360) {
+          for (const angle of [-.12,.12]) shots.push({...this.aim(enemy,playerX,playerY,125,angle),sourceLayer:'surface'});
+          enemy.secondShotFired = true;
         }
         continue;
       }
@@ -496,8 +511,8 @@ export class StageDirector {
     for (let pass = 0; pass < 24; pass++) {
       if (this.boss && this.boss.phase !== 'defeated') {
         for (const enemy of this.enemies) {
-          const rx = this.minibossActive ? 95 : 120;
-          const ry = this.minibossActive ? 58 : 90;
+          const rx = this.boss.bodyRadiusX ?? 95;
+          const ry = this.boss.bodyRadiusY ?? 65;
           const dx = enemy.x - this.boss.x, dy = enemy.y - this.boss.y;
           const radius = enemyBodyRadius(enemy) + 8;
           const norm = Math.hypot(dx / (rx + radius), dy / (ry + radius));
@@ -511,12 +526,13 @@ export class StageDirector {
       for (let i = 0; i < this.enemies.length; i++) {
         for (let j = i + 1; j < this.enemies.length; j++) {
           const a = this.enemies[i], b = this.enemies[j];
-          const gap = enemyBodyRadius(a) + enemyBodyRadius(b) + 6;
+          // Membranes/appendages extend beyond the damaging core: reserve visual space too.
+          const gap = enemyBodyRadius(a) + enemyBodyRadius(b) + 14;
           const dx = b.x - a.x, dy = b.y - a.y, distance = Math.hypot(dx, dy);
           if (distance >= gap) continue;
           const nx = distance > .01 ? dx / distance : (a.id % 2 ? 1 : -1);
           const ny = distance > .01 ? dy / distance : 0, push = gap - distance;
-          const anchoredA = !!a.layer && !a.swimmer, anchoredB = !!b.layer && !b.swimmer;
+          const anchoredA = !!a.layer, anchoredB = !!b.layer;
           const aw = anchoredA ? 0 : anchoredB ? 1 : .5;
           const bw = anchoredB ? 0 : anchoredA ? 1 : .5;
           a.x -= nx * push * aw; a.y -= ny * push * aw;
@@ -552,6 +568,7 @@ export class StageDirector {
     const index = this.enemies.findIndex(enemy => enemy.id === id);
     if (index === -1) return { killed: false, score: 0 };
     const enemy = this.enemies[index];
+    if (enemy.submerged) return {killed:false,score:0};
     enemy.hp = Math.max(0, enemy.hp - Math.max(0, amount));
     if (enemy.hp > 0) return { killed: false, score: 0 };
     this.enemies.splice(index, 1);
@@ -584,7 +601,7 @@ export class StageDirector {
       y: enemy.y + 16,
       velocityX: speed * Math.cos(finalAngle),
       velocityY: speed * Math.sin(finalAngle),
-      kind: enemy.swimmer?'raia':enemy.layer?'surface':enemy.kind,
+      kind: enemy.surfaceVariant==='ambush'?'cutter':enemy.layer?'surface':enemy.kind,
     };
   }
 }
