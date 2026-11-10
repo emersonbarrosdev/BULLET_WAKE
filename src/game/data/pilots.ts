@@ -30,7 +30,7 @@ export const PILOTS: readonly PilotDefinition[] = [
     shipName: 'Rivet',
     role: 'FOGO SUSTENTADO',
     specialName: 'TEMPESTADE PRISMATICA',
-    specialDescription: 'Rajada de 3 feixes prismáticos contínuos de alta perfuração.',
+    specialDescription: 'Três salvas de bombardeio prismático: varredura da arena, impactos e proteção temporária.',
     bio: 'Especialista militar em fogo de contenção e defesa de comboios de evacuação.',
     portraitKey: 'portrait-nolan',
     speed: 190,

@@ -9,7 +9,7 @@ export class StageCompleteOverlay extends MissionResultOverlay {
       'Setor contido. Ameaça alienígena neutralizada. Operador autorizado a retornar à base.', [
         { label: 'ENCERRAR OPERAÇÃO', key: 'Enter', run: onNextStage },
         { label: 'REJOGAR', key: 'R', run: onReplay },
-        { label: 'FASES', key: 'Escape', run: onStageSelect },
+        { label: 'ESCOLHER PILOTO', key: 'Escape', run: onStageSelect },
       ]);
   }
 }

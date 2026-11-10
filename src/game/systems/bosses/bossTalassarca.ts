@@ -56,10 +56,10 @@ export class BossTalassarca implements StageBoss {
         const aim = Math.atan2(playerY - originY, playerX - ox);
         for (const offset of (inner ? [-.48, -.24, 0, .24, .48] : [-.28, 0, .28])) {
           const angle = aim + offset;
-          shots.push({ x: ox, y: originY, velocityX: Math.cos(angle) * (inner ? 195 : 165), velocityY: Math.sin(angle) * (inner ? 195 : 165), damage: 1 });
+          shots.push({ x: ox, y: originY, velocityX: Math.cos(angle) * (inner ? 230 : 205), velocityY: Math.sin(angle) * (inner ? 230 : 205), damage: 1 });
         }
         if (inner && this.cycle % 3 === 0) {
-          for (const vx of [-110, -55, 55, 110]) shots.push({ x: this.x, y: originY, velocityX: vx, velocityY: 160, damage: 1 });
+          for (const vx of [-110, -55, 55, 110]) shots.push({ x: this.x, y: originY, velocityX: vx, velocityY: 195, damage: 1 });
         }
       }
     }

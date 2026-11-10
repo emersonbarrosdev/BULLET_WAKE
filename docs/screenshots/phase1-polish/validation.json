@@ -74,7 +74,7 @@
           "name": "special",
           "frames": 8,
           "variants": 8,
-          "cornerMax": 1
+          "cornerMax": 0
         },
         {
           "name": "blue",
@@ -201,7 +201,7 @@
         {
           "family": "red",
           "level": 4,
-          "beams": 6,
+          "beams": 4,
           "ribbons": 0
         }
       ],
@@ -214,11 +214,11 @@
           0
         ],
         "afterFrames": [
-          2,
-          2,
-          2,
-          2,
-          2
+          3,
+          3,
+          3,
+          3,
+          3
         ]
       },
       "waterAnimatesWithFixedScroll": true,
@@ -227,7 +227,7 @@
         "hp": 480,
         "key": "polish-special"
       },
-      "particles": 14,
+      "particles": 29,
       "victory": {
         "inside": true,
         "noScroll": true,
@@ -313,7 +313,7 @@
           "name": "special",
           "frames": 8,
           "variants": 8,
-          "cornerMax": 1
+          "cornerMax": 0
         },
         {
           "name": "blue",
@@ -440,7 +440,7 @@
         {
           "family": "red",
           "level": 4,
-          "beams": 6,
+          "beams": 4,
           "ribbons": 0
         }
       ],
@@ -466,7 +466,7 @@
         "hp": 480,
         "key": "polish-special"
       },
-      "particles": 14,
+      "particles": 29,
       "victory": {
         "inside": true,
         "noScroll": true,

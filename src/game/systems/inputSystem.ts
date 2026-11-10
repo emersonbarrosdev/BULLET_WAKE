@@ -1,19 +1,8 @@
-/**
- * BULLET WAKE V2 — Camada de Entrada Unificada (InputSystem)
- * 
- * Desacopla hardware físico (teclado, mouse, touch, gamepad) em comandos semânticos de gameplay.
- * Diretrizes Canônicas V2:
- * 1. MOUSE NÃO ATIRA NO PC. Cliques esquerdo/direito e cursor do mouse são 100% ignorados no gameplay.
- * 2. WASD / Setas são os únicos comandos de movimentação no PC (diagonais normalizadas).
- * 3. ESPAÇO: Disparo principal (contínuo segurando, manual tapando).
- * 4. SHIFT Esquerdo: Dash / Propulsão de emergência (exatamente 3 por fase).
- * 5. C: Carregar arma (quando aplicável).
- * 6. X: Bomba defensiva.
- * 7. V: Especial de ressonância do piloto.
- * 8. ESC: Pausa / Menu.
- * 9. O mouse é permitido EXCLUSIVAMENTE para navegação em menus e interfaces.
+import { connectedPad, GamepadReader } from './gamepadInput.ts';
+/** Keyboard: WASD/arrows, Space fire, Shift dash, X special, C charge, M missile, Esc pause.
+ * Standard gamepad: left stick/D-pad, South fire, West special, RB dash, LT charge, North missile, Menu pause.
+ * Mouse remains menu-only; Android controls are deferred until Phase 1 approval.
  */
-
 export interface RawInputFrame {
   // Teclas de Movimentação (WASD / Setas)
   keyW: boolean;
@@ -72,9 +61,9 @@ export interface PlayerActionCommands {
   chargeHeld: boolean;
   /** Momento em que a carga é liberada (C solto) */
   chargeReleased: boolean;
-  /** Legacy command name: X/B now shares the pilot special stock with V. */
+  /** Compatibility field, always false. There is no independent bomb. */
   bomb: boolean;
-  /** Ativação do especial por carga do piloto (V). */
+  /** Ativação do especial por carga do piloto (X). */
   special: boolean;
   /** Disparo de mísseis secundários (M) */
   missile: boolean;
@@ -130,15 +119,15 @@ export function processInputFrame(input: RawInputFrame): PlayerActionCommands {
   const chargeHeld = Boolean(input.keyC);
   const chargeReleased = Boolean(input.keyCJustUp);
 
-  // 7. X/B and V are aliases for the same special stock in the combat scene.
-  const bomb = Boolean(input.keyXJustDown || input.keyBJustDown);
-  const special = Boolean(input.keyVJustDown);
+  // 7. One canonical special key; legacy aliases must not consume charges.
+  const bomb = false;
+  const special = Boolean(input.keyXJustDown);
 
   // 8. Secundário / Mísseis (M)
   const missile = Boolean(input.keyMJustDown);
 
   // 9. Reinício (R) e Pausa (ESC)
-  const restart = Boolean(input.keyRJustDown);
+  const restart = false; // Restart is deliberate through the pause menu.
   const menuOrBack = Boolean(input.keyEscJustDown);
 
   return {
@@ -177,6 +166,9 @@ function isKeyJustDown(key?: unknown): boolean {
 export class InputManager {
   private readonly scene: Phaser.Scene;
   private prevCDown = false;
+  private pad = new GamepadReader();
+  private hadPad = false;
+  resetPad(): void { this.pad.sample(connectedPad()); }
 
   private keys?: Record<
     'W' | 'A' | 'S' | 'D' | 'SPACE' | 'SHIFT' | 'C' | 'X' | 'V' | 'M' | 'B' | 'R' | 'ESC',
@@ -260,6 +252,17 @@ export class InputManager {
       shipY,
     };
 
-    return processInputFrame(frame);
+    const keyboard = processInputFrame(frame);
+    const pad = this.pad.sample(connectedPad());
+    const disconnected=this.hadPad&&!pad.connected;this.hadPad=pad.connected;
+    return { ...keyboard,
+      moveX: keyboard.moveX || keyboard.moveY ? keyboard.moveX : pad.moveX,
+      moveY: keyboard.moveX || keyboard.moveY ? keyboard.moveY : pad.moveY,
+      firePrimary: keyboard.firePrimary || pad.firePrimary,
+      firePrimaryTap: keyboard.firePrimaryTap || pad.firePrimaryTap,
+      special: keyboard.special || pad.special, dashTrigger: keyboard.dashTrigger || pad.dashTrigger,
+      chargeHeld: keyboard.chargeHeld || pad.chargeHeld, chargeReleased: keyboard.chargeReleased || pad.chargeReleased,
+      missile: keyboard.missile || pad.missile, menuOrBack: keyboard.menuOrBack || pad.menuOrBack || disconnected,
+    };
   }
 }

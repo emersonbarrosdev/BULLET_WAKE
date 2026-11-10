@@ -1,3 +1,5 @@
+import { PrismStrike } from '../render/PrismStrike';
+import { CombatBriefing } from '../ui/CombatBriefing';
 import Phaser from 'phaser';
 import {
   FONT_TECH,
@@ -34,6 +36,7 @@ import {
   createPlayerWeapons,
   collectPowerItem,
   collectWeaponCapsule,
+  evolutionCargo,
   collectSpeedItem,
   collectFullPowerItem,
   collectSpecialCharge,
@@ -155,22 +158,25 @@ export class PrototypeScene extends Phaser.Scene {
   private crimsonLaserRenderer!: CrimsonLaserRenderer;
   private laserAudioTimerMs = 0;
 
-  private specialVisual?: Phaser.GameObjects.Sprite;
-  private specialTickMs = 0;
+  private specialVisual?: PrismStrike;
+  private specialBossHit = false;
   private checkpointDistance = 0;
   private resumeWeapons?: PlayerWeaponsState;
   private resumeDashes?: DashState;
   private triggerCadence: TriggerCadence = {holdMs:0,tapMs:0};
   private totalKills = 0;
   private completed = false;
+  private briefing?: CombatBriefing;
+  private skipBriefing = false;
   private particles!: CombatParticles;
 
   constructor() {
     super({ key: 'PrototypeScene' });
   }
 
-  init(data: { pilotId?: string; stageNumber?: number; checkpointDistance?:number; resumeWeapons?:PlayerWeaponsState; resumeDashes?:DashState } = {}): void {
+  init(data: { pilotId?: string; stageNumber?: number; skipBriefing?: boolean; checkpointDistance?:number; resumeWeapons?:PlayerWeaponsState; resumeDashes?:DashState } = {}): void {
     this.pilot = getPilot(data.pilotId);
+    this.skipBriefing = !!data.skipBriefing || !!data.resumeWeapons;
     this.stageNumber = 1;
     this.checkpointDistance = data.checkpointDistance ?? 0;
     this.resumeWeapons=data.resumeWeapons;this.resumeDashes=data.resumeDashes;
@@ -208,14 +214,14 @@ export class PrototypeScene extends Phaser.Scene {
     const difficulty = 'normal' as const;
     this.director = new StageDirector(GAME_WIDTH, true, this.stageNumber, difficulty);
     if(this.checkpointDistance>0)this.director.seekCheckpoint(this.checkpointDistance);
-    this.specialVisual=undefined;this.specialTickMs=0;
+    this.specialVisual=undefined;
     this.triggerCadence = {holdMs:0,tapMs:0};
     this.laserAudioTimerMs = 0;
 
     this.backdrop = new StageBackdrop(this, this.stageNumber, { fullWidth: false, showBezels: true });
     this.inputManager = new InputManager(this);
 
-    this.hud = new PremiumCombatHud(this, () => this.restart());
+    this.hud = new PremiumCombatHud(this, () => this.openBriefing(false));
     this.hud.setPilot(this.pilot.id, this.pilot.shipName);
     this.hud.setScore(0);
     this.hud.setHealth(this.health, false);
@@ -241,7 +247,18 @@ export class PrototypeScene extends Phaser.Scene {
     // Atalhos de Sandbox / Validação de Desenvolvimento (Teclas 1, 2, 3, 4 selecionam Laser Rubro LV1–LV4)
     this.registerSandboxShortcuts();
 
-    globalAudio.startStageMusic();
+    this.briefing=undefined;
+    if (!this.skipBriefing && this.stageNumber === 1) this.openBriefing(true);
+    else globalAudio.startStageMusic();
+  }
+
+  private openBriefing(preflight: boolean): void {
+    if (this.briefing || this.health.gameOver || this.completed) return;
+    globalAudio.stopMusic();
+    this.briefing = new CombatBriefing(this, preflight,
+      () => { this.briefing=undefined;this.inputManager.resetPad();globalAudio.startStageMusic(); },
+      () => { this.briefing=undefined;this.restart(); },
+      () => { this.briefing=undefined;this.choosePilot(); });
   }
 
   /**
@@ -328,7 +345,7 @@ export class PrototypeScene extends Phaser.Scene {
       return;
     }
     if (commands.menuOrBack) {
-      this.choosePilot();
+      this.openBriefing(false);
       return;
     }
     if (this.health.gameOver || this.completed) return;
@@ -435,7 +452,7 @@ export class PrototypeScene extends Phaser.Scene {
         this.fireSecondary();
       }
 
-      // V and X share one limited special stock.
+      // X and gamepad West activate the single special stock.
       if (commands.special || commands.bomb) {
         this.triggerSpecial();
       }
@@ -504,16 +521,16 @@ export class PrototypeScene extends Phaser.Scene {
           this,
           this.stageNumber,
           this.scoreCombo.score,
-          () => this.scene.start('EndingScene', { pilotId: this.pilot.id, score: this.scoreCombo.score }),
+          () => this.scene.start('TitleScene'),
           () => this.restart(),
-          () => this.scene.start('StageSelectScene'),
+          () => this.choosePilot(),
         );
       }
     }
 
   private restart(): void {
     globalAudio.stopMusic();
-    this.scene.restart({ pilotId: this.pilot.id, stageNumber: this.stageNumber });
+    this.scene.restart({ pilotId: this.pilot.id, stageNumber: this.stageNumber, skipBriefing: true });
   }
 
   private continueFromCheckpoint():void {
@@ -762,8 +779,8 @@ export class PrototypeScene extends Phaser.Scene {
     this.clearEnemyShots();
     // Fixed budget per activation, independent of FPS and visual duration.
     const boss = this.director.boss;
-    if (boss) this.applyBossDamage(SPECIAL_BOSS_DAMAGE, boss.x, boss.y);
-    for (const e of [...this.director.enemies]) if (!e.submerged) this.applyDamageToEnemy(e.id, 8);
+    if (boss && this.weapons.specialType !== 'prism') this.applyBossDamage(SPECIAL_BOSS_DAMAGE, boss.x, boss.y);
+    if(this.weapons.specialType !== 'prism')for (const e of [...this.director.enemies]) if (!e.submerged) this.applyDamageToEnemy(e.id, 8);
     globalAudio.playSpecial(this.weapons.specialType);
 
     if (this.weapons.specialType === 'prism') {
@@ -781,22 +798,26 @@ export class PrototypeScene extends Phaser.Scene {
 
   private emitPrismBurst(): void {
     this.specialVisual?.destroy();
-    this.specialVisual=this.add.sprite(this.ship.x,this.ship.y-125,'polish-special',0).setDisplaySize(350,300).setAlpha(.85).setDepth(11);
-    this.specialTickMs=0;
+    this.specialVisual=new PrismStrike(this);
+    this.specialBossHit=false;
   }
 
-  private updatePrismSpecial(dt:number):void {
+  private updatePrismSpecial(_dt:number):void {
     if(this.weapons.specialType!=='prism'||this.weapons.specialActiveMs<=0) {
       this.specialVisual?.destroy();this.specialVisual=undefined;return;
     }
     const elapsed=this.weapons.specialDurationMs-this.weapons.specialActiveMs;
-    const fade=Math.min(1,elapsed/180,this.weapons.specialActiveMs/300);
-    this.specialVisual?.setPosition(this.ship.x,this.ship.y-125).setFrame(Math.floor(elapsed/75)%8).setAlpha(fade*(.78+.1*Math.sin(elapsed/90)));
+    const impacts=this.specialVisual?.update(elapsed)??[];
     this.clearEnemyShots();
-    this.specialTickMs+=dt;
-    while(this.specialTickMs>=100) {
-      this.specialTickMs-=100;
-      for(const e of [...this.director.enemies])if(e.y<this.ship.y-15&&e.y>this.ship.y-260&&Math.abs(e.x-this.ship.x)<105)this.applyDamageToEnemy(e.id,.5);
+    for(const impact of impacts){
+      globalAudio.playExplosion(false);
+      this.particles.burst(impact.x,impact.y,1.1,false,0xffae56);
+      for(const e of [...this.director.enemies])if(!e.submerged&&Math.hypot(e.x-impact.x,e.y-impact.y)<95)this.applyDamageToEnemy(e.id,8);
+    }
+    if(elapsed>=580&&!this.specialBossHit){
+      this.specialBossHit=true;
+      const boss=this.director.boss;
+      if(boss)this.applyBossDamage(SPECIAL_BOSS_DAMAGE,boss.x,boss.y);
     }
   }
 
@@ -950,8 +971,8 @@ export class PrototypeScene extends Phaser.Scene {
         const result = collectWeaponCapsule(this.weapons, family);
         this.weapons = result.state;
         this.scoreCombo = addRawScore(this.scoreCombo, result.bonusPoints);
-        this.hud.setWeapon(family, this.weapons.weaponLevel, this.weapons.powerMeter);
-        this.hud.flash(result.bonusPoints ? 'MESMA COR: +5000 PONTOS' : PICKUP_GUIDE[item.type].label + ' EQUIPADA', PICKUP_GUIDE[item.type].color, 1100);
+        this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
+        this.hud.flash(result.bonusPoints ? 'MESMA COR: +5000 PONTOS' : this.weapons.weaponFamily === family ? PICKUP_GUIDE[item.type].label + ' · NV 1' : 'EVOLUÇÃO BLOQUEADA · ATINJA NV 4 DA ARMA ANTERIOR', PICKUP_GUIDE[item.type].color, 1100);
       } else if (item.type === 'speed') {
         const alreadyMax = this.weapons.speedLevel >= 3;
         this.weapons = collectSpeedItem(this.weapons);
@@ -1049,10 +1070,10 @@ export class PrototypeScene extends Phaser.Scene {
       this.spawnScorePopup(hit.score, x, y);
 
 
-      // Scripted supplies are independent of equipped weapon and kill count.
+      // Only the final evolution cargo adapts to the current cascade gate.
       const dropType = targetBefore?.carrier ? targetBefore.drop : null;
       if (dropType) {
-        this.pickups.spawn(dropType, x, y);
+        this.pickups.spawn(dropType === 'weapon_green' ? evolutionCargo(this.weapons) : dropType, x, y);
       }
       this.syncEnemyVisuals();
     } else {

@@ -1,3 +1,4 @@
+import { connectedPad, GamepadReader, padLabels } from '../systems/gamepadInput';
 import Phaser from 'phaser';
 import '../../title-screen.css';
 import { GAME_BACKGROUND } from '../constants';
@@ -14,6 +15,15 @@ type TitleAction = 'pilots' | 'options' | 'music' | 'effects' | 'difficulty' | '
  * As interações ficam no DOM (nativas, acessíveis e nítidas em Full HD).
  */
 export class TitleScene extends Phaser.Scene {
+  private pad = new GamepadReader();
+  private padId = '';
+  update(): void {
+    const device=connectedPad(), p=this.pad.sample(device);
+    if(this.padId !== (device?.id ?? '')){this.padId=device?.id??'';if(this.root)this.renderMode();}
+    if(p.confirm||p.menuOrBack){if(this.mode==='attract')this.revealMenu();else this.activateSelected();}
+    if(p.up)this.moveSelection(-1);if(p.down)this.moveSelection(1);
+    if(p.back)this.handleKeyDown(new KeyboardEvent('keydown',{key:'Escape'}));
+  }
   private mode: TitleMode = 'attract';
   private selectedIndex = 0;
   private root?: HTMLDivElement;
@@ -52,6 +62,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.pad.sample(connectedPad());
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
     this.mode = 'attract';
     this.selectedIndex = 0;
@@ -128,7 +139,7 @@ export class TitleScene extends Phaser.Scene {
         <nav class="bw-submenu-list" aria-label="${controls ? 'Controles' : 'Opções'}">
           ${this.renderActions()}
         </nav>
-        <p class="bw-submenu-help">${this.mode === 'guide' ? '↑ ↓ ROLAR LEGENDA' : '↑ ↓ NAVEGAR'}&nbsp;&nbsp; · &nbsp;&nbsp;ENTER SELECIONAR&nbsp;&nbsp; · &nbsp;&nbsp;ESC VOLTAR</p>
+        <p class="bw-submenu-help">${this.mode === 'guide' ? '↑ ↓ ROLAR LEGENDA' : '↑ ↓ NAVEGAR'}&nbsp;&nbsp; · &nbsp;&nbsp;${connectedPad()?padLabels(connectedPad()?.id).shoot:'ENTER'} SELECIONAR&nbsp;&nbsp; · &nbsp;&nbsp;${connectedPad()?padLabels(connectedPad()?.id).back:'ESC'} VOLTAR</p>
       </main>
     `;
     this.bindActions();
@@ -137,7 +148,7 @@ export class TitleScene extends Phaser.Scene {
 
   private renderActions(): string {
     if (this.mode === 'guide') {
-      return `<p class="bw-guide-intro">Colete por contato. Cor escolhe a arma; P aumenta potência. Os itens nunca recuperam dash.</p><div class="bw-item-guide" tabindex="0" aria-label="Legenda de itens, role para ver todos">${NORMAL_GUIDE_ITEMS.map(type => {
+      return `<p class="bw-guide-intro">Colete por contato. 3 P por nível. Azul NV4 libera verde; verde NV4 libera rubro. Os itens nunca recuperam dash.</p><div class="bw-item-guide" tabindex="0" aria-label="Legenda de itens, role para ver todos">${NORMAL_GUIDE_ITEMS.map(type => {
         const item = PICKUP_GUIDE[type];
         return `<article><div class="bw-guide-icon bw-guide-raster" style="background-image:url('${import.meta.env.BASE_URL}assets/combat-hd/review/pickups-${type}.webp')" role="img" aria-label="${item.label}"></div><div><h2 style="color:${item.color}">${item.letter} · ${item.label}</h2><p>${item.description}</p></div></article>`;
       }).join('')}</div>${this.actionButton('back', 'VOLTAR', '', 0)}`;
@@ -156,12 +167,13 @@ export class TitleScene extends Phaser.Scene {
     }
     return `
       <div class="bw-controls-list">
-        <div><span>WASD / SETAS</span><strong>MOVIMENTO</strong></div>
-        <div><span>ESPAÇO</span><strong>DISPARAR</strong></div>
-        <div><span>SHIFT ESQUERDO</span><strong>DASH (3 POR FASE)</strong></div>
-        <div><span>V / X</span><strong>ESPECIAL · 2 INICIAIS / MÁX. 3</strong></div>
-        <div><span>C</span><strong>CARREGAR (SE DISPONÍVEL)</strong></div>
-        <div><span>ESC</span><strong>PAUSA</strong></div>
+        <div><span>${connectedPad()?'ANALÓGICO / DIRECIONAL':'WASD / SETAS'}</span><strong>MOVIMENTO</strong></div>
+        <div><span>${connectedPad()?padLabels(connectedPad()?.id).shoot:'ESPAÇO'}</span><strong>DISPARAR</strong></div>
+        <div><span>${connectedPad()?padLabels(connectedPad()?.id).dash:'SHIFT ESQUERDO'}</span><strong>DASH (3 POR FASE)</strong></div>
+        <div><span>${connectedPad()?padLabels(connectedPad()?.id).special:'X'}</span><strong>ESPECIAL · 2 INICIAIS / MÁX. 3</strong></div>
+        <div><span>${connectedPad()?padLabels(connectedPad()?.id).charge:'C'}</span><strong>CARREGAR (SE DISPONÍVEL)</strong></div>
+        <div><span>${connectedPad()?padLabels(connectedPad()?.id).missile:'M'}</span><strong>MÍSSIL SECUNDÁRIO</strong></div>
+        <div><span>${connectedPad()?padLabels(connectedPad()?.id).pause:'ESC'}</span><strong>PAUSA</strong></div>
       </div>
       ${this.actionButton('back', 'VOLTAR', '', 0)}
     `;

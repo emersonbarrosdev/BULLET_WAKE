@@ -25,7 +25,7 @@ test('progression advances continuously by distance and does not label waves', (
 test('first passage spawns a formation and then a Lancer once', () => {
   const director = new StageDirector();
   const first = advance(director, 9400);
-  assert.deepEqual(first.spawned.map(e => e.kind), ['scout', 'scout', 'scout']);
+  assert.deepEqual(first.spawned.filter(e => !e.carrier).map(e => e.kind), ['scout', 'scout', 'scout']);
   const later = advance(director, 5200);
   assert.equal(later.spawned.filter(e => e.kind === 'lancer').length, 1);
 });

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import '../../mission-result.css';
+import { connectedPad, GamepadReader, padLabels } from '../systems/gamepadInput';
 
 interface ResultAction { label: string; key: string; run: () => void; }
 
@@ -17,8 +18,11 @@ export class MissionResultOverlay extends Phaser.GameObjects.Container {
     const hud = document.querySelector<HTMLElement>('#bw-combat-hud');
     if (hud) hud.inert = true;
     let handled = false;
+    let raf = 0, selected = 0, device = '';
+    const reader = new GamepadReader();reader.sample(connectedPad());
     const cleanup = (): void => {
       root.remove(); document.removeEventListener('keydown', onKey, true);
+      cancelAnimationFrame(raf);
       if (hud) hud.inert = false;
       scene.events.off(Phaser.Scenes.Events.SHUTDOWN, cleanup);
       this.off(Phaser.GameObjects.Events.DESTROY, cleanup);
@@ -35,6 +39,20 @@ export class MissionResultOverlay extends Phaser.GameObjects.Container {
       if (!event.repeat) activate(index < 0 ? 0 : index);
     };
     root.querySelectorAll<HTMLButtonElement>('button').forEach((button, i) => button.addEventListener('click', () => activate(i)));
+    const poll = ():void => {
+      if(handled)return;
+      const pad=connectedPad(),p=reader.sample(pad);
+      if(device!==(pad?.id??'keyboard')){
+        device=pad?.id??'keyboard';
+        root.querySelectorAll('kbd').forEach((node,i)=>node.textContent=pad?'['+padLabels(pad.id).shoot+']':'['+actions[i].key.toUpperCase().replace('ESCAPE','ESC')+']');
+      }
+      if(p.left||p.up)selected=(selected+actions.length-1)%actions.length;
+      if(p.right||p.down)selected=(selected+1)%actions.length;
+      if(p.left||p.right||p.up||p.down)root.querySelectorAll<HTMLButtonElement>('button')[selected]?.focus();
+      if(p.confirm){activate(selected);return;}
+      if(p.back){activate(actions.length-1);return;}
+      raf=requestAnimationFrame(poll);
+    };poll();
     document.addEventListener('keydown', onKey, true);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, cleanup);
     this.once(Phaser.GameObjects.Events.DESTROY, cleanup);

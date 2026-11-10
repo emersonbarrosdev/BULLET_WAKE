@@ -5,17 +5,16 @@ import { StageDirector, STAGE_EVENTS, SUPPLY_EVENTS, SCROLL_SPEED, SURFACE_SCROL
 import { PickupSystem } from '../src/game/systems/pickupSystem.ts';
 import { PICKUP_GUIDE, NORMAL_GUIDE_ITEMS, pickupSvg } from '../src/game/data/pickupGuide.ts';
 
-test('colors change immediately at level one; duplicates award points without adding P', () => {
-  let state = collectPowerItem(createPlayerWeapons('nolan', 'ion')).state;
-  for (const family of ['red', 'green', 'ion']) {
-    state = collectWeaponCapsule(state, family).state;
-    assert.equal(state.weaponFamily, family);
-    assert.equal(state.weaponLevel, 1);
-    assert.equal(state.powerMeter, 1);
-    const same = collectWeaponCapsule(state, family);
-    assert.equal(same.bonusPoints, 5000);
-    assert.deepEqual(same.state, state);
+test('capsules cannot skip cascade gates; each unlocked color restarts at LV1', () => {
+  let state = collectPowerItem(createPlayerWeapons()).state;
+  for(const family of ['green','red'])assert.deepEqual(collectWeaponCapsule(state,family).state,state);
+  for(const family of ['green','red']){
+    while(state.weaponLevel<4)state=collectPowerItem(state).state;
+    state=collectWeaponCapsule(state,family).state;
+    assert.equal(state.weaponFamily,family);assert.equal(state.weaponLevel,1);assert.equal(state.powerMeter,0);
+    const same=collectWeaponCapsule(state,family);assert.equal(same.bonusPoints,5000);assert.deepEqual(same.state,state);
   }
+  assert.deepEqual(collectWeaponCapsule(state,'ion').state,state);
 });
 
 test('nine P reach max; three additional P build a real reserve for the next life', () => {
@@ -45,10 +44,10 @@ test('nine P reach max; three additional P build a real reserve for the next lif
 
 test('Normal supply progression cannot reach level two in the opening seconds', () => {
   const powers = SUPPLY_EVENTS.filter(e => e.drop === 'power');
-  assert.equal(powers.length, 6);
+  assert.equal(powers.length, 9);
   assert.ok(powers[2].distance / SCROLL_SPEED > 20);
   assert.ok(powers[5].distance / SCROLL_SPEED > 40);
-  assert.ok(powers[5].distance / SCROLL_SPEED > 100);
+  assert.ok(powers[8].distance / SCROLL_SPEED > 100);
   assert.ok(!STAGE_EVENTS.some(e => e.drop === 'full_power'));
   for (const family of ['ion', 'green']) assert.ok(WEAPON_FAMILY_SPECS[family].autoIntervalMs > WEAPON_FAMILY_SPECS[family].burstIntervalMs);
 });

@@ -1,5 +1,7 @@
 # Fase 1 — organismos alienígenas, metamorfose e oceano vivo
 
+> **Atualização prioritária:** [Fase 1 — cascata, controles e polimento](36_FASE1_CASCATA_CONTROLES_POLIMENTO.md). Azul NV4 libera verde NV1; verde NV4 libera rubro NV1. Especial apenas X no teclado, guia antes da partida, pause/opções e controle padrão. Esta decisão mais recente substitui a troca livre e os atalhos V/B citados historicamente abaixo.
+
 Diretriz vigente de 10/11/2026. Este documento substitui as regras conflitantes dos documentos 27, 30 e 31. A aprovação da Fase 1 pertence ao usuário; nenhuma fase posterior entra em produção nesta entrega.
 
 > **Polimento vigente:** [Contato, água, áudio e explosões](35_FASE1_POLIMENTO_CONTATO_AGUA_AUDIO.md). Clarão sem elipse, projéteis sem fundo quadrado, fluxo de água contínuo, HUD agrupado, vozes alienígenas e explosões de fogo curtas com limpeza de resíduos. Inclui os novos prompts, destinos e evidências de validação.
@@ -24,7 +26,7 @@ Três spritesheets de oito frames fornecem a arte da água, espuma e refração.
 ## Um especial com estoque, sem bomba separada
 
 - Dois especiais no início da tentativa; no máximo três armazenados.
-- `V` ou `X` consome uma carga da mesma habilidade. Não há dois estoques ou duas ações de bomba/especial.
+- `X` consome uma carga da mesma habilidade. Não há dois estoques ou duas ações de bomba/especial.
 - `E` repõe uma carga por contato físico; estoque completo converte a coleta em 500 pontos.
 - Não há recarga passiva, por abate ou por barra de ressonância. Continue preserva as cargas restantes; reiniciar a fase inicia uma nova tentativa com duas.
 - A Tempestade Prismática da RIVET usa oito frames próprios, plasma ascendente, três lanças e asas de energia. Limpa projéteis e protege o casco durante sua duração.

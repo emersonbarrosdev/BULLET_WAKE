@@ -116,7 +116,7 @@ test('V2 Armas: Três famílias distintas (Raio Esmeralda, Dispersão Azul, Lase
   assert.equal(i3.length, 9, 'Dispersão Azul LV3: 9 direções em leque');
   assert.equal(i4.length, 16, 'Dispersão Azul LV4: 16 direções em leque amplo');
 
-  // 3. Arma Vermelha: LASER RUBRO (multifeixes contínuos: 1, 2, 4, 6 feixes)
+  // 3. Arma Vermelha: LASER RUBRO (multifeixes contínuos: 1, 2, 4, 4 feixes)
   const r1 = getPrimaryProjectiles('red', 1, 384, 350);
   const r2 = getPrimaryProjectiles('red', 2, 384, 350);
   const r3 = getPrimaryProjectiles('red', 3, 384, 350);
@@ -124,11 +124,11 @@ test('V2 Armas: Três famílias distintas (Raio Esmeralda, Dispersão Azul, Lase
   assert.equal(r1.length, 1, 'Laser Rubro LV1: 1 feixe frontal contínuo');
   assert.equal(r2.length, 2, 'Laser Rubro LV2: 2 feixes paralelos contínuos');
   assert.equal(r3.length, 4, 'Laser Rubro LV3: 4 feixes com varredura lateral');
-  assert.equal(r4.length, 6, 'Laser Rubro LV4: 6 feixes contínuos em potência máxima');
+  assert.equal(r4.length, 4, 'Laser Rubro LV4: 4 feixes contínuos em potência máxima');
   assert.equal(r1[0].isContinuousBeam, true, 'Laser Rubro é estritamente feixe contínuo');
 });
 
-test('V2 Medidor P (3 itens P por nível) & Troca de Cápsulas Coloridas sem resetar nível', () => {
+test('V2 Medidor P (3 itens P por nível) & Bloqueio de salto de cor antes do máximo', () => {
   assert.equal(POWER_ITEMS_PER_LEVEL, 3, 'Três itens P aumentam 1 nível');
   let weapons = createPlayerWeapons('nolan');
   assert.equal(weapons.weaponLevel, 1);
@@ -154,7 +154,7 @@ test('V2 Medidor P (3 itens P por nível) & Troca de Cápsulas Coloridas sem res
 
   // Troca para Cápsula Vermelha (Laser Rubro) no meio da progressão -> preserva LV2 e powerMeter
   weapons = switchWeaponFamily(p3.state, 'red');
-  assert.equal(weapons.weaponFamily, 'red');
+  assert.equal(weapons.weaponFamily, 'ion');
   assert.equal(weapons.weaponLevel, 2);
 
   // Mais 3 itens P -> LV3
@@ -182,7 +182,7 @@ test('V2 Laser Rubro: Emissão contínua, varredura lateral (LV3/LV4) e ticks de
   assert.equal(LASER_RUBRO_SPECS[3].beamCount, 4);
   assert.equal(LASER_RUBRO_SPECS[3].hasLateralSweep, true);
   assert.equal(LASER_RUBRO_SPECS[3].hasRearCoverage, false);
-  assert.equal(LASER_RUBRO_SPECS[4].beamCount, 6);
+  assert.equal(LASER_RUBRO_SPECS[4].beamCount, 4);
   assert.equal(LASER_RUBRO_SPECS[4].hasLateralSweep, true);
   assert.equal(LASER_RUBRO_SPECS[4].hasRearCoverage, true);
   assert.equal(LASER_RUBRO_SPECS[4].title, 'ASAS DE ENERGIA');
@@ -190,20 +190,17 @@ test('V2 Laser Rubro: Emissão contínua, varredura lateral (LV3/LV4) e ticks de
   // Verifica que os feixes laterais do LV3 e LV4 se movem lateralmente ao longo do tempo (phaseMs)
   const beamsT0 = computeLaserBeams(384, 340, 4, 0, 1.0);
   const beamsT1 = computeLaserBeams(384, 340, 4, 220, 1.0);
-  assert.equal(beamsT0.length, 6);
-  assert.equal(beamsT1.length, 6);
+  assert.equal(beamsT0.length, 4);
+  assert.equal(beamsT1.length, 4);
   // O feixe lateral externo (índice 2) deve mudar sua coordenada X no topo devido à abertura/fechamento de asas
-  const topXT0 = beamsT0[2].points[beamsT0[2].points.length - 1].x;
-  const topXT1 = beamsT1[2].points[beamsT1[2].points.length - 1].x;
+  const topXT0 = beamsT0[1].points[beamsT0[1].points.length - 1].x;
+  const topXT1 = beamsT1[1].points[beamsT1[1].points.length - 1].x;
   assert.notEqual(topXT0, topXT1, 'Feixes laterais do Laser Rubro realizam varredura oscilante real');
 
   // Verifica transformação geométrica do Nível 4: 2 fluxos posteriores/flanco (rear-wing) que protegem a retaguarda
-  const rearWings = beamsT0.filter((b) => b.role === 'rear-wing');
-  assert.equal(rearWings.length, 2, 'Laser Rubro LV4 possui 2 fluxos de cobertura posterior/flanco (rear-wing)');
-  for (const rw of rearWings) {
-    const endPt = rw.points[rw.points.length - 1];
-    assert.ok(endPt.y > 340, 'Fluxos rear-wing estendem-se para a diagonal traseira (+Y) com alcance controlado');
-  }
+  const returningWings = computeLaserBeams(384,340,4,1200).filter(b=>b.role==='lateral-sweep');
+  assert.equal(returningWings.length,2);
+  assert.ok(returningWings.every(b=>b.points.at(-1).y>340));
 
   // Item P vermelho raro (collectFullPowerItem) eleva diretamente para LV4 sem trocar a família da arma
   const greenLv1 = createPlayerWeapons('nolan', 'green');

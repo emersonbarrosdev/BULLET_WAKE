@@ -1,0 +1,10 @@
+.bw-briefing{position:fixed;inset:0;z-index:1100;display:grid;place-items:center;padding:24px;background:#080605e8;color:#fff0df;font-family:'Rajdhani',sans-serif;backdrop-filter:blur(7px)}
+.bw-brief-panel{width:min(820px,94vw);max-height:92dvh;overflow:auto;padding:clamp(20px,3vw,42px);border:1px solid #8f4d2c;background:linear-gradient(135deg,#24130df5,#100e0dfc 55%,#18110e);box-shadow:0 24px 100px #000c}
+.bw-brief-eyebrow{letter-spacing:3px;color:#b9957b;font-size:14px;margin:0 0 16px}.bw-brief-eyebrow em{color:#ff8b31;font-style:normal}
+.bw-brief-panel h1{font:800 clamp(22px,2.6vw,36px) 'Oxanium',sans-serif;margin:0 0 18px;color:#fff2df}.bw-brief-device{color:#ffb462;letter-spacing:2px;font-weight:700}
+.bw-brief-controls{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}.bw-brief-controls>div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #6b4b3544;font-size:19px}
+.bw-brief-controls kbd{font:700 14px 'Oxanium',sans-serif;color:#ffc484;background:#332015;border:1px solid #8b5b37;padding:5px 9px;border-radius:3px;white-space:nowrap}
+.bw-brief-note,.bw-brief-rule{font-size:17px;color:#cdb9a8;line-height:1.5}.bw-brief-rule{color:#ffce87;border-left:2px solid #ed7a29;padding-left:14px}
+.bw-brief-panel nav{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}.bw-brief-panel button{flex:1 1 220px;padding:14px;color:#ffe8cd;background:#2c1a10;border:1px solid #955c32;font:800 17px 'Rajdhani',sans-serif;cursor:pointer}.bw-brief-panel button:hover,.bw-brief-panel button:focus-visible{outline:2px solid #ffad51;outline-offset:3px;background:#613314;color:#fff}
+.bw-brief-items{max-height:48vh;overflow:auto;display:grid;gap:12px}.bw-brief-items article{display:flex;align-items:center;gap:16px;border-bottom:1px solid #67442b;padding-bottom:12px}.bw-brief-items img{width:45px;height:45px;object-fit:cover;object-position:left;/* atlas first cell */clip-path:inset(0)}.bw-brief-items p{margin:4px 0;font-size:17px;color:#cdb9a8}
+@media(max-width:600px){.bw-brief-controls{grid-template-columns:1fr}.bw-brief-panel{padding:20px}.bw-briefing{padding:8px}}

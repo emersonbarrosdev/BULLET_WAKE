@@ -1,5 +1,7 @@
 # IMPORTANTE — BULLET WAKE V2: IDENTIDADE, CAMPANHA E GAMEPLAY DEFINITIVOS
 
+> **Atualização prioritária:** [Fase 1 — cascata, controles e polimento](36_FASE1_CASCATA_CONTROLES_POLIMENTO.md). Azul NV4 libera verde NV1; verde NV4 libera rubro NV1. Especial apenas X no teclado, guia antes da partida, pause/opções e controle padrão. Esta decisão mais recente substitui a troca livre e os atalhos V/B citados historicamente abaixo.
+
 > **Polimento vigente da Fase 1:** [Contato, água, áudio e explosões](35_FASE1_POLIMENTO_CONTATO_AGUA_AUDIO.md). Água com fluxo contínuo sem emenda, explosões de fogo curtas sem fumaça cinza, projéteis transparentes, áudio alienígena e HUD agrupado por sobrevivência/armamento. Somente a primeira fase continua em produção.
 
 > **Diretriz vigente — 10/11/2026:** [Fase 1: alienígenas, camadas e oceano vivo](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md). Somente organismos alienígenas; sem bombas separadas ou recarga por ressonância. Dois especiais iniciais, máximo três, reposição física E. Chefes colossais com casca de cinco especiais, metamorfose e forma interna de três, preservando tiros convencionais e área de esquiva. Oceano calmo → invasão/turbulência/destroços → fenda antes do chefe. Esta diretriz prevalece sobre números e descrições históricas abaixo. Apenas Talassarca recebeu as duas camadas; futuros chefes, biomas e modos dependem da aprovação da Fase 1. [Pendências reais](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md#o-que-ainda-falta) e [prompts dos assets](34_FASE1_PROMPTS_POLIMENTO.md).
@@ -19,7 +21,7 @@
 >    - `ESPAÇO`: Disparo principal (contínuo segurando, manual tapando).
 >    - `SHIFT Esquerdo`: Dash / Propulsão de emergência (exatamente 3 por fase).
 >    - `C`: Carregar arma (Wave Cannon / Carga quando aplicável).
->    - `V` ou `X`: Mesmo especial do piloto; duas cargas iniciais, máximo três, sem ressonância.
+>    - `X`: Mesmo especial do piloto; duas cargas iniciais, máximo três, sem ressonância.
 >    - `ESC`: Pausa / Menu.
 >    - **MOUSE NÃO ATIRA NO PC:** Cliques do mouse (esquerdo ou direito) e movimento do ponteiro são 100% desvinculados do voo durante o gameplay. O mouse serve unicamente para menus e interfaces.
 > 4. **Mecânica Oficial do Dash:** Exatamente **3 DASHES POR FASE** (`DASH: ◆ ◆ ◆`). Sem recarga temporal, sem recarga por abate, sem power-up de dash e sem recuperação ao morrer dentro da fase. Restauração exclusiva ao reiniciar a fase do zero ou iniciar nova fase.

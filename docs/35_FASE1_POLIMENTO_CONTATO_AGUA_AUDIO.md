@@ -1,5 +1,7 @@
 # Fase 1 — polimento de contato, água, áudio e explosões
 
+> **Atualização prioritária:** [Fase 1 — cascata, controles e polimento](36_FASE1_CASCATA_CONTROLES_POLIMENTO.md). Azul NV4 libera verde NV1; verde NV4 libera rubro NV1. Especial apenas X no teclado, guia antes da partida, pause/opções e controle padrão. Esta decisão mais recente substitui a troca livre e os atalhos V/B citados historicamente abaixo.
+
 Revisão de 10/11/2026, complementar à [diretriz vigente da Fase 1](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md). Somente Fenda Pelágica/RIVET; as próximas fases continuam dependendo da aprovação do usuário.
 
 ## Correções integradas

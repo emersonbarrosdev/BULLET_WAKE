@@ -34,7 +34,7 @@ export async function runPhase1Review({send,evaluate,waitFor,key,click,shot,repo
     assert.ok(seam.maxRowDelta<Math.max(10,seam.meanRowDelta*7),'Horizontal seam: '+JSON.stringify(seam));
     await run('s.backdrop.water.update(960.2,350);');
     const motion=await pixels(after,await capture(width,height));
-    assert.ok(motion.meanDifference>.015&&motion.meanDifference<5,'Water must move gently with scroll held fixed: '+JSON.stringify(motion));
+    assert.ok(motion.meanDifference>1&&motion.meanDifference<12,'Water motion must be perceptible with scroll held fixed: '+JSON.stringify(motion));
     const timing=[];let reference;
     for(const fps of [30,60,120]){
       await run(`s.backdrop.water.elapsedMs=0;for(let i=0;i<${fps};i++)s.backdrop.water.update(800,1000/${fps});`);

@@ -3,7 +3,7 @@
  *
  * Arquitetura modular desacoplada do motor de renderização e 100% independente de FPS:
  * 1. Controle de emissão (ativação contínua com ESPAÇO, fade-out curto ao soltar, sem corte por calor).
- * 2. Geometria dos feixes (1 feixe no LV1, 2 no LV2, 4 com varredura lateral no LV3, 6 no LV4).
+ * 2. Geometria dos feixes (1 feixe no LV1, 2 no LV2, 4 com varredura lateral no LV3, 4 no LV4).
  * 3. Animação contínua (pulsos energéticos ascendentes e oscilação harmônica dos feixes laterais).
  * 4. Colisões contínuas (intersecção segmento-círculo ao longo de toda a extensão de cada feixe).
  * 5. Aplicação de dano por intervalo fixo de tempo (acumulador determinístico independente de FPS).
@@ -13,7 +13,7 @@
 import { GAME_HEIGHT, PLAYFIELD_X, PLAYFIELD_RIGHT } from '../constants.ts';
 import type { WeaponLevel } from './weaponSystem.ts';
 
-export type BeamRole = 'central' | 'inner-wave' | 'lateral-sweep' | 'rear-wing';
+export type BeamRole = 'central' | 'inner-wave' | 'lateral-sweep';
 
 export interface LaserPoint {
   x: number;
@@ -119,10 +119,10 @@ export const LASER_RUBRO_SPECS: Record<WeaponLevel, LaserLevelSpec> = {
   4: {
     level: 4,
     title: 'ASAS DE ENERGIA',
-    beamCount: 6,
+    beamCount: 4,
     hasLateralSweep: true,
     hasRearCoverage: true,
-    maxHorizontalSpreadPx: 168,
+    maxHorizontalSpreadPx: 220,
     totalDps: 24,
   },
 };
@@ -185,7 +185,7 @@ export function computeLaserBeams(
   };
 
   if (level === 1) {
-    // NÍVEL 1 — FLUXO INICIAL: 1 fluxo frontal contido (~195px) de plasma rubro-alaranjado fino e pulsante
+    // NÍVEL 1 — FLUXO INICIAL: 1 fluxo frontal contido (até o topo) de plasma rubro-alaranjado fino e pulsante
     beams.push({
       id: 'lv1-center',
       role: 'central',
@@ -195,7 +195,7 @@ export function computeLaserBeams(
             Math.sin(phaseSec * 16 - t * 9.5) * (2.2 * Math.sin(t * Math.PI)) +
             Math.cos(phaseSec * 23 - t * 14) * (0.9 * t),
         }),
-        195,
+        spanY,
       ),
       outerWidth: 6.4 * scale,
       midWidth: 3.8 * scale,
@@ -206,7 +206,7 @@ export function computeLaserBeams(
   }
 
   if (level === 2) {
-    // NÍVEL 2 — FLUXO DUPLO: 2 fluxos energéticos frontais (~250px) com emissores separados e pulsação própria
+    // NÍVEL 2 — FLUXO DUPLO: 2 fluxos energéticos frontais (até o topo) com emissores separados e pulsação própria
     const perBeamDps = LASER_RUBRO_SPECS[2].totalDps / 2;
     for (const side of [-1, 1] as const) {
       const phaseOffset = side < 0 ? 0 : Math.PI * 0.85;
@@ -219,7 +219,7 @@ export function computeLaserBeams(
               side * 10.5 +
               Math.sin(phaseSec * 16 - t * 9.0 + phaseOffset) * (2.6 * Math.sin(t * Math.PI)),
           }),
-          250,
+          spanY,
         ),
         outerWidth: 8.2 * scale,
         midWidth: 4.8 * scale,
@@ -232,7 +232,7 @@ export function computeLaserBeams(
 
   if (level === 3) {
     // NÍVEL 3 — EXPANSÃO LATERAL:
-    // 2 fluxos principais (~305px) + 2 ramificações laterais (~225px) que se abrem e retornam ciclicamente
+    // 2 fluxos principais (até o topo) + 2 ramificações laterais (~225px) que se abrem e retornam ciclicamente
     const centralDps = (LASER_RUBRO_SPECS[3].totalDps * 0.56) / 2;
     const lateralDps = (LASER_RUBRO_SPECS[3].totalDps * 0.44) / 2;
 
@@ -247,7 +247,7 @@ export function computeLaserBeams(
               side * 9.5 +
               Math.sin(phaseSec * 17 - t * 8.5 + phaseOffset) * (2.6 * Math.sin(t * Math.PI)),
           }),
-          305,
+          spanY,
         ),
         outerWidth: 9.6 * scale,
         midWidth: 5.5 * scale,
@@ -271,7 +271,7 @@ export function computeLaserBeams(
               dy: t === 0 ? 6 : 0,
             };
           },
-          225,
+          spanY,
         ),
         outerWidth: 8.4 * scale,
         midWidth: 4.8 * scale,
@@ -283,12 +283,11 @@ export function computeLaserBeams(
   }
 
   // NÍVEL 4 — ASAS DE ENERGIA (Transformação Completa de Geometria):
-  // - 2 fluxos principais frontais aprimorados (~355px)
-  // - 2 grandes ramificações laterais em arco (~290px) que batem/abrem e fecham como asas luminosas
-  // - 2 fluxos de cobertura posterior/flanco balanceada que curvam para trás/lados da nave
+  // - 2 fluxos principais frontais aprimorados (até o topo)
+  // - 2 asas contínuas varrem frente, flancos e retaguarda ao longo do ciclo.
+  // Quatro fluxos totais; geometria e DPS são calibração própria de Bullet Wake.
   const coreDps = (LASER_RUBRO_SPECS[4].totalDps * 0.44) / 2;
-  const wingDps = (LASER_RUBRO_SPECS[4].totalDps * 0.36) / 2;
-  const rearDps = (LASER_RUBRO_SPECS[4].totalDps * 0.20) / 2;
+  const wingDps = (LASER_RUBRO_SPECS[4].totalDps * 0.56) / 2;
 
   const wingCycle = 0.5 + 0.5 * Math.sin(phaseSec * 4.0);
 
@@ -305,7 +304,7 @@ export function computeLaserBeams(
             side * 9.5 +
             Math.sin(phaseSec * 18 - t * 9.0 + phaseOffset) * (3.2 * Math.sin(t * Math.PI)),
         }),
-        355,
+        spanY,
       ),
       outerWidth: 11.8 * scale,
       midWidth: 6.8 * scale,
@@ -320,14 +319,14 @@ export function computeLaserBeams(
       points: buildFrontalPolyline(
         (t) => {
           // Curva em forma de asa luminosa que abre amplamente na metade da coluna e varre o topo
-          const wingCurve = Math.sin(t * Math.PI * 0.72) * (54 + wingCycle * 98);
+          const wingCurve = Math.sin(t * Math.PI * 0.72) * (70 + wingCycle * 128);
           const plasmaWave = Math.sin(phaseSec * 15 - t * 7.5 + phaseOffset) * (5.5 * t);
           return {
             dx: side * (16 + wingCurve + plasmaWave),
-            dy: t === 0 ? 5 : Math.sin(t * Math.PI) * 14,
+            dy: t * spanY * (1.65 - wingCycle * 1.65) + Math.sin(t * Math.PI) * 14,
           };
         },
-        290,
+        spanY,
       ),
       outerWidth: 10.2 * scale,
       midWidth: 5.8 * scale,
@@ -335,29 +334,7 @@ export function computeLaserBeams(
       dpsPerBeam: wingDps,
     });
 
-    // 3. Fluxos de Cobertura Posterior/Flanco Balanceada (Asas Traseiras Limitadas ~125px)
-    const rearPts: LaserPoint[] = [];
-    const rearOriginY = shipY + 4;
-    for (let i = 0; i <= LASER_SEGMENTS; i++) {
-      const t = i / LASER_SEGMENTS;
-      // Abre lateralmente até ~98px e desce/curva para a retaguarda até +54px (alcance controlado!)
-      const lateralReach = 14 + Math.pow(t, 0.78) * (56 + wingCycle * 34);
-      const rearDrop = t * (34 + wingCycle * 22) - Math.sin(t * Math.PI) * 12;
-      const ripple = Math.sin(phaseSec * 16 - t * 6.5) * (3.2 * t);
-      rearPts.push({
-        x: clampPlayfieldX(shipX + side * (lateralReach + ripple)),
-        y: clampPlayfieldY(rearOriginY + rearDrop),
-      });
-    }
-    beams.push({
-      id: side < 0 ? 'lv4-rear-left' : 'lv4-rear-right',
-      role: 'rear-wing',
-      points: rearPts,
-      outerWidth: 10.0 * scale,
-      midWidth: 5.5 * scale,
-      coreWidth: 2.4 * scale,
-      dpsPerBeam: rearDps,
-    });
+
   }
 
   return beams;

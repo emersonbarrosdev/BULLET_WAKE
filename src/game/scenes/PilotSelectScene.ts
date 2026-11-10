@@ -1,3 +1,4 @@
+import { connectedPad, GamepadReader, padLabels } from '../systems/gamepadInput';
 import Phaser from 'phaser';
 import '../../pilot-select.css';
 import { GAME_BACKGROUND } from '../constants';
@@ -14,6 +15,17 @@ const ship = (pilot: PilotDefinition): string => `/assets/pilot-selection/ship-$
  * to this scene; gameplay's logical canvas, hitboxes and shooting are unchanged.
  */
 export class PilotSelectScene extends Phaser.Scene {
+  private pad = new GamepadReader();
+  private padId = '';
+  update(): void {
+    const device=connectedPad(), p=this.pad.sample(device);
+    if(this.padId !== (device?.id ?? '')){this.padId=device?.id??'';this.updateSelection();}
+    if(p.left)this.select((this.selectedIndex+PILOTS.length-1)%PILOTS.length);
+    if(p.right)this.select((this.selectedIndex+1)%PILOTS.length);
+    if(p.confirm){if(this.chosenIndex===this.selectedIndex)this.startGame();else this.choose(this.selectedIndex);}
+    if(p.missile)this.setView(this.view==='profile'?'cards':'profile');
+    if(p.back)this.handleKey(new KeyboardEvent('keydown',{key:'Escape'}));
+  }
   private selectedIndex = 0;
   private chosenIndex: number | null = null;
   private chosenAt = 0;
@@ -76,6 +88,7 @@ export class PilotSelectScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.pad.sample(connectedPad());
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
     this.cleanup();
     this.root = document.createElement('div');
@@ -250,12 +263,13 @@ export class PilotSelectScene extends Phaser.Scene {
     const chosen = this.chosenIndex === this.selectedIndex;
     this.root.querySelectorAll<HTMLButtonElement>('[data-confirm-index]').forEach((launch, index) => {
       launch.hidden = !chosen || index !== this.selectedIndex;
-      launch.innerHTML = 'CONFIRMAR ' + pilot.name.split(' ')[0].toUpperCase() + ' <span>[ENTER]</span>';
+      launch.innerHTML = 'CONFIRMAR ' + pilot.name.split(' ')[0].toUpperCase() + ' <span>['+(connectedPad()?padLabels(connectedPad()?.id).shoot:'ENTER')+']</span>';
       launch.setAttribute('aria-label', 'Confirmar ' + pilot.name + ' e iniciar operação');
     });
     const awaiting = this.root.querySelector<HTMLElement>('.bw-pilot-awaiting');
     if (awaiting) awaiting.hidden = chosen || this.view === 'profile';
     const help = this.root.querySelector<HTMLElement>('.bw-pilot-help');
+    if (help && connectedPad()) { const l=padLabels(connectedPad()?.id);help.textContent='DIRECIONAL: PILOTO · '+l.shoot+': ESCOLHER / CONFIRMAR · '+l.missile+': PERFIL · '+l.back+': VOLTAR';return; }
     if (help) help.textContent = this.view === 'profile'
       ? '[← →] TROCAR PILOTO · [ESC] FECHAR PERFIL'
       : chosen

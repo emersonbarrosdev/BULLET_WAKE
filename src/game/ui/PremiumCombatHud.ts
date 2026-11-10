@@ -31,8 +31,8 @@ export class PremiumCombatHud {
           <div><small>OPERADOR</small><strong data-field="name">NOLAN FITCH</strong><b data-field="ship">RIVET</b></div>
         </section>
         <section class="bw-combat-panel bw-combat-health"><small>INTEGRIDADE <i data-field="shield"></i></small><div class="bw-hull-bar" role="progressbar" aria-label="Vida da nave" aria-valuemin="0" aria-valuemax="100"><i data-field="health"></i><b data-field="integrity">100 / 100</b></div></section>
-        <section class="bw-combat-panel bw-combat-survival"><small>RECURSOS DE SOBREVIVÊNCIA</small><div class="bw-combat-resource"><div class="bw-combat-line"><span>DASH <b data-field="dash-count">3/3</b></span><kbd>SHIFT</kbd></div><strong data-field="dash">◆ ◆ ◆</strong></div><div class="bw-combat-resource"><small>ESPECIAL <kbd>V / X</kbd></small><div class="bw-combat-line"><strong data-field="special-stock">2 / 3</strong><b data-field="special">PRONTO</b></div></div></section>
-        <div class="bw-combat-bottom"><button type="button" data-action="restart">REINICIAR <kbd>R</kbd></button><small>RIVET // VANGUARD SQUADRON</small></div>
+        <section class="bw-combat-panel bw-combat-survival"><small>RECURSOS DE SOBREVIVÊNCIA</small><div class="bw-combat-resource"><div class="bw-combat-line"><span>DASH <b data-field="dash-count">3/3</b></span></div><strong data-field="dash">◆ ◆ ◆</strong></div><div class="bw-combat-resource"><small>ESPECIAL </small><div class="bw-combat-line"><strong data-field="special-stock">2 / 3</strong><b data-field="special">PRONTO</b></div></div></section>
+        <div class="bw-combat-bottom"><button type="button" data-action="restart">PAUSAR / OPÇÕES</button><small>RIVET // VANGUARD SQUADRON</small></div>
       </aside>
       <div class="bw-combat-center">
         <div class="bw-combat-boss" hidden><small data-field="boss-name"></small><div><i data-field="boss-fill"></i></div></div>
@@ -40,9 +40,9 @@ export class PremiumCombatHud {
       </div>
       <aside class="bw-combat-side bw-combat-right" aria-label="Telemetria de armamento">
         <div class="bw-combat-mission"><small>OPERAÇÃO PELÁGICA</small><strong>FENDA PELÁGICA</strong><span data-field="sector">ÁGUAS COSTEIRAS</span></div>
-        <section class="bw-combat-panel bw-combat-armament"><small>ARMA EQUIPADA</small><strong class="bw-combat-weapon" data-field="weapon">DISPERSÃO AZUL</strong><div class="bw-combat-line"><span>POTÊNCIA</span><b data-field="level">NV 1/4</b></div><div class="bw-combat-pips" data-field="pips"><i></i><i></i><i></i><i></i></div><div class="bw-combat-evolution"><div class="bw-combat-line"><small>PRÓXIMO NÍVEL · P</small><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i>P</i><i>P</i><i>P</i></div></div></section>
+        <section class="bw-combat-panel bw-combat-armament"><small>ARMA EQUIPADA</small><strong class="bw-combat-weapon" data-field="weapon">DISPERSÃO AZUL</strong><div class="bw-combat-line"><span>POTÊNCIA</span><b data-field="level">NV 1/4</b></div><div class="bw-combat-pips" data-field="pips"><i></i><i></i><i></i><i></i></div><div class="bw-combat-evolution"><div class="bw-combat-line"><small data-field="power-title">PRÓXIMO NÍVEL · P</small><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i>P</i><i>P</i><i>P</i></div></div></section>
         <section class="bw-combat-panel bw-combat-results"><small>PONTUAÇÃO <i data-field="combo"></i></small><strong class="bw-combat-score" data-field="score">000000</strong><small>AVANÇO DA OPERAÇÃO</small><div class="bw-combat-progress"><i data-field="progress"></i></div></section>
-        <div class="bw-combat-bottom"><div class="bw-combat-line"><span>DISPARO</span><kbd>ESPAÇO</kbd></div><span class="bw-combat-hint" data-field="charge">C CARREGAR · ESC MENU</span></div>
+        <div class="bw-combat-bottom"><span class="bw-combat-hint" data-field="charge"></span><small>EVOLUÇÃO EM CASCATA</small><span>AZUL → VERDE → RUBRO</span></div>
       </aside>`;
     this.root.querySelectorAll<HTMLElement>('[data-field]').forEach(node => this.fields.set(node.dataset.field!, node));
     document.body.append(this.root);
@@ -85,6 +85,7 @@ export class PremiumCombatHud {
     this.text('weapon', family === 'ion' ? 'DISPERSÃO AZUL' : family === 'green' ? 'ENERGIA ESPIRALADA' : 'LASER RUBRO');
     this.field('weapon').style.color = color; this.field('pips').style.setProperty('--weapon', color);
     this.text('level', `NV ${level}/4`); this.segments('pips', level); this.setPowerMeter(powerMeter, level);
+    this.text('power-title',level<4?'PRÓXIMO NÍVEL · P':family==='red'?'POTÊNCIA MÁXIMA':'EVOLUÇÃO LIBERADA');
   }
   setPowerMeter(meter: number, level: WeaponLevel): void {
     this.text('power', level >= 4 ? `RESERVA ${Math.max(0, Math.min(3, meter))}/3` : `${Math.max(0, Math.min(3, meter))} / 3`); this.segments('power-segments', meter);
@@ -93,7 +94,7 @@ export class PremiumCombatHud {
   setSpecialStock(n: number, active=false): void { this.text('special-stock', `${Math.max(0,Math.min(3,n))} / 3`); this.text('special', active?'ATIVO':n>0?'PRONTO':'VAZIO'); }
   setMissileReady(_ready: boolean): void { /* M keeps its existing binding. */ }
   setProgress(ratio: number): void { this.field('progress').style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`; }
-  setCharge(_ms: number, _max: number, charging: boolean): void { this.text('charge', charging ? 'CARREGANDO WAVE CANNON…' : 'C CARREGAR · ESC MENU'); }
+  setCharge(_ms: number, _max: number, charging: boolean): void { this.text('charge', charging ? 'CARREGANDO WAVE CANNON…' : ''); }
   setSector(sector: SectorId): void { this.text('sector', sectors[sector]); this.flash(`SETOR: ${sectors[sector]}`, '#ffbd79', 650); }
   showBossBar(name: string, hp: number, max: number): void {
     this.root.querySelector<HTMLElement>('.bw-combat-boss')!.hidden = false;

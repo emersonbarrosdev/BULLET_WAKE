@@ -148,23 +148,25 @@ export function createPlayerWeapons(pilotId: PilotId = 'nolan', initialFamily: W
   };
 }
 
-/** Troca a família de arma (Verde, Azul/Íon, Laser Rubro) mantendo o nível e o medidor P atuais */
-export function switchWeaponFamily(state: PlayerWeaponsState, newFamily: WeaponFamily): PlayerWeaponsState {
-  return {
-    ...state,
-    weaponFamily: newFamily,
-    isOverheated: newFamily === 'red' ? false : state.isOverheated,
-    heat: newFamily === 'red' ? 0 : state.heat,
-  };
+/** Bullet Wake cascade. Deliberately differs from Fire Shark's free color selection. */
+export function nextWeaponFamily(family: WeaponFamily): WeaponFamily | null {
+  return family === 'ion' ? 'green' : family === 'green' ? 'red' : null;
 }
-
-/** Colored capsules select a weapon; duplicates award points, never power. */
+export function switchWeaponFamily(state: PlayerWeaponsState, family: WeaponFamily): PlayerWeaponsState {
+  if (state.weaponLevel !== MAX_WEAPON_LEVEL || nextWeaponFamily(state.weaponFamily) !== family) return state;
+  return { ...state, weaponFamily: family, weaponLevel: 1, powerMeter: 0,
+    fireCooldownMs: 0, chargeMs: 0, isCharging: false, heat: 0, isOverheated: false };
+}
 export function collectWeaponCapsule(state: PlayerWeaponsState, family: WeaponFamily): {
   state: PlayerWeaponsState; bonusPoints: number;
 } {
-  return state.weaponFamily === family
-    ? { state, bonusPoints: 5000 }
-    : { state: switchWeaponFamily(state, family), bonusPoints: 0 };
+  if (state.weaponFamily === family) return { state, bonusPoints: 5000 };
+  return { state: switchWeaponFamily(state, family), bonusPoints: 0 };
+}
+/** Evolution cargo becomes useful P when the pilot has not reached the gate. */
+export function evolutionCargo(state: PlayerWeaponsState): 'power' | 'weapon_green' | 'weapon_red' {
+  if (state.weaponLevel < 4 || state.weaponFamily === 'red') return 'power';
+  return state.weaponFamily === 'ion' ? 'weapon_green' : 'weapon_red';
 }
 
 export function collectSpeedItem(state: PlayerWeaponsState): PlayerWeaponsState {
@@ -559,14 +561,12 @@ export function getPrimaryProjectiles(
       isContinuousBeam: true,
     }));
   }
-  // Nível 4 — Laser Rubro Máximo: 6 feixes contínuos sincronizados com varredura lateral ampla
+  // Nível 4 — Laser Rubro Máximo: 4 feixes contínuos sincronizados com varredura lateral ampla
   return [
     { ox: -8, vx: 0, dmg: 1.25 },
     { ox: 8, vx: 0, dmg: 1.25 },
     { ox: -18, vx: -130, dmg: 1.0 },
     { ox: 18, vx: 130, dmg: 1.0 },
-    { ox: -28, vx: -280, dmg: 1.05 },
-    { ox: 28, vx: 280, dmg: 1.05 },
   ].map((b) => ({
     texture: texRed,
     animation: animRed,

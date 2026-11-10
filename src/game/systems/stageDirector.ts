@@ -120,10 +120,9 @@ const SOLO_EVENTS: StageEvent[] = [
 
 // Supplies belong exclusively to recognizable aerostats. One cargo per carrier.
 // Three P give one upgrade; Phase 1 no longer hands out maximum power in a minute.
-export const SUPPLY_EVENTS: StageEvent[] = [
-  ...(['power','speed','power','weapon_green','weapon_red','power','health','power','weapon_ion','power','special','power'] as const).map((drop,i)=>({distance:[360,690,1020,1350,1650,2050,2390,2720,3050,3380,3720,4050][i],kind:'cutter' as const,y:145+(i%2)*100,carrier:true,drop})),
-  { distance: 1540, kind: 'cutter', y: 270, carrier: true, drop: 'special' },
-];
+export const SUPPLY_EVENTS: readonly StageEvent[] = (
+  ['power','power','speed','power','special','power','power','health','power','power','power','special','power','weapon_green'] as const
+).map((drop,i)=>({distance:[260,530,760,1000,1240,1480,1730,1970,2220,2470,2730,3000,3420,3970][i],kind:'cutter' as const,y:145+(i%2)*100,carrier:true,drop}));
 const FLOCK_EVENTS: StageEvent[] = [360, 740, 1100, 1450, 2050, 2450, 2850, 3200, 3650].flatMap((distance, group) =>
   Array.from({ length: group < 2 ? 5 : 6 }, (_, i) => ({ distance: distance + i * 15, kind: 'scout' as const, y: 100, flight: group % 2 ? 'sweep-right' as const : 'sweep-left' as const, drop: null })));
 const SURFACE_EVENTS: StageEvent[] = [820, 1550, 2250, 3050, 3720].map((distance, i) => ({ distance, kind: 'lancer', y: i % 2 ? 105 : 290, layer: 'surface', drop: null }));
@@ -282,7 +281,7 @@ export class StageDirector {
       spawned.push(enemy);
     }
 
-    const bulletSpeedMult = this.difficulty === 'arcade' ? 1.22 : this.difficulty === 'hard' ? 1.12 : 1.0;
+    const bulletSpeedMult = this.difficulty === 'arcade' ? 1.62 : this.difficulty === 'hard' ? 1.48 : 1.35;
     const chargeMult = this.difficulty === 'arcade' ? 0.78 : this.difficulty === 'hard' ? 0.88 : 1.0;
 
     for (const enemy of this.enemies) {
@@ -293,7 +292,7 @@ export class StageDirector {
         enemy.phase = enemy.ageMs > 7200 ? 'exit' : 'approach';
         // Slow carrier has one readable aimed shot per passage.
         if (enemy.ageMs > 3500 && !enemy.secondShotFired) {
-          shots.push(this.aim(enemy, playerX, playerY, 100));
+          shots.push(this.aim(enemy, playerX, playerY, 160));
           enemy.secondShotFired = true;
         }
         continue;
@@ -316,7 +315,7 @@ export class StageDirector {
         enemy.phaseMs = Math.max(0, 3100 - cycle);
         if (cycle < 3100) enemy.secondShotFired = false;
         if (cycle >= 3100 && cycle < 3450 && !enemy.secondShotFired && enemy.y > 25 && enemy.y < 360) {
-          for (const angle of [-.12,.12]) shots.push({...this.aim(enemy,playerX,playerY,125,angle),sourceLayer:'surface'});
+          for (const angle of [-.12,.12]) shots.push({...this.aim(enemy,playerX,playerY,175,angle),sourceLayer:'surface'});
           enemy.secondShotFired = true;
         }
         continue;

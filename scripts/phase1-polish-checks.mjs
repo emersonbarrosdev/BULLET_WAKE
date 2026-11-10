@@ -35,13 +35,13 @@ export async function runPhase1Review({send,evaluate,waitFor,key,click,shot,repo
     for(const family of ['ion','green','red'])for(const level of [1,2,3,4]){
       const state=await run(`s.director.enemies.length=0;s.syncEnemyVisuals();s.clearPlayerShots();s.weapons.weaponFamily='${family}';s.weapons.weaponLevel=${level};s.updateCrimsonLaser(500,false);for(let i=0;i<20;i++){if(i%6===0&&'${family}'!=='red')s.firePrimary();s.advancePlayerShots(1000/60);s.updateCrimsonLaser(1000/60,'${family}'==='red');}s.hud.setWeapon('${family}',${level});return {family:'${family}',level:${level},beams:s.crimsonLaserState.beams.length,ribbons:s.shots.filter(p=>p.trail.length>8).length};`);
       if(family==='green')assert.ok(state.ribbons>0,'Green must leave connected helical trails');
-      if(family==='red')assert.equal(state.beams,[1,2,4,6][level-1]);
+      if(family==='red')assert.equal(state.beams,[1,2,4,4][level-1]);
       weapons.push(state);await shot(`weapon-${family}-${level}-${width}x${height}`);
     }
     await run("s.clearPlayerShots();s.weapons.weaponFamily='ion';s.weapons.weaponLevel=1;s.updateCrimsonLaser(500,false);s.hud.setWeapon('ion',1);");
     const pickups=await run(`s.pickups.clear();for(const[i,t]of ['power','weapon_ion','weapon_green','weapon_red','health','speed','special'].entries())s.pickups.spawn(t,220+i%4*100,120+Math.floor(i/4)*95);s.syncPickupVisuals();return [...s.pickupVisuals.values()].every(c=>c.list.length===1&&c.list[0].type==='Sprite'&&c.list[0].anims.isPlaying);`);
     assert.ok(pickups);await shot(`items-${width}x${height}`);
-    const collected=await run(`s.pickups.clear();s.pickups.spawn('weapon_green',s.ship.x,s.ship.y-20);s.checkPickupCollisions();return s.weapons.weaponFamily;`);
+    const collected=await run(`s.setTestWeapon('ion',4);s.pickups.clear();s.pickups.spawn('weapon_green',s.ship.x,s.ship.y-20);s.checkPickupCollisions();return s.weapons.weaponFamily;`);
     assert.equal(collected,'green','Visible nose must collect capsule');
     await run(`s.director.enemies.length=0;s.pickups.clear();s.syncPickupVisuals();s.director.seekCheckpoint(700);s.director.boss=null;for(let i=0;i<180;i++)s.update(i*50,50);s.ship.setAlpha(1);`);
     await shot(`combat-${width}x${height}`);
@@ -57,7 +57,7 @@ export async function runPhase1Review({send,evaluate,waitFor,key,click,shot,repo
     await run(`s.director.enemies.length=0;s.syncEnemyVisuals();s.director.scrollPx=4250;s.director.eventIndex=999;s.director.minibossSpawned=true;s.director.minibossActive=false;s.director.boss=null;s.director.update(0,384,360);s.director.boss.update(1800,384,360);s.syncBossVisual(s.director.boss);s.hud.showBossBar('TALASSARCA · CASCA 1/2',600,600);s.backdrop.update(4250,0);`);
     assert.equal(await run('return s.bossVisual.main.displayWidth;'),432*.8);
     await shot(`boss-shell-${width}x${height}`);
-    const special=await run(`s.weapons.specialCharges=2;s.weapons.specialActiveMs=0;s.triggerSpecial();s.weapons.specialActiveMs-=220;s.updatePrismSpecial(220);return {charges:s.weapons.specialCharges,hp:s.director.boss.hp,key:s.specialVisual.texture.key};`);
+    const special=await run(`s.weapons.specialCharges=2;s.weapons.specialActiveMs=0;s.triggerSpecial();s.weapons.specialActiveMs-=620;s.updatePrismSpecial(620);return {charges:s.weapons.specialCharges,hp:s.director.boss.hp,key:s.specialVisual.nodes[0].texture.key};`);
     assert.deepEqual(special,{charges:1,hp:480,key:'polish-special'});
     assert.equal(await run('s.health.invulnerableMs=0;const before=s.health.hp;s.damageShip(25);return s.health.hp===before;'),true);
     await shot(`special-${width}x${height}`);

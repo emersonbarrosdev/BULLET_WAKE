@@ -1,0 +1,62 @@
+{
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "briefingFits": true,
+      "simulationPauses": true,
+      "keyboardSpecial": "X only",
+      "standardGamepad": true,
+      "cascade": [
+        [
+          "ion",
+          1
+        ],
+        [
+          "ion",
+          4
+        ],
+        [
+          "green",
+          1
+        ],
+        [
+          "red",
+          1
+        ]
+      ],
+      "specialCleanup": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "briefingFits": true,
+      "simulationPauses": true,
+      "keyboardSpecial": "X only",
+      "standardGamepad": true,
+      "cascade": [
+        [
+          "ion",
+          1
+        ],
+        [
+          "ion",
+          4
+        ],
+        [
+          "green",
+          1
+        ],
+        [
+          "red",
+          1
+        ]
+      ],
+      "specialCleanup": true
+    }
+  ],
+  "regression": {
+    "title": true
+  },
+  "errors": []
+}
