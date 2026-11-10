@@ -22,7 +22,7 @@ test('all 12 weapon states require P; gates cannot skip or regress colors',()=>{
 });
 test('rare supply script earns green only after nine P and late final carrier; missed P cannot skip',()=>{
   let w=createPlayerWeapons(), powers=0;
-  assert.equal(SUPPLY_EVENTS.length,14);
+  assert.equal(SUPPLY_EVENTS.length,12);
   for(const e of SUPPLY_EVENTS){
     if(e.drop==='power'){w=collectPowerItem(w).state;powers++;}
     if(e.drop==='weapon_green'){

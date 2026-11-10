@@ -339,7 +339,7 @@ test('V2 Coletáveis: Itens físicos caem verticalmente e jamais concedem dash',
 // ============================================================================
 test('phase one bosses: Raia-Dente remains distinct; Talassarca has two complete layers', () => {
   const mini=new MinibossRaiaDente();mini.update(1500,384,350);
-  assert.equal(mini.hp,45);assert.equal(mini.phase,'active');
+  assert.equal(mini.hp,140);assert.equal(mini.phase,'active');
   const boss=new BossTalassarca();boss.update(1800,384,350);
   assert.equal(boss.hp,600);assert.equal(boss.phase,'shell');
   for(let i=0;i<4;i++)assert.equal(boss.damage(120).killed,false);

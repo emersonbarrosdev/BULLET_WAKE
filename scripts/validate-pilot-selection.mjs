@@ -7,9 +7,9 @@ import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 
 const root = resolve('dist');
-const review = ['--review','--normal','--stage1','--polish','--fine','--cascade','--loading'].some(flag=>process.argv.includes(flag));
+const review = ['--review','--normal','--stage1','--polish','--fine','--cascade','--loading','--balance'].some(flag=>process.argv.includes(flag));
 const confirmation = !review;
-const screenshots = resolve(review ? (process.argv.includes('--loading') ? 'docs/screenshots/phase1-loading' : process.argv.includes('--cascade') ? 'docs/screenshots/phase1-cascade' : process.argv.includes('--fine') ? 'docs/screenshots/phase1-fine' : process.argv.includes('--polish') ? 'docs/screenshots/phase1-polish' : 'docs/screenshots/phase1-review') : 'docs/screenshots/pilot-confirmation');
+const screenshots = resolve(review ? (process.argv.includes('--balance') ? 'docs/screenshots/phase1-normal' : process.argv.includes('--loading') ? 'docs/screenshots/phase1-loading' : process.argv.includes('--cascade') ? 'docs/screenshots/phase1-cascade' : process.argv.includes('--fine') ? 'docs/screenshots/phase1-fine' : process.argv.includes('--polish') ? 'docs/screenshots/phase1-polish' : 'docs/screenshots/phase1-review') : 'docs/screenshots/pilot-confirmation');
 mkdirSync(screenshots, { recursive: true });
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png' };
 const server = createServer((req, res) => {
@@ -111,7 +111,7 @@ try {
   await click('[data-action="pilots"]');
   await waitFor(`Boolean(document.querySelector('.bw-pilot-card'))`);
   if (review) {
-    const {runPhase1Review}=await import(process.argv.includes('--loading')?'./phase1-loading-checks.mjs':process.argv.includes('--cascade')?'./phase1-cascade-checks.mjs':process.argv.includes('--fine')?'./phase1-fine-checks.mjs':process.argv.includes('--polish')?'./phase1-polish-checks.mjs':'./phase1-review-checks.mjs');
+    const {runPhase1Review}=await import(process.argv.includes('--balance')?'./phase1-normal-checks.mjs':process.argv.includes('--loading')?'./phase1-loading-checks.mjs':process.argv.includes('--cascade')?'./phase1-cascade-checks.mjs':process.argv.includes('--fine')?'./phase1-fine-checks.mjs':process.argv.includes('--polish')?'./phase1-polish-checks.mjs':'./phase1-review-checks.mjs');
     await runPhase1Review({send,evaluate,waitFor,key,click,shot,report,errors});
     writeFileSync(join(screenshots,'validation.json'),JSON.stringify(report,null,2)+'\n');
     if(!process.argv.includes('--polish')&&!process.argv.includes('--fine'))console.log('PASS: phase-one review checks; both desktop viewports; zero browser errors.');

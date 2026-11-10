@@ -61,8 +61,8 @@ export class CombatBriefing {
     const rows=[['Movimentar',pad?'ANALÓGICO / DIRECIONAL':'WASD / SETAS'],['Disparar',pad?l.shoot:'ESPAÇO'],
       ['Especial',pad?l.special:'X'],['Dash',pad?l.dash:'SHIFT'],['Carregar / soltar',pad?l.charge:'C'],
       ['Míssil secundário',pad?l.missile:'M'],['Pausar',pad?l.pause:'ESC']];
-    const cadence=saveSystem.getSaveData().settings.rapidFire?'RAPID ligado: segurar mantém a cadência rápida.':'Toques repetidos: cadência rápida. Segurar: cadência reduzida.';
-    return `<p class="bw-brief-device">${pad?'CONTROLE CONECTADO':'TECLADO'} · ${pad?'CONFIRMAR '+l.shoot:'CONFIRMAR ENTER'}</p><div class="bw-brief-controls">${rows.map(([a,b])=>`<div><span>${a}</span><kbd>${b}</kbd></div>`).join('')}</div><p class="bw-brief-note">${cadence} O Laser Rubro mantém o fluxo contínuo.</p>`;
+    const cadence=saveSystem.getSaveData().settings.rapidFire?'RAPID ligado: segurar mantém a cadência rápida.':'Toques ritmados: cadência rápida. Segurar: cadência reduzida.';
+    return `<p class="bw-brief-device">${pad?'CONTROLE CONECTADO':'TECLADO'} · ${pad?'CONFIRMAR '+l.shoot:'CONFIRMAR ENTER'}</p><div class="bw-brief-controls">${rows.map(([a,b])=>`<div><span>${a}</span><kbd>${b}</kbd></div>`).join('')}</div><p class="bw-brief-note">${cadence} O Laser Rubro mantém o fluxo contínuo.</p><p class="bw-brief-note">Carga: atravessa inimigos alinhados. Míssil: impacto concentrado, recarga de 3,2 s na RIVET. Especial: ataque de emergência limitado por cargas.</p>`;
   }
   private render() {
     if(this.closed||this.loading)return;

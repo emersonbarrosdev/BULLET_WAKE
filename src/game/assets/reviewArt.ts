@@ -42,7 +42,7 @@ export function registerReviewArt(scene: Phaser.Scene): void {
       scene.anims.create({
         key: key + '-loop',
         frames: scene.anims.generateFrameNumbers(key, { start: 0, end: 3 }),
-        frameRate: name.startsWith('effects') ? 14 : 8,
+        frameRate: name.startsWith('hostile') ? 14 : name.startsWith('effects') ? 18 : 8,
         repeat: name === 'effects-explosion' ? 0 : -1,
       });
   }

@@ -10,8 +10,8 @@ import { PLAYFIELD_X, PLAYFIELD_WIDTH } from '../../constants.ts';
 
 export class MinibossRaiaDente implements StageBoss {
   name = 'RAIA-DENTE';
-  readonly maxHp = 45;
-  hp = 45;
+  readonly maxHp = 140;
+  hp = 140;
   x = PLAYFIELD_X + PLAYFIELD_WIDTH / 2; // Centro do corredor: 384
   y = 85;
 
@@ -21,8 +21,12 @@ export class MinibossRaiaDente implements StageBoss {
   private introTimerMs = 1200;
   private attackTimerMs = 0;
   private shotCycle = 0;
+  private elapsedMs = 0;
+  private aimX=384;
+  private aimY=350;
 
   update(dt: number, playerX: number, playerY: number): BossTick {
+    this.elapsedMs+=Math.max(0,dt);
     const shots: BossShot[] = [];
     const spawns: BossSpawnEvent[] = [];
     let phaseChanged = false;
@@ -64,11 +68,14 @@ export class MinibossRaiaDente implements StageBoss {
     }
 
     // Movimentação sinusoidal lateral no corredor
-    this.x = (PLAYFIELD_X + PLAYFIELD_WIDTH / 2) + Math.sin(Date.now() / 900) * 65;
+    this.x = (PLAYFIELD_X + PLAYFIELD_WIDTH / 2) + Math.sin(this.elapsedMs / 1200) * 65;
+    const previous=this.attackTimerMs;
     this.attackTimerMs += dt;
+    if(previous<650&&this.attackTimerMs>=650){this.aimX=playerX;this.aimY=playerY;}
+    this.isTelegraphing=this.attackTimerMs>=650;
 
-    if (this.attackTimerMs >= 1000) {
-      this.attackTimerMs = 0;
+    if (this.attackTimerMs >= 1100) {
+      this.attackTimerMs -= 1100;
       this.shotCycle++;
 
       const pattern = this.shotCycle % 3;
@@ -94,8 +101,8 @@ export class MinibossRaiaDente implements StageBoss {
       }
       // Padrão C: Disparo direto mirado na nave do jogador
       else if (pattern === 2) {
-        const dx = playerX - this.x;
-        const dy = playerY - (this.y + 20);
+        const dx = this.aimX - this.x;
+        const dy = this.aimY - (this.y + 20);
         const dist = Math.hypot(dx, dy) || 1;
         shots.push(
           {
@@ -118,7 +125,7 @@ export class MinibossRaiaDente implements StageBoss {
         if (this.shotCycle % 6 === 5) {
           spawns.push({
             kind: 'scout',
-            x: this.x + (Math.random() > 0.5 ? 50 : -50),
+            x: this.x + (this.shotCycle%2 ? 50 : -50),
             y: this.y - 10,
           });
         }
@@ -148,14 +155,15 @@ export class MinibossRaiaDente implements StageBoss {
       return { bossDamage: 0, moduleDestroyed: null, killed: false };
     }
 
-    this.hp = Math.max(0, this.hp - amount);
+    const applied=Math.min(this.hp,Math.max(0,Number.isFinite(amount)?amount:0));
+    this.hp = Math.max(0, this.hp - applied);
     const killed = this.hp <= 0;
     if (killed) {
       this.phase = 'defeated';
     }
 
     return {
-      bossDamage: amount,
+      bossDamage: applied,
       moduleDestroyed: null,
       killed,
     };

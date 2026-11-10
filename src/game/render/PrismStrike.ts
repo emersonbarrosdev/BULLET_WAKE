@@ -20,7 +20,7 @@ export class PrismStrike {
     const impacts:Array<{x:number;y:number}>=[];
     this.nodes.forEach((node,i)=>{
       const lane=i%5, salvo=Math.floor(i/5);
-      const age=elapsed-salvo*950-lane*65;
+      const age=elapsed-salvo*800-lane*65;
       if(age<0||age>1000){node.setVisible(false);return;}
       const x=PLAYFIELD_X+(lane+.5)*PLAYFIELD_WIDTH/5;
       const targetY=65+((lane+salvo)%3)*70;
@@ -28,7 +28,7 @@ export class PrismStrike {
       const y=GAME_HEIGHT+50-(GAME_HEIGHT+50-targetY)*travel;
       const frame=age<580?Math.min(3,Math.floor(age/145)):Math.min(7,4+Math.floor((age-580)/105));
       node.setVisible(true).setPosition(x+Math.sin(travel*Math.PI)*12*(lane%2?1:-1),y).setFrame(frame)
-        .setAlpha(Math.min(1,age/65,Math.max(0,(1000-age)/150)));
+        .setAlpha(.85*Math.min(1,age/65,Math.max(0,(1000-age)/150)));
       if(age>=580&&!this.impacted.has(i)){this.impacted.add(i);impacts.push({x,y:targetY});}
     });
     return impacts;

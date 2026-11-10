@@ -82,15 +82,15 @@ export interface WeaponSpecs {
 
 export const WEAPON_FAMILY_SPECS: Record<WeaponFamily, WeaponSpecs> = {
   green: {
-    autoIntervalMs: 420,
-    burstIntervalMs: 150,
+    autoIntervalMs: 310,
+    burstIntervalMs: 180,
     heatPerShot: 7,
     coolingRatePerSec: 45,
     displayName: 'ENERGIA ESPIRALADA',
   },
   ion: {
-    autoIntervalMs: 380,
-    burstIntervalMs: 125,
+    autoIntervalMs: 280,
+    burstIntervalMs: 160,
     heatPerShot: 8,
     coolingRatePerSec: 50,
     displayName: 'DISPERSÃO AZUL',
@@ -114,7 +114,7 @@ export const PILOT_WEAPON_SPECS: Record<string, WeaponSpecs> = {
 };
 
 export const SPECIAL_DURATIONS: Record<SpecialType, number> = {
-  prism: 3800,  // Nolan: Tempestade Prismática
+  prism: 3000,  // Nolan: Tempestade Prismática
   phantom: 650, // Cora: Salto Fantasma
   nova: 900,    // Harlan: Ruptura Nova
 };
@@ -428,7 +428,7 @@ export function getPrimaryProjectiles(
     return Array.from({length:components},(_,i)=>({
       texture:'shot-rivet', animation:'shot-rivet-loop',
       x:originX, y:originY, velocityX:0, velocityY:-460,
-      damage:1.05+level*.08, hitRadius:4, scale:1,
+      damage:4.6/Math.sqrt(level), hitRadius:4, scale:1,
       waveAmplitude:16+level*8, waveVerticalAmplitude:9+level*5,
       waveFrequency:.014, wavePhase:i*Math.PI*2/components,
     }));
@@ -441,7 +441,7 @@ export function getPrimaryProjectiles(
 
     if (level === 1) {
       // Nível 1: 3 direções frontais estreitas e discretas (tiro inicial contido)
-      const vxs = [-45,0,45].map(a=>640*Math.sin(a*Math.PI/180));
+      const vxs = [-12,0,12].map(a=>640*Math.sin(a*Math.PI/180));
       return vxs.map((vx) => ({
         texture: tex,
         animation: anim,
@@ -456,7 +456,7 @@ export function getPrimaryProjectiles(
     }
     if (level === 2) {
       // Nível 2: 5 direções em leque médio
-      const vxs = [-45,-22.5,0,22.5,45].map(a=>640*Math.sin(a*Math.PI/180));
+      const vxs = [-27,-13.5,0,13.5,27].map(a=>640*Math.sin(a*Math.PI/180));
       return vxs.map((vx) => ({
         texture: tex,
         animation: anim,
@@ -727,8 +727,8 @@ export function getSecondaryProjectiles(
       y: originY - 12,
       velocityX: 0,
       velocityY: -460,
-      damage: 3.5,
-      hitRadius: 18,
+      damage: 8.0,
+      hitRadius: 6,
       scale: 0.8,
     }];
   }

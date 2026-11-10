@@ -37,6 +37,9 @@ export interface EnemyModel {
   animationFrame?: number;
   spawnScroll?: number;
   drop?: PickupType | null;
+  aimX?: number;
+  aimY?: number;
+  hitFlashMs?: number;
 }
 
 export interface EnemyShotEvent {
@@ -60,7 +63,7 @@ export interface StageTick {
   bossActive?: boolean;
 }
 
-export const SCROLL_SPEED = 34; // Slower traversal gives each encounter and supply carrier room.
+export const SCROLL_SPEED = 28; // Slower traversal gives each encounter and supply carrier room.
 export const DEMO_DISTANCE = 4250; // distância total até a arena do chefe
 
 // Roteiro por posição percorrida. Combinações táticas de passagem contínua.
@@ -120,14 +123,17 @@ const SOLO_EVENTS: StageEvent[] = [
 
 // Supplies belong exclusively to recognizable aerostats. One cargo per carrier.
 // Three P give one upgrade; Phase 1 no longer hands out maximum power in a minute.
-export const SUPPLY_EVENTS: readonly StageEvent[] = (
-  ['power','power','speed','power','special','power','power','health','power','power','power','special','power','weapon_green'] as const
-).map((drop,i)=>({distance:[260,530,760,1000,1240,1480,1730,1970,2220,2470,2730,3000,3420,3970][i],kind:'cutter' as const,y:145+(i%2)*100,carrier:true,drop}));
-const FLOCK_EVENTS: StageEvent[] = [360, 740, 1100, 1450, 2050, 2450, 2850, 3200, 3650].flatMap((distance, group) =>
-  Array.from({ length: group < 2 ? 5 : 6 }, (_, i) => ({ distance: distance + i * 15, kind: 'scout' as const, y: 100, flight: group % 2 ? 'sweep-right' as const : 'sweep-left' as const, drop: null })));
+export const SUPPLY_EVENTS: readonly StageEvent[] = ([
+  ...[360,740,1130,1540,1980,2420,2860,3300,3720].map((distance,i)=>({distance,kind:'cutter' as const,y:125+(i%3)*70,carrier:true,drop:'power' as const})),
+  {distance:2140,kind:'cutter',y:200,carrier:true,drop:'health'},
+  {distance:3140,kind:'cutter',y:140,carrier:true,drop:'special'},
+  {distance:4070,kind:'cutter',y:230,carrier:true,drop:'weapon_green'},
+] satisfies StageEvent[]).sort((a,b)=>a.distance-b.distance);
+const FLOCK_EVENTS: StageEvent[] = [360, 740, 1100, 1450, 2050, 2450, 2850, 3200, 3650, 3890].flatMap((distance, group) =>
+  Array.from({ length: group < 2 ? 5 : 6 }, (_, i) => ({ distance: distance + i * 13, kind: 'scout' as const, y: 100, flight: group % 2 ? 'sweep-right' as const : 'sweep-left' as const, drop: null })));
 const SURFACE_EVENTS: StageEvent[] = [820, 1550, 2250, 3050, 3720].map((distance, i) => ({ distance, kind: 'lancer', y: i % 2 ? 105 : 290, layer: 'surface', drop: null }));
 const AMBUSH_EVENTS: StageEvent[] = [1250,2650,3600].map((distance,i)=>({distance,kind:'dart',y:i%2?135:270,layer:'surface',surfaceVariant:'ambush',drop:null}));
-export const STAGE_EVENTS: readonly StageEvent[] = [...SOLO_EVENTS, ...SUPPLY_EVENTS, ...FLOCK_EVENTS, ...SURFACE_EVENTS, ...AMBUSH_EVENTS].sort((a, b) => a.distance - b.distance);
+export const STAGE_EVENTS: readonly StageEvent[] = [...SOLO_EVENTS, ...[1330,2310,2970,3510].flatMap((distance,i)=>[{distance,kind:'dart' as const,y:i%2?110:280},{distance:distance+24,kind:'scout' as const,y:i%2?260:130}]), ...SUPPLY_EVENTS, ...FLOCK_EVENTS, ...SURFACE_EVENTS, ...AMBUSH_EVENTS].sort((a, b) => a.distance - b.distance);
 export const SURFACE_SCROLL_FACTOR = 0.9;
 
 export function enemyBodyRadius(enemy:EnemyModel):number {
@@ -166,6 +172,7 @@ export class StageDirector {
   minibossActive = false;
   private eventIndex = 0;
   private nextId = 1;
+  private attackCooldownMs = 0;
   private currentSector: SectorId = 'evacuacao';
   private readonly enableBoss: boolean;
   readonly stageNumber: number;
@@ -187,11 +194,10 @@ export class StageDirector {
 
   update(deltaMs: number, playerX: number, playerY: number): StageTick {
     const dt = clamp(deltaMs, 0, 50);
+    this.attackCooldownMs=Math.max(0,this.attackCooldownMs-dt);
     if (!this.boss) {
       this.scrollPx += (SCROLL_SPEED * dt) / 1000;
-    } else {
-      this.scrollPx += (SCROLL_SPEED * 0.25 * dt) / 1000;
-    }
+    } // Boss encounters freeze the route; water continues to animate independently.
 
     const sector = getSector(this.scrollPx);
     const sectorChanged = sector !== this.currentSector;
@@ -250,11 +256,11 @@ export class StageDirector {
     }
 
     while (
-      this.eventIndex < STAGE_EVENTS.length &&
+      !this.boss && this.eventIndex < STAGE_EVENTS.length &&
       this.scrollPx >= STAGE_EVENTS[this.eventIndex].distance
     ) {
       const event = STAGE_EVENTS[this.eventIndex++];
-      const hp = event.flight ? 0.3 : event.drop ? 4 : event.kind === 'lancer' ? 3 : event.kind === 'cutter' ? 2 : 1;
+      const hp = event.flight ? 0.3 : event.drop ? 4 : event.layer ? 4 : event.kind === 'lancer' ? 4 : event.kind === 'cutter' ? 3 : event.kind === 'dart' ? 2 : 1.35;
       // Distribui a coordenada X ao longo do corredor central (PLAYFIELD_X até PLAYFIELD_RIGHT)
       const eventX = PLAYFIELD_X + 28 + ((event.y - 80) / 235) * (PLAYFIELD_WIDTH - 56);
       const enemy: EnemyModel = {
@@ -286,15 +292,12 @@ export class StageDirector {
 
     for (const enemy of this.enemies) {
       enemy.ageMs += dt;
+      enemy.hitFlashMs=Math.max(0,(enemy.hitFlashMs??0)-dt);
       if (enemy.carrier) {
         enemy.y += dt * (enemy.ageMs < 1700 ? .065 : enemy.ageMs > 7200 ? .12 : .018);
         enemy.x = enemy.baseX + Math.sin(enemy.ageMs / 1100) * 18;
         enemy.phase = enemy.ageMs > 7200 ? 'exit' : 'approach';
-        // Slow carrier has one readable aimed shot per passage.
-        if (enemy.ageMs > 3500 && !enemy.secondShotFired) {
-          shots.push(this.aim(enemy, playerX, playerY, 160));
-          enemy.secondShotFired = true;
-        }
+        // Supply carriers do not fire surprise shots while the player approaches cargo.
         continue;
       }
       if (enemy.flight) {
@@ -311,11 +314,13 @@ export class StageDirector {
         const cycle = enemy.ageMs % 6800;
         enemy.submerged = cycle < 1400 || cycle >= 5400;
         enemy.animationFrame = cycle < 1400 ? 0 : cycle < 1900 ? 1 : cycle < 2400 ? 2 : cycle < 3100 ? 3 : cycle < 3450 ? 4 : cycle < 4600 ? 5 : cycle < 5100 ? 6 : 7;
+        if(cycle>=2400&&cycle<3100&&enemy.phase!=='telegraph'){enemy.aimX=playerX;enemy.aimY=playerY;}
         enemy.phase = cycle >= 2400 && cycle < 3100 ? 'telegraph' : cycle >= 3100 && cycle < 4600 ? 'attack' : 'recover';
         enemy.phaseMs = Math.max(0, 3100 - cycle);
         if (cycle < 3100) enemy.secondShotFired = false;
-        if (cycle >= 3100 && cycle < 3450 && !enemy.secondShotFired && enemy.y > 25 && enemy.y < 360) {
-          for (const angle of [-.12,.12]) shots.push({...this.aim(enemy,playerX,playerY,175,angle),sourceLayer:'surface'});
+        if (cycle >= 3100 && cycle < 3450 && !enemy.secondShotFired && enemy.y > 25 && enemy.y < 360 && this.attackCooldownMs<=0) {
+          this.attackCooldownMs=180;
+          for (const angle of [-.18,.18]) shots.push({...this.aim(enemy,playerX,playerY,175,angle),sourceLayer:'surface'});
           enemy.secondShotFired = true;
         }
         continue;
@@ -330,13 +335,15 @@ export class StageDirector {
               enemy.x = clamp(enemy.baseX + Math.sin(enemy.ageMs / 220) * 28, PLAYFIELD_X + 24, PLAYFIELD_RIGHT - 24);
               if (enemy.y >= 90) {
                 enemy.phase = 'telegraph';
+                enemy.aimX=playerX;enemy.aimY=playerY;
                 enemy.phaseMs = Math.round(CHARGE_MS.scout * chargeMult);
               }
               break;
             case 'telegraph':
               enemy.y += (speed * 0.35 * dt) / 1000;
               enemy.phaseMs -= dt;
-              if (enemy.phaseMs <= 0) {
+              if (enemy.phaseMs <= 0 && this.attackCooldownMs<=0) {
+                this.attackCooldownMs=180;
                 enemy.phase = 'attack';
                 enemy.phaseMs = 220;
                 shots.push(this.aim(enemy, playerX, playerY, 150 * bulletSpeedMult));
@@ -371,13 +378,15 @@ export class StageDirector {
               enemy.x = clamp(enemy.x + (dirX * 60 * dt) / 1000, PLAYFIELD_X + 20, PLAYFIELD_RIGHT - 20);
               if (enemy.y >= 85) {
                 enemy.phase = 'telegraph';
+                enemy.aimX=playerX;enemy.aimY=playerY;
                 enemy.phaseMs = Math.round(CHARGE_MS.dart * chargeMult);
               }
               break;
             case 'telegraph':
               enemy.y += (speed * 0.5 * dt) / 1000;
               enemy.phaseMs -= dt;
-              if (enemy.phaseMs <= 0) {
+              if (enemy.phaseMs <= 0 && this.attackCooldownMs<=0) {
+                this.attackCooldownMs=180;
                 enemy.phase = 'attack';
                 enemy.phaseMs = 200;
                 shots.push(this.aim(enemy, playerX, playerY, 135 * bulletSpeedMult, -0.16));
@@ -414,13 +423,15 @@ export class StageDirector {
               enemy.x = clamp(enemy.x, PLAYFIELD_X + 24, PLAYFIELD_RIGHT - 24);
               if (enemy.y >= 95) {
                 enemy.phase = 'telegraph';
+                enemy.aimX=playerX;enemy.aimY=playerY;
                 enemy.phaseMs = Math.round(CHARGE_MS.lancer * chargeMult);
               }
               break;
             case 'telegraph':
               enemy.y += (speed * 0.3 * dt) / 1000;
               enemy.phaseMs -= dt;
-              if (enemy.phaseMs <= 0) {
+              if (enemy.phaseMs <= 0 && this.attackCooldownMs<=0) {
+                this.attackCooldownMs=180;
                 enemy.phase = 'attack';
                 enemy.phaseMs = 450;
                 if (this.difficulty === 'arcade') {
@@ -468,13 +479,15 @@ export class StageDirector {
               enemy.x = clamp(enemy.x, PLAYFIELD_X + 28, PLAYFIELD_RIGHT - 28);
               if (enemy.y >= 105) {
                 enemy.phase = 'telegraph';
+                enemy.aimX=playerX;enemy.aimY=playerY;
                 enemy.phaseMs = Math.round(CHARGE_MS.cutter * chargeMult);
               }
               break;
             case 'telegraph':
               enemy.y += (speed * 0.2 * dt) / 1000;
               enemy.phaseMs -= dt;
-              if (enemy.phaseMs <= 0) {
+              if (enemy.phaseMs <= 0 && this.attackCooldownMs<=0) {
+                this.attackCooldownMs=180;
                 enemy.phase = 'attack';
                 enemy.phaseMs = 550;
                 // Disparo de fagulhas laterais no início da investida
@@ -508,6 +521,7 @@ export class StageDirector {
 
     // Relax intersecting routes before rendering. Keep anchored organisms fixed.
     for (let pass = 0; pass < 24; pass++) {
+      let displaced=false;
       if (this.boss && this.boss.phase !== 'defeated') {
         for (const enemy of this.enemies) {
           const rx = this.boss.bodyRadiusX ?? 95;
@@ -516,6 +530,7 @@ export class StageDirector {
           const radius = enemyBodyRadius(enemy) + 8;
           const norm = Math.hypot(dx / (rx + radius), dy / (ry + radius));
           if (norm < 1 && !enemy.layer) {
+            displaced=true;
             const angle = Math.atan2(dy / (ry + radius), dx / (rx + radius));
             enemy.x = this.boss.x + Math.cos(angle) * (rx + radius);
             enemy.y = this.boss.y + Math.sin(angle) * (ry + radius);
@@ -529,6 +544,7 @@ export class StageDirector {
           const gap = enemyBodyRadius(a) + enemyBodyRadius(b) + 14;
           const dx = b.x - a.x, dy = b.y - a.y, distance = Math.hypot(dx, dy);
           if (distance >= gap) continue;
+          displaced=true;
           const nx = distance > .01 ? dx / distance : (a.id % 2 ? 1 : -1);
           const ny = distance > .01 ? dy / distance : 0, push = gap - distance;
           const anchoredA = !!a.layer, anchoredB = !!b.layer;
@@ -541,6 +557,7 @@ export class StageDirector {
           }
         }
       }
+      if(!displaced)break;
     }
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       if (this.enemies[i].y > 480 || this.enemies[i].y < -90) this.enemies.splice(i, 1);
@@ -552,7 +569,7 @@ export class StageDirector {
 
     return {
       spawned,
-      shots,
+      shots:shots.filter(s=>s.x>=PLAYFIELD_X&&s.x<=PLAYFIELD_RIGHT&&s.y>=0&&s.y<=400&&Math.hypot(s.x-playerX,s.y-playerY)>=70),
       scrollPx: this.scrollPx,
       progress: clamp(this.scrollPx / DEMO_DISTANCE, 0, 1),
       sector,
@@ -569,6 +586,7 @@ export class StageDirector {
     const enemy = this.enemies[index];
     if (enemy.submerged) return {killed:false,score:0};
     enemy.hp = Math.max(0, enemy.hp - Math.max(0, amount));
+    enemy.hitFlashMs=85;
     if (enemy.hp > 0) return { killed: false, score: 0 };
     this.enemies.splice(index, 1);
     const scoreMap: Record<EnemyKind, number> = {
@@ -591,8 +609,8 @@ export class StageDirector {
   }
 
   private aim(enemy: EnemyModel, x: number, y: number, speed: number, angleOffsetRad = 0): EnemyShotEvent {
-    const dx = x - enemy.x;
-    const dy = y - enemy.y;
+    const dx = (enemy.aimX??x) - enemy.x;
+    const dy = (enemy.aimY??y) - enemy.y;
     const baseAngle = Math.atan2(dy, dx);
     const finalAngle = baseAngle + angleOffsetRad;
     return {

@@ -1,5 +1,7 @@
 # Fase 1 — cascata, controles e polimento
 
+> **Revisão vigente do Normal — 10/11/2026:** [Ritmo, progressão e polimento fino](37_FASE1_NORMAL_RITMO_POLIMENTO.md). Doze transportadores, especial único com uma reposição, progressão mais espaçada, chefes recalibrados, tiros com colisão contínua e recuperação no Continue. Esta revisão prevalece sobre os números anteriores.
+
 Diretriz de 10/11/2026. Prevalece sobre regras conflitantes dos documentos 27, 30, 31, 33 e 35. O escopo permanece Fase 1 / RIVET / dificuldade Normal. Fase 2, Android e demais pilotos aguardam aprovação explícita.
 
 ## Evolução decidida para Bullet Wake

@@ -71,6 +71,7 @@ export class AudioSystem {
   playShot(pilotId: 'nolan' | 'cora' | 'harlan', level = 1): void {
     this.unlock();
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    if(!this.allowSound('player-shot',.065))return;
     const now = this.ctx.currentTime;
 
     if (pilotId === 'nolan') {
@@ -89,6 +90,7 @@ export class AudioSystem {
       gain.connect(this.sfxGain);
       osc.start(now);
       osc.stop(now + 0.08);
+      osc.onended=()=>{osc.disconnect();gain.disconnect();};
     } else if (pilotId === 'cora') {
       // Laser fino agudo com harmônicos
       const osc = this.ctx.createOscillator();
@@ -104,6 +106,7 @@ export class AudioSystem {
       gain.connect(this.sfxGain);
       osc.start(now);
       osc.stop(now + 0.07);
+      osc.onended=()=>{osc.disconnect();gain.disconnect();};
     } else {
       // Canhão pesado de Harlan: soco grave
       const osc = this.ctx.createOscillator();
@@ -119,6 +122,7 @@ export class AudioSystem {
       gain.connect(this.sfxGain);
       osc.start(now);
       osc.stop(now + 0.12);
+      osc.onended=()=>{osc.disconnect();gain.disconnect();};
     }
   }
 
@@ -301,6 +305,7 @@ export class AudioSystem {
   playChargeWindup(ratio: number): void {
     this.unlock();
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
+    if(!this.allowSound('charge-windup',.10))return;
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -317,6 +322,7 @@ export class AudioSystem {
     gain.connect(this.sfxGain);
     osc.start(now);
     osc.stop(now + 0.06);
+    osc.onended=()=>{osc.disconnect();gain.disconnect();};
   }
 
   playChargedShot(pilotId: string, level = 2): void {

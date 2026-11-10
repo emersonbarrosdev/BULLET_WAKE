@@ -65,6 +65,7 @@ export class VectorShip extends Phaser.GameObjects.Container {
   private readonly coreDot: Phaser.GameObjects.Graphics;
   private readonly palette: Palette;
   private readonly paintedRivet?: Phaser.GameObjects.Sprite;
+  private readonly paintedExhaust: Phaser.GameObjects.Sprite[] = [];
 
   private bankAngle = 0;
   private targetBankAngle = 0;
@@ -96,6 +97,10 @@ export class VectorShip extends Phaser.GameObjects.Container {
 
     this.add([this.shieldGraphics, this.graphics, this.coreDot]);
     if (pilotId === 'nolan' && viewMode === 'top-down' && scene.textures.exists('hd-rivet')) {
+      if(scene.textures.exists('polish-fire'))for(const x of [-5,0,5]){
+        const plume=scene.add.sprite(x,22,'polish-fire',0).setDisplaySize(4,10).setRotation(Math.PI).setAlpha(.85);
+        this.paintedExhaust.push(plume);this.addAt(plume,1);
+      }
       this.paintedRivet = scene.add.sprite(0, 0, 'hd-rivet', 0).setDisplaySize(46, 46);
       this.addAt(this.paintedRivet, 2);
     }
@@ -173,6 +178,8 @@ export class VectorShip extends Phaser.GameObjects.Container {
     } else if (this.paintedRivet) {
       const frame = roll < -.05 ? 2 : roll > .05 ? 3 : Math.floor(this.flamePhase / 5) % 2;
       this.paintedRivet.setFrame(frame);
+      // Bank poses keep their silhouette; the three exhausts animate independently.
+      this.paintedExhaust.forEach((plume,i)=>plume.setFrame((Math.floor(this.flamePhase/3)+i*2)%8).setDisplaySize(isDashing?5:4,isDashing?18:10));
       if (this.isHit) this.paintedRivet.setTint(0xffbdb4);
       else this.paintedRivet.clearTint();
       // The animated muzzle sprite owns firing feedback; no flat oval over the nose.

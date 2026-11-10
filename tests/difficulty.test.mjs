@@ -116,10 +116,10 @@ test('Boss Resilience: KRM-17 cannot be trivialized and requires multi-phase mas
 });
 
 test('Weapon Upgrades: Scaling increases volume of fire without trivializing boss HP', () => {
-  const lv1 = getPrimaryProjectiles('nolan', 1, 100, 200);
-  const lv2 = getPrimaryProjectiles('nolan', 2, 100, 200);
-  const lv3 = getPrimaryProjectiles('nolan', 3, 100, 200);
-  const lv4 = getPrimaryProjectiles('nolan', 4, 100, 200);
+  const lv1 = getPrimaryProjectiles('green', 1, 100, 200);
+  const lv2 = getPrimaryProjectiles('green', 2, 100, 200);
+  const lv3 = getPrimaryProjectiles('green', 3, 100, 200);
+  const lv4 = getPrimaryProjectiles('green', 4, 100, 200);
 
   assert.equal(lv1.length, 2, 'LV1 tem 2 projéteis paralelos');
   assert.equal(lv2.length, 4);
@@ -127,7 +127,9 @@ test('Weapon Upgrades: Scaling increases volume of fire without trivializing bos
   assert.equal(lv4.length, 8);
 
   const totalDmgLv3 = lv3.reduce((sum, p) => sum + p.damage, 0);
-  assert.ok(totalDmgLv3 >= 5.0 && totalDmgLv3 <= 9.0, 'Dano LV3 amplia cobertura sem quebrar a escala');
+  const totalDmgLv1=lv1.reduce((sum,p)=>sum+p.damage,0);
+  assert.ok(totalDmgLv3>totalDmgLv1&&totalDmgLv3<totalDmgLv1*2, 'Green coverage grows without tripling its concentrated volley damage');
+  assert.ok(lv4.reduce((sum,p)=>sum+p.damage,0)<=totalDmgLv1*2+1e-9);
 });
 
 test('Difficulty Modes: Arcade mode scales bullet velocity and expands Lancer spread to 5-way', () => {

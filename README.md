@@ -1,5 +1,7 @@
 # BULLET WAKE
 
+> **Revisão vigente do Normal — 10/11/2026:** [Ritmo, progressão e polimento fino](docs/37_FASE1_NORMAL_RITMO_POLIMENTO.md). Doze transportadores, especial único com uma reposição, progressão mais espaçada, chefes recalibrados, tiros com colisão contínua e recuperação no Continue. Esta revisão prevalece sobre os números anteriores.
+
 Revisão atual: [Fase 1 — cascata, controles, oceano e especial](docs/36_FASE1_CASCATA_CONTROLES_POLIMENTO.md). Inclui carregamento antes do guia, decolagem de 2,5 s e guia/HUD em carbono fosco. Fase 2 e Android aguardam aprovação da Fase 1.
 
 > **Polimento atual da Fase 1:** [água, contato, HUD, áudio e explosões](docs/35_FASE1_POLIMENTO_CONTATO_AGUA_AUDIO.md). Continuidade da água, projéteis sem retângulos, explosões de fogo rápidas e telemetria agrupada; [evidências nas duas resoluções](docs/screenshots/phase1-fine/). As próximas fases aguardam aprovação da primeira.

@@ -1,0 +1,170 @@
+{
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "ttks": [
+        {
+          "name": "raia",
+          "family": "ion",
+          "level": 2,
+          "seconds": 14.38,
+          "phases": {
+            "intro": 0,
+            "active": 1180,
+            "defeated": 14380
+          },
+          "defeated": true
+        },
+        {
+          "name": "talassarca",
+          "family": "ion",
+          "level": 2,
+          "seconds": 59.2,
+          "phases": {
+            "intro": 0,
+            "shell": 1780,
+            "metamorphosis": 36320,
+            "inner": 38720,
+            "defeated": 59200
+          },
+          "defeated": true
+        },
+        {
+          "name": "talassarca",
+          "family": "ion",
+          "level": 3,
+          "seconds": 42.38,
+          "phases": {
+            "intro": 0,
+            "shell": 1780,
+            "metamorphosis": 28000,
+            "inner": 30400,
+            "defeated": 42380
+          },
+          "defeated": true
+        },
+        {
+          "name": "talassarca",
+          "family": "ion",
+          "level": 4,
+          "seconds": 38.82,
+          "phases": {
+            "intro": 0,
+            "shell": 1780,
+            "metamorphosis": 25800,
+            "inner": 28200,
+            "defeated": 38820
+          },
+          "defeated": true
+        },
+        {
+          "name": "talassarca",
+          "family": "green",
+          "level": 1,
+          "seconds": 37.22,
+          "phases": {
+            "intro": 0,
+            "shell": 1780,
+            "metamorphosis": 22580,
+            "inner": 24980,
+            "defeated": 37220
+          },
+          "defeated": true
+        }
+      ],
+      "animatedFrames": true,
+      "specialDamage": 120,
+      "noOverflow": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "ttks": [
+        {
+          "name": "raia",
+          "family": "ion",
+          "level": 2,
+          "seconds": 14.38,
+          "phases": {
+            "intro": 0,
+            "active": 1180,
+            "defeated": 14380
+          },
+          "defeated": true
+        },
+        {
+          "name": "talassarca",
+          "family": "ion",
+          "level": 2,
+          "seconds": 59.2,
+          "phases": {
+            "intro": 0,
+            "shell": 1780,
+            "metamorphosis": 36320,
+            "inner": 38720,
+            "defeated": 59200
+          },
+          "defeated": true
+        },
+        {
+          "name": "talassarca",
+          "family": "ion",
+          "level": 3,
+          "seconds": 42.38,
+          "phases": {
+            "intro": 0,
+            "shell": 1780,
+            "metamorphosis": 28000,
+            "inner": 30400,
+            "defeated": 42380
+          },
+          "defeated": true
+        },
+        {
+          "name": "talassarca",
+          "family": "ion",
+          "level": 4,
+          "seconds": 38.82,
+          "phases": {
+            "intro": 0,
+            "shell": 1780,
+            "metamorphosis": 25800,
+            "inner": 28200,
+            "defeated": 38820
+          },
+          "defeated": true
+        },
+        {
+          "name": "talassarca",
+          "family": "green",
+          "level": 1,
+          "seconds": 37.22,
+          "phases": {
+            "intro": 0,
+            "shell": 1780,
+            "metamorphosis": 22580,
+            "inner": 24980,
+            "defeated": 37220
+          },
+          "defeated": true
+        }
+      ],
+      "animatedFrames": true,
+      "specialDamage": 120,
+      "noOverflow": true
+    }
+  ],
+  "regression": {
+    "title": true,
+    "stationaryPilot": {
+      "seconds": 44.7,
+      "hp": 0,
+      "gameOver": true,
+      "peakShots": 4,
+      "peakEnemies": 7,
+      "updateP95Ms": 0.2999999523162842
+    }
+  },
+  "errors": []
+}

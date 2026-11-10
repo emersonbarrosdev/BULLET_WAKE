@@ -166,8 +166,8 @@ test('TESTE D: Tecla Shift Esquerdo aciona dashTrigger com precisão instantâne
 test('TESTE E: Disparo manual mais rápido e contínuo compartilham cadência; calor legado resfria', () => {
   const specs = PILOT_WEAPON_SPECS.nolan;
   assert.ok(specs.burstIntervalMs < specs.autoIntervalMs);
-  assert.equal(specs.autoIntervalMs, 380);
-  assert.equal(specs.burstIntervalMs, 125);
+  assert.equal(specs.autoIntervalMs, 280);
+  assert.equal(specs.burstIntervalMs, 160);
 
   let w = createPlayerWeapons('nolan');
   assert.equal(w.heat, 0);
