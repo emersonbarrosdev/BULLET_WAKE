@@ -1,0 +1,315 @@
+{
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "hud": {
+        "survival": true,
+        "offense": true,
+        "bars": 1,
+        "panels": 5,
+        "fps": false,
+        "fits": true,
+        "scroll": false
+      },
+      "alpha": [
+        {
+          "name": "scout",
+          "cornerMax": 0
+        },
+        {
+          "name": "dart",
+          "cornerMax": 1
+        },
+        {
+          "name": "lancer",
+          "cornerMax": 1
+        },
+        {
+          "name": "cutter",
+          "cornerMax": 1
+        },
+        {
+          "name": "surface",
+          "cornerMax": 1
+        },
+        {
+          "name": "raia",
+          "cornerMax": 0
+        }
+      ],
+      "seam": {
+        "meanDifference": 0.38745784704043046,
+        "maxRowDelta": 1.412739965095986,
+        "meanRowDelta": 0.5952562168508575
+      },
+      "motion": {
+        "meanDifference": 0.3449799347367656,
+        "maxRowDelta": 1.4397905759162304,
+        "meanRowDelta": 0.5958682885428824
+      },
+      "timing": [
+        {
+          "fps": 30,
+          "meanDifference": 0
+        },
+        {
+          "fps": 60,
+          "meanDifference": 0
+        },
+        {
+          "fps": 120,
+          "meanDifference": 0
+        }
+      ],
+      "contact": {
+        "damaged": 82,
+        "afterInvulnerable": 82,
+        "remaining": 0
+      },
+      "pickup": {
+        "first": 70,
+        "second": 70,
+        "marked": true
+      },
+      "cleanup": {
+        "particles": 0,
+        "explosions": 0
+      }
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "hud": {
+        "survival": true,
+        "offense": true,
+        "bars": 1,
+        "panels": 5,
+        "fps": false,
+        "fits": true,
+        "scroll": false
+      },
+      "alpha": [
+        {
+          "name": "scout",
+          "cornerMax": 0
+        },
+        {
+          "name": "dart",
+          "cornerMax": 1
+        },
+        {
+          "name": "lancer",
+          "cornerMax": 1
+        },
+        {
+          "name": "cutter",
+          "cornerMax": 1
+        },
+        {
+          "name": "surface",
+          "cornerMax": 1
+        },
+        {
+          "name": "raia",
+          "cornerMax": 0
+        }
+      ],
+      "seam": {
+        "meanDifference": 0.38725331589334067,
+        "maxRowDelta": 1.023543990086741,
+        "meanRowDelta": 0.4289528718247311
+      },
+      "motion": {
+        "meanDifference": 0.34451156546881456,
+        "maxRowDelta": 1.0179677819083024,
+        "meanRowDelta": 0.4288945889362427
+      },
+      "timing": [
+        {
+          "fps": 30,
+          "meanDifference": 0
+        },
+        {
+          "fps": 60,
+          "meanDifference": 0
+        },
+        {
+          "fps": 120,
+          "meanDifference": 0
+        }
+      ],
+      "contact": {
+        "damaged": 82,
+        "afterInvulnerable": 82,
+        "remaining": 0
+      },
+      "pickup": {
+        "first": 70,
+        "second": 70,
+        "marked": true
+      },
+      "cleanup": {
+        "particles": 0,
+        "explosions": 0
+      }
+    }
+  ],
+  "regression": {
+    "title": true
+  },
+  "errors": [],
+  "audio": {
+    "voices": {
+      "scout": {
+        "peak": 0.033261556178331375,
+        "rms": 0.003914576385286835,
+        "tailRms": 0,
+        "hash": 457479938,
+        "oscillators": 2
+      },
+      "dart": {
+        "peak": 0.03247131407260895,
+        "rms": 0.003835633850148667,
+        "tailRms": 0,
+        "hash": -1426067453,
+        "oscillators": 2
+      },
+      "lancer": {
+        "peak": 0.03346466273069382,
+        "rms": 0.003971902179591054,
+        "tailRms": 0,
+        "hash": -623447207,
+        "oscillators": 2
+      },
+      "cutter": {
+        "peak": 0.032599158585071564,
+        "rms": 0.003893681224929162,
+        "tailRms": 0,
+        "hash": -287326211,
+        "oscillators": 2
+      },
+      "surface": {
+        "peak": 0.03365848958492279,
+        "rms": 0.004061317811548784,
+        "tailRms": 0,
+        "hash": 111238013,
+        "oscillators": 2
+      },
+      "raia": {
+        "peak": 0.03374169394373894,
+        "rms": 0.004168017432792447,
+        "tailRms": 0,
+        "hash": 1377070588,
+        "oscillators": 2
+      },
+      "talassarca": {
+        "peak": 0.03319064900279045,
+        "rms": 0.004460096901513088,
+        "tailRms": 0,
+        "hash": 1547161584,
+        "oscillators": 2
+      }
+    },
+    "human": {
+      "peak": 0.03397297486662865,
+      "rms": 0.0024960135350951163,
+      "tailRms": 0,
+      "hash": 109134033,
+      "oscillators": 1
+    },
+    "salvo": {
+      "peak": 0.033261556178331375,
+      "rms": 0.003914576385286835,
+      "tailRms": 0,
+      "hash": 457479938,
+      "oscillators": 2
+    },
+    "events": {
+      "hit-alien": {
+        "peak": 0.021376831457018852,
+        "rms": 0.0011951786592953114,
+        "tailRms": 0,
+        "hash": 65484097,
+        "oscillators": 1
+      },
+      "hit-hull": {
+        "peak": 0.08317217975854874,
+        "rms": 0.0057501448586787796,
+        "tailRms": 0,
+        "hash": -1882706550,
+        "oscillators": 1
+      },
+      "hit-shield": {
+        "peak": 0.04387581720948219,
+        "rms": 0.005165484197686424,
+        "tailRms": 0,
+        "hash": 812688108,
+        "oscillators": 1
+      },
+      "pickup-power": {
+        "peak": 0.1266157627105713,
+        "rms": 0.01112699206951837,
+        "tailRms": 0,
+        "hash": -1823963138,
+        "oscillators": 2
+      },
+      "pickup-health": {
+        "peak": 0.16024218499660492,
+        "rms": 0.016615482302273974,
+        "tailRms": 0,
+        "hash": 880326147,
+        "oscillators": 3
+      },
+      "pickup-special": {
+        "peak": 0.15821978449821472,
+        "rms": 0.01660516772484322,
+        "tailRms": 0,
+        "hash": -1361744163,
+        "oscillators": 3
+      },
+      "pickup-upgrade": {
+        "peak": 0.16293758153915405,
+        "rms": 0.02073096013255601,
+        "tailRms": 0,
+        "hash": 1232341393,
+        "oscillators": 4
+      },
+      "pickup-weapon_green": {
+        "peak": 0.1324697732925415,
+        "rms": 0.01113680998400578,
+        "tailRms": 0,
+        "hash": -368974212,
+        "oscillators": 2
+      },
+      "pickup-weapon_red": {
+        "peak": 0.13097071647644043,
+        "rms": 0.01113157182080651,
+        "tailRms": 0,
+        "hash": 805826092,
+        "oscillators": 2
+      },
+      "explosion": {
+        "peak": 0.09137637168169022,
+        "rms": 0.00744537327927545,
+        "tailRms": 0,
+        "hash": -1459978312,
+        "oscillators": 1
+      },
+      "largeExplosion": {
+        "peak": 0.20976202189922333,
+        "rms": 0.024129546260568475,
+        "tailRms": 0,
+        "hash": 1970971004,
+        "oscillators": 1
+      }
+    },
+    "mix": {
+      "peak": 0.3382999897003174,
+      "rms": 0.04260204196592284,
+      "tailRms": 0,
+      "hash": -1118429762,
+      "oscillators": 13
+    }
+  }
+}

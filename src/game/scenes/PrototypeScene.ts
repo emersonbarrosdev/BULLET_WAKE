@@ -64,7 +64,7 @@ import { CrimsonLaserRenderer } from '../render/CrimsonLaserRenderer.ts';
 import { CombatParticles } from '../render/CombatParticles';
 import { PICKUP_GUIDE } from '../data/pickupGuide';
 import { stepTriggerCadence, type TriggerCadence } from '../systems/fireCadence';
-import { circleHitsHull } from '../systems/hullCollision';
+import { circleHitsHull, sweptHullContact } from '../systems/hullCollision';
 import { InputManager } from '../systems/inputSystem.ts';
 import { PickupSystem, type PickupType } from '../systems/pickupSystem.ts';
 import {
@@ -534,10 +534,15 @@ export class PrototypeScene extends Phaser.Scene {
       this.time.delayedCall(85, () => sprite.destroy());
       return;
     }
-    const key='polish-explosion',size=kind==='explosion'?72:22;
+    if(kind==='hit'){
+      const spark=this.add.image(x,y,'polish-explosion',0).setDisplaySize(13,13).setDepth(19);
+      this.tweens.add({targets:spark,alpha:0,duration:65,onComplete:()=>spark.destroy()});
+      return;
+    }
+    const key='polish-explosion',size=64;
     const sprite=this.add.sprite(x,y,key,0).setDisplaySize(size,size).setDepth(19).play(key+'-loop');
     sprite.once('animationcomplete',()=>sprite.destroy());
-    if (kind==='explosion') this.particles.burst(x,y);
+    this.particles.burst(x,y);
   }
 
   private createPlayerProjectile(def: ProjectileSpawnDef, tint?: number): void {
@@ -659,7 +664,7 @@ export class PrototypeScene extends Phaser.Scene {
       if (typeof dmgEvent.targetId === 'number') {
         const stillAlive = this.director.enemies.some((e) => e.id === dmgEvent.targetId);
         if (stillAlive) {
-          this.applyDamageToEnemy(dmgEvent.targetId, dmgEvent.damage);
+          this.applyDamageToEnemy(dmgEvent.targetId, dmgEvent.damage, dmgEvent.hitX, dmgEvent.hitY);
         }
       } else if (dmgEvent.targetId === 'boss' && this.director.boss) {
         this.applyBossDamage(dmgEvent.damage, dmgEvent.hitX, dmgEvent.hitY);
@@ -914,14 +919,15 @@ export class PrototypeScene extends Phaser.Scene {
   private checkPickupCollisions(): void {
     const collected = this.pickups.checkCollection(this.ship.x, this.ship.y, this.vectorShip.hitRadius, true);
     for (const item of collected) {
-      globalAudio.playPickup(item.type);
+      if(item.type!=='power')globalAudio.playPickup(item.type);
       const color=Phaser.Display.Color.HexStringToColor(PICKUP_GUIDE[item.type].color).color;
       this.particles.burst(item.x,item.y,.7,false,color);
-      const feedback=this.add.image(item.x,item.y,'review-pickups-'+(item.type==='full_power'?'power':item.type),0).setDisplaySize(31,31).setDepth(22);
-      this.tweens.add({targets:feedback,alpha:0,scaleX:feedback.scaleX*1.65,scaleY:feedback.scaleY*1.65,y:item.y-10,duration:180,onComplete:()=>feedback.destroy()});
+      const feedback=this.add.image(item.x,item.y,'review-pickups-'+(item.type==='full_power'?'power':item.type),0).setDisplaySize(25,25).setDepth(22);
+      this.tweens.add({targets:feedback,alpha:0,scaleX:feedback.scaleX*.3,scaleY:feedback.scaleY*.3,x:this.ship.x,y:this.ship.y,duration:110,onComplete:()=>feedback.destroy()});
 
       if (item.type === 'power') {
         const res = collectPowerItem(this.weapons);
+        globalAudio.playPickup(res.levelIncreased?'upgrade':'power');
         this.weapons = res.state;
         this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
         if (res.levelIncreased) {
@@ -1022,14 +1028,14 @@ export class PrototypeScene extends Phaser.Scene {
     const bullet=this.add.sprite(event.x,event.y,key,0).setDisplaySize(sizes[kind],sizes[kind]).setDepth(18).play(key+'-loop');
     bullet.setRotation(Math.atan2(event.velocityY,event.velocityX)-Math.PI/2);
     this.enemyShots.push({node:bullet,baseX:event.x,baseY:event.y,trail:[],ageMs:0,velocityX:event.velocityX,velocityY:event.velocityY,damage:kind==='talassarca'?25:kind==='cutter'?22:18,hitRadius:kind==='lancer'||kind==='talassarca'?4:3,sourceLayer:event.sourceLayer});
-    globalAudio.playEnemyShot();
+    globalAudio.playEnemyShot(kind);
   }
 
-  private applyDamageToEnemy(enemyId: number, amount: number): void {
+  private applyDamageToEnemy(enemyId: number, amount: number, impactX?:number, impactY?:number): void {
     // Captura posição e tipo ANTES de `this.director.damage` remover o inimigo abatido da lista!
     const targetBefore = this.director.enemies.find(e => e.id === enemyId);
-    const x = targetBefore ? targetBefore.x : this.ship.x;
-    const y = targetBefore ? targetBefore.y : this.ship.y - 120;
+    if(!targetBefore || targetBefore.submerged || amount<=0)return;
+    const {x,y} = targetBefore;
     const hit = this.director.damage(enemyId, amount);
 
     if (hit.killed) {
@@ -1050,7 +1056,7 @@ export class PrototypeScene extends Phaser.Scene {
       }
       this.syncEnemyVisuals();
     } else {
-      this.playEffect('hit', x, y);
+      this.playEffect('hit', impactX??x, impactY??y);
       globalAudio.playHit();
     }
   }
@@ -1099,7 +1105,7 @@ export class PrototypeScene extends Phaser.Scene {
         ) {
           const combatDamage = shot.piercing ? shot.damage * 0.5 : shot.damage * 0.36;
           shot.hitTargets?.add(enemy.id);
-          this.applyDamageToEnemy(enemy.id, combatDamage);
+          this.applyDamageToEnemy(enemy.id, combatDamage, shot.node.x, shot.node.y);
           collided = !shot.piercing;
           break;
         }
@@ -1151,12 +1157,13 @@ export class PrototypeScene extends Phaser.Scene {
   private advanceEnemyShots(dt: number): void {
     for (let i = this.enemyShots.length - 1; i >= 0; i--) {
       const shot = this.enemyShots[i];
+      const previous={x:shot.node.x,y:shot.node.y};
       shot.ageMs += dt;
       shot.node.x += (shot.velocityX * dt) / 1000;
       shot.node.y += (shot.velocityY * dt) / 1000;
 
       // The visible hull includes the nose and wings, excluding empty sprite corners.
-      const hit = circleHitsHull(shot.node.x,shot.node.y,shot.hitRadius,this.ship.x,this.ship.y);
+      const hit = sweptHullContact(previous,{x:shot.node.x,y:shot.node.y},shot.hitRadius,this.ship.x,this.ship.y);
 
       const outside =
         shot.node.x < PLAYFIELD_X - 20 ||
@@ -1164,7 +1171,7 @@ export class PrototypeScene extends Phaser.Scene {
         shot.node.y < -20 ||
         shot.node.y > GAME_HEIGHT + 20;
 
-      const impactX=shot.node.x,impactY=shot.node.y;
+      const impactX=hit?.x??shot.node.x,impactY=hit?.y??shot.node.y;
       if (hit || outside) {
         shot.node.destroy();
         this.enemyShots.splice(i, 1);
@@ -1172,17 +1179,15 @@ export class PrototypeScene extends Phaser.Scene {
       if (hit) {
         // Se estiver em janela de invulnerabilidade do dash ou pós-acerto, ignora o dano
         if (this.health.invulnerableMs > 0 || isDashInvulnerable(this.dashState)) {
-          this.playEffect('hit', impactX, impactY);
           continue;
         }
-        this.playEffect('hit',impactX,impactY);
-        const result = this.damageShip(shot.damage);
+        const result = this.damageShip(shot.damage,impactX,impactY);
         if (result === 'respawn' || result === 'game-over') return;
       }
     }
   }
 
-  private damageShip(damage=20): HitEvent {
+  private damageShip(damage=20, impactX=this.ship.x, impactY=this.ship.y): HitEvent {
     if(damage<=0)return 'ignored';
     if(this.weapons.specialActiveMs>0 || this.director.boss?.phase==='metamorphosis')return 'ignored';
     // Se o jogador estiver em invulnerabilidade ativa, descarta qualquer dano
@@ -1196,8 +1201,8 @@ export class PrototypeScene extends Phaser.Scene {
       this.health = { ...this.health, invulnerableMs: 1200 };
       this.hud.setHealth(this.health, false);
       this.hud.flash('ESCUDO DISSIPADO!', '#7df9ff', 900);
-      this.playEffect('hit', this.vectorShip.x, this.vectorShip.y);
-      globalAudio.playHit();
+      this.playEffect('hit', impactX, impactY);
+      globalAudio.playHit('shield');
       return 'ignored';
     }
 
@@ -1209,9 +1214,9 @@ export class PrototypeScene extends Phaser.Scene {
 
     if (outcome.event === 'damaged') {
       this.hud.flash('CASCO ATINGIDO!', '#f87171', 1100);
-      globalAudio.playHit();
+      globalAudio.playHit('hull');
       this.hitPoseMs = 320;
-      this.playEffect('hit', this.vectorShip.x, this.vectorShip.y);
+      this.playEffect('hit', impactX, impactY);
     } else if (outcome.event === 'game-over') {
       this.specialVisual?.destroy();this.specialVisual=undefined;
       globalAudio.playExplosion(true);

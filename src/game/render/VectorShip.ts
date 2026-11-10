@@ -175,12 +175,7 @@ export class VectorShip extends Phaser.GameObjects.Container {
       this.paintedRivet.setFrame(frame);
       if (this.isHit) this.paintedRivet.setTint(0xffbdb4);
       else this.paintedRivet.clearTint();
-      if (this.isFiring) {
-        g.fillStyle(0x38bdf8, .25);
-        g.fillEllipse(0, -20, 16, 8);
-        g.fillStyle(0xe0f7ff, .95);
-        g.fillEllipse(0, -22, 4, 7);
-      }
+      // The animated muzzle sprite owns firing feedback; no flat oval over the nose.
       if (isDashing) {
         for (const x of [-5, 0, 5]) {
           g.fillStyle(0xffa83d, .45);

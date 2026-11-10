@@ -5,7 +5,7 @@ import {
   applyPlayerHit,
   advanceHealth,
 } from '../src/game/systems/combat.ts';
-import { circleHitsHull } from '../src/game/systems/hullCollision.ts';
+import { circleHitsHull, sweptHullContact } from '../src/game/systems/hullCollision.ts';
 import { stepTriggerCadence } from '../src/game/systems/fireCadence.ts';
 import {
   StageDirector,
@@ -30,6 +30,16 @@ test('visible nose and wings take hits; empty sprite corners do not', () => {
   assert.equal(circleHitsHull(117, 110, 1, 100, 100), true);
   assert.equal(circleHitsHull(118, 81, 1, 100, 100), false);
   assert.equal(circleHitsHull(100, 125, 1, 100, 100), false);
+});
+
+test('fast hostile shots contact the nose or wing before passing through, and near misses stay misses',()=>{
+  const nose=sweptHullContact({x:100,y:50},{x:100,y:140},2,100,100);
+  assert.ok(nose && Math.abs(nose.y-78)<.05);
+  const wing=sweptHullContact({x:140,y:110},{x:90,y:110},1,100,100);
+  assert.ok(wing && wing.x>117&&wing.x<120);
+  assert.equal(sweptHullContact({x:121,y:60},{x:121,y:140},1,100,100),null);
+  assert.equal(sweptHullContact({x:0,y:80},{x:30,y:80},2,100,100),null);
+  assert.deepEqual(sweptHullContact({x:100,y:100},{x:100,y:100},1,100,100),{x:100,y:100});
 });
 test('RAPID off rewards tapping; RAPID on restores held cadence across frame rates', () => {
   const count=(fps, mode)=>{

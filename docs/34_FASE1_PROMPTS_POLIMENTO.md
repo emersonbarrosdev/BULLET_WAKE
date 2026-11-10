@@ -2,6 +2,8 @@
 
 Assets raster originais gerados pela ferramenta integrada `image_gen`, sem CLI/API externa e sem reutilizar imagens dos jogos de referência. Abaixo estão as especificações normalizadas do conjunto de prompts selecionado. As versões de aeronaves, dirigível mecânico e fortaleza mecânica foram descartadas e não entram no jogo.
 
+> A explosão e a transparência dos projéteis receberam revisão posterior. Seus prompts e destinos vigentes estão em [Polimento de contato, água, áudio e explosões](35_FASE1_POLIMENTO_CONTATO_AGUA_AUDIO.md#assets-finais-e-prompts).
+
 ## Prompt-base de criaturas
 
 > Production animation sprite atlas for BULLET WAKE, premium hand-painted illustrated 2D arcade shooter, matte painterly 2.5D concept art, true orthographic top-down, head points down. LIVING EXTRATERRESTRIAL ORGANISMS, no spaceship, conventional aircraft, metal machine, cockpit, thruster, gun, clock, tank, gothic skull or Void creature. Every cell has the same centered core anchor, camera, scale and lighting. Animate actual joints, fins, gills, mandibles and tendrils, never whole-body squash/stretch. Keep the complete silhouette inside each equal-sized cell. Genuine transparent alpha outside the organisms, no white/gray matte, backdrop, shadow, text or grid lines. Crisp readable colors and silhouettes at gameplay scale.

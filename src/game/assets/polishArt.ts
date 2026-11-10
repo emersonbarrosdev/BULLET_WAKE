@@ -18,6 +18,6 @@ export function registerPolishArt(scene: Phaser.Scene): void {
   for (const [name, [, , frames]] of Object.entries(POLISH_SHEETS)) {
     const key = 'polish-' + name;
     scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
-    if (!scene.anims.exists(key + '-loop')) scene.anims.create({ key: key + '-loop', frames: scene.anims.generateFrameNumbers(key, { start: 0, end: frames - 1 }), frameRate: name === 'explosion' ? 24 : 12, repeat: name === 'explosion' ? 0 : -1 });
+    if (!scene.anims.exists(key + '-loop')) scene.anims.create({ key: key + '-loop', frames: scene.anims.generateFrameNumbers(key, { start: 0, end: frames - 1 }), frameRate: name === 'explosion' ? 40 : 12, repeat: name === 'explosion' ? 0 : -1 });
   }
 }

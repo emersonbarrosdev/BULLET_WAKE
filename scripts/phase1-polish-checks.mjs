@@ -21,7 +21,7 @@ export async function runPhase1Review({send,evaluate,waitFor,key,click,shot,repo
     const hull=await run(`s.health.hp=70;s.hud.setHealth(s.health);s.hud.setSpecialStock(s.weapons.specialCharges);return {bars:document.querySelectorAll('.bw-hull-bar').length,fill:document.querySelector('[data-field="health"]').style.width,value:document.querySelector('[data-field="integrity"]').textContent,stock:document.querySelector('[data-field="special-stock"]').textContent,resonance:document.querySelector('#bw-combat-hud').innerText.includes('RESSON'),bombs:document.querySelector('#bw-combat-hud').innerText.includes('BOMBAS')};`);
     assert.deepEqual(hull,{bars:1,fill:'70%',value:'70 / 100',stock:'2 / 3',resonance:false,bombs:false});
     // Hide every unrelated object: prove water animation with the scroll held fixed.
-    await run('s.savedVisibility=s.children.list.map(o=>[o,o.visible]);for(const[o]of s.savedVisibility)o.setVisible(false);for(const p of [...s.backdrop.paintedPanels,...s.backdrop.waveBlendPanels])p.setVisible(true);s.backdrop.update(0,0);');
+    await run('s.savedVisibility=s.children.list.map(o=>[o,o.visible]);for(const[o]of s.savedVisibility)o.setVisible(false);s.backdrop.water.surface.setVisible(true);s.backdrop.update(0,0);');
     await pause(100);
     const clip={x:Math.ceil(width*168/768),y:0,width:Math.floor(width*432/768)-2,height,scale:1};
     const a=(await send('Page.captureScreenshot',{format:'png',clip})).data;

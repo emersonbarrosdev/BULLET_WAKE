@@ -15,7 +15,6 @@ export class PremiumCombatHud {
   private readonly root: HTMLDivElement;
   private readonly fields = new Map<string, HTMLElement>();
   private statusRemainingMs = 0;
-  private fpsUpdateTimer = 0;
   private readonly align = (): void => {
     const r = this.scene.game.canvas.getBoundingClientRect();
     Object.assign(this.root.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
@@ -31,9 +30,8 @@ export class PremiumCombatHud {
           <img data-field="portrait" src="${import.meta.env.BASE_URL}assets/pilot-selection/portrait-nolan.webp" alt="Nolan Fitch" />
           <div><small>OPERADOR</small><strong data-field="name">NOLAN FITCH</strong><b data-field="ship">RIVET</b></div>
         </section>
-        <section class="bw-combat-panel"><small>PONTUAÇÃO <i data-field="combo"></i></small><strong class="bw-combat-score" data-field="score">000000</strong></section>
-        <section class="bw-combat-panel bw-combat-health"><small>VIDA / INTEGRIDADE <i data-field="shield"></i></small><div class="bw-hull-bar" role="progressbar" aria-label="Vida da nave" aria-valuemin="0" aria-valuemax="100"><i data-field="health"></i><b data-field="integrity">100 / 100</b></div><span class="bw-combat-hint">INTEGRIDADE DO CASCO</span></section>
-        <section class="bw-combat-panel"><small>PROPULSÃO DE EMERGÊNCIA</small><strong data-field="dash">◆ ◆ ◆</strong><div class="bw-combat-line"><span>DASH <b data-field="dash-count">3/3</b></span><kbd>SHIFT ESQ</kbd></div></section>
+        <section class="bw-combat-panel bw-combat-health"><small>INTEGRIDADE <i data-field="shield"></i></small><div class="bw-hull-bar" role="progressbar" aria-label="Vida da nave" aria-valuemin="0" aria-valuemax="100"><i data-field="health"></i><b data-field="integrity">100 / 100</b></div></section>
+        <section class="bw-combat-panel bw-combat-survival"><small>RECURSOS DE SOBREVIVÊNCIA</small><div class="bw-combat-resource"><div class="bw-combat-line"><span>DASH <b data-field="dash-count">3/3</b></span><kbd>SHIFT</kbd></div><strong data-field="dash">◆ ◆ ◆</strong></div><div class="bw-combat-resource"><small>ESPECIAL <kbd>V / X</kbd></small><div class="bw-combat-line"><strong data-field="special-stock">2 / 3</strong><b data-field="special">PRONTO</b></div></div></section>
         <div class="bw-combat-bottom"><button type="button" data-action="restart">REINICIAR <kbd>R</kbd></button><small>RIVET // VANGUARD SQUADRON</small></div>
       </aside>
       <div class="bw-combat-center">
@@ -42,10 +40,9 @@ export class PremiumCombatHud {
       </div>
       <aside class="bw-combat-side bw-combat-right" aria-label="Telemetria de armamento">
         <div class="bw-combat-mission"><small>OPERAÇÃO PELÁGICA</small><strong>FENDA PELÁGICA</strong><span data-field="sector">ÁGUAS COSTEIRAS</span></div>
-        <section class="bw-combat-panel"><small>ARMA EQUIPADA</small><strong class="bw-combat-weapon" data-field="weapon">DISPERSÃO AZUL</strong><div class="bw-combat-line"><span>POTÊNCIA</span><b data-field="level">NV 1/4</b></div><div class="bw-combat-pips" data-field="pips"><i></i><i></i><i></i><i></i></div></section>
-        <section class="bw-combat-panel"><small>EVOLUÇÃO DA ARMA · ITENS P</small><div class="bw-combat-line"><strong class="bw-combat-power-icon">P</strong><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i>P</i><i>P</i><i>P</i></div><span class="bw-combat-hint">3 COLETAS P = +1 NÍVEL</span></section>
-        <section class="bw-combat-panel"><small>ESPECIAL DO PILOTO <kbd>V / X</kbd></small><div class="bw-combat-line"><strong data-field="special-stock">2 / 3</strong><b data-field="special">PRONTO</b></div><span class="bw-combat-hint">E REPÕE UMA CARGA · MÁX. 3</span></section>
-        <div class="bw-combat-bottom"><div class="bw-combat-line"><span>DISPARO PRINCIPAL</span><kbd>ESPAÇO</kbd></div><span class="bw-combat-hint" data-field="charge">C CARREGAR · ESC MENU</span><div class="bw-combat-progress"><i data-field="progress"></i></div><small><span class="bw-combat-live-dot"></span> SISTEMA ATIVO <b data-field="fps">— FPS</b></small></div>
+        <section class="bw-combat-panel bw-combat-armament"><small>ARMA EQUIPADA</small><strong class="bw-combat-weapon" data-field="weapon">DISPERSÃO AZUL</strong><div class="bw-combat-line"><span>POTÊNCIA</span><b data-field="level">NV 1/4</b></div><div class="bw-combat-pips" data-field="pips"><i></i><i></i><i></i><i></i></div><div class="bw-combat-evolution"><div class="bw-combat-line"><small>PRÓXIMO NÍVEL · P</small><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i>P</i><i>P</i><i>P</i></div></div></section>
+        <section class="bw-combat-panel bw-combat-results"><small>PONTUAÇÃO <i data-field="combo"></i></small><strong class="bw-combat-score" data-field="score">000000</strong><small>AVANÇO DA OPERAÇÃO</small><div class="bw-combat-progress"><i data-field="progress"></i></div></section>
+        <div class="bw-combat-bottom"><div class="bw-combat-line"><span>DISPARO</span><kbd>ESPAÇO</kbd></div><span class="bw-combat-hint" data-field="charge">C CARREGAR · ESC MENU</span></div>
       </aside>`;
     this.root.querySelectorAll<HTMLElement>('[data-field]').forEach(node => this.fields.set(node.dataset.field!, node));
     document.body.append(this.root);
@@ -110,7 +107,5 @@ export class PremiumCombatHud {
     this.statusRemainingMs = Math.max(0, this.statusRemainingMs - dt);
     const toast = this.field('toast'); toast.hidden = this.statusRemainingMs === 0;
     if (this.statusRemainingMs < 180) toast.style.opacity = String(this.statusRemainingMs / 180);
-    this.fpsUpdateTimer += dt;
-    if (this.fpsUpdateTimer >= 300) { this.fpsUpdateTimer = 0; this.text('fps', `${Math.round(this.scene.game.loop.actualFps)} FPS`); }
   }
 }

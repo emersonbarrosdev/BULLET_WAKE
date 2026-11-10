@@ -61,3 +61,10 @@
 #bw-combat-hud [data-field="power-segments"] {display:flex;justify-content:center;gap:14px;}
 #bw-combat-hud [data-field="power-segments"] i {flex:none;width:25px;height:25px;display:grid;place-items:center;transform:none;border-radius:50%;background:#211c16;color:#655c4d;border:1px solid #63543d;font:800 13px 'Oxanium',sans-serif;}
 #bw-combat-hud [data-field="power-segments"] i.bw-active {background:#e9ad3c;color:#2b1703;box-shadow:0 0 8px #ffbd5060;}
+#bw-combat-hud .bw-combat-resource {margin-top:17px;}
+#bw-combat-hud .bw-combat-resource + .bw-combat-resource {border-top:1px solid #48515b88;padding-top:18px;margin-top:18px;}
+#bw-combat-hud .bw-combat-resource small kbd {float:right;}
+#bw-combat-hud .bw-combat-evolution {margin-top:22px;border-top:1px solid #48515b88;padding-top:12px;}
+#bw-combat-hud .bw-combat-evolution [data-field="power-segments"] {justify-content:flex-start;margin-bottom:0;}
+#bw-combat-hud .bw-combat-results .bw-combat-score {margin-bottom:24px;}
+#bw-combat-hud .bw-combat-results .bw-combat-progress {margin-top:12px;height:3px;}

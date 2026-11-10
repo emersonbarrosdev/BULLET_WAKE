@@ -2,6 +2,8 @@
 
 Diretriz vigente de 10/11/2026. Este documento substitui as regras conflitantes dos documentos 27, 30 e 31. A aprovação da Fase 1 pertence ao usuário; nenhuma fase posterior entra em produção nesta entrega.
 
+> **Polimento vigente:** [Contato, água, áudio e explosões](35_FASE1_POLIMENTO_CONTATO_AGUA_AUDIO.md). Clarão sem elipse, projéteis sem fundo quadrado, fluxo de água contínuo, HUD agrupado, vozes alienígenas e explosões de fogo curtas com limpeza de resíduos. Inclui os novos prompts, destinos e evidências de validação.
+
 ## Identidade e ambiente
 
 O inimigo é um organismo extraterrestre. Caças convencionais, tanques, dirigíveis mecânicos, formas de relógio e máquinas da campanha horizontal antiga não representam a invasão atual. As gerações mecânicas descartadas nesta revisão não são utilizadas nem reservadas para outras fases.
@@ -17,7 +19,7 @@ A Fenda Pelágica acontece **sobre o oceano terrestre**, em voo baixo. A nave n�
 3. A fenda se revela adiante na aproximação do chefe, com profundidade escura, luz biológica e correntes convergentes.
 4. Talassarca emerge na região da ruptura.
 
-Três spritesheets de oito frames animam água, espuma e refração. Interpolação entre frames, rolagem e partículas superficiais são movimentos independentes: a água continua animada com a rolagem parada. O cenário não começa com a fenda já aberta. Os intervalos de distância de produção são 1100–2400 para a invasão e 3150–4100 para revelar a fenda; são parâmetros de Bullet Wake, não medidas de outro jogo.
+Três spritesheets de oito frames fornecem a arte da água, espuma e refração. Fluxo contínuo em uma superfície WebGL, variação suave dos detalhes, rolagem e partículas superficiais são movimentos independentes: a água continua animada com a rolagem parada. Geometria e destroços não saltam ao trocar frames; repetição vertical usa janelas sobrepostas sem emenda. O cenário não começa com a fenda já aberta. Os intervalos de distância de produção são 1100–2400 para a invasão e 3150–4100 para revelar a fenda; são parâmetros de Bullet Wake, não medidas de outro jogo.
 
 ## Um especial com estoque, sem bomba separada
 
@@ -62,15 +64,15 @@ O [manual original de Sonic Wings 2](https://db.hfsplay.fr/files/2019/06/14/1aa6
 
 ## HUD, coleta e suprimentos
 
-Uma única barra contínua representa 0–100 de integridade; sem vidas extras automáticas. Os três círculos P representam evolução de arma e não são barras de vida. Os painéis continuam pretos/carbono com destroços; paleta e tipografia das telas iniciais foram preservadas. Vitória e derrota usam preto/vinho/âmbar e cabem integralmente no viewport.
+Uma única barra contínua representa 0–100 de integridade; sem vidas extras automáticas. Os três círculos P representam evolução de arma e não são barras de vida. À esquerda ficam operador, integridade, dash e especial; à direita, armamento/evolução e missão/pontuação/progresso. Os painéis continuam pretos/carbono com destroços; paleta e tipografia das telas iniciais foram preservadas. Vitória e derrota usam preto/vinho/âmbar e cabem integralmente no viewport.
 
 Treze casulos transportadores, com um único item explícito cada, substituem os drops por contagem de abates. Há seis P ao longo da fase, permitindo NV3 ao coletar todos; não se entrega potência máxima rapidamente. Cores, reparo, velocidade e duas reposições de especial têm eventos definidos. Monstros comuns e miniboss não despejam ícones. Um casulo perdido significa uma coleta perdida; não há concessão automática.
 
-O coletável exige contato com o casco visível, incluindo bico e asas, sem ímã que force a troca de cor. A coleta produz brilho e partículas. Ícones continuam sendo spritesheets distintos por forma, símbolo e cor, sem texto pendurado embaixo; a explicação fica em Opções. Explosões possuem 16 desenhos e partículas com trajetória, arrasto, rotação e dissipação.
+O coletável exige contato com o casco visível, incluindo bico e asas, sem ímã que force a troca de cor. A coleta produz brilho, partículas e som específico. Ícones continuam sendo spritesheets distintos por forma, símbolo e cor, sem texto pendurado embaixo; a explicação fica em Opções. Explosões de fogo possuem 16 desenhos em 400 ms e fragmentos com trajetória, arrasto, rotação e dissipação em até 340 ms; sem nuvem cinza persistente. Acertos comuns usam faísca curta, não explosão inteira. Balas hostis verificam seu trajeto até o primeiro contato com o casco. Sons alienígenas, danos e coletas têm identidades separadas.
 
 ## Validação e evidências
 
-- 142 testes de sistemas aprovados com `npm run test`; build TypeScript/Vite aprovado com `npm run build`.
+- 143 testes de sistemas aprovados com `node --experimental-strip-types --test tests/*.test.mjs`; build TypeScript/Vite aprovado com `npm run build`.
 - Navegador real em 1366×768 e 1920×1080: animação raster, transparência, movimento da água sem scroll, barra em 70/100, coleta pelo bico, especial, metamorfose, duas camadas e telas finais sem corte/scroll.
 - Capturas dos quatro níveis das três armas e das formas do chefe em [evidências visuais](screenshots/phase1-polish/), com [relatório automatizado](screenshots/phase1-polish/validation.json).
 - Regressão de seleção, perfis sem scroll, dimensões dos cards e confirmação por mouse, Enter e touch, aprovada com `node scripts/validate-pilot-selection.mjs`. A validação do combate usa o mesmo comando com `--polish`.

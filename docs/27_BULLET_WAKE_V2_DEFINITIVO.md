@@ -1,5 +1,7 @@
 # IMPORTANTE — BULLET WAKE V2: IDENTIDADE, CAMPANHA E GAMEPLAY DEFINITIVOS
 
+> **Polimento vigente da Fase 1:** [Contato, água, áudio e explosões](35_FASE1_POLIMENTO_CONTATO_AGUA_AUDIO.md). Água com fluxo contínuo sem emenda, explosões de fogo curtas sem fumaça cinza, projéteis transparentes, áudio alienígena e HUD agrupado por sobrevivência/armamento. Somente a primeira fase continua em produção.
+
 > **Diretriz vigente — 10/11/2026:** [Fase 1: alienígenas, camadas e oceano vivo](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md). Somente organismos alienígenas; sem bombas separadas ou recarga por ressonância. Dois especiais iniciais, máximo três, reposição física E. Chefes colossais com casca de cinco especiais, metamorfose e forma interna de três, preservando tiros convencionais e área de esquiva. Oceano calmo → invasão/turbulência/destroços → fenda antes do chefe. Esta diretriz prevalece sobre números e descrições históricas abaixo. Apenas Talassarca recebeu as duas camadas; futuros chefes, biomas e modos dependem da aprovação da Fase 1. [Pendências reais](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md#o-que-ainda-falta) e [prompts dos assets](34_FASE1_PROMPTS_POLIMENTO.md).
 
 > **Revisão vigente da Fase 1:** [Combate, arte e confirmação](31_FASE1_REVISAO_COMBATE.md). Barra única de integridade com Continue explícito; ícones raster sem legendas; fundo de superfície em movimento; chefes e especial próprios; confirmação sobre o card. Esta revisão substitui as definições conflitantes abaixo e do documento 30. Fase 2 depende de aprovação explícita da Fase 1.
