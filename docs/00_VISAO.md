@@ -1,5 +1,7 @@
 # 00 — Visão e escopo do jogo
 
+> **Versão vigente:** shooter vertical top-down; Fase 1 sobre a superfície da Fenda Pelágica. Consulte a [Bíblia V2](27_BULLET_WAKE_V2_DEFINITIVO.md) e a [revisão atual de combate](31_FASE1_REVISAO_COMBATE.md). O planejamento horizontal abaixo é histórico. As fases seguintes permanecem bloqueadas até aprovação da primeira.
+
 ## Pitch
 Um sinal luminoso sem objeto precursor deixa uma cicatriz no espaço. Logo depois, estruturas de manutenção deixam de proteger comunidades e começam a desmontá-las. Defesas automatizadas não podem mais ser usadas. Três caças de comando isolado são enviados para salvar uma rota de evacuação e depois seguir o rastro por outros mundos até interromper a origem da destruição.
 

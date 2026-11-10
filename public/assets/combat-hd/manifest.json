@@ -1,19 +1,20 @@
 {
-  "version": 2,
+  "version": 3,
+  "currentReview": "review/manifest.json",
   "direction": "top-down; Rivet north, enemies south",
   "medium": "hand-painted 2D concept art",
   "sheetLayout": { "columns": 4, "rows": 1, "frameWidth": 256, "frameHeight": 256, "pivot": [128, 128] },
   "sheets": {
-    "rivet": { "file": "rivet.webp", "frames": ["flight-a", "flight-b", "bank-left", "bank-right"], "displaySize": [54, 54], "hitRadiusUnchanged": 4.5 },
-    "scout": { "file": "scout.webp", "frames": ["flight-a", "flight-b", "charge", "recovery"], "displaySize": [47, 47] },
-    "dart": { "file": "dart.webp", "frames": ["flight-a", "flight-b", "charge", "recovery"], "displaySize": [62, 62] },
-    "lancer": { "file": "lancer.webp", "frames": ["flight-a", "flight-b", "charge", "recovery"], "displaySize": [61, 61] },
-    "cutter": { "file": "cutter.webp", "frames": ["flight-a", "flight-b", "charge", "recovery"], "displaySize": [66, 66] },
-    "bomb": { "file": "bomb.webp", "frames": ["ignition", "expansion", "pressure-ring", "dissipation"], "frameRate": 9, "displaySize": [410, 410] }
+    "rivet": { "file": "rivet.webp", "frames": ["flight-a", "flight-b", "bank-left", "bank-right"], "displaySize": [46, 46], "collision": "visible hull polygon, including nose and wings; hullCollision.ts" },
+    "scout": { "file": "scout.webp", "frames": ["flight-a", "flight-b", "charge", "recovery"], "displaySize": [38, 38] },
+    "dart": { "file": "dart.webp", "frames": ["flight-a", "flight-b", "charge", "recovery"], "displaySize": [48, 48] },
+    "lancer": { "file": "lancer.webp", "frames": ["flight-a", "flight-b", "charge", "recovery"], "displaySize": [46, 46] },
+    "cutter": { "file": "cutter.webp", "frames": ["flight-a", "flight-b", "charge", "recovery"], "displaySize": [50, 50] },
+    "bomb": { "file": "bomb.webp", "frames": ["ignition", "expansion", "pressure-ring", "dissipation"], "frameRate": 9, "displaySize": [260, 260] }
   },
   "images": {
-    "ocean": { "file": "ocean.webp", "size": [1024, 1536], "loop": "second half mirrored vertically at runtime" },
-    "capsule": { "file": "capsule.webp", "size": [256, 256], "usage": "Historical; replaced in gameplay by shared SVG catalog" },
+    "ocean": { "file": "ocean.webp", "size": [1024, 1536], "usage": "Historical underwater art; gameplay uses review/ocean.webp" },
+    "capsule": { "file": "capsule.webp", "size": [256, 256], "usage": "Historical; gameplay uses animated review/pickups-* raster strips" },
     "carbon-wreckage": { "file": "carbon-wreckage.webp", "size": [768, 1152], "usage": "Opaque carbon HUD; original image_gen art, FFmpeg WebP conversion" }
   },
   "pickups": { "source": "src/game/data/pickupGuide.ts", "displaySize": [30, 30], "identification": "Unique silhouette, glyph and color; shared combat/options catalog" },

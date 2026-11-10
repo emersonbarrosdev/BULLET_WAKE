@@ -1,5 +1,7 @@
 # Fase 1 — carbono, progressão e combate Normal
 
+> **Registro anterior:** consulte a [revisão vigente de combate](31_FASE1_REVISAO_COMBATE.md). Os itens SVG com placas, vidas automáticas, cadência antiga, contagem azul 3/5/7/9, balas crescentes e arte submarina descritos abaixo foram substituídos. O estoque atual de X é de três pulsos locais; V tem função ofensiva própria. As diretrizes de biomas e dificuldades futuras continuam válidas.
+
 Revisão de 09/11/2026. Complementa e prevalece sobre definições conflitantes de HUD, drops e dificuldade dos documentos anteriores. A produção continua concentrada na Fenda Pelágica e na RIVET; as artes das outras duas naves permanecem como estão.
 
 ## Referências verificadas

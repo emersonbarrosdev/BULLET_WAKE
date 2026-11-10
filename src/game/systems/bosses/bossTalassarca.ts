@@ -16,7 +16,7 @@ export class BossTalassarca implements StageBoss {
   readonly maxHp = 160;
   hp = 160;
   x = PLAYFIELD_X + PLAYFIELD_WIDTH / 2; // Centro do corredor: 384
-  y = 75; // Posicionado no topo da arena de combate
+  y = 110; // Posicionado no topo da arena de combate
 
   phase: 'intro' | 'wings' | 'tentacles' | 'core' | 'defeated' = 'intro';
   isTelegraphing = false;
@@ -72,7 +72,7 @@ export class BossTalassarca implements StageBoss {
     if (this.phase === 'intro') {
       this.introTimerMs -= dt;
       // Desce suavemente até a posição de combate
-      this.y = Math.min(75, -50 + (1 - this.introTimerMs / 1800) * 125);
+      this.y = Math.min(110, -75 + (1 - this.introTimerMs / 1800) * 185);
       if (this.introTimerMs <= 0) {
         this.phase = 'wings';
         phaseChanged = true;

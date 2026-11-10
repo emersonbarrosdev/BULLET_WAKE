@@ -50,13 +50,13 @@ const PALETTES: Record<string, Palette> = {
  * BULLET WAKE V2 — Renderizador Vetorial Neo-Arcade de Caças Espaciais.
  * 
  * Modos de Apresentação:
- * 1. 'top-down': Visão superior de combate vertical (28×32px, compacto, micro-hitbox, nariz ao norte -Y).
+ * 1. 'top-down': Visão superior de combate vertical, nariz ao norte -Y; colisão pelo casco visível.
  * 2. 'profile': Perfil lateral aeronáutico elegante para cards e interfaces de seleção.
  */
 export class VectorShip extends Phaser.GameObjects.Container {
   readonly halfWidth: number;
   readonly halfHeight: number;
-  readonly hitRadius = 4.5;
+  readonly hitRadius = 4.5; // Pickup collection only; damage uses hullCollision.ts.
   readonly pilotId: string;
   readonly viewMode: VectorShipViewMode;
 
@@ -87,8 +87,8 @@ export class VectorShip extends Phaser.GameObjects.Container {
     this.viewMode = viewMode;
     this.palette = PALETTES[pilotId] || PALETTES.nolan;
 
-    this.halfWidth = viewMode === 'profile' ? 22 : 14;
-    this.halfHeight = viewMode === 'profile' ? 10 : 16;
+    this.halfWidth = viewMode === 'profile' ? 22 : pilotId==='nolan'?18:14;
+    this.halfHeight = viewMode === 'profile' ? 10 : pilotId==='nolan'?20:16;
 
     this.graphics = scene.add.graphics();
     this.shieldGraphics = scene.add.graphics();
@@ -96,7 +96,7 @@ export class VectorShip extends Phaser.GameObjects.Container {
 
     this.add([this.shieldGraphics, this.graphics, this.coreDot]);
     if (pilotId === 'nolan' && viewMode === 'top-down' && scene.textures.exists('hd-rivet')) {
-      this.paintedRivet = scene.add.sprite(0, 0, 'hd-rivet', 0).setDisplaySize(54, 54);
+      this.paintedRivet = scene.add.sprite(0, 0, 'hd-rivet', 0).setDisplaySize(46, 46);
       this.addAt(this.paintedRivet, 2);
     }
     this.setDepth(15);
@@ -195,10 +195,7 @@ export class VectorShip extends Phaser.GameObjects.Container {
     const cd = this.coreDot;
     cd.clear();
     const trimColor = this.isHit ? 0xff2222 : p.trim;
-    cd.fillStyle(trimColor, 0.45);
-    cd.fillCircle(0, 0, this.hitRadius + 1.2);
-    cd.fillStyle(0xffffff, 0.95);
-    cd.fillCircle(0, 0, 1.8);
+    if(this.isHit) { cd.fillStyle(trimColor, .4); cd.fillEllipse(0,0,15,28); }
 
     // Escudo de energia esférico (se ativo)
     const sg = this.shieldGraphics;

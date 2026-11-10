@@ -1,5 +1,7 @@
 # IMPORTANTE — BULLET WAKE V2: IDENTIDADE, CAMPANHA E GAMEPLAY DEFINITIVOS
 
+> **Revisão vigente da Fase 1:** [Combate, arte e confirmação](31_FASE1_REVISAO_COMBATE.md). Barra única de integridade com Continue explícito; ícones raster sem legendas; fundo de superfície em movimento; chefes e especial próprios; confirmação sobre o card. Esta revisão substitui as definições conflitantes abaixo e do documento 30. Fase 2 depende de aprovação explícita da Fase 1.
+
 > **Revisão vigente de HUD, potência e dificuldade (09/11/2026):** [Fase 1 — carbono e Normal](30_FASE1_NORMAL_FIRE_SHARK.md). Laterais pretas de carbono em tela cheia; cor repetida dá pontos, P evolui sozinho, S é velocidade e $ é pontuação. O modo de produção atual é Normal. Fácil, Difícil e Real são planos posteriores. Esta revisão prevalece sobre as descrições históricas conflitantes abaixo.
 
 > [!IMPORTANT]

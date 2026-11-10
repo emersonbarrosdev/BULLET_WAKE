@@ -1,0 +1,18 @@
+{
+  "version": 3,
+  "medium": "original painterly 2D raster art; image_gen; FFmpeg grid packaging",
+  "orientation": "RIVET north; enemies south; Phase 1 aircraft above ocean surface",
+  "framesPerSheet": 4,
+  "layout": "one horizontal strip; frame center pivot; true alpha",
+  "groups": {
+    "bosses": {"names": ["raia", "talassarca"], "frameSize": 512, "stripSize": [2048, 512]},
+    "actors": {"names": ["surface", "swimmer", "special"], "frameSize": 256, "stripSize": [1024, 256]},
+    "pickups": {"prefix": "pickups-", "names": ["power", "weapon_ion", "weapon_green", "weapon_red", "health", "bomb", "speed", "score", "missile", "special"], "frameSize": 64, "stripSize": [256, 64]},
+    "hostile": {"prefix": "hostile-", "names": ["scout", "dart", "lancer", "cutter", "surface", "raia"], "frameSize": 64, "stripSize": [256, 64]},
+    "effects": {"prefix": "effects-", "names": ["blue", "green", "fire", "missile", "charge", "explosion"], "frameSize": 128, "stripSize": [512, 128]}
+  },
+  "ocean": {"file": "ocean.webp", "size": [1024, 3072], "opaque": true, "motion": "two moving panels, alternating Y mirror; 0.9 logical scroll"},
+  "usage": {"talassarcaProjectile": "hostile-lancer, 24 units", "swimmerProjectile": "hostile-raia, cyan", "pickupLabelsInCombat": false, "special": "RIVET offensive storm; X remains a local defensive pulse"},
+  "documentation": "../../../../docs/31_FASE1_REVISAO_COMBATE.md",
+  "prompts": "../../../../docs/32_FASE1_PROMPTS_ARTE.md"
+}

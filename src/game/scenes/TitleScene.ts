@@ -3,7 +3,7 @@ import '../../title-screen.css';
 import { GAME_BACKGROUND } from '../constants';
 import { saveSystem } from '../systems/saveSystem.ts';
 import { globalAudio } from '../audio/audioSystem.ts';
-import { NORMAL_GUIDE_ITEMS, PICKUP_GUIDE, pickupSvg } from '../data/pickupGuide';
+import { NORMAL_GUIDE_ITEMS, PICKUP_GUIDE } from '../data/pickupGuide';
 
 type TitleMode = 'attract' | 'main' | 'options' | 'controls' | 'guide';
 type TitleAction = 'pilots' | 'options' | 'music' | 'effects' | 'difficulty' | 'controls' | 'guide' | 'back';
@@ -139,7 +139,7 @@ export class TitleScene extends Phaser.Scene {
     if (this.mode === 'guide') {
       return `<p class="bw-guide-intro">Colete por contato. Cor escolhe a arma; P aumenta potência. Os itens nunca recuperam dash.</p><div class="bw-item-guide" tabindex="0" aria-label="Legenda de itens, role para ver todos">${NORMAL_GUIDE_ITEMS.map(type => {
         const item = PICKUP_GUIDE[type];
-        return `<article><div class="bw-guide-icon">${pickupSvg(type)}</div><div><h2 style="color:${item.color}">${item.letter} · ${item.label}</h2><p>${item.description}</p></div></article>`;
+        return `<article><div class="bw-guide-icon bw-guide-raster" style="background-image:url('${import.meta.env.BASE_URL}assets/combat-hd/review/pickups-${type}.webp')" role="img" aria-label="${item.label}"></div><div><h2 style="color:${item.color}">${item.letter} · ${item.label}</h2><p>${item.description}</p></div></article>`;
       }).join('')}</div>${this.actionButton('back', 'VOLTAR', '', 0)}`;
     }
     if (this.mode === 'options') {

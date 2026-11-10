@@ -1,5 +1,7 @@
 # 11 — Roadmap de produção (BULLET WAKE)
 
+> **Prioridade vigente:** [pendências após a revisão da Fase 1](31_FASE1_REVISAO_COMBATE.md#o-que-ainda-falta). Arte de Raia-Dente, Talassarca e efeitos auxiliares da RIVET implementada. Aprovação da Fase 1 ainda depende do usuário; não iniciar produção da Fase 2.
+
 > **Atualização 09/11/2026:** A tabela antiga de cinco fases concluídas não descreve a campanha V2. Consulte as pendências reais na [Bíblia V2, seção 8.1](27_BULLET_WAKE_V2_DEFINITIVO.md#81-pendências-reais-da-campanha-v2) e a prioridade atual em [Fase 1 — Normal](30_FASE1_NORMAL_FIRE_SHARK.md). Somente Fenda Pelágica está liberada; os modos Fácil, Difícil e Real ainda serão implementados.
 
 

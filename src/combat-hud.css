@@ -56,3 +56,5 @@
 #bw-combat-hud .bw-combat-boss>div {height:5px;background:#54242b;margin-top:7px;}
 #bw-combat-hud .bw-combat-boss i {display:block;height:100%;background:linear-gradient(90deg,#b93e34,#ffb16e);}
 @media(max-height:650px) {#bw-combat-hud .bw-combat-side {gap:7px;padding-top:9px;padding-bottom:8px;}#bw-combat-hud .bw-combat-panel {padding:8px;}#bw-combat-hud .bw-combat-identity img {height:43px;}#bw-combat-hud .bw-combat-wordmark small {display:none;}#bw-combat-hud .bw-combat-weapon {margin:6px 0;}#bw-combat-hud .bw-combat-special-label {margin-top:10px;}#bw-combat-hud button {padding:7px;}}
+#bw-combat-hud .bw-hull-bar {height:13px;background:#141b23;border:1px solid #526471;margin:15px 0 12px;}
+#bw-combat-hud .bw-hull-bar i {display:block;height:100%;width:100%;background:linear-gradient(90deg,#678d68,#c4edaa);transition:width .12s linear;}

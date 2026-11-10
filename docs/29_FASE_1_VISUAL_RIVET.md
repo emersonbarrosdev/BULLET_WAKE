@@ -1,5 +1,7 @@
 # Fase 1 — revisão visual focada na RIVET
 
+> **Atualização:** Raia-Dente, Talassarca e os efeitos auxiliares da RIVET foram produzidos na [revisão de combate](31_FASE1_REVISAO_COMBATE.md), que substitui suas pendências de arte e as regras conflitantes deste registro.
+
 Data: 09/11/2026. Etapa visual, sem avanço à Fase 2.
 
 ## Escopo entregue

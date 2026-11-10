@@ -7,7 +7,7 @@ export class StageCompleteOverlay extends MissionResultOverlay {
     const stage = STAGES[stageNumber - 1] || STAGES[0];
     super(scene, 'MISSÃO CUMPRIDA!', 'FASE ' + String(stageNumber).padStart(2, '0') + ' · ' + stage.title.toUpperCase() + ' // ' + stage.bossName.toUpperCase() + ' NEUTRALIZADO', score,
       'Setor contido. Ameaça alienígena neutralizada. Operador autorizado a retornar à base.', [
-        { label: 'AVANÇAR', key: 'Enter', run: onNextStage },
+        { label: 'ENCERRAR OPERAÇÃO', key: 'Enter', run: onNextStage },
         { label: 'REJOGAR', key: 'R', run: onReplay },
         { label: 'FASES', key: 'Escape', run: onStageSelect },
       ]);

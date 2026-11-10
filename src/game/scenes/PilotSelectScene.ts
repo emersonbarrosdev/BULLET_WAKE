@@ -16,6 +16,7 @@ const ship = (pilot: PilotDefinition): string => `/assets/pilot-selection/ship-$
 export class PilotSelectScene extends Phaser.Scene {
   private selectedIndex = 0;
   private chosenIndex: number | null = null;
+  private chosenAt = 0;
   private stageNumber = 1;
   private view: PilotView = 'cards';
   private root?: HTMLDivElement;
@@ -41,6 +42,8 @@ export class PilotSelectScene extends Phaser.Scene {
       const button = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>('button');
       if (button && this.root.contains(button) && button.dataset.action !== undefined) {
         this.activateAction(button);
+      } else if (this.view === 'profile') {
+        this.choose(this.selectedIndex);
       } else if (this.chosenIndex === this.selectedIndex) {
         this.startGame();
       } else {
@@ -114,6 +117,7 @@ export class PilotSelectScene extends Phaser.Scene {
   private choose(index: number): void {
     this.select(index);
     this.chosenIndex = index;
+    this.chosenAt = performance.now();
     globalAudio.playPickup('upgrade');
     if (this.view === 'profile') this.setView('cards');
     else this.updateSelection();
@@ -147,7 +151,7 @@ export class PilotSelectScene extends Phaser.Scene {
           <div class="bw-pilot-footer-actions">
             ${this.view === 'profile' ? '<button type="button" class="bw-pilot-info-action" data-action="cards">VOLTAR À SELEÇÃO [I]</button>' : ''}
             <span class="bw-pilot-awaiting" aria-live="polite">ESCOLHA UM PILOTO PARA CONTINUAR</span>
-            <button type="button" class="bw-pilot-launch" data-action="start" hidden></button>
+
           </div>
         </footer>
       </main>
@@ -161,6 +165,7 @@ export class PilotSelectScene extends Phaser.Scene {
       <section class="bw-pilot-cards" aria-label="Pilotos disponíveis">
         ${PILOTS.map((pilot, index) => `
           <article class="bw-pilot-card" data-card-index="${index}" aria-label="${pilot.name}">
+            <button type="button" class="bw-pilot-launch bw-pilot-card-confirm" data-action="start" data-confirm-index="${index}" hidden></button>
             <button type="button" class="bw-pilot-card-select" data-pilot-index="${index}" aria-label="Escolher ${pilot.name}" aria-pressed="false"></button>
             <div class="bw-pilot-card-head">
               <strong>${pilot.name}</strong>
@@ -221,7 +226,10 @@ export class PilotSelectScene extends Phaser.Scene {
       button.addEventListener('click', () => this.choose(index));
     });
     this.root.querySelectorAll<HTMLButtonElement>('[data-action]').forEach(button => {
-      button.addEventListener('click', () => this.activateAction(button));
+      button.addEventListener('click', () => {
+        if(button.dataset.action==='start'&&performance.now()-this.chosenAt<250)return;
+        this.activateAction(button);
+      });
     });
   }
 
@@ -240,12 +248,11 @@ export class PilotSelectScene extends Phaser.Scene {
     if (bio) bio.textContent = `${pilot.name} // ${pilot.bio}`;
     if (detail) detail.textContent = `HABILIDADE ESPECIAL: ${pilot.specialDescription} (100% RESSONÂNCIA)`;
     const chosen = this.chosenIndex === this.selectedIndex;
-    const launch = this.root.querySelector<HTMLButtonElement>('[data-action="start"]');
-    if (launch) {
-      launch.hidden = !chosen;
-      launch.innerHTML = `CONFIRMAR ${pilot.name.split(' ')[0].toUpperCase()} <span>[ENTER]</span>`;
-      launch.setAttribute('aria-label', `Confirmar ${pilot.name} e iniciar operação`);
-    }
+    this.root.querySelectorAll<HTMLButtonElement>('[data-confirm-index]').forEach((launch, index) => {
+      launch.hidden = !chosen || index !== this.selectedIndex;
+      launch.innerHTML = 'CONFIRMAR ' + pilot.name.split(' ')[0].toUpperCase() + ' <span>[ENTER]</span>';
+      launch.setAttribute('aria-label', 'Confirmar ' + pilot.name + ' e iniciar operação');
+    });
     const awaiting = this.root.querySelector<HTMLElement>('.bw-pilot-awaiting');
     if (awaiting) awaiting.hidden = chosen || this.view === 'profile';
     const help = this.root.querySelector<HTMLElement>('.bw-pilot-help');

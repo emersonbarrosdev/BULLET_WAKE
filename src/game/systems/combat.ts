@@ -8,8 +8,8 @@ export interface PlayerHealth {
 
 export type HitEvent = 'ignored' | 'damaged' | 'respawn' | 'game-over';
 
-export const MAX_HP = 3;
-export const START_LIVES = 3;
+export const MAX_HP = 100;
+export const START_LIVES = 1;
 export const HIT_INVULNERABILITY_MS = 1500;
 export const RESPAWN_INVULNERABILITY_MS = 2000;
 
@@ -26,27 +26,17 @@ export function advanceHealth(state: PlayerHealth, deltaMs: number): PlayerHealt
 
 export function applyPlayerHit(
   state: PlayerHealth,
+  damage = 20,
 ): { state: PlayerHealth; event: HitEvent } {
   if (state.gameOver || state.invulnerableMs > 0) {
     return { state, event: 'ignored' };
   }
 
-  if (state.hp > 1) {
+  const remaining = Math.max(0,state.hp-Math.max(0,damage));
+  if (remaining > 0) {
     return {
-      state: { ...state, hp: state.hp - 1, invulnerableMs: HIT_INVULNERABILITY_MS },
+      state: { ...state, hp: remaining, invulnerableMs: HIT_INVULNERABILITY_MS },
       event: 'damaged',
-    };
-  }
-
-  if (state.lives > 1) {
-    return {
-      state: {
-        hp: MAX_HP,
-        lives: state.lives - 1,
-        invulnerableMs: RESPAWN_INVULNERABILITY_MS,
-        gameOver: false,
-      },
-      event: 'respawn',
     };
   }
 

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import '../../combat-hud.css';
-import type { PlayerHealth } from '../systems/combat';
+import { MAX_HP, type PlayerHealth } from '../systems/combat';
 import type { SectorId } from '../systems/stageDirector';
 import type { WeaponLevel, WeaponFamily } from '../systems/weaponSystem';
 import { formatDashIndicator } from '../systems/dashSystem';
@@ -32,7 +32,7 @@ export class PremiumCombatHud {
           <div><small>OPERADOR</small><strong data-field="name">NOLAN FITCH</strong><b data-field="ship">RIVET</b></div>
         </section>
         <section class="bw-combat-panel"><small>PONTUAÇÃO <i data-field="combo"></i></small><strong class="bw-combat-score" data-field="score">000000</strong></section>
-        <section class="bw-combat-panel"><small>BLINDAGEM <i data-field="shield"></i></small><div class="bw-combat-segments" data-field="health"><i></i><i></i><i></i></div><div class="bw-combat-line"><span>VIDAS</span><b data-field="lives">03</b></div></section>
+        <section class="bw-combat-panel"><small>BLINDAGEM <i data-field="shield"></i></small><div class="bw-hull-bar" role="progressbar" aria-label="Integridade do casco" aria-valuemin="0" aria-valuemax="100"><i data-field="health"></i></div><div class="bw-combat-line"><span>INTEGRIDADE</span><b data-field="integrity">100%</b></div></section>
         <section class="bw-combat-panel"><small>PROPULSÃO DE EMERGÊNCIA</small><strong data-field="dash">◆ ◆ ◆</strong><div class="bw-combat-line"><span>DASH <b data-field="dash-count">3/3</b></span><kbd>SHIFT ESQ</kbd></div></section>
         <div class="bw-combat-bottom"><button type="button" data-action="restart">REINICIAR <kbd>R</kbd></button><small>RIVET // VANGUARD SQUADRON</small></div>
       </aside>
@@ -44,7 +44,7 @@ export class PremiumCombatHud {
         <div class="bw-combat-mission"><small>OPERAÇÃO PELÁGICA</small><strong>FENDA PELÁGICA</strong><span data-field="sector">ÁGUAS COSTEIRAS</span></div>
         <section class="bw-combat-panel"><small>ARMA EQUIPADA</small><strong class="bw-combat-weapon" data-field="weapon">DISPERSÃO AZUL</strong><div class="bw-combat-line"><span>POTÊNCIA</span><b data-field="level">NV 1/4</b></div><div class="bw-combat-pips" data-field="pips"><i></i><i></i><i></i><i></i></div></section>
         <section class="bw-combat-panel"><small>PROGRESSO DE POTÊNCIA</small><div class="bw-combat-line"><strong class="bw-combat-power-icon">P</strong><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i></i><i></i><i></i></div><span class="bw-combat-hint">3 ITENS P = +1 NÍVEL</span></section>
-        <section class="bw-combat-panel"><div class="bw-combat-line"><small>BOMBAS <kbd>X</kbd></small><strong data-field="bombs">02</strong></div><small class="bw-combat-special-label">RESSONÂNCIA <kbd>V</kbd><b data-field="special">0%</b></small><div class="bw-combat-bar"><i data-field="special-fill"></i></div></section>
+        <section class="bw-combat-panel"><div class="bw-combat-line"><small>PULSO DEFENSIVO <kbd>X</kbd></small><strong data-field="bombs">02</strong></div><small class="bw-combat-special-label">RESSONÂNCIA <kbd>V</kbd><b data-field="special">0%</b></small><div class="bw-combat-bar"><i data-field="special-fill"></i></div></section>
         <div class="bw-combat-bottom"><div class="bw-combat-line"><span>DISPARO CONTÍNUO</span><kbd>ESPAÇO</kbd></div><span class="bw-combat-hint" data-field="charge">C CARREGAR · ESC MENU</span><div class="bw-combat-progress"><i data-field="progress"></i></div><small><span class="bw-combat-live-dot"></span> SISTEMA ATIVO <b data-field="fps">— FPS</b></small></div>
       </aside>`;
     this.root.querySelectorAll<HTMLElement>('[data-field]').forEach(node => this.fields.set(node.dataset.field!, node));
@@ -77,7 +77,7 @@ export class PremiumCombatHud {
     this.text('combo', comboCount > 1 ? `×${multiplier.toFixed(1)}` : '');
   }
   setHealth(state: PlayerHealth, shield = false): void {
-    this.segments('health', state.hp); this.text('lives', String(state.lives).padStart(2, '0')); this.text('shield', shield ? 'ESCUDO' : '');
+    const percent=Math.max(0,Math.min(100,state.hp/MAX_HP*100)); this.field('health').style.width=percent+'%';this.field('health').parentElement!.setAttribute('aria-valuenow',String(percent));this.text('integrity',Math.ceil(percent)+'%'); this.text('shield', shield ? 'ESCUDO' : '');
   }
   setDash(remaining: number, max = 3): void {
     const n = Math.max(0, Math.min(max, remaining));

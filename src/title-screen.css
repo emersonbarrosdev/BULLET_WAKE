@@ -263,6 +263,7 @@
 #bw-title-screen .bw-item-guide article {display:flex;align-items:center;gap:14px;background:#080b10ee;border:1px solid #59637166;padding:10px;min-width:0;}
 #bw-title-screen .bw-guide-icon {flex:0 0 54px;}
 #bw-title-screen .bw-guide-icon svg {width:54px;height:54px;display:block;}
+#bw-title-screen .bw-guide-raster {height:54px;background-size:400% 100%;background-repeat:no-repeat;background-position:left center;}
 #bw-title-screen .bw-item-guide h2 {font:700 clamp(14px,1.15vw,20px)/1.2 'Oxanium',sans-serif;margin:0 0 5px;}
 #bw-title-screen .bw-item-guide p {font:600 clamp(14px,1vw,19px)/1.25 'Rajdhani',sans-serif;color:#d0d9df;margin:0;}
 @media(max-width:700px) {#bw-title-screen .bw-item-guide {grid-template-columns:1fr;max-height:57vh;}}

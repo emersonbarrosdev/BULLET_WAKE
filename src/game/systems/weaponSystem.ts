@@ -62,7 +62,7 @@ export interface PlayerWeaponsState {
 
 export const MAX_WEAPON_LEVEL: WeaponLevel = 4;
 export const POWER_ITEMS_PER_LEVEL = 3;
-export const MAX_BOMBS = 10;
+export const MAX_BOMBS = 3;
 export const START_BOMBS = 3;
 export const MAX_RESONANCE = 100;
 export const MISSILE_COOLDOWN_MS = 1500;
@@ -83,15 +83,15 @@ export interface WeaponSpecs {
 
 export const WEAPON_FAMILY_SPECS: Record<WeaponFamily, WeaponSpecs> = {
   green: {
-    autoIntervalMs: 240,
-    burstIntervalMs: 240,
+    autoIntervalMs: 150,
+    burstIntervalMs: 150,
     heatPerShot: 7,
     coolingRatePerSec: 45,
     displayName: 'ENERGIA ESPIRALADA',
   },
   ion: {
-    autoIntervalMs: 220,
-    burstIntervalMs: 220,
+    autoIntervalMs: 125,
+    burstIntervalMs: 125,
     heatPerShot: 8,
     coolingRatePerSec: 50,
     displayName: 'DISPERSÃO AZUL',
@@ -577,60 +577,60 @@ export function getPrimaryProjectiles(
 
     if (level === 1) {
       // Nível 1: 3 direções frontais estreitas e discretas (tiro inicial contido)
-      const vxs = [-72, 0, 72];
-      return vxs.map((vx, i) => ({
+      const vxs = [-12,0,12].map(a=>640*Math.sin(a*Math.PI/180));
+      return vxs.map((vx) => ({
         texture: tex,
         animation: anim,
-        x: originX + (i - 1) * 4,
-        y: originY - (i === 1 ? 2 : 0),
+        x: originX,
+        y: originY,
         velocityX: vx,
-        velocityY: -720,
+        velocityY: -Math.sqrt(640*640-vx*vx),
         damage: 0.95,
-        hitRadius: 6,
+        hitRadius: 2.5,
         scale: 0.95,
       }));
     }
     if (level === 2) {
       // Nível 2: 5 direções em leque médio
-      const vxs = [-156, -78, 0, 78, 156];
-      return vxs.map((vx, i) => ({
+      const vxs = [-24,-12,0,12,24].map(a=>640*Math.sin(a*Math.PI/180));
+      return vxs.map((vx) => ({
         texture: tex,
         animation: anim,
-        x: originX + (i - 2) * 3.5,
-        y: originY - (i === 2 ? 3 : 0),
+        x: originX,
+        y: originY,
         velocityX: vx,
-        velocityY: -745,
+        velocityY: -Math.sqrt(640*640-vx*vx),
         damage: 1.0,
-        hitRadius: 7,
+        hitRadius: 2.5,
         scale: 1.12,
       }));
     }
     if (level === 3) {
-      // Nível 3: 7 direções em leque aberto
-      const vxs = [-246, -164, -82, 0, 82, 164, 246];
+      // Nível 3: 9 direções em leque aberto
+      const vxs = [-48,-36,-24,-12,0,12,24,36,48].map(a=>640*Math.sin(a*Math.PI/180));
       return vxs.map((vx, i) => ({
         texture: tex,
         animation: anim,
-        x: originX + (i - 3) * 3.5,
-        y: originY - (i === 3 ? 4 : 0),
+        x: originX,
+        y: originY,
         velocityX: vx,
-        velocityY: -765,
-        damage: i === 3 ? 1.12 : 1.02,
-        hitRadius: 8,
+        velocityY: -Math.sqrt(640*640-vx*vx),
+        damage: i === 4 ? 1.12 : 1.02,
+        hitRadius: 2.5,
         scale: 1.30,
       }));
     }
-    // Nível 4: 9 direções de cobertura total do corredor
-    const vxsLv4 = [-336, -252, -168, -84, 0, 84, 168, 252, 336];
-    return vxsLv4.map((vx, i) => ({
+    // Nível 4: 16 direções de cobertura total do corredor
+    const vxsLv4 = Array.from({length:16},(_,i)=>640*Math.sin((-75+i*10)*Math.PI/180));
+    return vxsLv4.map((vx) => ({
       texture: tex,
       animation: anim,
-      x: originX + (i - 4) * 3.5,
-      y: originY - (i === 4 ? 5 : 0),
+      x: originX,
+      y: originY,
       velocityX: vx,
-      velocityY: -785,
-      damage: i === 4 ? 1.22 : 1.08,
-      hitRadius: 8,
+      velocityY: -Math.sqrt(640*640-vx*vx),
+      damage: 0.95,
+      hitRadius: 2.5,
       scale: 1.48,
     }));
   }

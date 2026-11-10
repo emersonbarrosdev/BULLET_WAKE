@@ -266,6 +266,8 @@ export interface StageBackdropOptions {
  * qualquer elemento de UI, cards, textos ou HUD de combate.
  */
 export class StageBackdrop {
+  private readonly paintedPanels: Phaser.GameObjects.Image[] = [];
+  private paintedHeight = 0;
   private readonly abyssTile: Phaser.GameObjects.TileSprite;
   private readonly reefsTile: Phaser.GameObjects.TileSprite;
   private readonly surfaceTile: Phaser.GameObjects.TileSprite;
@@ -325,6 +327,11 @@ export class StageBackdrop {
       .setDepth(-7);
     this.mistTile.tilePositionX = tileOffsetX;
     if (painted) {
+      if(scene.textures.exists('review-ocean')) {
+        this.paintedHeight = width * 3;
+        for(let i=0;i<2;i++)this.paintedPanels.push(scene.add.image(centerX,i*this.paintedHeight,'review-ocean').setOrigin(.5,0).setDisplaySize(width,this.paintedHeight).setFlipY(i===1).setDepth(-10));
+        this.abyssTile.setVisible(false);
+      }
       this.reefsTile.setVisible(false);
       this.surfaceTile.setVisible(false);
       this.mistTile.setVisible(false);
@@ -352,6 +359,7 @@ export class StageBackdrop {
    * Atribuição direta (=) e NÃO incremento (-=), garantindo velocidade constante e sem aberração.
    */
   update(scrollPx: number): void {
+    for(const[ i,panel]of this.paintedPanels.entries())panel.y=((scrollPx*.9+i*this.paintedHeight)%(2*this.paintedHeight))-this.paintedHeight;
     this.abyssTile.tilePositionY = -scrollPx * 0.72 / this.abyssTile.tileScaleY;
     this.reefsTile.tilePositionY = -scrollPx * 0.55;
     this.surfaceTile.tilePositionY = -scrollPx * 1.0;

@@ -1,0 +1,468 @@
+{
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "confirmation": {
+        "index": "0",
+        "inside": true,
+        "count": 1
+      },
+      "art": [
+        {
+          "name": "raia",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "talassarca",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "surface",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "swimmer",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "special",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-power",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-weapon_ion",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-weapon_green",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-weapon_red",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-health",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-bomb",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-speed",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-score",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-missile",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-special",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "hostile-scout",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "hostile-dart",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "hostile-lancer",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "hostile-cutter",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "hostile-surface",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "hostile-raia",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "effects-blue",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "effects-green",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "effects-fire",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "effects-missile",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "effects-charge",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "effects-explosion",
+          "frames": 5,
+          "variants": 4
+        }
+      ],
+      "noLabels": true,
+      "labels": {
+        "lifeLabels": false,
+        "bars": 1
+      },
+      "backgroundPixelsChanged": true,
+      "ground": {
+        "exists": true,
+        "key": "review-surface"
+      },
+      "swimmer": "review-swimmer",
+      "blueCounts": [
+        3,
+        5,
+        9,
+        16
+      ],
+      "auxiliary": {
+        "missile": "review-effects-missile",
+        "charge": "review-effects-charge"
+      },
+      "shots": [
+        {
+          "key": "review-hostile-scout",
+          "size": 18,
+          "animated": true
+        },
+        {
+          "key": "review-hostile-dart",
+          "size": 19,
+          "animated": true
+        },
+        {
+          "key": "review-hostile-lancer",
+          "size": 20,
+          "animated": true
+        },
+        {
+          "key": "review-hostile-cutter",
+          "size": 21,
+          "animated": true
+        },
+        {
+          "key": "review-hostile-surface",
+          "size": 18,
+          "animated": true
+        },
+        {
+          "key": "review-hostile-raia",
+          "size": 23,
+          "animated": true
+        },
+        {
+          "key": "review-hostile-lancer",
+          "size": 24,
+          "animated": true
+        }
+      ],
+      "hull": {
+        "hp": 82,
+        "remaining": 0
+      },
+      "contact": {
+        "removed": true,
+        "explosion": true,
+        "hp": 82
+      },
+      "pulse": {
+        "remaining": 1,
+        "stock": 2
+      },
+      "noShake": false,
+      "victory": true,
+      "continued": {
+        "hp": 100,
+        "lives": 1,
+        "distance": 2118.170280000001,
+        "stage": 1,
+        "dash": 1,
+        "meter": 2
+      }
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "confirmation": {
+        "index": "0",
+        "inside": true,
+        "count": 1
+      },
+      "art": [
+        {
+          "name": "raia",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "talassarca",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "surface",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "swimmer",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "special",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-power",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-weapon_ion",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-weapon_green",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-weapon_red",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-health",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-bomb",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-speed",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-score",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-missile",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "pickups-special",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "hostile-scout",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "hostile-dart",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "hostile-lancer",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "hostile-cutter",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "hostile-surface",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "hostile-raia",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "effects-blue",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "effects-green",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "effects-fire",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "effects-missile",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "effects-charge",
+          "frames": 5,
+          "variants": 4
+        },
+        {
+          "name": "effects-explosion",
+          "frames": 5,
+          "variants": 4
+        }
+      ],
+      "noLabels": true,
+      "labels": {
+        "lifeLabels": false,
+        "bars": 1
+      },
+      "backgroundPixelsChanged": true,
+      "ground": {
+        "exists": true,
+        "key": "review-surface"
+      },
+      "swimmer": "review-swimmer",
+      "blueCounts": [
+        3,
+        5,
+        9,
+        16
+      ],
+      "auxiliary": {
+        "missile": "review-effects-missile",
+        "charge": "review-effects-charge"
+      },
+      "shots": [
+        {
+          "key": "review-hostile-scout",
+          "size": 18,
+          "animated": true
+        },
+        {
+          "key": "review-hostile-dart",
+          "size": 19,
+          "animated": true
+        },
+        {
+          "key": "review-hostile-lancer",
+          "size": 20,
+          "animated": true
+        },
+        {
+          "key": "review-hostile-cutter",
+          "size": 21,
+          "animated": true
+        },
+        {
+          "key": "review-hostile-surface",
+          "size": 18,
+          "animated": true
+        },
+        {
+          "key": "review-hostile-raia",
+          "size": 23,
+          "animated": true
+        },
+        {
+          "key": "review-hostile-lancer",
+          "size": 24,
+          "animated": true
+        }
+      ],
+      "hull": {
+        "hp": 82,
+        "remaining": 0
+      },
+      "contact": {
+        "removed": true,
+        "explosion": true,
+        "hp": 82
+      },
+      "pulse": {
+        "remaining": 1,
+        "stock": 2
+      },
+      "noShake": false,
+      "victory": true,
+      "continued": {
+        "hp": 100,
+        "lives": 1,
+        "distance": 2119.2902400000003,
+        "stage": 1,
+        "dash": 1,
+        "meter": 2
+      }
+    }
+  ],
+  "regression": {
+    "title": true,
+    "guide": {
+      "count": 10,
+      "raster": true,
+      "noPageScroll": true,
+      "text": "P · POTÊNCIA\n\n3 P = +1 nível. São 9 P do NV1 ao NV4. No máximo, guarde mais 3 como reserva para o próximo Continue.\n\nW · DISPERSÃO AZUL\n\nTiros em leque: 3 / 5 / 9 / 16 projéteis em leque. Troca a arma preservando potência e P. Mesma cor: +5.000 pontos.\n\nW · ENERGIA ESPIRALADA\n\nOndas concentradas que se abrem com a potência. Troca livre desde NV1. Mesma cor: +5.000 pontos; não dá P.\n\nW · LASER RUBRO\n\nFeixes contínuos enquanto segura Espaço. Mais feixes por nível. Mesma cor: +5.000 pontos; não aumenta potência.\n\nH · REPARO\n\nRecupera 30% de integridade do casco. Com blindagem completa, vale 300 pontos. Não recarrega dash.\n\nB · PULSO DEFENSIVO\n\n+1 pulso defensivo, até 3. X limpa balas próximas, protege por 0,4 s e causa dano leve. V é o especial ofensivo.\n\nS · VELOCIDADE\n\nAumenta o movimento em 8%, até 3 incrementos. Reinicia ao usar Continue. Não recarrega dash.\n\n$ · PONTOS\n\n+500 pontos. O símbolo $ distingue pontuação do S de velocidade.\n\nM · MÍSSIL\n\nDeixa o míssil secundário pronto para disparar com M. Não troca a arma principal.\n\nE · RESSONÂNCIA\n\n+25% de ressonância. Ao completar 100%, V ativa a habilidade do piloto."
+    }
+  },
+  "errors": []
+}

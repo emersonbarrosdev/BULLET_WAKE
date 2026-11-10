@@ -78,7 +78,7 @@ test('resonance accumulates up to 100 and enables special', () => {
   assert.equal(canActivateSpecial(act.state), false);
 });
 
-test('bomb stock starts at three, reaches zero, and caps at ten', () => {
+test('bomb stock starts at three, reaches zero, and caps at three', () => {
   let w = createPlayerWeapons('harlan');
   assert.equal(w.bombs, 3);
   for (let i = 0; i < 3; i++) { const r = useBomb(w); assert.equal(r.used, true); w = r.state; }
@@ -86,7 +86,7 @@ test('bomb stock starts at three, reaches zero, and caps at ten', () => {
   assert.equal(useBomb(w).used, false);
   for (let i = 0; i < 15; i++) w = addBomb(w);
   assert.equal(w.bombs, MAX_BOMBS);
-  assert.equal(MAX_BOMBS, 10);
+  assert.equal(MAX_BOMBS, 3);
 });
 
 test('primary projectiles scale with weapon levels for all three pilots', () => {

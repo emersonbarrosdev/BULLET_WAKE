@@ -1,5 +1,7 @@
 # 05 — Campanha: cinco fases artesanais
 
+> **Fase 1 atual:** [revisão de combate e cenário](31_FASE1_REVISAO_COMBATE.md). A RIVET voa sobre água com espuma e destroços; arte distinta para voadores, organismos ancorados e nadadores. A rolagem física dos painéis substitui a apresentação submarina anterior.
+
 > **Atualização 09/11/2026:** A campanha abaixo é um registro histórico da versão horizontal. A Fase 1 vigente é Fenda Pelágica, oceano terrestre sob invasão alienígena. Cenário móvel, ameaças de superfície e aproximação em profundidade para biomas futuros estão definidos em [Fase 1 — Normal](30_FASE1_NORMAL_FIRE_SHARK.md); a campanha canônica de 15 fases está na [Bíblia V2](27_BULLET_WAKE_V2_DEFINITIVO.md).
 
 

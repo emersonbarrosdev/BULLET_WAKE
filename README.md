@@ -1,5 +1,7 @@
 # BULLET WAKE
 
+> **Revisão atual da Fase 1:** [combate, arte e confirmação](docs/31_FASE1_REVISAO_COMBATE.md). Fundo de superfície em movimento, spritesheets de chefes/itens/efeitos, casco com barra única, Continue explícito e confirmação sobre o card. Somente Fenda Pelágica liberada; as próximas fases aguardam aprovação da primeira.
+
 > **Estado atual V2:** shooter vertical top-down; somente Fase 1 — Fenda Pelágica está liberada. Consulte a [Bíblia V2](docs/27_BULLET_WAKE_V2_DEFINITIVO.md) e a [revisão do Normal](docs/30_FASE1_NORMAL_FIRE_SHARK.md). As descrições da campanha horizontal abaixo são históricas.
 
 *Every shot leaves a trace.*

@@ -113,8 +113,8 @@ test('V2 Armas: Três famílias distintas (Raio Esmeralda, Dispersão Azul, Lase
   const i4 = getPrimaryProjectiles('ion', 4, 384, 350);
   assert.equal(i1.length, 3, 'Dispersão Azul LV1: 3 direções em leque');
   assert.equal(i2.length, 5, 'Dispersão Azul LV2: 5 direções em leque');
-  assert.equal(i3.length, 7, 'Dispersão Azul LV3: 7 direções em leque');
-  assert.equal(i4.length, 9, 'Dispersão Azul LV4: 9 direções em leque amplo');
+  assert.equal(i3.length, 9, 'Dispersão Azul LV3: 9 direções em leque');
+  assert.equal(i4.length, 16, 'Dispersão Azul LV4: 16 direções em leque amplo');
 
   // 3. Arma Vermelha: LASER RUBRO (multifeixes contínuos: 1, 2, 4, 6 feixes)
   const r1 = getPrimaryProjectiles('red', 1, 384, 350);
