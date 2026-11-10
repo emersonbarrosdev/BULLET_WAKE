@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { CombatLoading } from './CombatLoading';
 import { connectedPad, GamepadReader, padLabels } from '../systems/gamepadInput';
 import { NORMAL_GUIDE_ITEMS, PICKUP_GUIDE } from '../data/pickupGuide';
 import { saveSystem } from '../systems/saveSystem';
@@ -10,6 +11,7 @@ export class CombatBriefing {
   private reader = new GamepadReader();
   private raf = 0;
   private closed = false;
+  private loading?: CombatLoading;
   private page: 'flight' | 'pause' | 'options' | 'controls' | 'items';
   private device = '';
   private selection = 0;
@@ -27,9 +29,10 @@ export class CombatBriefing {
     this.tick();
   }
   private buttons() { return Array.from(this.root.querySelectorAll<HTMLButtonElement>('button')); }
-  private focus() { const b=this.buttons(); this.selection=(this.selection+b.length)%b.length; b[this.selection]?.focus({preventScroll:true}); }
+  private focus() { const b=this.buttons(); if(!b.length)return;this.selection=(this.selection+b.length)%b.length; b[this.selection]?.focus({preventScroll:true}); }
   private tick = () => {
     if(this.closed)return;
+    if(this.loading){this.reader.sample(connectedPad());this.raf=requestAnimationFrame(this.tick);return;}
     const pad=connectedPad(), device=pad?.id ?? 'keyboard';
     if(device!==this.device){this.device=device;this.render();}
     const p=this.reader.sample(pad);
@@ -40,6 +43,7 @@ export class CombatBriefing {
     if(!this.closed)this.raf=requestAnimationFrame(this.tick);
   };
   private onKey = (e: KeyboardEvent) => {
+    if(this.loading){e.preventDefault();e.stopImmediatePropagation();return;}
     if(!['Escape','Enter',' ','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Tab'].includes(e.key))return;
     e.preventDefault(); e.stopImmediatePropagation(); if(e.repeat)return;
     if(e.key==='Escape'){this.back();return;}
@@ -47,6 +51,7 @@ export class CombatBriefing {
     this.selection += e.key==='ArrowLeft'||e.key==='ArrowUp'||(e.key==='Tab'&&e.shiftKey)?-1:1; this.focus();
   };
   private back() {
+    if(this.loading)return;
     if(this.page==='flight')return; // Starting combat always requires explicit confirmation.
     if(this.page==='pause'){this.finish(this.resume);return;}
     this.page=this.page==='options'?'pause':'options';this.selection=0;this.render();
@@ -60,13 +65,13 @@ export class CombatBriefing {
     return `<p class="bw-brief-device">${pad?'CONTROLE CONECTADO':'TECLADO'} · ${pad?'CONFIRMAR '+l.shoot:'CONFIRMAR ENTER'}</p><div class="bw-brief-controls">${rows.map(([a,b])=>`<div><span>${a}</span><kbd>${b}</kbd></div>`).join('')}</div><p class="bw-brief-note">${cadence} O Laser Rubro mantém o fluxo contínuo.</p>`;
   }
   private render() {
-    if(this.closed)return;
+    if(this.closed||this.loading)return;
     const title={flight:'PRONTO PARA DECOLAR?',pause:'OPERAÇÃO PAUSADA',options:'OPÇÕES DE COMBATE',controls:'COMANDOS',items:'COLETÁVEIS'}[this.page];
     let body='', actions: Array<[string,()=>void]>=[];
     if(this.page==='flight'||this.page==='controls'){
       body=this.controls();
       if(this.page==='flight')body+='<p class="bw-brief-rule">AZUL NV4 → VERDE NV1 · VERDE NV4 → RUBRO NV1<br>3 P por nível. Especial: 2 cargas iniciais, máximo 3.</p>';
-      actions=this.page==='flight'?[['ENTENDI · INICIAR OPERAÇÃO',()=>this.finish(this.resume)]]:[['VOLTAR',()=>this.back()]];
+      actions=this.page==='flight'?[['ENTENDI · INICIAR OPERAÇÃO',()=>this.launch()]]:[['VOLTAR',()=>this.back()]];
     }else if(this.page==='pause'){
       body='<p class="bw-brief-note">A operação está suspensa. Retome quando estiver pronto.</p>';
       actions=[['CONTINUAR',()=>this.finish(this.resume)],['OPÇÕES',()=>this.show('options')],['REINICIAR FASE',()=>this.finish(this.restart)],['ESCOLHER PILOTO',()=>this.finish(this.leave)]];
@@ -80,9 +85,16 @@ export class CombatBriefing {
     this.buttons().forEach((b,i)=>{b.addEventListener('focus',()=>this.selection=i);b.addEventListener('click',actions[i][1]);});this.focus();
   }
   private show(page: 'options'|'controls'|'items') {this.page=page;this.selection=0;this.render();}
+  private launch() {
+    if(this.closed||this.loading)return;
+    this.root.inert=true;
+    this.loading=new CombatLoading('PREPARANDO DECOLAGEM', 'Aguarde. Sua operação começa em instantes.');
+    this.loading.ready(2500,()=>this.finish(this.resume),true);
+  }
   private finish(action:()=>void) { if(this.closed)return;this.destroy();this.scene.input.keyboard?.resetKeys();this.scene.scene.resume();action(); }
   destroy = () => {
     if(this.closed)return;this.closed=true;cancelAnimationFrame(this.raf);document.removeEventListener('keydown',this.onKey,true);
+    this.loading?.destroy();this.loading=undefined;
     this.scene.events.off(Phaser.Scenes.Events.SHUTDOWN,this.destroy);this.scene.events.off(Phaser.Scenes.Events.DESTROY,this.destroy);
     this.root.remove();if(this.hud)this.hud.inert=false;
   };

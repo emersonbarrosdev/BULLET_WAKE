@@ -31,7 +31,7 @@ A abertura continua relativamente calma, a invasão cresce entre 1100 e 2400 uni
 
 ## Controles e fluxo
 
-Antes de iniciar a Fase 1 pela seleção, o jogador confirma o guia de comandos. Nenhum inimigo, cronômetro ou movimento avança enquanto ele lê. Reiniciar e Continue não repetem obrigatoriamente o guia, que permanece acessível em **Pause → Opções → Ver comandos**. A mesma área oferece a legenda dos coletáveis. As telas mantêm a tipografia existente e a paleta quente dos menus. Encerrar uma vitória retorna à abertura; a outra saída permite escolher piloto. A Fase 1 não conduz ao epílogo legado nem às fases seguintes.
+Antes de iniciar a Fase 1 pela seleção, o jogador confirma o guia de comandos. Nenhum inimigo, cronômetro ou movimento avança enquanto ele lê. Reiniciar e Continue não repetem obrigatoriamente o guia, que permanece acessível em **Pause → Opções → Ver comandos**. A mesma área oferece a legenda dos coletáveis. O guia, a pausa e as opções mantêm a tipografia existente e usam preto fosco/carbono neutro, conforme a revisão de carregamento abaixo. Encerrar uma vitória retorna à abertura; a outra saída permite escolher piloto. A Fase 1 não conduz ao epílogo legado nem às fases seguintes.
 
 | Ação | Teclado | Controle padrão Xbox | PlayStation | Nintendo padrão |
 |---|---|---|---|---|
@@ -88,3 +88,21 @@ Todas as verificações de navegador acima passaram em **1366×768 e 1920×1080*
 5. Medir desempenho em uma máquina intermediária e uma GPU integrada. O bundle Phaser ainda gera aviso de tamanho no build; otimização de carregamento permanece recomendada.
 
 A fase está em revisão, não aprovada automaticamente. Android, novos modos de dificuldade, outros pilotos e próximas fases permanecem fora desta entrega.
+
+
+## Revisão: carregamento e carbono fosco (10/11/2026)
+
+Esta revisão substitui a paleta marrom/âmbar do guia e dos painéis da gameplay. Não altera o layout, a tipografia, o oceano animado ou as mecânicas de combate.
+
+- Confirmar o piloto abre **CARREGANDO OPERAÇÃO**, com barra vinculada ao progresso do carregador de recursos. Depois de criar a cena, a apresentação permanece por mais 650 ms para ser visível também quando os recursos já estão em cache. O guia aparece somente após essa preparação.
+- Confirmar **ENTENDI · INICIAR OPERAÇÃO** abre **PREPARANDO DECOLAGEM** por **2,5 segundos**, com barra temporal. Essa segunda barra representa a transição solicitada; não simula um novo download.
+- A simulação fica pausada em toda a preparação, leitura e decolagem. A música de combate começa ao entrar na gameplay. Cliques repetidos, Enter, Escape e confirmações do controle não pulam nem reiniciam a transição.
+- Pausa, opções e retorno à partida não acrescentam essa espera. Reiniciar e Continue mantêm o fluxo existente sem repetir obrigatoriamente o guia.
+- O carregamento trata falha de recursos com mensagem e retorno aos pilotos. Sair da cena cancela a transição e remove os bloqueios de entrada, evitando reativação tardia da gameplay.
+- Guia, loading, pausa, opções e HUD usam preto fosco, textura sutil de carbono, bordas cinza e textos neutros. As laterais preservam os destroços discretos. Vida, armas, potência coletada e especial mantêm suas cores de identificação. As telas iniciais e os cards aprovados permanecem com sua identidade própria.
+
+### Validação desta revisão
+
+Build de produção e 149 testes de lógica aprovados. A verificação de navegador em 1366×768 e 1920×1080 mede a duração real da decolagem, verifica a simulação congelada, proteção contra confirmação duplicada, retorno sem atraso da pausa, carregamento com cache, ausência de scroll e descarte da transição ao sair da cena. Controle padrão é simulado pela API de gamepad; falha de recurso é exercitada pelo evento do carregador. Essas verificações não substituem teste com controle físico.
+
+Executar: `node scripts/validate-pilot-selection.mjs --loading` após `npm run build`. [Capturas e relatório](screenshots/phase1-loading/validation.json). A aprovação visual da Fase 1 continua pendente do usuário; Fase 2 e Android não foram liberados.

@@ -1,5 +1,7 @@
 # IMPORTANTE — BULLET WAKE V2: IDENTIDADE, CAMPANHA E GAMEPLAY DEFINITIVOS
 
+> **Carregamento e carbono fosco — 10/11/2026:** [revisão de apresentação](36_FASE1_CASCATA_CONTROLES_POLIMENTO.md#revisão-carregamento-e-carbono-fosco-10112026). Confirmar piloto mostra progresso dos recursos antes do guia; confirmar o guia mostra decolagem por 2,5 s com simulação pausada. Guia, pausa, opções e HUD passam a preto fosco/carbono com detalhes neutros; cores funcionais de combate permanecem.
+
 > **Atualização prioritária:** [Fase 1 — cascata, controles e polimento](36_FASE1_CASCATA_CONTROLES_POLIMENTO.md). Azul NV4 libera verde NV1; verde NV4 libera rubro NV1. Especial apenas X no teclado, guia antes da partida, pause/opções e controle padrão. Esta decisão mais recente substitui a troca livre e os atalhos V/B citados historicamente abaixo.
 
 > **Polimento vigente da Fase 1:** [Contato, água, áudio e explosões](35_FASE1_POLIMENTO_CONTATO_AGUA_AUDIO.md). Água com fluxo contínuo sem emenda, explosões de fogo curtas sem fumaça cinza, projéteis transparentes, áudio alienígena e HUD agrupado por sobrevivência/armamento. Somente a primeira fase continua em produção.

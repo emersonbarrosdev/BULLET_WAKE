@@ -95,13 +95,13 @@ export class PremiumCombatHud {
   setMissileReady(_ready: boolean): void { /* M keeps its existing binding. */ }
   setProgress(ratio: number): void { this.field('progress').style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`; }
   setCharge(_ms: number, _max: number, charging: boolean): void { this.text('charge', charging ? 'CARREGANDO WAVE CANNON…' : ''); }
-  setSector(sector: SectorId): void { this.text('sector', sectors[sector]); this.flash(`SETOR: ${sectors[sector]}`, '#ffbd79', 650); }
+  setSector(sector: SectorId): void { this.text('sector', sectors[sector]); this.flash(`SETOR: ${sectors[sector]}`, '#dedede', 650); }
   showBossBar(name: string, hp: number, max: number): void {
     this.root.querySelector<HTMLElement>('.bw-combat-boss')!.hidden = false;
     this.text('boss-name', name); this.field('boss-fill').style.width = `${Math.max(0, Math.min(1, hp / (max || 1))) * 100}%`;
   }
   hideBossBar(): void { this.root.querySelector<HTMLElement>('.bw-combat-boss')!.hidden = true; }
-  flash(message: string, color = '#ffd166', ms = 700): void {
+  flash(message: string, color = '#dedede', ms = 700): void {
     this.text('toast', message); const toast = this.field('toast'); toast.hidden = false; toast.style.color = color; toast.style.opacity = '1'; this.statusRemainingMs = ms;
   }
   update(dt: number): void {

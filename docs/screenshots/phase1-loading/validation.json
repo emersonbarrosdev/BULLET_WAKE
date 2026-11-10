@@ -1,0 +1,41 @@
+{
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "launchDurationMs": 2531.100000023842,
+      "neutralCarbon": true,
+      "semanticWeaponColor": true,
+      "simulationFrozen": true,
+      "noOverflow": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "launchDurationMs": 2522.4000000953674,
+      "neutralCarbon": true,
+      "semanticWeaponColor": true,
+      "simulationFrozen": true,
+      "noOverflow": true
+    }
+  ],
+  "regression": {
+    "title": true,
+    "loadingTeardown": true,
+    "standardGamepadLaunch": true,
+    "loadingFailureRecovery": true,
+    "expectedResourceFailure": [
+      [
+        {
+          "type": "string",
+          "value": "[BULLET WAKE] Falha ao carregar sprite:"
+        },
+        {
+          "type": "string",
+          "value": "qa-resource"
+        }
+      ]
+    ]
+  },
+  "errors": []
+}

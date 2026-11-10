@@ -1,5 +1,6 @@
 import { PrismStrike } from '../render/PrismStrike';
 import { CombatBriefing } from '../ui/CombatBriefing';
+import { CombatLoading } from '../ui/CombatLoading';
 import Phaser from 'phaser';
 import {
   FONT_TECH,
@@ -168,6 +169,8 @@ export class PrototypeScene extends Phaser.Scene {
   private completed = false;
   private briefing?: CombatBriefing;
   private skipBriefing = false;
+  private entryLoading?: CombatLoading;
+  private entryLoadFailed = false;
   private particles!: CombatParticles;
 
   constructor() {
@@ -180,13 +183,34 @@ export class PrototypeScene extends Phaser.Scene {
     this.stageNumber = 1;
     this.checkpointDistance = data.checkpointDistance ?? 0;
     this.resumeWeapons=data.resumeWeapons;this.resumeDashes=data.resumeDashes;
+    this.entryLoadFailed=false;
+    if(!this.skipBriefing){
+      this.entryLoading=new CombatLoading('CARREGANDO OPERAÇÃO', 'Preparando a Fenda Pelágica e o guia de comandos.');
+      this.load.on('progress',this.onLoadProgress);
+      this.load.on('loaderror',this.onLoadError);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN,this.clearEntryLoading);
+      this.events.once(Phaser.Scenes.Events.DESTROY,this.clearEntryLoading);
+    }
   }
+
+  private onLoadProgress = (value:number) => this.entryLoading?.setProgress(value * .95);
+  private onLoadError = () => {
+    this.entryLoadFailed=true;
+    this.entryLoading?.fail(()=>this.scene.start('PilotSelectScene'));
+  };
+  private clearEntryLoading = () => {
+    this.entryLoading?.destroy();this.entryLoading=undefined;
+    this.load.off('progress',this.onLoadProgress);this.load.off('loaderror',this.onLoadError);
+    this.events.off(Phaser.Scenes.Events.SHUTDOWN,this.clearEntryLoading);
+    this.events.off(Phaser.Scenes.Events.DESTROY,this.clearEntryLoading);
+  };
 
   preload(): void {
     loadGameSprites(this);
   }
 
   create(): void {
+    if(this.entryLoadFailed){globalAudio.stopMusic();this.scene.pause();return;}
     registerGameAnimations(this);
     enableCombatResolution(this);
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
@@ -232,7 +256,7 @@ export class PrototypeScene extends Phaser.Scene {
 
     const stageDef = STAGES[this.stageNumber - 1] || STAGES[0];
     const diffTag = ' [NORMAL]';
-    this.hud.flash(`FASE 0${this.stageNumber}  -  ${stageDef.title.toUpperCase()}${diffTag}`, '#a6e3e2', 2600);
+    this.hud.flash(`FASE 0${this.stageNumber}  -  ${stageDef.title.toUpperCase()}${diffTag}`, '#dedede', 2600);
 
     // Nave do jogador centralizada no corredor vertical, apontando para o Norte (-Y)
     const initialShipX = PLAYFIELD_X + PLAYFIELD_WIDTH / 2;
@@ -248,7 +272,12 @@ export class PrototypeScene extends Phaser.Scene {
     this.registerSandboxShortcuts();
 
     this.briefing=undefined;
-    if (!this.skipBriefing && this.stageNumber === 1) this.openBriefing(true);
+    if (this.entryLoading) {
+      globalAudio.stopMusic();this.scene.pause();
+      this.entryLoading.setProgress(1);
+      this.entryLoading.ready(650,()=>{this.clearEntryLoading();this.openBriefing(true);});
+    }
+    else if (!this.skipBriefing && this.stageNumber === 1) this.openBriefing(true);
     else globalAudio.startStageMusic();
   }
 
