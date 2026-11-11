@@ -224,12 +224,18 @@ export class AudioSystem {
     this.tone('sine',isLarge?150:220,35,isLarge?.35:.16,isLarge?.38:.22);
   }
 
-  playSpecial(type: 'prism' | 'phantom' | 'nova' | 'orbital' | 'comet'): void {
+  playSpecial(type: 'scarlet' | 'phantom' | 'nova' | 'orbital' | 'comet'): void {
     this.unlock();
     if (!this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
     const now = this.ctx.currentTime;
 
-    if (type === 'prism'||type==='orbital') {
+    if(type==='scarlet') {
+      // Low mechanical ignition, followed by sustained pressurised plasma; no crystal chord.
+      this.noise(.15,.2,3400);
+      this.noise(2.75,.085,1700);
+      this.tone('sine',95,52,2.8,.12);
+      this.tone('triangle',175,105,2.7,.035);
+    } else if (type==='orbital') {
       // Acorde harmônico cristalino
       for (const freq of [440, 554, 659, 880]) {
         const osc = this.ctx.createOscillator();

@@ -1,10 +1,10 @@
 # BULLET WAKE — Bíblia vigente
 
-Revisão de 11/11/2026. Esta revisão substitui regras conflitantes anteriores. Correções atuais e evidências em [RIVET vermelha, HUD e punição por morte](46_RIVET_VERMELHA_HUD_E_RECUPERACAO.md); [chefe, RIVET FULL, escala e nu metal](44_CHEFE_RIVET5_ESCALA_E_NU_METAL.md) registra a revisão anterior; [revisão anterior](41_REVISAO_FINAL_FASE_1.md) é histórica; [relatório anterior](39_ELENCO_COMBATE_AUDIO.md) é histórico. Somente Fenda Pelágica está produzida; nenhuma fase seguinte deve ser produzida antes de sua aprovação.
+Revisão de 11/11/2026. Esta revisão substitui regras conflitantes anteriores. Correções atuais e evidências em [RIVET caça e Tormenta Escarlate](48_RIVET_CACA_TORMENTA_ESCARLATE.md); [HUD e punição por morte](46_RIVET_VERMELHA_HUD_E_RECUPERACAO.md) registra a revisão anterior; [chefe, RIVET FULL, escala e nu metal](44_CHEFE_RIVET5_ESCALA_E_NU_METAL.md) registra a revisão anterior; [revisão anterior](41_REVISAO_FINAL_FASE_1.md) é histórica; [relatório anterior](39_ELENCO_COMBATE_AUDIO.md) é histórico. Somente Fenda Pelágica está produzida; nenhuma fase seguinte deve ser produzida antes de sua aprovação.
 
 ## Identidade e câmera
 
-Shooter vertical arcade 2D. Tudo no combate é visto diretamente de cima, em projeção ortográfica: água, criaturas, caças e armas instaladas. A câmera não gira ao mover. A RIVET usa poses de rolagem lateral para esquerda/direita, com o bico sempre apontado ao norte e disparo no eixo da nave; não gira a imagem no plano nem muda a câmera para três quartos. Naves usam arte de 34 unidades (redução de 15%); inimigos comuns e portadores, redução de 12%, preservando o chefe colossal e a arena. Menu pode usar naves em três quartos. RIVET mantém casco branco, detalhes vermelhos, três motores e arte própria; nenhum crop da abertura é utilizado.
+Shooter vertical arcade 2D. Tudo no combate é visto diretamente de cima, em projeção ortográfica: água, criaturas, caças e armas instaladas. A câmera não gira ao mover. A RIVET usa poses de rolagem lateral para esquerda/direita, com o bico sempre apontado ao norte e disparo no eixo da nave; não gira a imagem no plano nem muda a câmera para três quartos. Naves usam arte de 34 unidades (redução de 15%); inimigos comuns e portadores, redução de 12%, preservando o chefe colossal e a arena. Menu pode usar naves em três quartos. RIVET tem proporções de caça inspiradas no F/A-18, com fuselagem fina, asas e estabilizadores de cauda distintos, dois motores, casco branco e detalhes escarlates; nenhum crop da abertura é utilizado.
 
 Invasores são organismos alienígenas, inclusive criaturas biomecânicas. Distinguir voadores de organismos aquáticos: os primeiros compartilham o plano da nave, os segundos emergem, permanecem ancorados ao cenário e voltam a submergir. Não dar a todos aparência de naves humanas.
 
@@ -12,7 +12,7 @@ Invasores são organismos alienígenas, inclusive criaturas biomecânicas. Disti
 
 | Ordem / piloto | Identidade | Nave / tiro | Especial | Busca pessoal |
 |---|---|---|---|---|
-| 1. **Bayek** | Egípcio; protagonista | RIVET / dispersão vermelha | Tempestade Prismática | Irmão desaparecido e honra após salvar civis |
+| 1. **Bayek** | Egípcio; protagonista | RIVET / Rajada Escarlate | Tormenta Escarlate | Irmão desaparecido e honra após salvar civis |
 | 2. **Tita** | Ruiva; aparência preservada com cabelo cobre | MOTH / ondas verdes | Salto Fantasma | Mãe pesquisadora; distinguir a voz real do enxame |
 | 3. **Leona** | Mulher negra brasileira | KESTREL / azul concentrado | Coroa Orbital | Pai desaparecido; manter a clínica da família |
 | 4. **Osvald** | Russo; veterano de resgate | KNUCKLE / fluxo rubro | Ruptura Nova | Resgatar a filha e aprender a ouvi-la |
@@ -27,7 +27,7 @@ Cada piloto tem desejo, ferida, conflito, fala de missão e final próprio. A se
 Cada nave mantém **um armamento próprio**, que evolui do NV1 ao NV5/FULL na RIVET e ao NV4 nos demais conjuntos. Esta decisão substitui a cascata azul→verde→vermelho. Os efeitos verdes/vermelhos foram preservados e transferidos para MOTH/KNUCKLE. P aumenta potência, nunca troca a nave para a arma de outro piloto.
 
 - RIVET: melhorias com 2/2/2/3 P, nove P do NV1 ao NV5/FULL. Demais conjuntos: três P por melhoria, nove P do NV1 ao NV4. No máximo, P extra concede 5.000 pontos; não cria reserva invisível.
-- RIVET: Dispersão Vermelha, com spritesheet própria de oito quadros de projétil individual, núcleo claro e corpo vermelho. Largura e comprimento crescem a cada nível, com salto perceptível no NV3. Salvas de 1/2/3/6/7 tiros, com três pares no NV4 e sete tiros encorpados no FULL. Dois mísseis automáticos juntos no NV3/NV4 (intervalo 1,5 s); três guiados no FULL (intervalo 1,1 s), com giro limitado e busca de alvos/peças vivos. Nenhuma ação manual extra. Os nove P existentes chegam ao FULL sem aumentar as onze caixas.
+- RIVET: Rajada Escarlate, com spritesheet própria de oito quadros de projétil individual, núcleo claro e corpo vermelho. Largura e comprimento crescem a cada nível, com salto perceptível no NV3. Salvas de 1/2/3/6/7 tiros, com três pares no NV4 e sete tiros encorpados no FULL. Dois mísseis automáticos juntos no NV3/NV4 (intervalo 1,5 s); três guiados no FULL (intervalo 1,1 s), com giro limitado e busca de alvos/peças vivos. Nenhuma ação manual extra. Os nove P existentes chegam ao FULL sem aumentar as onze caixas.
 - MOTH: ondas verdes entrelaçadas, componentes 2/4/6/8. Dano reequilibrado para estar disponível desde o início.
 - KNUCKLE: fogo rubro contínuo, com varreduras móveis nos níveis superiores; alcança o teto da arena, sem bolas vermelhas.
 - KESTREL: menor dispersão, exige alinhamento e favorece alvos prioritários.
@@ -36,7 +36,7 @@ Cada nave mantém **um armamento próprio**, que evolui do NV1 ao NV5/FULL na RI
 
 **Referências:** Sonic Wings informa o conceito de tiro/especial próprios da aeronave. Fire Shark possui troca livre de cor com potência compartilhada; não exige a cascata abandonada de Bullet Wake. Não descrever nossas regras como cópia exata dos dois jogos.
 
-Especiais: apresentação própria e dano sincronizado aos impactos. Leona usa seis lanças orbitais (20 de orçamento por impacto); Hien, oito falcões de energia (15). Tita usa três pulsos de fase (40), pós-imagens da MOTH real e deslocamento de 650 ms; Osvald usa uma ruptura radial de 120. Bayek mantém três salvas prismáticas com orçamento total de 120 contra o chefe. Proteção especial comum de **1,8 s**; duração visual pode ser maior. Limpar balas ao quebrar uma peça comum não é recompensa automática; a limpeza total fica nos especiais e metamorfose.
+Especiais: apresentação própria e dano sincronizado aos impactos. Leona usa seis lanças orbitais (20 de orçamento por impacto); Hien, oito falcões de energia (15). Tita usa três pulsos de fase (40), pós-imagens da MOTH real e deslocamento de 650 ms; Osvald usa uma ruptura radial de 120. Bayek usa **Tormenta Escarlate**: sobrecarga ofensiva frontal, feixe central dominante e duas rajadas auxiliares, em escarlate intenso com núcleo branco-amarelado e bordas laranja, mais fragmentos incandescentes. A emissão nasce no bico e acompanha o deslocamento; não é bombardeio da arena inteira. Duração de 3 s, orçamento máximo de 120 contra o chefe durante contato contínuo; atingem-se somente as peças cruzadas pelo plasma. Dano perdido por errar não fica guardado para aplicar depois. Inimigos atrás da nave não recebem dano. O eixo e as poses continuam vistos de cima: à direita, asa direita abaixa/esquerda sobe; à esquerda, o inverso. Proteção especial comum de **1,8 s**; duração visual pode ser maior. Limpar balas ao quebrar uma peça comum não é recompensa automática; a limpeza total fica nos especiais e metamorfose.
 
 ### Vidas, especiais e suprimentos
 

@@ -14,7 +14,7 @@ export async function runPhase1Review(api) {
   await start();
   const hud=await run(`s.hud.setRadio('Olha pra tela, não pra mensagem, caramba!',true);const root=document.querySelector('#bw-combat-hud'),rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom}};const q=x=>root.querySelector(x);return {progressCount:root.querySelectorAll('[data-field="progress"]').length,progressLeft:!!q('.bw-combat-left [data-field="progress"]'),progress:rect(q('.bw-combat-results')),score:rect(q('.bw-combat-score-panel')),radio:rect(q('.bw-combat-radio')),radioColor:getComputedStyle(q('.bw-combat-radio p')).color,radioBorder:getComputedStyle(q('.bw-combat-radio')).borderTopStyle,pauseText:q('[data-action="restart"]').textContent,pauseLabel:q('[data-action="restart"]').getAttribute('aria-label'),weapon:q('[data-field="weapon"]').textContent,overflow:[...root.querySelectorAll('section,button')].filter(e=>{const r=e.getBoundingClientRect();return r.bottom>innerHeight+1||r.right>innerWidth+1||e.scrollWidth>e.clientWidth+1}).map(e=>e.className)};`);
   assert.equal(hud.progressCount,1);assert.equal(hud.progressLeft,true);assert.ok(hud.progress.bottom<=hud.score.y,'Progress above score');
-  assert.equal(hud.pauseText,'');assert.equal(hud.pauseLabel,'Pausar jogo');assert.equal(hud.weapon,'DISPERSÃO VERMELHA');
+  assert.equal(hud.pauseText,'');assert.equal(hud.pauseLabel,'Pausar jogo');assert.equal(hud.weapon,'RAJADA ESCARLATE');
   assert.equal(hud.radioBorder,'solid');assert.equal(hud.radioColor,'rgb(255, 119, 112)');assert.ok(hud.radio.y<height*.7,'Radio raised');assert.deepEqual(hud.overflow,[]);
   await shot('hud-red-radio-'+width);
   const lives=await run(`const nodes=[...document.querySelectorAll('.bw-life-icons i')],positions=[],frames=[];for(const time of [0,350,700,1050]){for(const n of nodes){const a=n.getAnimations()[0];a.pause();a.currentTime=time;}await new Promise(r=>requestAnimationFrame(r));positions.push(nodes.map(n=>n.getBoundingClientRect().x));frames.push(getComputedStyle(nodes[0]).backgroundImage);}return {positions,frames,backgroundPosition:getComputedStyle(nodes[0]).backgroundPosition};`);
@@ -22,7 +22,7 @@ export async function runPhase1Review(api) {
   const banks=[];
   for(const [name,dx] of [['left',-1],['right',1],['neutral',0]]) {
    const bank=await run(`s.ship.setPosition(384,340);for(let i=0;i<15;i++)s.ship.updateShip(20,${dx},0,0,false);s.clearPlayerShots();s.weapons.weaponLevel=3;s.firePrimary();return {texture:s.ship.hullSprite.texture.key,frame:s.ship.hullSprite.frame.name,rotation:s.ship.rotation,x:s.ship.x,y:s.ship.y,shots:s.shots.map(p=>({x:p.baseX,y:p.baseY,texture:p.node.texture.key,originX:p.node.originX}))};`);
-   assert.equal(bank.rotation,0);assert.equal(bank.texture,name==='neutral'?'hd-rivet':'hd-rivet-bank');if(name!=='neutral')assert.equal(Math.floor(Number(bank.frame)/4),name==='left'?0:1);
+   assert.equal(bank.rotation,0);assert.equal(bank.texture,name==='neutral'?'hd-rivet':'hd-rivet-bank');if(name!=='neutral')assert.equal(Math.floor(Number(bank.frame)/4),name==='left'?1:0);
    for(const p of bank.shots){assert.equal(p.x,bank.x);assert.equal(p.y,bank.y-16.45);assert.equal(p.texture,'polish-rivet-red');assert.equal(p.originX,.5);}
    banks.push({name,...bank});await shot('bank-'+name+'-'+width);
   }

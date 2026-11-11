@@ -1,0 +1,43 @@
+{
+  "tool": "image_gen native",
+  "created": "2026-11-11",
+  "assets": [
+    {
+      "file": "../public/assets/combat-hd/rivet-hornet.webp",
+      "bankFile": "../public/assets/combat-hd/rivet-hornet-bank.webp",
+      "prompt": "New original GAME SPRITESHEET of a recognizable contemporary F/A-18 HORNET STYLE military aircraft, not a space ship. Twelve equally sized square cells in FOUR columns x THREE rows, TRUE TRANSPARENT background. Ignore earlier spacecraft images; redesign from the actual fighter planform. The aircraft has a slender needle nose, long narrow central fuselage, small dark amber cockpit near the front, pronounced thin leading edge root extensions, swept trapezoidal main wings at mid-body, TWO small horizontal TAILPLANES distinctly behind the main wings, TWO vertical tail fins seen edge-on, and TWO exhaust nozzles with SHORT orange jets at the rear. A long aeronautical silhouette: fuselage length 88% of the cell, wingspan 70%, main wing tips at y53%, horizontal tailplanes at y79%. PALETTE ONLY: ivory-white aircraft skin, saturated scarlet red wingtip panels, red tailplane tips and red nose cap, charcoal panel lines/engine metal, warm amber glass. No third engine, no huge canopy, no delta/triangular spacefighter, no underwing stores or insignia. Crisp high-definition illustrated arcade sprite, readable down to 34px. ROW ONE: four IDENTICAL perfectly vertical neutral TOP-DOWN orthographic poses, bilaterally symmetrical left/right geometry, identical lighting on both halves, nose/cockpit/tailcenter aligned x50%; only engine fire flickers. ROW TWO: four identical RIGHT ROLL poses: right wing LOW, left wing HIGH. Aircraft nose still vertical UP, left upper wing more visible and right side of fuselage visible, horizon/camera never tilts. ROW THREE: four LEFT ROLL poses: left wing LOW, right wing HIGH, opposite shading and foreshortening. Nose faces UP in all cells, no yaw. All noses fixed x50% y5%, body center x50% y48%, nozzle bases y88%, tails and wings must fit inside cell with transparent padding, no shadows on an imaginary floor, no borders or text. Hull shape never morphs between frames. Clear separate tailplanes make the fighter look like a real Hornet, not the old triangular Rivet.",
+      "source": "exec-55b676a6-7c39-4874-aca7-9dbe2bce375b.png",
+      "grid": [
+        4,
+        3
+      ],
+      "frames": 12,
+      "frameSize": [
+        256,
+        256
+      ],
+      "layout": "Source: neutral row, RIGHT-wing-down row, LEFT-wing-down row. Runtime: neutral four frames in one sheet; right row then left row in bank sheet.",
+      "anchor": "Nose x128/y10 in every frame; 34 world-unit size, no image-plane rotation."
+    },
+    {
+      "file": "../public/assets/combat-hd/polish/scarlet-storm.webp",
+      "prompt": "Generate one polished arcade game VFX animation spritesheet for TOR MENTA ESCARLATE (do not write any text): exactly EIGHT equal SQUARE cells, FOUR columns and TWO rows, true TRANSPARENT background. Each cell contains one frontal plasma COLUMN pointing UP, stretching from bottom y96% to top y4%, central x50%. Continuous dominant plasma lance with a white-yellow core and extremely saturated intense scarlet red outer plasma, thin incandescent orange fringes, turbulent flowing red ribbons and small hot fragments hugging the column. Width about 60% of cell in middle, a bright connected narrow emitter at bottom x50%, pointed fiery front at top, asymmetric moving edge detail with centerline fixed. Eight temporal frames of a seamless powerful streaming plasma loop; energy rushes UP, visibly varies within the same registered overall footprint. No circular shockwave, mushroom cloud, bomb, large smoke, lasers made from straight geometric lines, opaque rectangle or background. Shape should read as an aggressive dense plasma TORRENT, central white-yellow spear surrounded by red energy, not pale pink lightning. Painterly high definition 2D sprite, crisp bright core, edge falls to fully transparent well before cell borders. Leave side padding. No objects, spaceships, labels or grid lines.",
+      "alphaEditPrompt": "EDIT THIS spritesheet, preserve every red/orange plasma shape, white-yellow central core, all eight frames and exact 4-column 2-row grid. Remove the entire pale gray/white translucent matte that surrounds the flames. All EMPTY SPACE must have alpha EXACTLY ZERO, not gray/white haze with reduced opacity. Keep only red/orange/white-yellow energy and its tight local edge antialiasing. Outer padding and every cell corner must be 100% transparent, no colored semitransparent rectangle. No global white fog or backing. Do not alter the grid, scale, plasma colors, or animation poses. Save as a true RGBA transparent sprite atlas suitable for drawing over dark ocean without any rectangular background.",
+      "initialSource": "exec-dca84b37-a80d-4afc-b1e9-75d4cf7eddba.png",
+      "finalSource": "exec-27fa556b-8312-4ca3-bfbc-88221d07b241.png",
+      "grid": [
+        4,
+        2
+      ],
+      "frames": 8,
+      "frameSize": [
+        256,
+        256
+      ],
+      "anchor": "Emitter at y246; translucent matte removed by native image edit before atlas assembly."
+    }
+  ],
+  "sourceDirectory": "C:/Users/emers/.codex/generated_images/01a1c229-53c7-79d2-a601-586148e85ea7",
+  "assembly": "../scripts/assemble-rivet-hornet.py",
+  "notes": "Assembly only crops/resizes/registers existing RGBA cells and saves lossless WebP. No Python painting, recoloring, symmetry edits or background removal."
+}

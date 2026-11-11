@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { stepRivetBank, rivetBankPose } from './rivetPresentation';
+import { stepRivetBank, rivetBankPose, rivetBankFrame } from './rivetPresentation';
 
 export type VectorShipViewMode = 'top-down' | 'profile';
 
@@ -166,7 +166,7 @@ export class VectorShip extends Phaser.GameObjects.Container {
       const pose = this.pilotId === 'nolan' ? rivetBankPose(this.bankAngle) : 0;
       const key = pose && this.scene.textures.exists('hd-rivet-bank') ? 'hd-rivet-bank' : this.paintedRivet.texture.key === 'hd-rivet-bank' ? 'hd-rivet' : this.paintedRivet.texture.key;
       if (key !== this.paintedRivet.texture.key) this.paintedRivet.setTexture(key);
-      this.paintedRivet.setFrame(key === 'hd-rivet-bank' ? frame + (pose > 0 ? 4 : 0) : frame);
+      this.paintedRivet.setFrame(key === 'hd-rivet-bank' ? rivetBankFrame(this.bankAngle,frame) : frame);
       this.paintedRivet.setDisplaySize(34, 34);
       if (this.isHit) this.paintedRivet.setTint(0xffbdb4);
       else this.paintedRivet.clearTint();

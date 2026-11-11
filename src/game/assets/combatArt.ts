@@ -11,7 +11,8 @@ export function loadCombatArt(scene: Phaser.Scene, base: string): void {
   loadPolishArt(scene,base);
   for (const name of COMBAT_SHEETS) {
     if (!scene.textures.exists(`hd-${name}`)) {
-      scene.load.spritesheet(`hd-${name}`, `${base}/assets/combat-hd/${name==='supply-parachute'?'supply-parachute-v2':name}.webp`, { frameWidth: 256, frameHeight: 256 });
+      const file = name==='rivet'?'rivet-hornet':name==='rivet-bank'?'rivet-hornet-bank':name==='supply-parachute'?'supply-parachute-v2':name;
+      scene.load.spritesheet(`hd-${name}`, `${base}/assets/combat-hd/${file}.webp`, { frameWidth: 256, frameHeight: 256 });
     }
   }
   for (const name of ['ocean', 'capsule']) {

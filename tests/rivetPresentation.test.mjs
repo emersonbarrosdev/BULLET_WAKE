@@ -25,7 +25,7 @@ test('red RIVET lances grow in body and length at each level without becoming th
     assert.ok(current.radius<current.width*.31/2);
     previous=current;
   }
-  assert.equal(PILOT_WEAPON_SPECS.nolan.displayName,'DISPERSÃO VERMELHA');
+  assert.equal(PILOT_WEAPON_SPECS.nolan.displayName,'RAJADA ESCARLATE');
   assert.equal(createPlayerWeapons('nolan').weaponFamily,'ion');
   assert.equal(createPlayerWeapons('harlan').weaponFamily,'red');
 });

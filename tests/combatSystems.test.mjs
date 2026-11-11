@@ -32,7 +32,7 @@ test('weapons start at LV1 with two special charges', () => {
   assert.equal(w.specialCharges, 2);
   assert.equal(w.hasShield, false);
   assert.equal(w.specialActiveMs, 0);
-  assert.equal(w.specialType, 'prism');
+  assert.equal(w.specialType, 'scarlet');
 });
 
 test('RIVET upgrades to FULL LV5 and no further', () => {

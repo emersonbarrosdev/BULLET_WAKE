@@ -43,7 +43,7 @@ export class PremiumCombatHud {
       </div>
       <aside class="bw-combat-side bw-combat-right" aria-label="Telemetria de armamento">
         <div class="bw-combat-mission"><small>OPERAÇÃO PELÁGICA</small><strong>FENDA PELÁGICA</strong><span data-field="sector">ÁGUAS COSTEIRAS</span></div>
-        <section class="bw-combat-panel bw-combat-armament"><small>ARMA EQUIPADA</small><strong class="bw-combat-weapon" data-field="weapon">DISPERSÃO VERMELHA</strong><div class="bw-combat-line"><span>POTÊNCIA</span><b data-field="level">NV 1/4</b></div><div class="bw-combat-pips" data-field="pips"><i></i><i></i><i></i><i></i></div><div class="bw-combat-evolution"><div class="bw-combat-line"><small data-field="power-title">PRÓXIMO NÍVEL</small><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i>P</i><i>P</i><i>P</i></div></div></section>
+        <section class="bw-combat-panel bw-combat-armament"><small>ARMA EQUIPADA</small><strong class="bw-combat-weapon" data-field="weapon">RAJADA ESCARLATE</strong><div class="bw-combat-line"><span>POTÊNCIA</span><b data-field="level">NV 1/4</b></div><div class="bw-combat-pips" data-field="pips"><i></i><i></i><i></i><i></i></div><div class="bw-combat-evolution"><div class="bw-combat-line"><small data-field="power-title">PRÓXIMO NÍVEL</small><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i>P</i><i>P</i><i>P</i></div></div></section>
         <section class="bw-combat-radio" aria-label="Comunicação do piloto"><small>CANAL DO PILOTO <i data-field="radio-status">EM ESCUTA</i></small><p data-field="radio">Canal aberto.</p></section>
       </aside>`;
     this.root.querySelectorAll<HTMLElement>('[data-field]').forEach(node => this.fields.set(node.dataset.field!, node));
@@ -90,7 +90,7 @@ export class PremiumCombatHud {
   setWeapon(family: WeaponFamily, level: WeaponLevel, powerMeter = 0): void {
     const rivet = this.pilotId === 'nolan' && family === 'ion';
     const color = rivet ? '#ff655c' : family === 'ion' ? '#79deff' : family === 'green' ? '#86efac' : '#ff735e';
-    this.text('weapon', rivet ? 'DISPERSÃO VERMELHA' : family === 'ion' ? 'DISPERSÃO AZUL' : family === 'green' ? 'ENERGIA ESPIRALADA' : 'LASER RUBRO');
+    this.text('weapon', rivet ? 'RAJADA ESCARLATE' : family === 'ion' ? 'DISPERSÃO AZUL' : family === 'green' ? 'ENERGIA ESPIRALADA' : 'LASER RUBRO');
     this.field('weapon').style.color = color; this.field('pips').style.setProperty('--weapon', color);
     this.text('level', level>=maxWeaponLevel(this.pilotId)?'FULL':`NV ${level}/${maxWeaponLevel(this.pilotId)}`); this.segments('pips', level); this.setPowerMeter(powerMeter, level);
     this.text('power-title',level<maxWeaponLevel(this.pilotId)?'PRÓXIMO NÍVEL':'POTÊNCIA MÁXIMA');

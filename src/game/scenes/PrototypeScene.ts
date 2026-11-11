@@ -6,7 +6,8 @@ import { deathPowerDropCount } from '../systems/recoverySystem';
 import { rivetShotPresentation } from '../render/rivetPresentation';
 import { spriteContact, spritesOverlap } from '../render/SpriteSilhouette';
 import { continueWeapons, primaryBossFactor, NORMAL_BOSS_SHOT_SCALE, RIVET_MISSILE_INTERVAL_MS } from '../systems/normalBalance';
-import { PrismStrike } from '../render/PrismStrike';
+import { ScarletStorm } from '../render/ScarletStorm';
+import { scarletSegments, scarletDamageBetween } from '../systems/scarletStorm';
 import { CombatBriefing } from '../ui/CombatBriefing';
 import { CombatLoading } from '../ui/CombatLoading';
 import Phaser from 'phaser';
@@ -132,7 +133,6 @@ export class PrototypeScene extends Phaser.Scene {
 
   private hitPoseMs = 0;
   private missilePoseMs = 0;
-  private prismPoseMs = 0;
   private phantomDashTimerMs = 0;
 
   private pilot: PilotDefinition = getPilot('nolan');
@@ -160,8 +160,8 @@ export class PrototypeScene extends Phaser.Scene {
   private crimsonLaserRenderer!: CrimsonLaserRenderer;
   private laserAudioTimerMs = 0;
 
-  private specialVisual?: PrismStrike;
-  private specialBossHit = false;
+  private specialVisual?: ScarletStorm;
+  private scarletLastDamageMs = 0;
   private checkpointDistance = 0;
   private resumeWeapons?: PlayerWeaponsState;
   private resumeRadio?:RadioSnapshot;
@@ -220,7 +220,6 @@ export class PrototypeScene extends Phaser.Scene {
 
     this.hitPoseMs = 0;
     this.missilePoseMs = 0;
-    this.prismPoseMs = 0;
     this.phantomDashTimerMs = 0;
 
     // Each pilot starts with the owned primary at level 1 and zero P.
@@ -360,7 +359,7 @@ export class PrototypeScene extends Phaser.Scene {
         ? `LASER RUBRO — NV ${level} (${LASER_RUBRO_SPECS[Math.min(4,level) as 1|2|3|4].title})`
         : family === 'green'
           ? `ENERGIA ESPIRALADA — NÍVEL ${level}`
-          : `${this.pilot.id === 'nolan' ? 'DISPERSÃO VERMELHA' : 'DISPERSÃO AZUL'} — NÍVEL ${level}`;
+          : `${this.pilot.id === 'nolan' ? 'RAJADA ESCARLATE' : 'DISPERSÃO AZUL'} — NÍVEL ${level}`;
     const color = family === 'red' ? '#ff1e42' : family === 'green' ? '#4ade80' : '#00f0ff';
     this.hud.flash(label, color, 1100);
   }
@@ -388,7 +387,6 @@ export class PrototypeScene extends Phaser.Scene {
 
     this.hitPoseMs = Math.max(0, this.hitPoseMs - dt);
     this.missilePoseMs = Math.max(0, this.missilePoseMs - dt);
-    this.prismPoseMs = Math.max(0, this.prismPoseMs - dt);
     this.phantomDashTimerMs = Math.max(0, this.phantomDashTimerMs - dt);
 
     // Atualiza o HUD
@@ -452,8 +450,8 @@ export class PrototypeScene extends Phaser.Scene {
         this.triggerSpecial();
       }
 
-      // Tempestade Prismática ativa da Rivet (rajada contínua enquanto especial ativo)
-      this.updatePrismSpecial(dt);
+      // Tormenta Escarlate: emissão frontal acompanhando o bico da RIVET.
+      this.updateScarletSpecial();
 
       // Atualiza diretor da fase
       const tick = this.director.update(dt, this.ship.x, this.ship.y);
@@ -771,10 +769,11 @@ export class PrototypeScene extends Phaser.Scene {
     const boss = this.director.boss;
     globalAudio.playSpecial(this.weapons.specialType);
 
-    if (this.weapons.specialType === 'prism') {
-      this.prismPoseMs = 600;
-      this.hud.flash('TEMPESTADE PRISMÁTICA ATIVADA!', '#d6b2ff', 1600);
-      this.emitPrismBurst();
+    if (this.weapons.specialType === 'scarlet') {
+      this.hud.flash('TORMENTA ESCARLATE!', '#ff6250', 1400);
+      this.specialVisual?.destroy();
+      this.specialVisual = new ScarletStorm(this);
+      this.scarletLastDamageMs = 0;
     } else if (this.weapons.specialType === 'phantom') {
       this.phantomDashTimerMs = 650;
       this.hud.flash('SALTO FANTASMA!', '#7df9ff', 1200);
@@ -805,28 +804,42 @@ export class PrototypeScene extends Phaser.Scene {
     }
   }
 
-  private emitPrismBurst(): void {
-    this.specialVisual?.destroy();
-    this.specialVisual=new PrismStrike(this);
-    this.specialBossHit=false;
-  }
-
-  private updatePrismSpecial(_dt:number):void {
-    if(this.weapons.specialType!=='prism'||this.weapons.specialActiveMs<=0) {
+  private updateScarletSpecial():void {
+    if(this.weapons.specialType!=='scarlet'||this.weapons.specialActiveMs<=0) {
       this.specialVisual?.destroy();this.specialVisual=undefined;return;
     }
     const elapsed=this.weapons.specialDurationMs-this.weapons.specialActiveMs;
-    const impacts=this.specialVisual?.update(elapsed)??[];
-    this.clearEnemyShots();
-    for(const impact of impacts){
-      globalAudio.playExplosion(false);
-      this.particles.burst(impact.x,impact.y,1.1,false,0xffae56);
-      for(const e of [...this.director.enemies])if(!e.submerged&&Math.hypot(e.x-impact.x,e.y-impact.y)<95)this.applyDamageToEnemy(e.id,8);
+    const beams=this.specialVisual?.update(elapsed,this.ship.x,this.ship.y-this.ship.halfHeight-2)??[];
+    if(elapsed-this.scarletLastDamageMs<80)return;
+    const damage=scarletDamageBetween(this.scarletLastDamageMs,elapsed);
+    this.scarletLastDamageMs=elapsed;
+    if(damage<=0)return;
+    const segments=beams.flatMap(scarletSegments);
+    const contact=(body:Phaser.GameObjects.Sprite,region?:ReturnType<typeof talassarcaRegions>[number])=>{
+      for(const b of segments){
+        const t=spriteContact(body,b.ax,b.ay,b.bx,b.by,b.radius,region);
+        if(t!==null)return {x:b.ax+(b.bx-b.ax)*t,y:b.ay+(b.by-b.ay)*t};
+      }
+      return null;
+    };
+    for(const e of [...this.director.enemies]) {
+      const v=this.enemyVisuals.get(e.id),hit=!e.submerged&&v?contact(v.body):null;
+      if(hit)this.applyDamageToEnemy(e.id,damage*.5,hit.x,hit.y);
     }
-    if(elapsed>=580&&!this.specialBossHit){
-      this.specialBossHit=true;
-      const boss=this.director.boss;
-      if(boss)this.applyBossDamage(SPECIAL_BOSS_DAMAGE,boss.x,boss.y,true);
+    const boss=this.director.boss,visual=this.bossVisual;
+    if(boss&&visual&&!['intro','metamorphosis','defeated'].includes(boss.phase)) {
+      if(boss.name==='TALASSARCA') {
+        const hits=talassarcaRegions(boss.layer==='inner').filter(r=>!boss.modules?.find(m=>m.id===r.id)?.destroyed)
+          .flatMap(r=>{const hit=contact(visual.main,r);return hit?[{...hit,id:r.id}]:[];});
+        for(const hit of hits)this.applyBossDamage(damage/hits.length,hit.x,hit.y,false,hit.id);
+        if(hits.length)this.particles.burst(hits[0].x,hits[0].y,.22,false,0xff5b24);
+      } else {
+        const hit=contact(visual.main);
+        if(hit)this.applyBossDamage(damage,hit.x,hit.y);
+      }
+    }
+    for(let i=this.enemyShots.length-1;i>=0;i--)if(contact(this.enemyShots[i].node)) {
+      this.enemyShots[i].node.destroy();this.enemyShots.splice(i,1);
     }
   }
 

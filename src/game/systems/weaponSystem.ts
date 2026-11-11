@@ -12,7 +12,7 @@ import { getPilot, type PilotId } from '../data/pilots.ts';
 export type WeaponFamily = 'green' | 'ion' | 'red';
 export type ClassicWeaponLevel = 1 | 2 | 3 | 4;
 export type WeaponLevel = ClassicWeaponLevel | 5;
-export type SpecialType = 'prism' | 'phantom' | 'nova' | 'orbital' | 'comet';
+export type SpecialType = 'scarlet' | 'phantom' | 'nova' | 'orbital' | 'comet';
 
 export interface ProjectileSpawnDef {
   texture: string;
@@ -113,7 +113,7 @@ export const WEAPON_FAMILY_SPECS: Record<WeaponFamily, WeaponSpecs> = {
 };
 
 export const PILOT_WEAPON_SPECS: Record<string, WeaponSpecs> = {
-  nolan: { ...WEAPON_FAMILY_SPECS.ion, displayName: 'DISPERSÃO VERMELHA' },
+  nolan: { ...WEAPON_FAMILY_SPECS.ion, displayName: 'RAJADA ESCARLATE' },
   cora: WEAPON_FAMILY_SPECS.green,
   harlan: WEAPON_FAMILY_SPECS.red,
   green: WEAPON_FAMILY_SPECS.green,
@@ -124,7 +124,7 @@ export const PILOT_WEAPON_SPECS: Record<string, WeaponSpecs> = {
 export const SPECIAL_DURATIONS: Record<SpecialType, number> = {
   comet: 2400,
   orbital: 2400,
-  prism: 3000,  // Nolan: Tempestade Prismática
+  scarlet: 3000, // Bayek: Tormenta Escarlate
   phantom: 2400, // Cora: Salto Fantasma
   nova: 2400,    // Harlan: Ruptura Nova
 };
@@ -137,7 +137,7 @@ export function pilotWeaponFamily(id: string): WeaponFamily {
 export function createPlayerWeapons(pilotId: PilotId = 'nolan', initialFamily?: WeaponFamily): PlayerWeaponsState {
   const pilot = getPilot(pilotId);
   const specialType: SpecialType =
-    pilot.id === 'bento' ? 'comet' : pilot.id === 'lyra' ? 'orbital' : pilot.id === 'cora' ? 'phantom' : pilot.id === 'harlan' ? 'nova' : 'prism';
+    pilot.id === 'bento' ? 'comet' : pilot.id === 'lyra' ? 'orbital' : pilot.id === 'cora' ? 'phantom' : pilot.id === 'harlan' ? 'nova' : 'scarlet';
 
   // Arma inicial canônica da Fase 1: TODOS os pilotos iniciam no Nível 1 com medidor P zerado.
   const family: WeaponFamily = initialFamily ?? pilotWeaponFamily(pilot.id);
