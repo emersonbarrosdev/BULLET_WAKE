@@ -6,6 +6,8 @@ import { saveSystem } from '../systems/saveSystem.ts';
 import { globalAudio } from '../audio/audioSystem.ts';
 import { NORMAL_GUIDE_ITEMS, PICKUP_GUIDE } from '../data/pickupGuide';
 
+const SECRET_ELIGIBLE_AT_BOOT=saveSystem.getSaveData().completedCampaignPilots.length>0;
+
 type TitleMode = 'attract' | 'main' | 'options' | 'controls' | 'guide';
 type TitleAction = 'pilots' | 'options' | 'music' | 'effects' | 'difficulty' | 'rapid' | 'controls' | 'guide' | 'back';
 
@@ -24,6 +26,7 @@ export class TitleScene extends Phaser.Scene {
     if(p.up)this.moveSelection(-1);if(p.down)this.moveSelection(1);
     if(p.back)this.handleKeyDown(new KeyboardEvent('keydown',{key:'Escape'}));
   }
+  private secretBuffer='';private secretEligibleAtBoot=false;
   private mode: TitleMode = 'attract';
   private selectedIndex = 0;
   private root?: HTMLDivElement;
@@ -31,6 +34,7 @@ export class TitleScene extends Phaser.Scene {
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
     if (!this.root || event.altKey || event.ctrlKey || event.metaKey) return;
     const key = event.key.toLowerCase();
+    if(this.mode==='attract'&&!event.repeat&&this.secretEligibleAtBoot&&/^[a-z]$/.test(key)){this.secretBuffer=(this.secretBuffer+key).slice(-9);if(saveSystem.enterSecretCode(this.secretBuffer)){globalAudio.playPickup('upgrade');this.root.setAttribute('aria-label','Bento desbloqueado');}}
     if (!['enter', ' ', 'escape', 'arrowup', 'arrowdown', 'w', 's'].includes(key)) return;
     event.preventDefault();
     event.stopPropagation();
@@ -62,7 +66,9 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
+    globalAudio.setEnvironment('atmosphere');globalAudio.startMenuMusic();this.game.registry.set('audio',globalAudio);
     const audioSettings=saveSystem.getSaveData().settings;globalAudio.setMix(audioSettings.musicVolume,audioSettings.sfxVolume);
+    this.secretEligibleAtBoot=SECRET_ELIGIBLE_AT_BOOT;this.secretBuffer='';
     this.pad.sample(connectedPad());
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
     this.mode = 'attract';
@@ -149,7 +155,7 @@ export class TitleScene extends Phaser.Scene {
 
   private renderActions(): string {
     if (this.mode === 'guide') {
-      return `<p class="bw-guide-intro">Colete por contato. 3 P por nível. Azul NV4 libera verde; verde NV4 libera rubro. 3 vidas; ao ser abatido, recupere o armamento no campo.</p><div class="bw-item-guide" tabindex="0" aria-label="Legenda de itens, role para ver todos">${NORMAL_GUIDE_ITEMS.map(type => {
+      return `<p class="bw-guide-intro">Colete por contato. 3 P por nível. Cada nave evolui sua própria arma até NV4. RIVET: leque azul · MOTH: ondas verdes · KNUCKLE: fluxo rubro · KESTREL: tiro de precisão · PEREGRINE: rajada alternada. 3 vidas iniciais, máximo 5; ao ser abatido, recupere o armamento no campo.</p><div class="bw-item-guide" tabindex="0" aria-label="Legenda de itens, role para ver todos">${NORMAL_GUIDE_ITEMS.map(type => {
         const item = PICKUP_GUIDE[type];
         return `<article><div class="bw-guide-icon bw-guide-raster" style="background-image:url('${import.meta.env.BASE_URL}assets/combat-hd/review/pickups-${type}.webp')" role="img" aria-label="${item.label}"></div><div><h2 style="color:${item.color}">${item.letter} · ${item.label}</h2><p>${item.description}</p></div></article>`;
       }).join('')}</div>${this.actionButton('back', 'VOLTAR', '', 0)}`;
@@ -169,7 +175,7 @@ export class TitleScene extends Phaser.Scene {
       <div class="bw-controls-list">
         <div><span>${connectedPad()?'ANALÓGICO / DIRECIONAL':'WASD / SETAS'}</span><strong>MOVIMENTO</strong></div>
         <div><span>${connectedPad()?padLabels(connectedPad()?.id).shoot:'ESPAÇO'}</span><strong>SEGURAR PARA DISPARO RÁPIDO</strong></div>
-        <div><span>${connectedPad()?padLabels(connectedPad()?.id).special:'X'}</span><strong>ESPECIAL · 2 INICIAIS / MÁX. 3</strong></div>
+        <div><span>${connectedPad()?padLabels(connectedPad()?.id).special:'X'}</span><strong>ESPECIAL · 2 INICIAIS / MÁX. 5</strong></div>
         <div><span>${connectedPad()?padLabels(connectedPad()?.id).pause:'ESC'}</span><strong>PAUSA</strong></div>
       </div>
       ${this.actionButton('back', 'VOLTAR', '', 0)}
@@ -225,7 +231,7 @@ export class TitleScene extends Phaser.Scene {
     switch (action) {
       case 'pilots':
         this.cleanup();
-        this.scene.start('StageSelectScene');
+        this.scene.start('PilotSelectScene');
         return;
       case 'options':
         this.showMode('options');
@@ -242,7 +248,7 @@ export class TitleScene extends Phaser.Scene {
       case 'music': {
         const enabled = saveSystem.getSaveData().settings.musicVolume > 0;
         saveSystem.updateSettings({ musicVolume: enabled ? 0 : 1 });
-        if (enabled) globalAudio.stopMusic();
+        if (enabled) globalAudio.stopMusic();else globalAudio.startMenuMusic();
         break;
       }
       case 'effects': {

@@ -97,8 +97,8 @@ export class VectorShip extends Phaser.GameObjects.Container {
     this.coreDot = scene.add.graphics();
 
     this.add([this.shieldGraphics, this.graphics, this.coreDot]);
-    if ((pilotId === 'nolan'||pilotId==='lyra') && viewMode === 'top-down' && scene.textures.exists(pilotId==='lyra'?'hd-kestrel':'hd-rivet')) {
-      this.paintedRivet = scene.add.sprite(0, 0, pilotId==='lyra'?'hd-kestrel':'hd-rivet', 0).setDisplaySize(40, 40);
+    if ((pilotId === 'nolan'||pilotId==='lyra'||pilotId==='bento') && viewMode === 'top-down' && scene.textures.exists(pilotId==='bento'?'hd-peregrine':pilotId==='lyra'?'hd-kestrel':'hd-rivet')) {
+      this.paintedRivet = scene.add.sprite(0, 0, pilotId==='bento'?'hd-peregrine':pilotId==='lyra'?'hd-kestrel':'hd-rivet', 0).setDisplaySize(40, 40);
       this.addAt(this.paintedRivet, 2);
     }
     this.setDepth(15);
@@ -173,7 +173,7 @@ export class VectorShip extends Phaser.GameObjects.Container {
     } else if (this.pilotId === 'harlan') {
       this.drawKnuckleTopDown(g, p, roll, isDashing);
     } else if (this.paintedRivet) {
-      const frame = Math.floor(this.flamePhase / 5) % 2;
+      const frame = Math.floor(this.flamePhase / 5) % 4;
       this.paintedRivet.setFrame(frame);
       if (this.isHit) this.paintedRivet.setTint(0xffbdb4);
       else this.paintedRivet.clearTint();

@@ -27,12 +27,12 @@ export class PremiumCombatHud {
       <aside class="bw-combat-side bw-combat-left" aria-label="Telemetria do piloto">
         <div class="bw-combat-wordmark">BULLET <em>WAKE</em></div>
         <section class="bw-combat-panel bw-combat-identity">
-          <img data-field="portrait" src="${import.meta.env.BASE_URL}assets/pilot-selection/portrait-nolan.webp" alt="Nolan Fitch" />
-          <div><small>OPERADOR</small><strong data-field="name">NOLAN FITCH</strong><b data-field="ship">RIVET</b></div>
+          <img data-field="portrait" src="${import.meta.env.BASE_URL}assets/pilot-selection/portrait-nolan.webp" alt="Terry" />
+          <div><small>OPERADOR</small><strong data-field="name">TERRY</strong><b data-field="ship">RIVET</b></div>
         </section>
         <section class="bw-combat-panel bw-combat-score-panel"><small>PONTUAÇÃO <i data-field="combo"></i></small><strong class="bw-combat-score" data-field="score">000000</strong></section>
-        <section class="bw-combat-panel"><div class="bw-combat-line"><small>VIDAS</small><b data-field="lives-count">3</b></div><div class="bw-resource-icons bw-life-icons" data-field="lives" aria-label="3 vidas"><i></i><i></i><i></i></div><small data-field="shield"></small></section>
-        <section class="bw-combat-panel"><div class="bw-combat-line"><small>ESPECIAL</small><b data-field="special">PRONTO</b></div><div class="bw-resource-icons bw-special-icons" data-field="special-stock" aria-label="2 especiais"><i></i><i></i><i></i></div></section>
+        <section class="bw-combat-panel"><div class="bw-combat-line"><small>VIDAS</small><b data-field="lives-count">3</b></div><div class="bw-resource-icons bw-life-icons" data-field="lives" aria-label="3 vidas"><i></i><i></i><i></i><i></i><i></i></div></section>
+        <section class="bw-combat-panel"><div class="bw-combat-line"><small>ESPECIAL</small><b data-field="special">PRONTO</b></div><div class="bw-resource-icons bw-special-icons" data-field="special-stock" aria-label="2 especiais"><i></i><i></i><i></i><i></i><i></i></div></section>
         <div class="bw-combat-bottom"><button type="button" data-action="restart">PAUSAR / OPÇÕES</button></div>
       </aside>
       <div class="bw-combat-center">
@@ -43,7 +43,7 @@ export class PremiumCombatHud {
         <div class="bw-combat-mission"><small>OPERAÇÃO PELÁGICA</small><strong>FENDA PELÁGICA</strong><span data-field="sector">ÁGUAS COSTEIRAS</span></div>
         <section class="bw-combat-panel bw-combat-armament"><small>ARMA EQUIPADA</small><strong class="bw-combat-weapon" data-field="weapon">DISPERSÃO AZUL</strong><div class="bw-combat-line"><span>POTÊNCIA</span><b data-field="level">NV 1/4</b></div><div class="bw-combat-pips" data-field="pips"><i></i><i></i><i></i><i></i></div><div class="bw-combat-evolution"><div class="bw-combat-line"><small data-field="power-title">PRÓXIMO NÍVEL</small><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i>P</i><i>P</i><i>P</i></div></div></section>
         <section class="bw-combat-panel bw-combat-results"><small>TRAJETO DA MISSÃO</small><div class="bw-combat-progress"><i data-field="progress"></i></div></section>
-        <div class="bw-combat-bottom"><small>FENDA PELÁGICA // FASE 01</small></div>
+        <section class="bw-combat-radio" aria-label="Comunicação do piloto"><small>CANAL DO PILOTO <i data-field="radio-status">EM ESCUTA</i></small><p data-field="radio">Canal aberto.</p></section>
       </aside>`;
     this.root.querySelectorAll<HTMLElement>('[data-field]').forEach(node => this.fields.set(node.dataset.field!, node));
     document.body.append(this.root);
@@ -69,33 +69,34 @@ export class PremiumCombatHud {
     const portrait = this.field('portrait') as HTMLImageElement;
     portrait.src = `${import.meta.env.BASE_URL}assets/pilot-selection/portrait-${id}.webp`; portrait.alt = name;
     this.text('name', name.toUpperCase()); this.text('ship', shipName.toUpperCase());
-    this.field('lives').style.setProperty('--life-image', `url('${new URL(`${import.meta.env.BASE_URL}assets/combat-hd/${id==='lyra'?'kestrel':'rivet'}.webp`, document.baseURI).href}')`);
+    this.field('lives').style.setProperty('--life-image', `url('${new URL(`${import.meta.env.BASE_URL}assets/combat-hd/review/pickups-life-${id}.webp`, document.baseURI).href}')`);
   }
   setScore(score: number, comboCount = 0, multiplier = 1): void {
     this.text('score', String(Math.max(0, Math.floor(score))).padStart(6, '0'));
     this.text('combo', comboCount > 1 ? `×${multiplier.toFixed(1)}` : '');
   }
-  setHealth(state: PlayerHealth, shield = false): void {
+  setHealth(state: PlayerHealth, _shield = false): void {
     this.text('lives-count',String(state.lives));this.segments('lives',state.lives);
     this.field('lives').setAttribute('aria-label',`${state.lives} vidas`);
-    this.text('shield',shield?'ESCUDO ATIVO':'');
+
   }
   setWeapon(family: WeaponFamily, level: WeaponLevel, powerMeter = 0): void {
     const color = family === 'ion' ? '#79deff' : family === 'green' ? '#86efac' : '#ff735e';
     this.text('weapon', family === 'ion' ? 'DISPERSÃO AZUL' : family === 'green' ? 'ENERGIA ESPIRALADA' : 'LASER RUBRO');
     this.field('weapon').style.color = color; this.field('pips').style.setProperty('--weapon', color);
     this.text('level', `NV ${level}/4`); this.segments('pips', level); this.setPowerMeter(powerMeter, level);
-    this.text('power-title',level<4?'PRÓXIMO NÍVEL':family==='red'?'POTÊNCIA MÁXIMA':'EVOLUÇÃO LIBERADA');
+    this.text('power-title',level<4?'PRÓXIMO NÍVEL':'POTÊNCIA MÁXIMA');
   }
   setPowerMeter(meter: number, level: WeaponLevel): void {
-    this.text('power', level >= 4 ? `RESERVA ${Math.max(0, Math.min(3, meter))}/3` : `${Math.max(0, Math.min(3, meter))} / 3`); this.segments('power-segments', meter);
+    this.text('power', level >= 4 ? 'MÁXIMO' : `${Math.max(0, Math.min(3, meter))} / 3`); this.segments('power-segments', meter);
   }
   setHeat(_heat: number, _isOverheated: boolean): void { /* Autofire never blocks for heat. */ }
   setSpecialStock(n: number, active=false): void {
-    const count=Math.max(0,Math.min(3,n));this.segments('special-stock',count);
+    const count=Math.max(0,Math.min(5,n));this.segments('special-stock',count);
     this.field('special-stock').setAttribute('aria-label',`${count} especiais`);
     this.text('special',active?'ATIVO':count>0?'PRONTO':'VAZIO');
   }
+  setRadio(message:string,active:boolean):void {this.text('radio',active?message:'Canal aberto.');this.text('radio-status',active?'TRANSMITINDO':'EM ESCUTA');this.field('radio').parentElement!.classList.toggle('bw-radio-active',active);}
   setProgress(ratio: number): void { this.field('progress').style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`; }
   setSector(sector: SectorId): void { this.text('sector', sectors[sector]); this.flash(`SETOR: ${sectors[sector]}`, '#dedede', 650); }
   showBossBar(name: string, hp: number, max: number): void {

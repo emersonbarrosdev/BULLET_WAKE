@@ -128,8 +128,8 @@ test('Weapon Upgrades: Scaling increases volume of fire without trivializing bos
 
   const totalDmgLv3 = lv3.reduce((sum, p) => sum + p.damage, 0);
   const totalDmgLv1=lv1.reduce((sum,p)=>sum+p.damage,0);
-  assert.ok(totalDmgLv3>totalDmgLv1&&totalDmgLv3<totalDmgLv1*2, 'Green coverage grows without tripling its concentrated volley damage');
-  assert.ok(lv4.reduce((sum,p)=>sum+p.damage,0)<=totalDmgLv1*2+1e-9);
+  assert.ok(totalDmgLv3>totalDmgLv1&&totalDmgLv3<=totalDmgLv1*3+1e-9, 'The MOTH gains three times its initial volley by NV3, without cross-family swaps');
+  assert.ok(lv4.reduce((sum,p)=>sum+p.damage,0)<=totalDmgLv1*4+1e-9);
 });
 
 test('Difficulty Modes: Arcade mode scales bullet velocity and expands Lancer spread to 5-way', () => {

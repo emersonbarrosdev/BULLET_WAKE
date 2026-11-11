@@ -3,7 +3,7 @@ import { loadReviewArt, registerReviewArt } from './reviewArt';
 import { loadPolishArt, registerPolishArt } from './polishArt';
 
 /** Hand-painted combat art is separate from legacy pixel sheets and menu assets. */
-export const COMBAT_SHEETS = ['rivet', 'kestrel', 'supply-parachute', 'scout', 'dart', 'lancer', 'cutter', 'bomb'] as const;
+export const COMBAT_SHEETS = ['rivet', 'peregrine', 'biogun', 'kestrel', 'supply-parachute', 'scout', 'dart', 'lancer', 'cutter', 'bomb'] as const;
 
 export function loadCombatArt(scene: Phaser.Scene, base: string): void {
   for(const name of ['talassarca-top','inner-top'])if(!scene.textures.exists('hd-'+name))scene.load.spritesheet('hd-'+name,`${base}/assets/combat-hd/${name}.webp`,{frameWidth:512,frameHeight:512});

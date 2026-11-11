@@ -1,3 +1,6 @@
+import { getPilot } from '../data/pilots';
+import { PILOT_STORIES } from '../data/pilotStories';
+import { saveSystem } from '../systems/saveSystem';
 import Phaser from 'phaser';
 import { connectedPad, GamepadReader, padLabels } from '../systems/gamepadInput';
 import '../../combat-briefing.css';
@@ -7,12 +10,14 @@ export class StageSelectScene extends Phaser.Scene {
   private root?: HTMLDivElement;
   private pad = new GamepadReader();
   private selection = 0;
+  private pilotId='nolan';
+  init(data:{pilotId?:string}={}){this.pilotId=data.pilotId??'nolan';}
   private device?: string;
 
   constructor() { super({ key: 'StageSelectScene' }); }
 
-  private launch = () => this.scene.start('PilotSelectScene', { stageNumber: 1 });
-  private back = () => this.scene.start('TitleScene');
+  private launch = () => this.scene.start('PrototypeScene', { pilotId:this.pilotId,stageNumber:1 });
+  private back = () => this.scene.start('PilotSelectScene',{selectedPilotId:this.pilotId});
   private buttons() { return Array.from(this.root?.querySelectorAll<HTMLButtonElement>('button') ?? []); }
 
   private move(direction: number): void {
@@ -37,6 +42,8 @@ export class StageSelectScene extends Phaser.Scene {
 
   create(): void {
     this.selection = 0;
+    const pilot=getPilot(this.pilotId),story=PILOT_STORIES[pilot.id],progress=saveSystem.getPilotProgress(pilot.id);
+    saveSystem.setLastPilot(pilot.id);
     this.device = undefined;
     this.pad.sample(connectedPad());
     this.root = document.createElement('div');
@@ -48,8 +55,8 @@ export class StageSelectScene extends Phaser.Scene {
         <span>MISSÃO 01</span><strong>FENDA PELÁGICA</strong>
         <small>Oceano aberto · invasão alienígena · Talassarca</small>
       </button>
-      <p class="bw-brief-note">Intercepte os organismos invasores. Atravesse as águas contaminadas e encontre a origem da fenda.</p>
-      <nav><button data-mission-action="launch">ESCOLHER PILOTO · ENTER</button><button data-mission-action="back">VOLTAR · ESC</button></nav>
+      <section class="bw-mission-story"><img src="${import.meta.env.BASE_URL}assets/pilot-selection/portrait-${pilot.id}.webp" alt="${pilot.name}"/><div><small>${pilot.name.toUpperCase()} · ${pilot.shipName.toUpperCase()}</small><p>“${story.mission1}”</p><span>${progress.clearedStages.includes(1)?'MISSÃO CONCLUÍDA · RECORDE '+String(progress.bestScores[1]??0).padStart(6,'0'):'UMA PISTA NO OCEANO · MISSÃO 01'}</span></div></section>
+      <nav><button data-mission-action="launch">INICIAR MISSÃO · ENTER</button><button data-mission-action="back">VOLTAR · ESC</button></nav>
     </section>`;
     document.body.append(this.root);
     this.buttons().forEach((button, index) => button.addEventListener('focus', () => this.selection = index));
@@ -68,7 +75,7 @@ export class StageSelectScene extends Phaser.Scene {
     if (this.device !== (pad?.id ?? '')) {
       this.device = pad?.id ?? '';
       const labels = padLabels(pad?.id);
-      this.root!.querySelector('[data-mission-action="launch"]')!.textContent = 'ESCOLHER PILOTO · ' + (pad ? labels.shoot : 'ENTER');
+      this.root!.querySelector('[data-mission-action="launch"]')!.textContent = 'INICIAR MISSÃO · ' + (pad ? labels.shoot : 'ENTER');
       this.root!.querySelector('[data-mission-action="back"]')!.textContent = 'VOLTAR · ' + (pad ? labels.back : 'ESC');
     }
     if (commands.left || commands.up) this.move(-1);

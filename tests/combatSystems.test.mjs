@@ -54,14 +54,14 @@ test('weapons upgrade up to LV4 and no further', () => {
   assert.equal(u4.state.weaponLevel, MAX_WEAPON_LEVEL);
 });
 
-test('special consumes one charge, cannot retrigger active, caps at three, and empties', () => {
+test('special consumes one charge, cannot retrigger active, caps at five, and empties', () => {
   let w = createPlayerWeapons('nolan');
   assert.equal(canActivateSpecial(w), true);
   w = collectSpecialCharge(w);
   for (let i=0;i<15;i++) w = collectSpecialCharge(w);
   assert.equal(w.specialCharges, MAX_SPECIAL_CHARGES);
-  assert.equal(MAX_SPECIAL_CHARGES,3);
-  for(let i=3;i>0;i--){
+  assert.equal(MAX_SPECIAL_CHARGES,5);
+  for(let i=5;i>0;i--){
     const activation=activateSpecial(w);
     assert.equal(activation.activated,true);
     assert.equal(activation.state.specialCharges,i-1);

@@ -9,6 +9,7 @@ export interface PlayerHealth {
 export type HitEvent = 'ignored' | 'damaged' | 'respawn' | 'game-over';
 
 export const MAX_HP = 100;
+export const MAX_LIVES = 5;
 export const START_LIVES = 3;
 export const HIT_INVULNERABILITY_MS = 1500;
 export const RESPAWN_INVULNERABILITY_MS = 2000;
@@ -38,4 +39,8 @@ export function applyPlayerHit(
     state: { hp: lives ? MAX_HP : 0, lives, invulnerableMs: lives ? RESPAWN_INVULNERABILITY_MS : 0, gameOver: lives === 0 },
     event: lives ? 'respawn' : 'game-over',
   };
+}
+
+export function collectLife(state: PlayerHealth): { state:PlayerHealth; bonusPoints:number } {
+  return state.lives>=MAX_LIVES ? {state,bonusPoints:5000} : {state:{...state,lives:state.lives+1},bonusPoints:0};
 }

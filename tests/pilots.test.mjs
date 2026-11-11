@@ -3,14 +3,14 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { getPilot, PILOTS, shotIntervalMs } from '../src/game/data/pilots.ts';
 
-test('four approved pilot and ship names are preserved', () => {
+test('five cartoon pilot and ship names are preserved', () => {
   assert.deepEqual(PILOTS.map(p => [p.name, p.shipName]), [
-    ['Nolan Fitch', 'Rivet'],
-    ['Cora Wren', 'Moth'],
-    ['Harlan Greer', 'Knuckle'],
-    ['Lyra Voss','Kestrel'],
+    ['Terry', 'Rivet'],
+    ['Tita', 'Moth'],
+    ['Osvald', 'Knuckle'],
+    ['Luma','Kestrel'],['Bento','Peregrine'],
   ]);
-  assert.equal(new Set(PILOTS.map(p => p.id)).size, 4);
+  assert.equal(new Set(PILOTS.map(p => p.id)).size, 5);
 });
 
 test('pilots have different speed, cadence and damage', () => {
@@ -36,23 +36,19 @@ test('fire intervals reflect cadence, with three valid distinct pilots', () => {
 });
 
 test('each pilot keeps own color and planned special name', () => {
-  assert.equal(new Set(PILOTS.map(p => p.specialName)).size, 4);
-  assert.equal(new Set(PILOTS.map(p => p.accentColor)).size, 4);
+  assert.equal(new Set(PILOTS.map(p => p.specialName)).size, 5);
+  assert.equal(new Set(PILOTS.map(p => p.accentColor)).size, 5);
 });
 
-test('each pilot has complete tactical profile, callsign, and valid 64x64 portrait PNG', () => {
+test('each pilot has complete tactical profile, callsign, and valid production portrait WebP', () => {
   for (const pilot of PILOTS) {
     assert.ok(pilot.callsign && pilot.callsign.length > 3, `${pilot.id} has callsign`);
     assert.ok(pilot.bio && pilot.bio.length > 10, `${pilot.id} has bio`);
     assert.ok(pilot.specialDescription && pilot.specialDescription.length > 10, `${pilot.id} has specialDescription`);
     assert.ok(pilot.portraitKey && pilot.portraitKey.startsWith('portrait-'), `${pilot.id} has portraitKey`);
 
-    const pngPath = `public/assets/pilots/${pilot.id}.png`;
-    const buffer = readFileSync(pngPath);
-    assert.equal(buffer.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', `${pngPath} is valid PNG`);
-    const width = buffer.readUInt32BE(16);
-    const height = buffer.readUInt32BE(20);
-    assert.equal(width, 64, `${pngPath} width is 64px`);
-    assert.equal(height, 64, `${pngPath} height is 64px`);
+    const path=`public/assets/pilot-selection/portrait-${pilot.id}.webp`;
+    const buffer=readFileSync(path);assert.equal(buffer.subarray(0,4).toString(),'RIFF');assert.equal(buffer.subarray(8,12).toString(),'WEBP');assert.ok(buffer.length>10000);
+
   }
 });

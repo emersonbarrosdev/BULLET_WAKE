@@ -64,7 +64,7 @@ export interface StageTick {
 }
 
 export const SCROLL_SPEED = 28; // Slower traversal gives each encounter and supply carrier room.
-export const DEMO_DISTANCE = 4250; // distância total até a arena do chefe
+export const DEMO_DISTANCE = 4600; // distância total até a arena do chefe
 
 // Roteiro por posição percorrida. Combinações táticas de passagem contínua.
 // Nenhum evento reaparece como round de arena.
@@ -124,16 +124,16 @@ const SOLO_EVENTS: StageEvent[] = [
 // Supplies belong exclusively to recognizable aerostats. One cargo per carrier.
 // Three P give one upgrade; Phase 1 no longer hands out maximum power in a minute.
 export const SUPPLY_EVENTS: readonly StageEvent[] = ([
-  ...[360,740,1130,1540,1980,2420,2860,3300,3720].map((distance,i)=>({distance,kind:'cutter' as const,y:125+(i%3)*70,carrier:true,drop:'power' as const})),
-  {distance:2140,kind:'cutter',y:200,carrier:true,drop:'health'},
-  {distance:3140,kind:'cutter',y:140,carrier:true,drop:'special'},
-  {distance:4070,kind:'cutter',y:230,carrier:true,drop:'weapon_green'},
+  // Three P per level: spread out nine upgrade items over roughly 135 seconds of traversal.
+  ...[420,850,1280,1740,2170,2600,3020,3450,3880].map((distance,i)=>({distance,kind:'cutter' as const,y:125+(i%3)*70,carrier:true,drop:'power' as const})),
+  {distance:2380,kind:'cutter',y:200,carrier:true,drop:'life'},
+  {distance:3250,kind:'cutter',y:140,carrier:true,drop:'special'},
 ] satisfies StageEvent[]).sort((a,b)=>a.distance-b.distance);
 const FLOCK_EVENTS: StageEvent[] = [360, 740, 1100, 1450, 2050, 2450, 2850, 3200, 3650, 3890].flatMap((distance, group) =>
   Array.from({ length: group < 2 ? 5 : 6 }, (_, i) => ({ distance: distance + i * 13, kind: 'scout' as const, y: 100, flight: group % 2 ? 'sweep-right' as const : 'sweep-left' as const, drop: null })));
 const SURFACE_EVENTS: StageEvent[] = [820, 1550, 2250, 3050, 3720].map((distance, i) => ({ distance, kind: 'lancer', y: i % 2 ? 105 : 290, layer: 'surface', drop: null }));
 const AMBUSH_EVENTS: StageEvent[] = [1250,2650,3600].map((distance,i)=>({distance,kind:'dart',y:i%2?135:270,layer:'surface',surfaceVariant:'ambush',drop:null}));
-export const STAGE_EVENTS: readonly StageEvent[] = [...SOLO_EVENTS, ...[1330,2310,2970,3510].flatMap((distance,i)=>[{distance,kind:'dart' as const,y:i%2?110:280},{distance:distance+24,kind:'scout' as const,y:i%2?260:130}]), ...SUPPLY_EVENTS, ...FLOCK_EVENTS, ...SURFACE_EVENTS, ...AMBUSH_EVENTS].sort((a, b) => a.distance - b.distance);
+export const STAGE_EVENTS: readonly StageEvent[] = [...SOLO_EVENTS, ...[640,1330,2310,2970,3510,4150,4380].flatMap((distance,i)=>[{distance,kind:'dart' as const,y:i%2?110:280},{distance:distance+24,kind:'scout' as const,y:i%2?260:130}]), ...SUPPLY_EVENTS, ...[4230,4430].map((distance,i)=>({distance,kind:'lancer' as const,y:i?110:280})), ...FLOCK_EVENTS, ...SURFACE_EVENTS, ...AMBUSH_EVENTS].sort((a, b) => a.distance - b.distance);
 export const SURFACE_SCROLL_FACTOR = 0.9;
 
 export function enemyBodyRadius(enemy:EnemyModel):number {
@@ -260,7 +260,7 @@ export class StageDirector {
       this.scrollPx >= STAGE_EVENTS[this.eventIndex].distance
     ) {
       const event = STAGE_EVENTS[this.eventIndex++];
-      const hp = event.flight ? 0.3 : event.drop ? 4 : event.layer ? 4 : event.kind === 'lancer' ? 4 : event.kind === 'cutter' ? 3 : event.kind === 'dart' ? 2 : 1.35;
+      const hp = event.flight ? 0.3 : event.drop ? 4 : event.layer ? 5 : event.kind === 'lancer' ? 5.4 : event.kind === 'cutter' ? 5 : event.kind === 'dart' ? 2.6 : 1.65;
       // Distribui a coordenada X ao longo do corredor central (PLAYFIELD_X até PLAYFIELD_RIGHT)
       const eventX = PLAYFIELD_X + 28 + ((event.y - 80) / 235) * (PLAYFIELD_WIDTH - 56);
       const enemy: EnemyModel = {
@@ -318,7 +318,7 @@ export class StageDirector {
         enemy.phase = cycle >= 2400 && cycle < 3100 ? 'telegraph' : cycle >= 3100 && cycle < 4600 ? 'attack' : 'recover';
         enemy.phaseMs = Math.max(0, 3100 - cycle);
         if (cycle < 3100) enemy.secondShotFired = false;
-        if (cycle >= 3100 && cycle < 3450 && !enemy.secondShotFired && enemy.y > 25 && enemy.y < 360 && this.attackCooldownMs<=0) {
+        if (cycle >= 3100 && cycle < 4600 && !enemy.secondShotFired && enemy.y > 25 && enemy.y < 360 && this.attackCooldownMs<=0) {
           this.attackCooldownMs=180;
           for (const angle of [-.18,.18]) shots.push({...this.aim(enemy,playerX,playerY,175,angle),sourceLayer:'surface'});
           enemy.secondShotFired = true;

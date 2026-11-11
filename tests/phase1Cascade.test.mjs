@@ -6,34 +6,21 @@ import {processInputFrame} from '../src/game/systems/inputSystem.ts';
 import {computeLaserBeams} from '../src/game/systems/crimsonLaserSystem.ts';
 import {SUPPLY_EVENTS,SCROLL_SPEED,StageDirector} from '../src/game/systems/stageDirector.ts';
 
-test('all 12 weapon states require P; gates cannot skip or regress colors',()=>{
-  let w=createPlayerWeapons();
-  for(const family of ['ion','green','red']){
-    for(let level=1;level<=4;level++){
-      assert.equal(w.weaponFamily,family);assert.equal(w.weaponLevel,level);
-      if(level<4)for(let i=0;i<3;i++){
-        for(const blocked of ['ion','green','red'].filter(f=>f!==family))assert.deepEqual(collectWeaponCapsule(w,blocked).state,w);
-        w=collectPowerItem(w).state;
-      }
-    }
-    if(family!=='red')w=collectWeaponCapsule(w,family==='ion'?'green':'red').state;
+test('all owned primary weapons evolve through four levels at three P per upgrade',()=>{
+ for(const pilot of ['nolan','cora','harlan','lyra']){
+  let w=createPlayerWeapons(pilot);const family=w.weaponFamily;
+  for(let level=1;level<=4;level++){
+   assert.equal(w.weaponLevel,level);assert.equal(w.weaponFamily,family);
+   if(level<4)for(let i=0;i<3;i++)w=collectPowerItem(w).state;
   }
-  assert.deepEqual(collectWeaponCapsule(w,'ion').state,w);
+  assert.equal(collectPowerItem(w).meterIncreased,false);assert.equal(evolutionCargo(w),'power');
+ }
 });
-test('rare supply script earns green only after nine P and late final carrier; missed P cannot skip',()=>{
-  let w=createPlayerWeapons(), powers=0;
-  assert.equal(SUPPLY_EVENTS.length,12);
-  for(const e of SUPPLY_EVENTS){
-    if(e.drop==='power'){w=collectPowerItem(w).state;powers++;}
-    if(e.drop==='weapon_green'){
-      assert.equal(powers,9);assert.ok(e.distance/SCROLL_SPEED>110);
-      assert.equal(evolutionCargo(w),'weapon_green');
-      assert.equal(evolutionCargo({...w,weaponLevel:3}),'power');
-      w=collectWeaponCapsule(w,'green').state;
-    }
-  }
-  assert.equal(w.weaponFamily,'green');assert.equal(w.weaponLevel,1);
+test('eleven supplies contain nine P, one life and one special, without weapon swaps',()=>{
+ assert.equal(SUPPLY_EVENTS.length,11);assert.equal(SUPPLY_EVENTS.filter(e=>e.drop==='power').length,9);
+ assert.ok(SUPPLY_EVENTS.every(e=>!e.drop.startsWith('weapon_')&&e.drop!=='health'));
 });
+
 test('keyboard special is X only; V/B and accidental R no longer trigger actions',()=>{
   assert.equal(processInputFrame({keyXJustDown:true}).special,true);
   for(const key of ['keyVJustDown','keyBJustDown','keyRJustDown']){

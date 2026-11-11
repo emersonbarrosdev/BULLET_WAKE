@@ -10,8 +10,8 @@ import { PLAYFIELD_X, PLAYFIELD_WIDTH } from '../../constants.ts';
 
 export class MinibossRaiaDente implements StageBoss {
   name = 'RAIA-DENTE';
-  readonly maxHp = 140;
-  hp = 140;
+  readonly maxHp = 180;
+  hp = 180;
   x = PLAYFIELD_X + PLAYFIELD_WIDTH / 2; // Centro do corredor: 384
   y = 85;
 

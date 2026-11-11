@@ -1,5 +1,6 @@
 # 02 — Três pilotos, três naves
 
+> HISTÓRICO: para nomes, cinco pilotos, vidas/especiais 5/5, armas próprias, duração 2–4 min e áudio atuais, prevalecem a [Bíblia vigente](27_BULLET_WAKE_V2_DEFINITIVO.md) e a [revisão 39](39_ELENCO_COMBATE_AUDIO.md).
 > Estado vigente: [Bíblia V2](27_BULLET_WAKE_V2_DEFINITIVO.md) e [revisão de ritmo/elenco/contornos](38_RITMO_ELENCO_E_CONTORNOS.md). As definições históricas abaixo não substituem quatro pilotos, três vidas sem barra, especial único, ausência de dash/carga/míssil manual e foco exclusivo na Fase 1.
 
 **Aprovados:** nomes, aparência-base, especialidade e especiais. **Somente propostas:** números e dimensões exatos.

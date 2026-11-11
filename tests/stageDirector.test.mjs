@@ -40,7 +40,7 @@ test('Scout and Lancer announce attacks before releasing aimed shots', () => {
   assert.ok(shots.some(s => s.velocityX < 0));
 });
 
-test('Lancer has 4 HP; only elimination awards points', () => {
+test('Lancer survives one volley; only elimination awards points', () => {
   const director = new StageDirector();
   advance(director, 510/SCROLL_SPEED*1000);
   const lancer = director.enemies.find(e => e.kind === 'lancer');
@@ -48,7 +48,7 @@ test('Lancer has 4 HP; only elimination awards points', () => {
   assert.deepEqual(director.damage(lancer.id, 1), { killed: false, score: 0 });
   assert.deepEqual(director.damage(lancer.id, 1), { killed: false, score: 0 });
   assert.deepEqual(director.damage(lancer.id, 1), { killed: false, score: 0 });
-  assert.deepEqual(director.damage(lancer.id, 1), { killed: true, score: 300 });
+  assert.deepEqual(director.damage(lancer.id, lancer.hp), { killed: true, score: 300 });
   assert.deepEqual(director.damage(lancer.id, 1), { killed: false, score: 0 });
 });
 

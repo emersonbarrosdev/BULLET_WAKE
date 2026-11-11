@@ -1,5 +1,6 @@
 # Ritmo arcade, quatro pilotos e contato com silhuetas
 
+> HISTÓRICO: para nomes, cinco pilotos, vidas/especiais 5/5, armas próprias, duração 2–4 min e áudio atuais, prevalecem a [Bíblia vigente](27_BULLET_WAKE_V2_DEFINITIVO.md) e a [revisão 39](39_ELENCO_COMBATE_AUDIO.md).
 Revisão de 11/11/2026. Complementa a Bíblia e prevalece sobre o elenco de três pilotos. A expansão da campanha permanece planejamento; o trabalho jogável continua concentrado na Fase 1.
 
 ## Direção de ritmo aprovada

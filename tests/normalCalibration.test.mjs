@@ -5,41 +5,19 @@ import { StageDirector, STAGE_EVENTS, SUPPLY_EVENTS, SCROLL_SPEED, SURFACE_SCROL
 import { PickupSystem } from '../src/game/systems/pickupSystem.ts';
 import { PICKUP_GUIDE, NORMAL_GUIDE_ITEMS, pickupSvg } from '../src/game/data/pickupGuide.ts';
 
-test('capsules cannot skip cascade gates; each unlocked color restarts at LV1', () => {
-  let state = collectPowerItem(createPlayerWeapons()).state;
-  for(const family of ['green','red'])assert.deepEqual(collectWeaponCapsule(state,family).state,state);
-  for(const family of ['green','red']){
-    while(state.weaponLevel<4)state=collectPowerItem(state).state;
-    state=collectWeaponCapsule(state,family).state;
-    assert.equal(state.weaponFamily,family);assert.equal(state.weaponLevel,1);assert.equal(state.powerMeter,0);
-    const same=collectWeaponCapsule(state,family);assert.equal(same.bonusPoints,5000);assert.deepEqual(same.state,state);
-  }
-  assert.deepEqual(collectWeaponCapsule(state,'ion').state,state);
+test('each pilot starts with its own primary; capsules cannot turn it into a different aircraft',()=>{
+ for(const [pilot,family] of [['nolan','ion'],['cora','green'],['harlan','red'],['lyra','ion'],['bento','ion']]){
+  let state=createPlayerWeapons(pilot);assert.equal(state.weaponFamily,family);
+  for(let i=0;i<9;i++)state=collectPowerItem(state).state;
+  for(const other of ['ion','green','red']){const result=collectWeaponCapsule(state,other);assert.equal(result.state.weaponFamily,family);assert.equal(result.bonusPoints,5000);}
+ }
 });
-
-test('nine P reach max; three additional P build a real reserve for the next life', () => {
-  let state = createPlayerWeapons('nolan', 'red');
-  for (let i = 1; i <= 9; i++) {
-    state = collectPowerItem(state).state;
-    assert.equal(state.weaponLevel, 1 + Math.floor(i / 3));
-    assert.equal(state.powerMeter, i % 3);
-  }
-  assert.equal(resetWeaponsOnRespawn(state).weaponLevel, 1, 'reaching maximum does not create a free reserve');
-  for (let i = 1; i <= 3; i++) {
-    state = collectPowerItem(state).state;
-    assert.equal(state.powerMeter, i);
-    assert.equal(state.weaponLevel, 4);
-  }
-  assert.equal(collectPowerItem(state).meterIncreased, false);
-  const reset = resetWeaponsOnRespawn({ ...state, speedLevel: 3, specialCharges: 0 });
-  assert.equal(reset.weaponLevel, 2);
-  assert.equal(reset.powerMeter, 0);
-  assert.equal(reset.weaponFamily, 'ion');
-  assert.equal(reset.speedLevel, 0);
-  assert.equal(reset.specialCharges, 0);
-  const partial = resetWeaponsOnRespawn({ ...state, powerMeter: 2 });
-  assert.equal(partial.powerMeter, 2);
-  assert.equal(partial.weaponLevel, 1);
+test('nine P reach maximum; every excess P becomes points without hidden reserves',()=>{
+ let state=createPlayerWeapons('cora');
+ for(let i=1;i<=9;i++){state=collectPowerItem(state).state;assert.equal(state.weaponLevel,1+Math.floor(i/3));assert.equal(state.powerMeter,i%3);}
+ const maximum=state;
+ for(let i=0;i<6;i++){const result=collectPowerItem(state);assert.equal(result.meterIncreased,false);assert.equal(result.levelIncreased,false);assert.equal(result.state,maximum);}
+ const reset=resetWeaponsOnRespawn({...state,specialCharges:0,speedLevel:3});assert.equal(reset.weaponFamily,'green');assert.equal(reset.weaponLevel,1);assert.equal(reset.specialCharges,0);assert.equal(reset.speedLevel,0);
 });
 
 test('Normal supply progression cannot reach level two in the opening seconds', () => {

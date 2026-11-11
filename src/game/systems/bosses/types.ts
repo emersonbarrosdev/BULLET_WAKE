@@ -4,6 +4,8 @@
  */
 
 export interface BossModule {
+  kind?:'organic'|'weapon';
+  firedMs?:number;
   id: string;
   name: string;
   offsetX: number;

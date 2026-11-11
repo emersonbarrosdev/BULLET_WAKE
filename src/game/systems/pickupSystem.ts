@@ -16,12 +16,13 @@ export type PickupType =
   | 'weapon_green'  // Cápsula Verde: Troca para ENERGIA ESPIRALADA
   | 'weapon_ion'    // Cápsula Azul: Troca para DISPERSÃO AZUL
   | 'weapon_red'    // Cápsula Vermelha: Troca para LASER RUBRO
-  | 'health'        // H: Recupera até 30 de integridade
+  | 'life'          // Extra life, maximum five; excess becomes points
+  | 'health'        // Alias legado de vida; nunca escudo
   | 'bomb'          // B: Alias legado de especial; não aparece no Normal
   | 'missile'       // M: Reabastece munição de mísseis
   | 'speed'         // S: Velocidade, até 3 incrementos
   | 'score'         // $: Concede 500 pontos
-  | 'special';      // E: Uma carga de especial (máximo três)
+  | 'special';      // E: Uma carga de especial (máximo cinco)
 
 export interface PickupModel {
   recovery?: RecoveryPayload;

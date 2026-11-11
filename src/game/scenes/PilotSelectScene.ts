@@ -1,3 +1,5 @@
+import { DEV_SHOW_SECRET_PILOT } from '../data/pilotStories';
+import { saveSystem } from '../systems/saveSystem';
 import { connectedPad, GamepadReader, padLabels } from '../systems/gamepadInput';
 import Phaser from 'phaser';
 import '../../pilot-select.css';
@@ -7,21 +9,22 @@ import { globalAudio } from '../audio/audioSystem';
 
 type PilotView = 'cards' | 'profile';
 
-const portrait = (pilot: PilotDefinition): string => `/assets/pilot-selection/portrait-${pilot.id}.webp`;
-const ship = (pilot: PilotDefinition): string => `/assets/pilot-selection/ship-${pilot.id}.webp`;
+const portrait = (pilot: PilotDefinition): string => `${import.meta.env.BASE_URL}assets/pilot-selection/portrait-${pilot.id}.webp`;
+const ship = (pilot: PilotDefinition): string => `${import.meta.env.BASE_URL}assets/pilot-selection/ship-${pilot.id}.webp`;
 
 /**
  * Approved cinematic pilot selection. The full-resolution DOM overlay only belongs
  * to this scene; gameplay's logical canvas, hitboxes and shooting are unchanged.
  */
 export class PilotSelectScene extends Phaser.Scene {
+  private get pilots(){return PILOTS.filter(p=>p.id!=='bento'||DEV_SHOW_SECRET_PILOT||saveSystem.getSaveData().secretPilotUnlocked);}
   private pad = new GamepadReader();
   private padId = '';
   update(): void {
     const device=connectedPad(), p=this.pad.sample(device);
     if(this.padId !== (device?.id ?? '')){this.padId=device?.id??'';this.updateSelection();}
-    if(p.left)this.select((this.selectedIndex+PILOTS.length-1)%PILOTS.length);
-    if(p.right)this.select((this.selectedIndex+1)%PILOTS.length);
+    if(p.left)this.select((this.selectedIndex+this.pilots.length-1)%this.pilots.length);
+    if(p.right)this.select((this.selectedIndex+1)%this.pilots.length);
     if(p.confirm){if(this.chosenIndex===this.selectedIndex)this.startGame();else this.choose(this.selectedIndex);}
     if(p.profile)this.setView(this.view==='profile'?'cards':'profile');
     if(p.back)this.handleKey(new KeyboardEvent('keydown',{key:'Escape'}));
@@ -29,14 +32,13 @@ export class PilotSelectScene extends Phaser.Scene {
   private selectedIndex = 0;
   private chosenIndex: number | null = null;
   private chosenAt = 0;
-  private stageNumber = 1;
   private view: PilotView = 'cards';
   private root?: HTMLDivElement;
 
   private readonly handleKey = (event: KeyboardEvent): void => {
     if (!this.root || event.ctrlKey || event.altKey || event.metaKey || event.repeat) return;
     const key = event.key.toLowerCase();
-    const supported = ['arrowleft', 'arrowright', 'a', 'd', '1', '2', '3', '4', 'enter', ' ', 'escape', 'i'];
+    const supported = ['arrowleft', 'arrowright', 'a', 'd', '1', '2', '3', '4', '5', 'enter', ' ', 'escape', 'i'];
     if (!supported.includes(key)) return;
     event.preventDefault();
     event.stopPropagation();
@@ -67,12 +69,12 @@ export class PilotSelectScene extends Phaser.Scene {
       this.setView(this.view === 'cards' ? 'profile' : 'cards');
       return;
     }
-    if (key >= '1' && key <= '4') {
+    if (key >= '1' && key <= '5') {
       this.select(Number(key) - 1);
     } else if (key === 'arrowleft' || key === 'a') {
-      this.select((this.selectedIndex + PILOTS.length - 1) % PILOTS.length);
+      this.select((this.selectedIndex + this.pilots.length - 1) % this.pilots.length);
     } else if (key === 'arrowright' || key === 'd') {
-      this.select((this.selectedIndex + 1) % PILOTS.length);
+      this.select((this.selectedIndex + 1) % this.pilots.length);
     }
   };
 
@@ -81,8 +83,7 @@ export class PilotSelectScene extends Phaser.Scene {
   }
 
   init(data: { selectedPilotId?: string; stageNumber?: number } = {}): void {
-    this.selectedIndex = Math.max(0, PILOTS.findIndex(pilot => pilot.id === data.selectedPilotId));
-    this.stageNumber = data.stageNumber || 1;
+    this.selectedIndex = Math.max(0, this.pilots.findIndex(pilot => pilot.id === data.selectedPilotId));
     this.view = 'cards';
     this.chosenIndex = null;
   }
@@ -119,7 +120,7 @@ export class PilotSelectScene extends Phaser.Scene {
   }
 
   private select(index: number): void {
-    if (index < 0 || index >= PILOTS.length) return;
+    if (index < 0 || index >= this.pilots.length) return;
     if (index !== this.selectedIndex) globalAudio.playPickup('upgrade');
     if (index !== this.selectedIndex) this.chosenIndex = null;
     this.selectedIndex = index;
@@ -148,7 +149,7 @@ export class PilotSelectScene extends Phaser.Scene {
 
   private render(): void {
     if (!this.root) return;
-    const current = PILOTS[this.selectedIndex];
+    const current = this.pilots[this.selectedIndex];
     this.root.innerHTML = `
       <div class="bw-pilot-backdrop" aria-hidden="true"></div>
       <div class="bw-pilot-vignette" aria-hidden="true"></div>
@@ -176,7 +177,7 @@ export class PilotSelectScene extends Phaser.Scene {
   private renderCards(): string {
     return `
       <section class="bw-pilot-cards" aria-label="Pilotos disponíveis">
-        ${PILOTS.map((pilot, index) => `
+        ${this.pilots.map((pilot, index) => `
           <article class="bw-pilot-card" data-card-index="${index}" aria-label="${pilot.name}">
             <button type="button" class="bw-pilot-launch bw-pilot-card-confirm" data-action="start" data-confirm-index="${index}" hidden></button>
             <button type="button" class="bw-pilot-card-select" data-pilot-index="${index}" aria-label="Escolher ${pilot.name}" aria-pressed="false"></button>
@@ -248,7 +249,7 @@ export class PilotSelectScene extends Phaser.Scene {
 
   private updateSelection(): void {
     if (!this.root) return;
-    const pilot = PILOTS[this.selectedIndex];
+    const pilot = this.pilots[this.selectedIndex];
     this.root.querySelectorAll<HTMLButtonElement>('[data-pilot-index]').forEach((button, index) => {
       const selected = index === this.selectedIndex;
       const chosen = this.chosenIndex === index;
@@ -259,7 +260,7 @@ export class PilotSelectScene extends Phaser.Scene {
     const bio = this.root.querySelector<HTMLElement>('.bw-pilot-brief-bio');
     const detail = this.root.querySelector<HTMLElement>('.bw-pilot-brief-special');
     if (bio) bio.textContent = `${pilot.name} // ${pilot.bio}`;
-    if (detail) detail.textContent = `HABILIDADE ESPECIAL: ${pilot.specialDescription} (2 CARGAS INICIAIS · MÁX. 3)`;
+    if (detail) detail.textContent = `HABILIDADE ESPECIAL: ${pilot.specialDescription} (2 CARGAS INICIAIS · MÁX. 5)`;
     const chosen = this.chosenIndex === this.selectedIndex;
     this.root.querySelectorAll<HTMLButtonElement>('[data-confirm-index]').forEach((launch, index) => {
       launch.hidden = !chosen || index !== this.selectedIndex;
@@ -274,19 +275,19 @@ export class PilotSelectScene extends Phaser.Scene {
       ? '[← →] TROCAR PILOTO · [ESC] FECHAR PERFIL'
       : chosen
         ? `${pilot.name.toUpperCase()} ESCOLHIDO · [ENTER] CONFIRMAR · [ESC] CANCELAR`
-        : '[← → / 1 2 3 4] NAVEGAR · [ENTER] ESCOLHER · [ESC] VOLTAR';
+        : '[← → / 1 2 3 4 5] NAVEGAR · [ENTER] ESCOLHER · [ESC] VOLTAR';
   }
 
   private leaveSelection(): void {
     this.cleanup();
-    this.scene.start('StageSelectScene');
+    this.scene.start('TitleScene');
   }
 
   private startGame(): void {
     if (this.chosenIndex !== this.selectedIndex) return;
-    const pilot = PILOTS[this.selectedIndex];
+    const pilot = this.pilots[this.selectedIndex];
     globalAudio.playPickup('upgrade');
     this.cleanup();
-    this.scene.start('PrototypeScene', { pilotId: pilot.id, stageNumber: this.stageNumber });
+    this.scene.start('StageSelectScene', { pilotId: pilot.id });
   }
 }

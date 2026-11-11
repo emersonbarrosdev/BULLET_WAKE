@@ -1,0 +1,53 @@
+{
+  "menu": {
+    "bpm": 118,
+    "bars": 32,
+    "seconds": 65.08474576271186,
+    "instruments": [
+      "grand piano",
+      "electric lead guitar",
+      "rhythm guitar",
+      "fingered bass",
+      "strings",
+      "clean guitar",
+      "acoustic drums"
+    ],
+    "peakDbFS": -1.061038741215237,
+    "rmsDbFS": -16.394474444562366,
+    "samplesPerChannel": 2870237
+  },
+  "stage1": {
+    "bpm": 142,
+    "bars": 32,
+    "seconds": 54.08450704225352,
+    "instruments": [
+      "grand piano",
+      "electric lead guitar",
+      "rhythm guitar",
+      "fingered bass",
+      "strings",
+      "clean guitar",
+      "acoustic drums"
+    ],
+    "peakDbFS": -1.061038741215237,
+    "rmsDbFS": -15.702361474317135,
+    "samplesPerChannel": 2385127
+  },
+  "boss": {
+    "bpm": 156,
+    "bars": 32,
+    "seconds": 49.23076923076923,
+    "instruments": [
+      "grand piano",
+      "electric lead guitar",
+      "rhythm guitar",
+      "fingered bass",
+      "strings",
+      "clean guitar",
+      "acoustic drums"
+    ],
+    "peakDbFS": -1.061038741215237,
+    "rmsDbFS": -15.715992029454796,
+    "samplesPerChannel": 2171077
+  }
+}

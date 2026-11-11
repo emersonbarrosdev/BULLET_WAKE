@@ -11,7 +11,7 @@ import { getPilot, type PilotId } from '../data/pilots.ts';
 
 export type WeaponFamily = 'green' | 'ion' | 'red';
 export type WeaponLevel = 1 | 2 | 3 | 4;
-export type SpecialType = 'prism' | 'phantom' | 'nova' | 'orbital';
+export type SpecialType = 'prism' | 'phantom' | 'nova' | 'orbital' | 'comet';
 
 export interface ProjectileSpawnDef {
   texture: string;
@@ -62,7 +62,7 @@ export interface PlayerWeaponsState {
 
 export const MAX_WEAPON_LEVEL: WeaponLevel = 4;
 export const POWER_ITEMS_PER_LEVEL = 3;
-export const MAX_SPECIAL_CHARGES = 3;
+export const MAX_SPECIAL_CHARGES = 5;
 export const START_SPECIAL_CHARGES = 2;
 export const MISSILE_COOLDOWN_MS = 1500;
 
@@ -106,7 +106,7 @@ export const WEAPON_FAMILY_SPECS: Record<WeaponFamily, WeaponSpecs> = {
 
 export const PILOT_WEAPON_SPECS: Record<string, WeaponSpecs> = {
   nolan: WEAPON_FAMILY_SPECS.ion,
-  cora: WEAPON_FAMILY_SPECS.ion,
+  cora: WEAPON_FAMILY_SPECS.green,
   harlan: WEAPON_FAMILY_SPECS.red,
   green: WEAPON_FAMILY_SPECS.green,
   ion: WEAPON_FAMILY_SPECS.ion,
@@ -114,19 +114,25 @@ export const PILOT_WEAPON_SPECS: Record<string, WeaponSpecs> = {
 };
 
 export const SPECIAL_DURATIONS: Record<SpecialType, number> = {
+  comet: 2400,
   orbital: 2200,
   prism: 3000,  // Nolan: Tempestade Prismática
   phantom: 650, // Cora: Salto Fantasma
   nova: 900,    // Harlan: Ruptura Nova
 };
 
-export function createPlayerWeapons(pilotId: PilotId = 'nolan', initialFamily: WeaponFamily = 'ion'): PlayerWeaponsState {
+/** Each pilot owns one evolving primary weapon; families no longer form a cascade. */
+export function pilotWeaponFamily(id: string): WeaponFamily {
+  return id==='cora'?'green':id==='harlan'?'red':'ion';
+}
+
+export function createPlayerWeapons(pilotId: PilotId = 'nolan', initialFamily?: WeaponFamily): PlayerWeaponsState {
   const pilot = getPilot(pilotId);
   const specialType: SpecialType =
-    pilot.id === 'lyra' ? 'orbital' : pilot.id === 'cora' ? 'phantom' : pilot.id === 'harlan' ? 'nova' : 'prism';
+    pilot.id === 'bento' ? 'comet' : pilot.id === 'lyra' ? 'orbital' : pilot.id === 'cora' ? 'phantom' : pilot.id === 'harlan' ? 'nova' : 'prism';
 
   // Arma inicial canônica da Fase 1: TODOS os pilotos iniciam no Nível 1 com medidor P zerado.
-  const family: WeaponFamily = initialFamily;
+  const family: WeaponFamily = initialFamily ?? pilotWeaponFamily(pilot.id);
 
   return {
     pilotId: pilot.id,
@@ -149,26 +155,13 @@ export function createPlayerWeapons(pilotId: PilotId = 'nolan', initialFamily: W
   };
 }
 
-/** Bullet Wake cascade. Deliberately differs from Fire Shark's free color selection. */
-export function nextWeaponFamily(family: WeaponFamily): WeaponFamily | null {
-  return family === 'ion' ? 'green' : family === 'green' ? 'red' : null;
+/** Compatibility helpers for old saves/sandbox: no production capsule can swap a pilot's weapon. */
+export function nextWeaponFamily(_family: WeaponFamily): WeaponFamily | null { return null; }
+export function switchWeaponFamily(state: PlayerWeaponsState, _family: WeaponFamily): PlayerWeaponsState { return state; }
+export function collectWeaponCapsule(state: PlayerWeaponsState, _family: WeaponFamily): {state:PlayerWeaponsState;bonusPoints:number} {
+  return {state,bonusPoints:5000};
 }
-export function switchWeaponFamily(state: PlayerWeaponsState, family: WeaponFamily): PlayerWeaponsState {
-  if (state.weaponLevel !== MAX_WEAPON_LEVEL || nextWeaponFamily(state.weaponFamily) !== family) return state;
-  return { ...state, weaponFamily: family, weaponLevel: 1, powerMeter: 0,
-    fireCooldownMs: 0, chargeMs: 0, isCharging: false, heat: 0, isOverheated: false };
-}
-export function collectWeaponCapsule(state: PlayerWeaponsState, family: WeaponFamily): {
-  state: PlayerWeaponsState; bonusPoints: number;
-} {
-  if (state.weaponFamily === family) return { state, bonusPoints: 5000 };
-  return { state: switchWeaponFamily(state, family), bonusPoints: 0 };
-}
-/** Evolution cargo becomes useful P when the pilot has not reached the gate. */
-export function evolutionCargo(state: PlayerWeaponsState): 'power' | 'weapon_green' | 'weapon_red' {
-  if (state.weaponLevel < 4 || state.weaponFamily === 'red') return 'power';
-  return state.weaponFamily === 'ion' ? 'weapon_green' : 'weapon_red';
-}
+export function evolutionCargo(_state:PlayerWeaponsState): 'power' { return 'power'; }
 
 export function collectSpeedItem(state: PlayerWeaponsState): PlayerWeaponsState {
   return { ...state, speedLevel: Math.min(3, state.speedLevel + 1) };
@@ -182,8 +175,8 @@ export function collectPowerItem(state: PlayerWeaponsState): {
 } {
   if (state.weaponLevel >= MAX_WEAPON_LEVEL) {
     return {
-      state: { ...state, powerMeter: Math.min(POWER_ITEMS_PER_LEVEL, state.powerMeter + 1) },
-      meterIncreased: state.powerMeter < POWER_ITEMS_PER_LEVEL,
+      state,
+      meterIncreased: false,
       levelIncreased: false,
     };
   }
@@ -305,7 +298,7 @@ export function resetWeaponsOnRespawn(state: PlayerWeaponsState): PlayerWeaponsS
   const reserveReady = state.weaponLevel === MAX_WEAPON_LEVEL && state.powerMeter === POWER_ITEMS_PER_LEVEL;
   return {
     ...state,
-    weaponFamily: 'ion',
+    weaponFamily: pilotWeaponFamily(state.pilotId),
     weaponLevel: reserveReady ? 2 : 1,
     powerMeter: reserveReady ? 0 : state.powerMeter,
     speedLevel: 0,
@@ -410,17 +403,7 @@ export function getPrimaryProjectiles(
   originY: number,
   overrideFamily?: WeaponFamily,
 ): ProjectileSpawnDef[] {
-  // Resolução da família
-  let family: WeaponFamily = 'green';
-  if (overrideFamily) {
-    family = overrideFamily;
-  } else if (familyOrPilot === 'green' || familyOrPilot === 'ion' || familyOrPilot === 'red') {
-    family = familyOrPilot;
-  } else if (familyOrPilot === 'cora') {
-    family = 'ion';
-  } else if (familyOrPilot === 'harlan') {
-    family = 'red';
-  }
+  const family:WeaponFamily=overrideFamily??(familyOrPilot==='ion'||familyOrPilot==='green'||familyOrPilot==='red'?familyOrPilot:pilotWeaponFamily(familyOrPilot));
 
   // Paired, phase-shifted wave components form the forward Shark Beam.
   // World-unit timings are Bullet Wake calibration, not claimed ROM constants.
@@ -429,7 +412,7 @@ export function getPrimaryProjectiles(
     return Array.from({length:components},(_,i)=>({
       texture:'shot-rivet', animation:'shot-rivet-loop',
       x:originX, y:originY, velocityX:0, velocityY:-460,
-      damage:8/Math.sqrt(level), hitRadius:4, scale:1,
+      damage:1.6, hitRadius:4, scale:1,
       waveAmplitude:16+level*8, waveVerticalAmplitude:9+level*5,
       waveFrequency:.014, wavePhase:i*Math.PI*2/components,
     }));

@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 import { NORMAL_GUIDE_ITEMS } from '../data/pickupGuide';
 export const REVIEW_SHEETS: Record<string, number> = {
+  ...Object.fromEntries(['nolan','cora','harlan','lyra','bento'].map(id=>['pickups-life-'+id,64])),
   raia: 512,
   talassarca: 512,
   surface: 256,
   swimmer: 256,
   special: 256,
-  ...Object.fromEntries(NORMAL_GUIDE_ITEMS.map((t) => ['pickups-' + t, 64])),
+  ...Object.fromEntries([...NORMAL_GUIDE_ITEMS,'weapon_ion','weapon_green','weapon_red','health'].map((t) => ['pickups-' + t, 64])),
   ...Object.fromEntries(
     ['scout', 'dart', 'lancer', 'cutter', 'surface', 'raia'].map((t) => [
       'hostile-' + t,

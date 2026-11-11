@@ -19,3 +19,19 @@
 .bw-brief-items{grid-template-columns:minmax(0,1fr);overflow-x:hidden;scrollbar-color:#777 #161616}
 .bw-brief-items article,.bw-brief-items article>div{min-width:0}
 .bw-brief-items article>div{flex:1}.bw-brief-items p{overflow-wrap:anywhere}
+
+.bw-briefing.bw-pause{background:#0007;backdrop-filter:blur(1px)}
+.bw-pause .bw-brief-panel{width:min(380px,92vw);padding:26px;background:linear-gradient(135deg,#171717eb,#090909ed);border-color:#7778}
+.bw-pause .bw-brief-panel h1{font-size:25px;margin-bottom:18px}
+.bw-pause .bw-brief-panel nav{flex-direction:column;gap:9px}
+.bw-pause .bw-brief-panel button{flex:none;width:100%;padding:12px}
+.bw-pause .bw-brief-controls{grid-template-columns:1fr}.bw-pause .bw-brief-controls>div{font-size:16px}
+.bw-pause .bw-brief-controls kbd{font-size:11px}.bw-pause .bw-brief-note{font-size:15px}
+
+.bw-mission-story{display:flex;align-items:center;gap:20px;margin:20px 0;color:#ddd;text-align:left;}
+.bw-mission-story img{width:90px;height:105px;object-fit:cover;object-position:50% 20%;border:1px solid #555;}
+.bw-mission-story small{font:700 14px Rajdhani,sans-serif;letter-spacing:.1em;color:#fff;}
+.bw-mission-story p{font-size:clamp(16px,1.3vw,21px);line-height:1.35;margin:7px 0;}
+.bw-mission-story span{font-size:12px;color:#999;letter-spacing:.07em;}
+.bw-ending .bw-brief-panel{max-width:780px;}
+.bw-ending .bw-ending-copy{font-size:clamp(17px,1.5vw,23px);line-height:1.5;color:#ddd;}

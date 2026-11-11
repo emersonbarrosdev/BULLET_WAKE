@@ -6,15 +6,15 @@ import {MinibossRaiaDente} from '../src/game/systems/bosses/minibossRaiaDente.ts
 import {continueWeapons,segmentEllipseHit} from '../src/game/systems/normalBalance.ts';
 import {createPlayerWeapons,WEAPON_FAMILY_SPECS} from '../src/game/systems/weaponSystem.ts';
 
-test('Normal supplies are scarce: three earned upgrades, one repair opportunity and one special refill',()=>{
-  assert.equal(SUPPLY_EVENTS.length,12);
+test('Normal supplies are scarce: three earned upgrades, one extra life and one special refill',()=>{
+  assert.equal(SUPPLY_EVENTS.length,11);
   const p=SUPPLY_EVENTS.filter(e=>e.drop==='power');
   assert.equal(p.length,9);
   assert.ok(p[2].distance/SCROLL_SPEED>=40);
   assert.ok(p[5].distance/SCROLL_SPEED>=85);
   assert.ok(p[8].distance/SCROLL_SPEED>=130);
   assert.equal(SUPPLY_EVENTS.filter(e=>e.drop==='special').length,1);
-  assert.equal(SUPPLY_EVENTS.filter(e=>e.drop==='health').length,1);
+  assert.equal(SUPPLY_EVENTS.filter(e=>e.drop==='life').length,1);
   assert.ok(SUPPLY_EVENTS.every(e=>e.drop!=='bomb'&&e.drop!=='full_power'));
   for(let i=1;i<SUPPLY_EVENTS.length;i++)assert.ok((SUPPLY_EVENTS[i].distance-SUPPLY_EVENTS[i-1].distance)/SCROLL_SPEED>=5);
 });
@@ -41,7 +41,7 @@ test('inner Talassarca alternates a generous moving corridor with aimed salvos, 
 test('Raia uses simulation time and announces its attacks; one special cannot skip the fight',()=>{
   const a=new MinibossRaiaDente(),b=new MinibossRaiaDente();let warns=0;
   for(let i=0;i<200;i++){const tick=a.update(25,384,350);b.update(25,384,350);assert.equal(a.x,b.x);if(tick.telegraph)warns++;}
-  assert.ok(warns>0);assert.equal(a.damage(120).killed,false);assert.equal(a.hp,20);
+  assert.ok(warns>0);assert.equal(a.damage(120).killed,false);assert.equal(a.hp,60);
 });
 
 test('late Continue guarantees only blue NV2, keeps partial P and cannot farm special or speed',()=>{

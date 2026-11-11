@@ -1,0 +1,456 @@
+{
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "layout": {
+        "lives": 3,
+        "special": 2,
+        "family": "ion",
+        "hud": "BULLET WAKE\nOPERADOR\nTERRY\nRIVET\nPONTUAÇÃO\n000000\nVIDAS\n3\nESPECIAL\nPRONTO\nPAUSAR / OPÇÕES\n\nFASE 01 - FENDA PELÁGICA [NORMAL]\n\nOPERAÇÃO PELÁGICA\nFENDA PELÁGICA\nÁGUAS COSTEIRAS\nARMA EQUIPADA\nDISPERSÃO AZUL\nPOTÊNCIA\nNV 1/4\nPRÓXIMO NÍVEL\n0 / 3\nP\nP\nP\nTRAJETO DA MISSÃO\nCANAL DO PILOTO\nEM ESCUTA\n\nCanal aberto.",
+        "lifeIcons": 5,
+        "specialIcons": 5
+      },
+      "profiles": [
+        {
+          "scroll": false,
+          "clipped": false,
+          "name": "Terry"
+        },
+        {
+          "scroll": false,
+          "clipped": false,
+          "name": "Tita"
+        },
+        {
+          "scroll": false,
+          "clipped": false,
+          "name": "Osvald"
+        },
+        {
+          "scroll": false,
+          "clipped": false,
+          "name": "Luma"
+        },
+        {
+          "scroll": false,
+          "clipped": false,
+          "name": "Bento"
+        }
+      ],
+      "shooting": {
+        "rotation": 0,
+        "missileCooldown": 2382.0800000000017,
+        "shots": 27
+      },
+      "caps": {
+        "lives": 5,
+        "special": 5,
+        "score": 17000
+      },
+      "radio": {
+        "first": "O bico não é escudo. Acabamos de comprovar.",
+        "second": "Se eu reclamar mais alto, você desvia melhor?",
+        "lives": 3
+      },
+      "boss": {
+        "modules": 6,
+        "weapons": 3
+      },
+      "part": {
+        "destroyed": true,
+        "hp": 500,
+        "before": 600,
+        "visible": false
+      },
+      "pauseView": {
+        "labels": [
+          "CONTINUAR",
+          "CONTROLES",
+          "VOLTAR AO MENU"
+        ],
+        "width": 380,
+        "background": "rgba(0, 0, 0, 0.467)"
+      },
+      "owners": [
+        {
+          "id": "nolan",
+          "family": "ion",
+          "level": 1,
+          "ttks": [
+            {
+              "boss": "raia",
+              "level": 2,
+              "seconds": 24.38,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 2,
+              "seconds": 59.02,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 3,
+              "seconds": 32.02,
+              "defeated": true
+            }
+          ]
+        },
+        {
+          "id": "cora",
+          "family": "green",
+          "level": 1,
+          "ttks": [
+            {
+              "boss": "raia",
+              "level": 2,
+              "seconds": 10.74,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 2,
+              "seconds": 51.82,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 3,
+              "seconds": 35.5,
+              "defeated": true
+            }
+          ]
+        },
+        {
+          "id": "harlan",
+          "family": "red",
+          "level": 1,
+          "ttks": [
+            {
+              "boss": "raia",
+              "level": 2,
+              "seconds": 9.84,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 2,
+              "seconds": 50.3,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 3,
+              "seconds": 37.52,
+              "defeated": true
+            }
+          ]
+        },
+        {
+          "id": "lyra",
+          "family": "ion",
+          "level": 1,
+          "ttks": [
+            {
+              "boss": "raia",
+              "level": 2,
+              "seconds": 12.6,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 2,
+              "seconds": 58.98,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 3,
+              "seconds": 32.98,
+              "defeated": true
+            }
+          ]
+        },
+        {
+          "id": "bento",
+          "family": "ion",
+          "level": 1,
+          "ttks": [
+            {
+              "boss": "raia",
+              "level": 2,
+              "seconds": 15.94,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 2,
+              "seconds": 59.06,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 3,
+              "seconds": 33.28,
+              "defeated": true
+            }
+          ]
+        }
+      ],
+      "audio": {
+        "silent": {
+          "environment": "space",
+          "track": "none",
+          "voices": 0,
+          "musicLoadFailed": false,
+          "master": 0,
+          "sfx": 0.7224999999999999,
+          "music": 0.30250000000000005
+        },
+        "menu": {
+          "environment": "atmosphere",
+          "track": "menu",
+          "voices": 0,
+          "musicLoadFailed": false,
+          "master": 0,
+          "sfx": 0.7224999999999999,
+          "music": 0.30250000000000005
+        }
+      }
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "layout": {
+        "lives": 3,
+        "special": 2,
+        "family": "ion",
+        "hud": "BULLET WAKE\nOPERADOR\nTERRY\nRIVET\nPONTUAÇÃO\n000000\nVIDAS\n3\nESPECIAL\nPRONTO\nPAUSAR / OPÇÕES\n\nFASE 01 - FENDA PELÁGICA [NORMAL]\n\nOPERAÇÃO PELÁGICA\nFENDA PELÁGICA\nÁGUAS COSTEIRAS\nARMA EQUIPADA\nDISPERSÃO AZUL\nPOTÊNCIA\nNV 1/4\nPRÓXIMO NÍVEL\n0 / 3\nP\nP\nP\nTRAJETO DA MISSÃO\nCANAL DO PILOTO\nEM ESCUTA\n\nCanal aberto.",
+        "lifeIcons": 5,
+        "specialIcons": 5
+      },
+      "profiles": [
+        {
+          "scroll": false,
+          "clipped": false,
+          "name": "Terry"
+        },
+        {
+          "scroll": false,
+          "clipped": false,
+          "name": "Tita"
+        },
+        {
+          "scroll": false,
+          "clipped": false,
+          "name": "Osvald"
+        },
+        {
+          "scroll": false,
+          "clipped": false,
+          "name": "Luma"
+        },
+        {
+          "scroll": false,
+          "clipped": false,
+          "name": "Bento"
+        }
+      ],
+      "shooting": {
+        "rotation": 0,
+        "missileCooldown": 2265.200000000004,
+        "shots": 29
+      },
+      "caps": {
+        "lives": 5,
+        "special": 5,
+        "score": 17000
+      },
+      "radio": {
+        "first": "Tá olhando o mar ou as balas?",
+        "second": "Eu voltei. Minha paciência ficou na outra nave.",
+        "lives": 3
+      },
+      "boss": {
+        "modules": 6,
+        "weapons": 3
+      },
+      "part": {
+        "destroyed": true,
+        "hp": 500,
+        "before": 600,
+        "visible": false
+      },
+      "pauseView": {
+        "labels": [
+          "CONTINUAR",
+          "CONTROLES",
+          "VOLTAR AO MENU"
+        ],
+        "width": 380,
+        "background": "rgba(0, 0, 0, 0.467)"
+      },
+      "owners": [
+        {
+          "id": "nolan",
+          "family": "ion",
+          "level": 1,
+          "ttks": [
+            {
+              "boss": "raia",
+              "level": 2,
+              "seconds": 24.38,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 2,
+              "seconds": 59.02,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 3,
+              "seconds": 32.02,
+              "defeated": true
+            }
+          ]
+        },
+        {
+          "id": "cora",
+          "family": "green",
+          "level": 1,
+          "ttks": [
+            {
+              "boss": "raia",
+              "level": 2,
+              "seconds": 10.74,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 2,
+              "seconds": 51.82,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 3,
+              "seconds": 35.5,
+              "defeated": true
+            }
+          ]
+        },
+        {
+          "id": "harlan",
+          "family": "red",
+          "level": 1,
+          "ttks": [
+            {
+              "boss": "raia",
+              "level": 2,
+              "seconds": 9.84,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 2,
+              "seconds": 50.3,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 3,
+              "seconds": 37.52,
+              "defeated": true
+            }
+          ]
+        },
+        {
+          "id": "lyra",
+          "family": "ion",
+          "level": 1,
+          "ttks": [
+            {
+              "boss": "raia",
+              "level": 2,
+              "seconds": 12.6,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 2,
+              "seconds": 58.98,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 3,
+              "seconds": 32.98,
+              "defeated": true
+            }
+          ]
+        },
+        {
+          "id": "bento",
+          "family": "ion",
+          "level": 1,
+          "ttks": [
+            {
+              "boss": "raia",
+              "level": 2,
+              "seconds": 15.32,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 2,
+              "seconds": 59.06,
+              "defeated": true
+            },
+            {
+              "boss": "talassarca",
+              "level": 3,
+              "seconds": 33.08,
+              "defeated": true
+            }
+          ]
+        }
+      ],
+      "audio": {
+        "silent": {
+          "environment": "space",
+          "track": "none",
+          "voices": 0,
+          "musicLoadFailed": false,
+          "master": 0,
+          "sfx": 0.7224999999999999,
+          "music": 0.30250000000000005
+        },
+        "menu": {
+          "environment": "atmosphere",
+          "track": "menu",
+          "voices": 0,
+          "musicLoadFailed": false,
+          "master": 0,
+          "sfx": 0.7224999999999999,
+          "music": 0.30250000000000005
+        }
+      }
+    }
+  ],
+  "regression": {
+    "title": true,
+    "camping": {
+      "seconds": 26.5,
+      "lives": 0,
+      "gameOver": true,
+      "peakEnemies": 5,
+      "peakShots": 4,
+      "updateP95Ms": 0.5
+    }
+  },
+  "errors": []
+}

@@ -1,0 +1,40 @@
+{
+  "mode": "builtin image_gen",
+  "date": "2026-11-11",
+  "portraits": [
+    {
+      "asset": "public/assets/pilot-selection/portrait-nolan.webp",
+      "prompt": "Edit the supplied portrait into the FINAL Terry character selection portrait for BULLET WAKE, original premium 2D arcade aviation game. Keep character identity, outfit palette and the dark burgundy abstract background. Preserve his swept black hair, cheek scar, red and charcoal flight collar. More adventurous and expressive determined grin. Strong contemporary hand-drawn CARTOON / anime-adventure illustration, confident clean ink contours, simplified bold facial planes, expressive slightly larger eyes, matte cel shading with just three value groups plus small painterly accents. Premium polished illustration, not childish, no 3D rendering, no skin specular, no photo textures, no realistic pore detail. Bust framed centrally, head and shoulders fully contained, portrait composition 2:3, no text no logos no border. This should look like part of the same cohesive five-person cartoon cast."
+    },
+    {
+      "asset": "public/assets/pilot-selection/portrait-cora.webp",
+      "prompt": "Edit the supplied portrait into the FINAL Tita character selection portrait for BULLET WAKE, original premium 2D arcade aviation game. Keep character identity, outfit palette and the dark burgundy abstract background. Preserve her swept short white hair, cheek scar, plum flight collar. Clever confident sly smile. Strong contemporary hand-drawn CARTOON / anime-adventure illustration, confident clean ink contours, simplified bold facial planes, expressive slightly larger eyes, matte cel shading with just three value groups plus small painterly accents. Premium polished illustration, not childish, no 3D rendering, no skin specular, no photo textures, no realistic pore detail. Bust framed centrally, head and shoulders fully contained, portrait composition 2:3, no text no logos no border. This should look like part of the same cohesive five-person cartoon cast."
+    },
+    {
+      "asset": "public/assets/pilot-selection/portrait-harlan.webp",
+      "prompt": "Edit the supplied portrait into the FINAL Osvald character selection portrait for BULLET WAKE, original premium 2D arcade aviation game. Keep character identity, outfit palette and the dark burgundy abstract background. Preserve his bald head, gray beard, orange headset, heavy charcoal flight armor. Gruff warm imposing veteran. Strong contemporary hand-drawn CARTOON / anime-adventure illustration, confident clean ink contours, simplified bold facial planes, expressive slightly larger eyes, matte cel shading with just three value groups plus small painterly accents. Premium polished illustration, not childish, no 3D rendering, no skin specular, no photo textures, no realistic pore detail. Bust framed centrally, head and shoulders fully contained, portrait composition 2:3, no text no logos no border. This should look like part of the same cohesive five-person cartoon cast."
+    },
+    {
+      "asset": "public/assets/pilot-selection/portrait-lyra.webp",
+      "prompt": "Edit the supplied portrait into the FINAL Luma character selection portrait for BULLET WAKE, original premium 2D arcade aviation game. Keep character identity, outfit palette and the dark burgundy abstract background. Preserve her dark braided swept hair with shaved temple, freckles, jade headset and flight collar. Warm daring rescue pilot. Strong contemporary hand-drawn CARTOON / anime-adventure illustration, confident clean ink contours, simplified bold facial planes, expressive slightly larger eyes, matte cel shading with just three value groups plus small painterly accents. Premium polished illustration, not childish, no 3D rendering, no skin specular, no photo textures, no realistic pore detail. Bust framed centrally, head and shoulders fully contained, portrait composition 2:3, no text no logos no border. This should look like part of the same cohesive five-person cartoon cast."
+    },
+    {
+      "asset": "public/assets/pilot-selection/portrait-bento.webp",
+      "prompt": "Create a FINAL character selection portrait for Bento, an ORIGINAL pilot in BULLET WAKE premium 2D arcade aviation game. Adult Brazilian-looking male emergency courier and former smuggler, late thirties, warm brown skin, dark curly hair, a small mustache, round amber aviator goggles on forehead, charming crooked smile concealing sadness, a blue and ochre flight jacket with off-white scarf and a tiny envelope clasp. Expressive contemporary hand-drawn CARTOON / anime adventure illustration, clean confident dark ink contours, matte cel shading in three value groups, slightly larger expressive eyes, no 3D rendering no skin shine no photo texture. Dramatic bust and face centered in portrait 2:3, head and shoulders fully contained. Deep burgundy abstract painted backdrop, warm edge light. Premium cohesive arcade cast quality. No text no border no insignia from existing franchises."
+    }
+  ],
+  "sheets": [
+    {
+      "asset": "public/assets/combat-hd/peregrine.webp",
+      "prompt": "Production sprite sheet for ONE original friendly aircraft PEREGRINE in BULLET WAKE, premium illustrated 2D arcade vertical shmup. EXACTLY 4 equal square cells in a single horizontal row, transparent alpha background. Identical strictly ORTHOGRAPHIC DIRECT TOP DOWN aircraft in all cells, nose pointing perfectly upward, fuselage vertically aligned. No isometric perspective, no visible front face or rear nozzle circles. Small tough courier interceptor: narrow ivory fuselage, cobalt blue broad clipped wings, ochre yellow wing tips, two separated rear jet engines and a small central tail fin, turquoise canopy. Clear distinct compact silhouette, hand painted cartoon mechanical detail readable at 40px. Only orange exhaust flickers vary over four sequential frames, fixed body and size. Each ship fully contained with padding. No shadows on ground, no text, no UI, no borders."
+    },
+    {
+      "asset": "public/assets/pilot-selection/ship-bento.webp",
+      "prompt": "Create the isolated MENU aircraft asset PEREGRINE for BULLET WAKE, using the reference overhead sprite ONLY as design identity reference. ONE spacecraft shown in an elegant modest three-quarter overhead menu view, nose toward lower left, rear upper right. Ivory central fuselage, cobalt blue clipped wings, ochre yellow wing tips, turquoise canopy, TWO rear jet engines, clearly distinct courier interceptor. Premium illustrated hand painted 2.5D arcade concept art, matte painted metal, crisp edges, red-orange subtle exhaust, matching the visual scale and restrained warm lighting of a premium fighter selection card. Entire craft contained with generous transparent padding, occupies 85% width and 75% height of landscape image. No background no UI no text no border no promotional scene no crop, transparent alpha."
+    },
+    {
+      "asset": "public/assets/combat-hd/review/pickups-life-{pilotId}.webp",
+      "prompt": "Create ONE coherent production pickup icon SPRITESHEET for BULLET WAKE 2D arcade game. EXACT 4 columns by 5 rows grid, 20 equal SQUARE cells, transparent background. Every cell contains an octagonal metal badge with a tiny TOP DOWN aircraft and a small red plaque reading exactly '1UP', like a premium arcade extra-life item. Keep all badges same metal frame shape and size. Each ROW is one aircraft's badge animation: SAME aircraft all 4 cells of row, only the small rim indicator advances clockwise, no spinning body. Row1: WHITE and RED triple-engine swept wing fighter. Row2: sleek VIOLET twin-wing interceptor. Row3: wide heavy ORANGE and CHARCOAL twin-nacelle gunship. Row4: elegant IVORY and JADE narrow interceptor. Row5: IVORY and COBALT BLUE courier fighter with YELLOW wing tips and two engines. Four columns = four successive rim light frames. Crisp matte illustrated cartoon metal style with clean edge alpha, readable at 32px, no external glow rectangles, no background, no captions outside badge, no grid lines, no cropping. Precisely aligned 5 rows x4 columns."
+    }
+  ]
+}

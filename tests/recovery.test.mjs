@@ -4,7 +4,7 @@ import {recoveryPayloads,recoverArmament} from '../src/game/systems/recoverySyst
 import {createPlayerWeapons,resetWeaponsOnRespawn} from '../src/game/systems/weaponSystem.ts';
 test('earned families and levels return as finite physical milestones; duplicates cannot mint upgrades',()=>{
  for(const family of ['ion','green','red'])for(const level of [1,2,3,4]){
-  const old={...createPlayerWeapons('nolan'),weaponFamily:family,weaponLevel:level,powerMeter:2};
+  const old={...createPlayerWeapons(family==='ion'?'nolan':family==='green'?'cora':'harlan'),weaponFamily:family,weaponLevel:level,powerMeter:2};
   const drops=recoveryPayloads(old);assert.ok(drops.length<=4);
   let state={...resetWeaponsOnRespawn(old),weaponLevel:1,powerMeter:0};
   for(const item of [...drops].reverse())state=recoverArmament(state,item);

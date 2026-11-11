@@ -12,10 +12,19 @@ export class BossTalassarca implements StageBoss {
   hp = SHELL_HP;
   modules:BossModule[]=this.makeModules(false);
   private makeModules(inner:boolean):BossModule[]{
-    const hp=(inner?INNER_HP:SHELL_HP)/3;
+    const hp=(inner?INNER_HP:SHELL_HP)/6;
     const scale=PLAYFIELD_WIDTH*(inner?1.30:1.02)/512;
-    return [['left','Órgão esquerdo',inner?-49:-68,inner?-111:-94],['right','Órgão direito',inner?49:64,inner?-111:-97],['vent','Ventre dorsal',0,74]].map(([id,name,x,y])=>({id:String(id),name:String(name),offsetX:Number(x)*scale,offsetY:Number(y)*scale,width:52,height:52,hp,maxHp:hp,destroyed:false}));
+    const points:Array<[string,string,number,number,'organic'|'weapon']>=[
+      ['left','Órgão esquerdo',inner?-49:-68,inner?-111:-94,'organic'],
+      ['right','Órgão direito',inner?49:64,inner?-111:-97,'organic'],
+      ['vent','Ventre dorsal',0,74,'organic'],
+      ['battery-left','Bateria esquerda',inner?-98:-105,-22,'weapon'],
+      ['battery-right','Bateria direita',inner?98:105,-22,'weapon'],
+      ['battery-core','Artilharia central',0,-38,'weapon'],
+    ];
+    return points.map(([id,name,x,y,kind])=>({id,name,kind,offsetX:x*scale,offsetY:y*scale,width:34,height:34,hp,maxHp:hp,destroyed:false}));
   }
+
   layer: 'shell' | 'inner' = 'shell';
   phase: 'intro' | 'shell' | 'metamorphosis' | 'inner' | 'defeated' = 'intro';
   x = PLAYFIELD_X + PLAYFIELD_WIDTH / 2;
@@ -39,6 +48,7 @@ export class BossTalassarca implements StageBoss {
   update(dt: number, playerX: number, playerY: number): BossTick {
     dt = Math.max(0, dt);
     this.elapsedMs += dt;
+    for(const m of this.modules)m.firedMs=Math.max(0,(m.firedMs??0)-dt);
     const shots: BossShot[] = [];
     let phaseChanged = false;
     if (this.phase === 'intro') {
@@ -70,7 +80,8 @@ export class BossTalassarca implements StageBoss {
         const organs=this.modules.filter(m=>!m.destroyed);
         const chosen=organs[(this.cycle-1)%Math.max(1,organs.length)];
         if(chosen){
-          const ox=this.x+chosen.offsetX,originY=this.y+chosen.offsetY;
+          chosen.firedMs=150;
+          const ox=this.x+chosen.offsetX,originY=this.y+chosen.offsetY+(chosen.kind==='weapon'?12:0);
           const aim=Math.atan2(this.aimY-originY,this.aimX-ox);
           if(inner&&this.attackPattern==='curtain'){
             for(const organ of organs){

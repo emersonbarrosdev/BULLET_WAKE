@@ -1,5 +1,6 @@
 # 07 — Manual de gameplay e progressão
 
+> HISTÓRICO: para nomes, cinco pilotos, vidas/especiais 5/5, armas próprias, duração 2–4 min e áudio atuais, prevalecem a [Bíblia vigente](27_BULLET_WAKE_V2_DEFINITIVO.md) e a [revisão 39](39_ELENCO_COMBATE_AUDIO.md).
 > Estado vigente: [Bíblia V2](27_BULLET_WAKE_V2_DEFINITIVO.md) e [revisão de ritmo/elenco/contornos](38_RITMO_ELENCO_E_CONTORNOS.md). As definições históricas abaixo não substituem quatro pilotos, três vidas sem barra, especial único, ausência de dash/carga/míssil manual e foco exclusivo na Fase 1.
 
 > **Regras vigentes da Fase 1:** [diretriz 33](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md). Uma barra contínua 0–100 de integridade; sem vidas extras automáticas. Especial único V/X, duas cargas iniciais/máximo três, E repõe uma, sem bomba separada ou ressonância. Cor de arma e potência P independentes. O texto legado abaixo não substitui essa diretriz.

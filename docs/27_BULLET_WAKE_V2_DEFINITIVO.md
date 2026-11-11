@@ -1,72 +1,90 @@
-# BULLET WAKE V2 — Bíblia vigente
+# BULLET WAKE — Bíblia vigente
 
-Revisão de 11/11/2026. Este documento consolida as decisões atuais e substitui os trechos conflitantes das revisões anteriores. Detalhamento de produção e validação: [ritmo, elenco e contornos](38_RITMO_ELENCO_E_CONTORNOS.md).
+Revisão de 11/11/2026. Esta revisão substitui regras conflitantes anteriores. Detalhes e evidências em [elenco, combate e áudio](39_ELENCO_COMBATE_AUDIO.md). Somente Fenda Pelágica está produzida; nenhuma fase seguinte deve ser produzida antes de sua aprovação.
 
-## Estado e identidade
+## Identidade e câmera
 
-- Shooter vertical 2D, visão superior ortográfica. Nariz da nave ao norte; movimento lateral não inclina o plano da imagem. Arte em três quartos fica restrita aos menus.
-- Invasão da Terra por organismos alienígenas. Inimigos da Fase 1 são criaturas vivas, sem cockpit, fuselagem ou aparência de veículos humanos.
-- Somente Fenda Pelágica está liberada. As demais fases e rotas abaixo são planejamento; produção da Fase 2 depende da aprovação explícita da primeira.
-- Quatro pilotos: Nolan/RIVET, Cora/MOTH, Harlan/KNUCKLE e Lyra/KESTREL. Cada especial tem entrega própria e estoque inicial 2/máximo 3. Sem bomba independente.
-- Tipografia: Oxanium para títulos/destaques e Rajdhani para leitura/menus. Preservar a abertura e a identidade dos pilotos; opções, preparação, resultados e laterais usam preto fosco/carbono.
+Shooter vertical arcade 2D. Tudo no combate é visto diretamente de cima, em projeção ortográfica: água, criaturas, caças e armas instaladas. Movimento lateral não inclina a imagem. Menu pode usar naves em três quartos. RIVET mantém casco branco, detalhes vermelhos, três motores e arte própria; nenhum crop da abertura é utilizado.
 
-## Regras atuais da Fase 1
+Invasores são organismos alienígenas, inclusive criaturas biomecânicas. Distinguir voadores de organismos aquáticos: os primeiros compartilham o plano da nave, os segundos emergem, permanecem ancorados ao cenário e voltam a submergir. Não dar a todos aparência de naves humanas.
 
-### Vidas, morte e recuperação
+## Cinco pilotos e progressão própria
 
-Início com **três vidas**, sem barra de integridade. Um impacto não protegido abate a nave. Um escudo absorve um impacto; após o abate, a nave reaparece no mesmo combate com dois segundos de proteção, arma azul NV1 e sem velocidade acumulada. O especial não ganha cargas gratuitamente.
+| Piloto | Nave / tiro | Especial | Busca pessoal |
+|---|---|---|---|
+| Terry | RIVET / dispersão azul | Tempestade Prismática | Irmão desaparecido; reconstruir a honra após desobedecer para salvar civis |
+| Tita | MOTH / ondas verdes | Salto Fantasma | Mãe pesquisadora; distinguir uma voz real de uma armadilha do enxame |
+| Osvald | KNUCKLE / fluxo rubro | Ruptura Nova | Filha desaparecida; aprender a ouvir além de proteger |
+| Luma | KESTREL / azul concentrado | Coroa Orbital | Pai desaparecido; salvar a clínica da família e decidir para que serve a fama |
+| Bento | PEREGRINE / rajada alternada | Chuva de Cometas | Esposa e cartas dos refugiados; parar de fugir da própria culpa |
 
-O armamento conquistado retorna como itens físicos que quicam nas bordas. Até quatro marcos de recuperação restituem família, nível e P parcial por contato. Itens recuperados não compram uma família nova nem duplicam potência; recolher fora de ordem não reduz o nível já restaurado. Nenhum item sai de inimigos comuns.
+Primeiros nomes apenas. Retratos cartoon de alta qualidade, contornos desenhados e sombras matte, sem renderização 3D. Identidades anteriores são preservadas artisticamente; IDs internos antigos continuam estáveis para não quebrar saves/assets.
 
-Ao acabar a terceira vida, mostrar derrota e Continue explícito por checkpoint. Continue começa com três vidas, preserva apenas a recuperação prevista pelo balanceamento e não reabastece especiais. A sobrevivência sem barra é a regra do Normal atual; modos futuros ainda não estão produzidos.
+Cada piloto tem desejo, ferida, conflito, fala de missão e final próprio. A seleção da missão mostra seu retrato e motivação, sem tutorial obrigatório. A Fase 1 mostra um epílogo intermediário; nenhum final da campanha é liberado por vencer somente Talassarca. Progresso e recordes são salvos separadamente por piloto.
 
-### Comandos e armamento
+### Armas
 
-- WASD/setas ou analógico/direcional: movimento com diagonal normalizada.
-- Espaço mantido ou botão sul do controle: disparo na cadência rápida; não exigir apertos repetidos.
-- X ou botão oeste: especial único. Esc/Menu: pausa e opções.
-- **Dash, tiro carregado e míssil manual removidos**, incluindo diálogos. Cora mantém deslocamento de fase como especial limitado, sem uma ação extra de dash.
-- RIVET dispara dois mísseis automaticamente ao segurar disparo em NV3/NV4 de qualquer família. Não há botão nem coletável de míssil na Fase 1.
-- Cascata autoral aprovada: azul NV4 libera cápsula verde NV1; verde NV4 libera rubro NV1. Cada troca evolutiva zera P. Três P sobem um nível, nove P do NV1 ao NV4; até três P de reserva no máximo. Cápsula repetida concede pontos.
-- Azul: leque de projéteis 3/5/9/16. Verde: ondas entrelaçadas 2/4/6/8, com dano calibrado para a troca não ser uma perda de poder. Rubro: fluxos contínuos móveis, com expansões laterais/traseiras nos níveis avançados. Quantidades/dano/intervalos são calibração de Bullet Wake, não valores medidos das ROMs de referência.
+Cada nave mantém **um armamento próprio**, que evolui do NV1 ao NV4. Esta decisão substitui a cascata azul→verde→vermelho. Os efeitos verdes/vermelhos foram preservados e transferidos para MOTH/KNUCKLE. P aumenta potência, nunca troca a nave para a arma de outro piloto.
 
-A cascata acima é uma escolha de Bullet Wake solicitada posteriormente. **Fire Shark permite troca de cores independente da potência**, portanto não apresentar nossa cascata como reprodução fiel daquele sistema.
+- 3 P por nível; 9 P do NV1 ao NV4. No máximo, P extra concede 5.000 pontos; não cria reserva invisível.
+- RIVET: leque azul 3/5/9/16, mais espesso em NV3/NV4. Dois mísseis automáticos em NV3+; nenhuma ação manual extra.
+- MOTH: ondas verdes entrelaçadas, componentes 2/4/6/8. Dano reequilibrado para estar disponível desde o início.
+- KNUCKLE: fogo rubro contínuo, com varreduras móveis nos níveis superiores; alcança o teto da arena, sem bolas vermelhas.
+- KESTREL: menor dispersão, exige alinhamento e favorece alvos prioritários.
+- PEREGRINE: duas âncoras alternadas e dispersão intermediária, mobilidade e dano moderados.
+- Cadência, dano e quantidades são calibrações autorais, não números atribuídos às ROMs de referência. Equilíbrio deve considerar acertos reais, cobertura, risco e especiais, além de DPS teórico.
 
-### Coletáveis e apresentação
+**Referências:** Sonic Wings informa o conceito de tiro/especial próprios da aeronave. Fire Shark possui troca livre de cor com potência compartilhada; não exige a cascata abandonada de Bullet Wake. Não descrever nossas regras como cópia exata dos dois jogos.
 
-Caixas com paraquedas entram como suprimento. O jogador precisa destruí-las; o item liberado quica nas quatro bordas e permanece por até 16 segundos. P, cápsulas, velocidade, proteção e especial possuem spritesheets distintas. O antigo H funciona agora como escudo de um impacto; não cura uma barra inexistente.
+### Vidas, especiais e suprimentos
 
-HUD sem legendas sob os itens nem atalhos espalhados. Laterais preservadas: arena lógica X168..600, largura 432, laterais 168 cada, canvas 768×432. Esquerda agrupa piloto, pontuação, três ícones de vida e até três ícones de especial. Direita agrupa missão, família, nível, P e avanço. Barra do chefe permanece sobre a arena. Tela inteira ocupada pelo conjunto, sem margens externas.
+Início: **3 vidas e 2 especiais**. Ambos acumulam até **5**. Vida extra no máximo concede 5.000 pontos; especial no máximo concede 500. Sem barra de integridade, escudo coletável, dash, bomba separada, tiro carregado ou míssil manual. A proteção breve após renascer/usar especial serve para não encadear mortes; não é uma nova barra nem item de escudo.
 
-Seleção de missão antes dos quatro pilotos; somente Fenda disponível. Perfil dentro de cada card e confirmação sobre o card escolhido exigem ações distintas. Guia de comandos conforme dispositivo antes da primeira partida, loading de recursos antes do guia e transição de 2,5 segundos para decolagem. Pausa oferece comandos, guia de itens e áudio. Derrota/conclusão usam diálogos de carbono sobre a tela inteira, com ações acessíveis por teclado, mouse e controle.
+Um impacto sem proteção abate a nave. Ao renascer: arma própria NV1, velocidade inicial, dois segundos de proteção, nenhum reabastecimento gratuito de especial. A potência conquistada volta como marcos físicos de recuperação, até três, que não duplicam progresso nem reduzem um nível já recuperado. Continue explícito por checkpoint mantém estoque restante e oferece recuperação limitada, sem farm.
 
-### Câmera, contato e efeitos
+Caixas com paraquedas precisam ser destruídas; o item liberado precisa ser tocado. Quica nas quatro bordas por até 16 s. Inimigos comuns não distribuem itens. Onze suprimentos no roteiro: nove P, uma vida e um especial. P nº3 aproximadamente aos 46 s de percurso; nº6 aos 93 s; nº9 aos 139 s, fora as pausas dos chefes. Destruir o portador e buscar o item são decisões reais. Cada nave tem spritesheet de 1UP com a própria miniatura. Sem legenda sob itens.
 
-RIVET mantém casco branco/vermelho, três motores, frames neutros superiores e escala menor. Remover propulsão duplicada e efeitos de muzzle que ficam no mundo enquanto a nave se move. Tiros nascem da posição atual do bico.
+## Fenda Pelágica: ritmo de 2–4 minutos
 
-Projéteis e laser atingem o contorno opaco do frame atual, incluindo extremidades e preservando vazios/concavidades. Usar varredura para não atravessar alvos entre frames. Máscaras de alfa ficam em cache; não usar o retângulo inteiro da spritesheet nem somente um círculo central. Contato físico aéreo explode o inimigo; criaturas de superfície podem ser sobrevoadas.
+O alvo atual é **2–4 minutos por fase**, incluindo chefes, em uma partida sem mortes/repetições. A antiga proposta de cinco minutos para a Fase 1 e a tabela de 3–7 minutos foram substituídas. Não estender uma fase artificialmente para atingir um cronômetro.
 
-Sem tremor de câmera. Explosões de fogo curtas, partículas limitadas e dissipação rápida. Projéteis alienígenas mantêm cores/formas próprias e transparência. Água usa sheets animadas com fluxo contínuo, sem depender de uma imagem estática rolando: oceano calmo → invasão/turbulência/destroços → fenda revelada antes de Talassarca.
+Oceano relativamente calmo → contaminação/criaturas emergentes → Raia-Dente → destroços e invasão → revelação da fenda → Talassarca. Travessia atual: 4.600 unidades a 28/s, cerca de 164 s, mais confrontos, que suspendem o deslocamento do roteiro. O tempo final depende da potência/acerto; medir a faixa em partidas, sem prometer duração fixa em caso de P perdidos ou Continue.
 
-### Chefes
+Mudança perceptível a cada 30–45 s; acontecimento relevante a cada 60–90 s; ao menos uma situação exclusiva por fase. Alternar bandos rápidos frágeis que não atiram, atacantes individuais e organismos aquáticos. Normal exige reposicionamento e prioridade de alvos; aumentar só a velocidade de balas não é suficiente. Coordenar entradas, evitar sobreposição e preservar saída dos padrões.
 
-Raia-Dente permanece miniboss aéreo. Talassarca é corpo aquático colossal visto por cima, abaixo da nave, com órgãos dorsais destrutíveis em posições distintas; órgãos destruídos param de disparar. A nave pode atravessar visualmente o corpo, mas os projéteis continuam perigosos.
+Água tem sheets animadas, interpolação contínua, refração, espuma e partículas. Movimento continua durante chefes; não voltar a uma imagem estática rolando. Destroços não devem saltar de posição com a animação da água. Fenda se revela antes do chefe, não desde a primeira tela.
 
-Casca de 600 HP (cinco especiais de 120), metamorfose de 2,4 s sem transferência de dano excedente, forma interna de 360 HP (três especiais). Arte útil ocupa aproximadamente 80%/100% da largura da arena; o padding do atlas não conta como corpo. Segunda forma altera origens/padrões e preserva corredor de esquiva. Tiros convencionais também vencem ambas as formas; especiais não são requisito obrigatório.
+### Chefes e contato
 
-## Ritmo e duração
+Raia-Dente é miniboss aéreo. Talassarca é organismo aquático colossal abaixo da nave, com seis partes destrutíveis: três órgãos e três baterias biomecânicas. Tiros partem de cada origem; destruir uma parte impede seus disparos. A nave pode sobrevoar o corpo.
 
-| Fases | Alvo total por fase |
-|---|---|
-| 1–3 | 3–4 minutos |
-| 4–7 | 4–5 minutos |
-| 8–12 | 4–5 minutos |
-| 13–15 | 5–6 minutos |
-| Secretas | 5–7 minutos |
+Casca: 600 HP, equivalente a cinco especiais de 120. Metamorfose: 2,4 s, sem transferência do dano excedente. Forma interna: 360 HP, três especiais. Arte útil ocupa aproximadamente 80%/100% da largura da arena. Segunda camada altera padrões/origens e oferece corredor de esquiva; tiros convencionais vencem ambas. Especiais não são requisito.
 
-Campanha principal planejada em 60–75 min, dependendo dos confrontos. Mudança perceptível a cada 30–45 s, acontecimento relevante a cada 60–90 s e uma situação/mecânica exclusiva por fase. Nunca preencher duração artificialmente. Rotas alternativas/partidas curtas devem ser avaliadas. Fases de 7–9 min exigem acontecimentos suficientes e recuperação justa perto do final.
+Colisão usa alfa do frame real e varredura entre frames: atingir bordas sólidas e respeitar vazios/concavidades. Não usar o quadrado da spritesheet nem só o centro. Contato aéreo explode o inimigo. Explosão pequena é breve; grandes inimigos e chefes têm várias detonações locais escalonadas, partículas e final maior na região atingida. Sem tremor de câmera.
 
-Na Fenda: oceano aberto → águas contaminadas → Raia-Dente → intensificação/destroços → fenda → Talassarca. O roteiro de cinco minutos é uma proposta de expansão, não um cronômetro já implementado. Medir partidas reais antes de prolongar a fase.
+## Fluxo, HUD e comandos
+
+Abertura → cinco pilotos → missão com retrato/fala pessoal → loading de 2,5 s → gameplay. Perfil e confirmação continuam dentro/sobre o card escolhido, exigindo duas ações. Somente a Fenda é selecionável. Sem tutorial obrigatório antes da partida.
+
+Laterais preservadas em preto fosco/carbono; arena lógica de 432 px dentro do canvas 768×432, sem margens externas. Esquerda: piloto, score, até cinco ícones de vida e cinco de especial. Direita: missão, arma/nível/P, avanço e canal discreto de comunicação. 275 falas, 55 por piloto, cinco por contexto, incluindo morte, revanche, medo, muitos inimigos, miniboss e quarta parede. Rádio com intervalos longos e seis segundos de leitura; não encobrir a arena.
+
+Pausa congela a gameplay e abre card menor/translúcido com botões verticais: **Continuar / Controles / Voltar ao menu**. Controles no mesmo card. Sair exige **Cancelar / Confirmar saída**, informando perda do progresso da fase atual. Sem reiniciar fase ou trocar piloto nesse card.
+
+Movimento: WASD/setas ou analógico/direcional. Disparo: Espaço ou botão sul, segurar mantém cadência rápida. Especial: X/botão oeste. Pausa: Esc/Menu. Mostrar identificação conforme controle conectado. Validar menus/perfis/resultados sem scroll/corte em 1366×768 e 1920×1080. Tipografia Oxanium/Rajdhani e abertura preservadas.
+
+## Áudio
+
+Trilha autoral de rock de aviação: melodias próprias, guitarra elétrica, baixo, piano, cordas e bateria acústica amostrada, sem reproduzir música de Top Gun, Fire Shark ou Sonic Wings. Três arranjos produzidos: abertura/menus, oceano, chefe. Alternar piano, guitarra e respostas melódicas ao longo de 32 compassos; evitar um único motivo curto repetido.
+
+Renderização: FluidSynth + GeneralUser GS; arquivos finais OGG, transporte com cache e uma faixa por vez. Créditos/licença em [áudio e produção](39_ELENCO_COMBATE_AUDIO.md) e [licença original](licenses/GeneralUser-GS.txt). Efeitos humanos de canhão com transientes mecânicos; alienígenas com cores/timbres diferenciados; impactos curtos e explosões com ataque definido e corpo grave. Limitar sobreposição.
+
+**Espaço: silêncio absoluto**, incluindo música, tiros, explosões e UI. A API de ambiente já silencia todo o master e impede reativação por mute. Fases espaciais permanecem planejamento e deverão usar esse ambiente.
+
+## Campanha, 100% e segredos
+
+Quinze capítulos principais planejados, duas fases secretas. Completar os 15 capítulos com um piloto libera seu final e as duas fases secretas; não exigir todos os pilotos para o primeiro 100%. Recordes, capítulos e final visto ficam separados por piloto. Duração estimada da rota principal: 30–60 min sem telas/mortes, conforme o alvo de 2–4 min; não é conteúdo já produzido.
+
+Bento é o piloto secreto e fica visível no desenvolvimento. Na versão de desbloqueio: completar uma campanha, iniciar o jogo novamente e digitar **WAKEBENTO** na abertura. O código não funciona com apenas a Fase 1 concluída. Chave de desenvolvimento pode ocultá-lo quando for hora de ativar a regra; sistema de progresso já está preparado. Fases secretas são IDs 16/17 e continuam indisponíveis na seleção enquanto não produzidas/aprovadas.
 
 ## Campanha planejada: quinze fases e finais secretos
 
@@ -109,13 +127,10 @@ O chefe final da Fase 15 é determinado estritamente pela primeira região escol
 - **Começou pela Metrópole (Fase 3):** **PRISMA ÓRFÃO — ARQUITETO DA RUPTURA** (estrutura geométrica colossal de cristal vivo com feixes hiper-focados).
 
 ### Finais Secretos — Fases 16 e 17
-A ordem completa de conclusão das três regiões iniciais determina a rota da transmissão desconhecida:
-- **Rotas Secretas A-B-C e B-C-A:** Desbloqueiam as Fases 16 e 17 (Final Verdadeiro).
-- **Rotas A-C-B e C-A-B:** Desbloqueiam a Fase 16 (Final Subterrâneo).
-- **Rotas B-A-C e C-B-A:** Encerram no Final Principal padrão.
+As ordens de rota A/B/C da proposta anterior não condicionam mais os segredos. Completar os quinze capítulos principais com um piloto desbloqueia as duas fases extras planejadas.
 
 * **Fase 16 — Abismo Subterrâneo:** Túneis nas profundezas da crosta terrestre onde a raiz da invasão se instalou. Chefe: *Coração Telúrico*.
-* **Fase 17 — Lua: Origem da Colmeia:** Complexo alienígena na superfície lunar. Chefe Final Verdadeiro: **MATRIZ PRIMORDIAL — A ORIGEM DO ENXAME** (entidade suprema em 4 fases devastadoras).
+* **Fase 17 — Lua: Origem da Colmeia:** Complexo alienígena na superfície lunar. Chefe Final Verdadeiro: **MATRIZ PRIMORDIAL — A ORIGEM DO ENXAME** (entidade suprema com casca, metamorfose e segunda camada, seguindo a regra 5/3 especiais).
 
 ---
 
@@ -123,7 +138,8 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
 ## Referências e histórico
 
 - [Fire Shark — manual Mega Drive](https://www.retrogames.cz/manualy/Genesis/Fire_Shark_-_Genesis_-_Manual.pdf).
-- [Sonic Wings 2 — manual](https://db.hfsplay.fr/files/2019/06/14/1aa6199e-35d2-456a-8a2f-e3513f37594e.pdf).
-- [Normal e suprimentos anteriores](37_FASE1_NORMAL_RITMO_POLIMENTO.md), [água/contato/áudio](35_FASE1_POLIMENTO_CONTATO_AGUA_AUDIO.md), [camadas e invasão](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md).
+- [Sonic Wings 2 — manual original](https://db.hfsplay.fr/files/2019/06/14/1aa6199e-35d2-456a-8a2f-e3513f37594e.pdf), páginas impressas 7–9: comandos, seleção e itens.
+- [Fire Shark — Toaplan](https://www.toaplangames.co.jp/en/license/license-09.html).
+- [FluidSynth oficial](https://www.fluidsynth.org/) e [GeneralUser GS do autor](https://github.com/mrbumpy409/GeneralUser-GS).
 
-Histórico de decisões antigas e implementações removidas pode ser consultado no Git. Esta versão não conserva regras conflitantes como se estivessem ativas.
+Documentos 28–38 são histórico; em conflitos prevalecem esta Bíblia e a revisão 39.

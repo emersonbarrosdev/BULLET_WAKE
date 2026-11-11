@@ -42,7 +42,7 @@
   margin: 0 0 clamp(10px, 1.3vh, 15px); font-size: clamp(13px, 1.2vw, 17px); letter-spacing: .15em; color: #ffb56e;
 }
 #bw-pilot-select .bw-pilot-cards {
-  width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: clamp(9px, 1.15vw, 20px); flex: 1 1 auto; min-height: 0;
   margin-top: clamp(18px, 2.2vh, 28px); margin-bottom: clamp(10px, 1.5vh, 18px);
 }
@@ -323,4 +323,16 @@
 #bw-pilot-select .bw-pilot-stat b{font-size:clamp(11px,.9vw,16px);}
 #bw-pilot-select .bw-pilot-portrait-wrap{width:min(66%,185px);}
 #bw-pilot-select .bw-pilot-ship-row span{font-size:clamp(12px,1vw,17px);}
+}
+
+/* Five compact arcade portraits; the desktop canvas retains its breathing space. */
+@media(min-width:951px){
+#bw-pilot-select .bw-pilot-cards{max-width:1660px;gap:clamp(9px,1.1vw,20px);}
+#bw-pilot-select .bw-pilot-card{padding-inline:clamp(7px,.75vw,13px);}
+#bw-pilot-select .bw-pilot-portrait-wrap{width:76%;max-width:172px;}
+#bw-pilot-select .bw-pilot-card-head small{font-size:clamp(10px,.78vw,14px);}
+#bw-pilot-select .bw-pilot-card-role{font-size:clamp(12px,1vw,18px);}
+#bw-pilot-select .bw-pilot-card-special{font-size:clamp(10px,.81vw,15px);}
+#bw-pilot-select .bw-pilot-stats{gap:5px;}
+#bw-pilot-select .bw-pilot-stat-bars i{width:clamp(4px,.4vw,7px);}
 }
