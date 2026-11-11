@@ -33,12 +33,19 @@ export class MissionResultOverlay extends Phaser.GameObjects.Container {
     };
     const onKey = (event: KeyboardEvent): void => {
       const key = event.key.toLowerCase();
+      if(['arrowleft','arrowright','arrowup','arrowdown','tab'].includes(key)){
+        event.preventDefault();event.stopImmediatePropagation();
+        selected=(selected+(['arrowleft','arrowup'].includes(key)||(key==='tab'&&event.shiftKey)?actions.length-1:1))%actions.length;
+        root.querySelectorAll<HTMLButtonElement>('button')[selected]?.focus();return;
+      }
+      if(key==='enter'||key===' '){event.preventDefault();event.stopImmediatePropagation();if(!event.repeat)activate(selected);return;}
+
       const index = actions.findIndex(a => a.key.toLowerCase() === key);
       if (index < 0 && key !== ' ') return;
       event.preventDefault(); event.stopImmediatePropagation();
       if (!event.repeat) activate(index < 0 ? 0 : index);
     };
-    root.querySelectorAll<HTMLButtonElement>('button').forEach((button, i) => button.addEventListener('click', () => activate(i)));
+    root.querySelectorAll<HTMLButtonElement>('button').forEach((button, i) => {button.addEventListener('focus',()=>selected=i);button.addEventListener('click', () => activate(i));});
     const poll = ():void => {
       if(handled)return;
       const pad=connectedPad(),p=reader.sample(pad);

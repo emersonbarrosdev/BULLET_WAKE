@@ -1,5 +1,7 @@
 # 00 — Visão e escopo do jogo
 
+> Estado vigente: [Bíblia V2](27_BULLET_WAKE_V2_DEFINITIVO.md) e [revisão de ritmo/elenco/contornos](38_RITMO_ELENCO_E_CONTORNOS.md). As definições históricas abaixo não substituem quatro pilotos, três vidas sem barra, especial único, ausência de dash/carga/míssil manual e foco exclusivo na Fase 1.
+
 > **Versão vigente:** shooter vertical top-down; Fase 1 sobre a superfície da Fenda Pelágica. Consulte a [Bíblia V2](27_BULLET_WAKE_V2_DEFINITIVO.md) e a [revisão atual de combate](31_FASE1_REVISAO_COMBATE.md). O planejamento horizontal abaixo é histórico. As fases seguintes permanecem bloqueadas até aprovação da primeira.
 
 ## Pitch

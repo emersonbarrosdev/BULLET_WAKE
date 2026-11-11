@@ -1,5 +1,7 @@
 # 02 — Três pilotos, três naves
 
+> Estado vigente: [Bíblia V2](27_BULLET_WAKE_V2_DEFINITIVO.md) e [revisão de ritmo/elenco/contornos](38_RITMO_ELENCO_E_CONTORNOS.md). As definições históricas abaixo não substituem quatro pilotos, três vidas sem barra, especial único, ausência de dash/carga/míssil manual e foco exclusivo na Fase 1.
+
 **Aprovados:** nomes, aparência-base, especialidade e especiais. **Somente propostas:** números e dimensões exatos.
 
 | Piloto | Nave | Mobilidade | Cadência | Dano | Especial |

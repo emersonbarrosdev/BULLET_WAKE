@@ -23,7 +23,7 @@ export class PilotSelectScene extends Phaser.Scene {
     if(p.left)this.select((this.selectedIndex+PILOTS.length-1)%PILOTS.length);
     if(p.right)this.select((this.selectedIndex+1)%PILOTS.length);
     if(p.confirm){if(this.chosenIndex===this.selectedIndex)this.startGame();else this.choose(this.selectedIndex);}
-    if(p.missile)this.setView(this.view==='profile'?'cards':'profile');
+    if(p.profile)this.setView(this.view==='profile'?'cards':'profile');
     if(p.back)this.handleKey(new KeyboardEvent('keydown',{key:'Escape'}));
   }
   private selectedIndex = 0;
@@ -36,7 +36,7 @@ export class PilotSelectScene extends Phaser.Scene {
   private readonly handleKey = (event: KeyboardEvent): void => {
     if (!this.root || event.ctrlKey || event.altKey || event.metaKey || event.repeat) return;
     const key = event.key.toLowerCase();
-    const supported = ['arrowleft', 'arrowright', 'a', 'd', '1', '2', '3', 'enter', ' ', 'escape', 'i'];
+    const supported = ['arrowleft', 'arrowright', 'a', 'd', '1', '2', '3', '4', 'enter', ' ', 'escape', 'i'];
     if (!supported.includes(key)) return;
     event.preventDefault();
     event.stopPropagation();
@@ -67,7 +67,7 @@ export class PilotSelectScene extends Phaser.Scene {
       this.setView(this.view === 'cards' ? 'profile' : 'cards');
       return;
     }
-    if (key >= '1' && key <= '3') {
+    if (key >= '1' && key <= '4') {
       this.select(Number(key) - 1);
     } else if (key === 'arrowleft' || key === 'a') {
       this.select((this.selectedIndex + PILOTS.length - 1) % PILOTS.length);
@@ -274,12 +274,12 @@ export class PilotSelectScene extends Phaser.Scene {
       ? '[← →] TROCAR PILOTO · [ESC] FECHAR PERFIL'
       : chosen
         ? `${pilot.name.toUpperCase()} ESCOLHIDO · [ENTER] CONFIRMAR · [ESC] CANCELAR`
-        : '[← → / 1 2 3] NAVEGAR · [ENTER] ESCOLHER · [ESC] VOLTAR';
+        : '[← → / 1 2 3 4] NAVEGAR · [ENTER] ESCOLHER · [ESC] VOLTAR';
   }
 
   private leaveSelection(): void {
     this.cleanup();
-    this.scene.start('TitleScene');
+    this.scene.start('StageSelectScene');
   }
 
   private startGame(): void {

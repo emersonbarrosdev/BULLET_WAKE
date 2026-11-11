@@ -3,13 +3,14 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { getPilot, PILOTS, shotIntervalMs } from '../src/game/data/pilots.ts';
 
-test('three approved pilot and ship names are preserved', () => {
+test('four approved pilot and ship names are preserved', () => {
   assert.deepEqual(PILOTS.map(p => [p.name, p.shipName]), [
     ['Nolan Fitch', 'Rivet'],
     ['Cora Wren', 'Moth'],
     ['Harlan Greer', 'Knuckle'],
+    ['Lyra Voss','Kestrel'],
   ]);
-  assert.equal(new Set(PILOTS.map(p => p.id)).size, 3);
+  assert.equal(new Set(PILOTS.map(p => p.id)).size, 4);
 });
 
 test('pilots have different speed, cadence and damage', () => {
@@ -35,8 +36,8 @@ test('fire intervals reflect cadence, with three valid distinct pilots', () => {
 });
 
 test('each pilot keeps own color and planned special name', () => {
-  assert.equal(new Set(PILOTS.map(p => p.specialName)).size, 3);
-  assert.equal(new Set(PILOTS.map(p => p.accentColor)).size, 3);
+  assert.equal(new Set(PILOTS.map(p => p.specialName)).size, 4);
+  assert.equal(new Set(PILOTS.map(p => p.accentColor)).size, 4);
 });
 
 test('each pilot has complete tactical profile, callsign, and valid 64x64 portrait PNG', () => {

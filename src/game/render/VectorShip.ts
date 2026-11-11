@@ -54,6 +54,7 @@ const PALETTES: Record<string, Palette> = {
  * 2. 'profile': Perfil lateral aeronáutico elegante para cards e interfaces de seleção.
  */
 export class VectorShip extends Phaser.GameObjects.Container {
+  get hullSprite(): Phaser.GameObjects.Sprite | undefined { return this.paintedRivet; }
   readonly halfWidth: number;
   readonly halfHeight: number;
   readonly hitRadius = 4.5; // Pickup collection only; damage uses hullCollision.ts.
@@ -65,7 +66,7 @@ export class VectorShip extends Phaser.GameObjects.Container {
   private readonly coreDot: Phaser.GameObjects.Graphics;
   private readonly palette: Palette;
   private readonly paintedRivet?: Phaser.GameObjects.Sprite;
-  private readonly paintedExhaust: Phaser.GameObjects.Sprite[] = [];
+
 
   private bankAngle = 0;
   private targetBankAngle = 0;
@@ -88,20 +89,16 @@ export class VectorShip extends Phaser.GameObjects.Container {
     this.viewMode = viewMode;
     this.palette = PALETTES[pilotId] || PALETTES.nolan;
 
-    this.halfWidth = viewMode === 'profile' ? 22 : pilotId==='nolan'?18:14;
-    this.halfHeight = viewMode === 'profile' ? 10 : pilotId==='nolan'?20:16;
+    this.halfWidth = viewMode === 'profile' ? 22 : pilotId==='nolan'?16:14;
+    this.halfHeight = viewMode === 'profile' ? 10 : pilotId==='nolan'?17:16;
 
     this.graphics = scene.add.graphics();
     this.shieldGraphics = scene.add.graphics();
     this.coreDot = scene.add.graphics();
 
     this.add([this.shieldGraphics, this.graphics, this.coreDot]);
-    if (pilotId === 'nolan' && viewMode === 'top-down' && scene.textures.exists('hd-rivet')) {
-      if(scene.textures.exists('polish-fire'))for(const x of [-5,0,5]){
-        const plume=scene.add.sprite(x,22,'polish-fire',0).setDisplaySize(4,10).setRotation(Math.PI).setAlpha(.85);
-        this.paintedExhaust.push(plume);this.addAt(plume,1);
-      }
-      this.paintedRivet = scene.add.sprite(0, 0, 'hd-rivet', 0).setDisplaySize(46, 46);
+    if ((pilotId === 'nolan'||pilotId==='lyra') && viewMode === 'top-down' && scene.textures.exists(pilotId==='lyra'?'hd-kestrel':'hd-rivet')) {
+      this.paintedRivet = scene.add.sprite(0, 0, pilotId==='lyra'?'hd-kestrel':'hd-rivet', 0).setDisplaySize(40, 40);
       this.addAt(this.paintedRivet, 2);
     }
     this.setDepth(15);
@@ -135,7 +132,7 @@ export class VectorShip extends Phaser.GameObjects.Container {
 
     const lerpRate = Math.min(1, (dt * 14) / 1000);
     this.bankAngle += (this.targetBankAngle - this.bankAngle) * lerpRate;
-    this.rotation = this.bankAngle * 0.40;
+    this.rotation = 0; // Orthographic view; lateral travel never tilts the image plane.
 
     // 2. Animação de propulsão e estados de combate
     this.flamePhase += dt * 0.04;
@@ -168,7 +165,7 @@ export class VectorShip extends Phaser.GameObjects.Container {
       return;
     }
 
-    const roll = this.bankAngle;
+    const roll = 0;
 
     // Renderiza a silhueta top-down autêntica de cada caça
     if (this.pilotId === 'cora') {
@@ -176,19 +173,12 @@ export class VectorShip extends Phaser.GameObjects.Container {
     } else if (this.pilotId === 'harlan') {
       this.drawKnuckleTopDown(g, p, roll, isDashing);
     } else if (this.paintedRivet) {
-      const frame = roll < -.05 ? 2 : roll > .05 ? 3 : Math.floor(this.flamePhase / 5) % 2;
+      const frame = Math.floor(this.flamePhase / 5) % 2;
       this.paintedRivet.setFrame(frame);
-      // Bank poses keep their silhouette; the three exhausts animate independently.
-      this.paintedExhaust.forEach((plume,i)=>plume.setFrame((Math.floor(this.flamePhase/3)+i*2)%8).setDisplaySize(isDashing?5:4,isDashing?18:10));
       if (this.isHit) this.paintedRivet.setTint(0xffbdb4);
       else this.paintedRivet.clearTint();
       // The animated muzzle sprite owns firing feedback; no flat oval over the nose.
-      if (isDashing) {
-        for (const x of [-5, 0, 5]) {
-          g.fillStyle(0xffa83d, .45);
-          g.fillTriangle(x - 2, 19, x + 2, 19, x, 37 + Math.sin(this.flamePhase) * 2);
-        }
-      }
+
     } else {
       this.drawRivetTopDown(g, p, roll, isDashing);
     }

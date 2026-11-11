@@ -1,243 +1,79 @@
 import Phaser from 'phaser';
-import { FONT_HUD, FONT_TECH, FONT_TITLE, GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from '../constants';
-import { STAGES, type StageDefinition } from '../data/stages';
-import { StageBackdrop } from './StageBackdrop';
-import { saveSystem } from '../systems/saveSystem.ts';
-import { globalAudio } from '../audio/audioSystem.ts';
+import { connectedPad, GamepadReader, padLabels } from '../systems/gamepadInput';
+import '../../combat-briefing.css';
 
-interface StageCard {
-  panel: Phaser.GameObjects.Rectangle;
-  title: Phaser.GameObjects.Text;
-  subtitle: Phaser.GameObjects.Text;
-  bossText: Phaser.GameObjects.Text;
-  scoreText: Phaser.GameObjects.Text;
-  stageNumber: number;
-  unlocked: boolean;
-}
-
+/** Only the produced mission is selectable; campaign routes remain in the Bible. */
 export class StageSelectScene extends Phaser.Scene {
-  private selectedIndex = 0;
-  private backdrop!: StageBackdrop;
-  private previewDistance = 0;
-  private cards: StageCard[] = [];
-  private briefingText!: Phaser.GameObjects.Text;
+  private root?: HTMLDivElement;
+  private pad = new GamepadReader();
+  private selection = 0;
+  private device?: string;
 
-  constructor() {
-    super({ key: 'StageSelectScene' });
+  constructor() { super({ key: 'StageSelectScene' }); }
+
+  private launch = () => this.scene.start('PilotSelectScene', { stageNumber: 1 });
+  private back = () => this.scene.start('TitleScene');
+  private buttons() { return Array.from(this.root?.querySelectorAll<HTMLButtonElement>('button') ?? []); }
+
+  private move(direction: number): void {
+    const buttons = this.buttons();
+    if (!buttons.length) return;
+    this.selection = (this.selection + direction + buttons.length) % buttons.length;
+    buttons[this.selection]?.focus();
   }
+
+  private key = (event: KeyboardEvent): void => {
+    if (event.repeat) return;
+    if (['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'].includes(event.key)) {
+      event.preventDefault();
+      this.move(event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1);
+    }
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.buttons()[this.selection]?.click();
+    }
+    if (event.key === 'Escape') this.back();
+  };
 
   create(): void {
-    this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
-    this.selectedIndex = 0;
-    this.cards = [];
-    this.previewDistance = 0;
-
-    const data = saveSystem.getSaveData();
-
-    this.backdrop = new StageBackdrop(this, 1, { fullWidth: true, showBezels: false });
-
-    // Cabeçalho
-    this.add.rectangle(GAME_WIDTH / 2, 44, GAME_WIDTH, 84, 0x050e18, 0.88).setDepth(10);
-    this.add.text(GAME_WIDTH / 2, 12, 'BULLET WAKE', {
-      fontFamily: FONT_TITLE,
-      fontSize: '26px',
-      color: '#ffffff',
-      letterSpacing: 3,
-    }).setOrigin(0.5, 0).setResolution(2).setDepth(11);
-
-    this.add.text(GAME_WIDTH / 2, 48, 'COORDENADAS DE MISSÃO E SELEÇÃO DE SETORES', {
-      fontFamily: FONT_TECH,
-      fontSize: '13px',
-      color: '#00f0ff',
-      letterSpacing: 2,
-    }).setOrigin(0.5, 0).setResolution(2).setDepth(11);
-
-    // Cards horizontais das 5 fases
-    const startX = 84;
-    const spacingX = 150;
-    const cardY = 175;
-
-    STAGES.forEach((stageDef: StageDefinition, index: number) => {
-      const x = startX + index * spacingX;
-      // Regra Estrita de Escopo V2: Somente a Fase 1 (Fenda Pelágica) é jogável nesta versão
-      const unlocked = stageDef.stageNumber === 1;
-      const bestScore = data.bestScores[stageDef.stageNumber]?.score || 0;
-
-      const panel = this.add
-        .rectangle(x, cardY, 138, 160, unlocked ? 0x0c1b2c : 0x081018, 0.94)
-        .setStrokeStyle(1, unlocked ? 0x22425e : 0x14212e)
-        .setInteractive({ useHandCursor: unlocked })
-        .setDepth(10);
-
-      const title = this.add.text(
-        x,
-        cardY - 68,
-        `FASE 0${stageDef.stageNumber}`,
-        {
-          fontFamily: FONT_TITLE,
-          fontSize: '14px',
-          fontStyle: 'bold',
-          color: unlocked ? '#00f0ff' : '#64748b',
-        },
-      ).setOrigin(0.5, 0).setResolution(3).setDepth(11);
-
-    const subtitle = this.add.text(
-      x,
-      cardY - 46,
-      stageDef.title.toUpperCase(),
-      {
-        fontFamily: FONT_TECH,
-        fontSize: '12px',
-        color: unlocked ? '#ffffff' : '#475569',
-        fontStyle: 'bold',
-      },
-      ).setOrigin(0.5, 0).setResolution(3).setDepth(11);
-
-    const bossText = this.add.text(
-      x,
-      cardY - 12,
-      unlocked ? `CHEFE:\n${stageDef.bossName}` : '[BLOQUEADA]',
-      {
-        fontFamily: FONT_TECH,
-        fontSize: '12px',
-        fontStyle: 'bold',
-        color: unlocked ? '#facc15' : '#64748b',
-        align: 'center',
-      },
-      ).setOrigin(0.5, 0).setResolution(3).setDepth(11);
-
-    const scoreText = this.add.text(
-      x,
-      cardY + 40,
-      unlocked ? `RECORDE:\n${bestScore.toString().padStart(6, '0')}` : '---',
-      {
-        fontFamily: FONT_TECH,
-        fontSize: '12px',
-        fontStyle: 'bold',
-        color: unlocked ? '#34d399' : '#475569',
-        align: 'center',
-      },
-      ).setOrigin(0.5, 0).setResolution(3).setDepth(11);
-
-    panel.on('pointerdown', () => {
-      if (unlocked) {
-        this.selectStage(index);
-        this.launchStage();
-      }
+    this.selection = 0;
+    this.device = undefined;
+    this.pad.sample(connectedPad());
+    this.root = document.createElement('div');
+    this.root.className = 'bw-briefing bw-mission-select';
+    this.root.innerHTML = `<section class="bw-brief-panel">
+      <p class="bw-brief-eyebrow">BULLET WAKE // OPERAÇÕES</p><h1>ESCOLHA SUA MISSÃO</h1>
+      <button class="bw-mission-card" data-mission="1">
+        <img src="${import.meta.env.BASE_URL}assets/combat-hd/ocean.webp" alt="Oceano da Fenda Pelágica"/>
+        <span>MISSÃO 01</span><strong>FENDA PELÁGICA</strong>
+        <small>Oceano aberto · invasão alienígena · Talassarca</small>
+      </button>
+      <p class="bw-brief-note">Intercepte os organismos invasores. Atravesse as águas contaminadas e encontre a origem da fenda.</p>
+      <nav><button data-mission-action="launch">ESCOLHER PILOTO · ENTER</button><button data-mission-action="back">VOLTAR · ESC</button></nav>
+    </section>`;
+    document.body.append(this.root);
+    this.buttons().forEach((button, index) => button.addEventListener('focus', () => this.selection = index));
+    this.root.querySelector('[data-mission]')!.addEventListener('click', this.launch);
+    this.root.querySelector('[data-mission-action="launch"]')!.addEventListener('click', this.launch);
+    this.root.querySelector('[data-mission-action="back"]')!.addEventListener('click', this.back);
+    document.addEventListener('keydown', this.key);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      document.removeEventListener('keydown', this.key);
+      this.root?.remove(); this.root = undefined;
     });
-    panel.on('pointerover', () => {
-      if (unlocked) this.selectStage(index);
-    });
-
-    this.cards.push({
-      panel,
-      title,
-      subtitle,
-      bossText,
-      scoreText,
-      stageNumber: stageDef.stageNumber,
-      unlocked,
-    });
-  });
-
-    // Painel de Briefing e Inteligência da Missão
-    this.add.rectangle(GAME_WIDTH / 2, 310, GAME_WIDTH - 80, 80, 0x071320, 0.94)
-  .setStrokeStyle(1, 0x1e3a5f).setDepth(10);
-
-this.briefingText = this.add.text(
-  GAME_WIDTH / 2,
-  282,
-  '',
-  {
-    fontFamily: FONT_TECH,
-    fontSize: '12px',
-    color: '#93c5fd',
-    align: 'center',
-  },
-).setOrigin(0.5, 0).setResolution(2).setDepth(11);
-
-// Rodapé de navegação
-this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 22, GAME_WIDTH, 44, 0x050e18, 0.92).setDepth(10);
-
-const backBtn = this.add.rectangle(130, GAME_HEIGHT - 22, 190, 32, 0x1e293b)
-  .setStrokeStyle(1, 0x475569).setInteractive({ useHandCursor: true }).setDepth(11);
-this.add.text(130, GAME_HEIGHT - 22, 'VOLTAR AO MENU [ESC]', {
-  fontFamily: FONT_HUD,
-  fontSize: '12px',
-  color: '#94a3b8',
-  fontStyle: 'bold',
-  letterSpacing: 1,
-}).setOrigin(0.5).setResolution(2).setDepth(12);
-backBtn.on('pointerdown', () => this.backToMenu());
-
-const startBtn = this.add.rectangle(GAME_WIDTH - 140, GAME_HEIGHT - 22, 210, 32, 0x0e7490)
-  .setStrokeStyle(1, 0x38bdf8).setInteractive({ useHandCursor: true }).setDepth(11);
-this.add.text(GAME_WIDTH - 140, GAME_HEIGHT - 22, 'INICIAR MISSÃO [ENTER]', {
-  fontFamily: FONT_HUD,
-  fontSize: '12px',
-  color: '#ffffff',
-  fontStyle: 'bold',
-  letterSpacing: 1,
-}).setOrigin(0.5).setResolution(2).setDepth(12);
-startBtn.on('pointerdown', () => this.launchStage());
-
-this.selectStage(0);
-
-// Teclado
-const kb = this.input.keyboard;
-if (kb) {
-  kb.on('keydown-LEFT', () => this.moveSelection(-1));
-  kb.on('keydown-RIGHT', () => this.moveSelection(1));
-  kb.on('keydown-ENTER', () => this.launchStage());
-  kb.on('keydown-SPACE', () => this.launchStage());
-  kb.on('keydown-ESC', () => this.backToMenu());
-}
   }
 
-update(_time: number, delta: number): void {
-  this.previewDistance += Math.min(delta, 50) * 0.026;
-  this.backdrop.update(this.previewDistance);
-}
-
-  private moveSelection(dir: number): void {
-  const next = (this.selectedIndex + dir + STAGES.length) % STAGES.length;
-  this.selectStage(next);
-}
-
-  private selectStage(index: number): void {
-  this.selectedIndex = index;
-  const stageDef = STAGES[index];
-  const card = this.cards[index];
-
-  this.cards.forEach((c, idx) => {
-    const isSelected = idx === index;
-    if (c.unlocked) {
-      c.panel.setStrokeStyle(isSelected ? 2 : 1, isSelected ? 0x00f0ff : 0x22425e);
-      c.panel.setFillStyle(isSelected ? 0x16304a : 0x0c1b2c, 0.95);
+  update(): void {
+    const pad = connectedPad(), commands = this.pad.sample(pad);
+    if (this.device !== (pad?.id ?? '')) {
+      this.device = pad?.id ?? '';
+      const labels = padLabels(pad?.id);
+      this.root!.querySelector('[data-mission-action="launch"]')!.textContent = 'ESCOLHER PILOTO · ' + (pad ? labels.shoot : 'ENTER');
+      this.root!.querySelector('[data-mission-action="back"]')!.textContent = 'VOLTAR · ' + (pad ? labels.back : 'ESC');
     }
-  });
-
-  if(card && card.unlocked) {
-  this.briefingText.setText(
-    `BRIEFING DE COMBATE // FASE 0${stageDef.stageNumber}: ${stageDef.title.toUpperCase()}\n` +
-    `BIOMA: ${stageDef.biome.toUpperCase()}  |  ALVO PRIMÁRIO: ${stageDef.bossName.toUpperCase()}\n` +
-    `RELATÓRIO: Setor hostil ativo com patrulhas pesadas e armamentos de área.`,
-  );
-} else {
-  this.briefingText.setText(
-    `COORDENADAS BLOQUEADAS // CONCLUA AS FASES ANTERIORES PARA SINTONIZAR O SINAL DE RASTRO.`,
-  );
-}
+    if (commands.left || commands.up) this.move(-1);
+    if (commands.right || commands.down) this.move(1);
+    if (commands.confirm) this.buttons()[this.selection]?.click();
+    if (commands.back) this.back();
   }
-
-  private launchStage(): void {
-  const card = this.cards[this.selectedIndex];
-  if(!card || !card.unlocked) return;
-globalAudio.playPickup('upgrade');
-this.scene.start('PilotSelectScene', { stageNumber: card.stageNumber });
-  }
-
-  private backToMenu(): void {
-  this.scene.start('TitleScene');
-}
 }

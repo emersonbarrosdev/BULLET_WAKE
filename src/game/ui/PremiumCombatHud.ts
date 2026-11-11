@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 import '../../combat-hud.css';
-import { MAX_HP, type PlayerHealth } from '../systems/combat';
+import { type PlayerHealth } from '../systems/combat';
 import type { SectorId } from '../systems/stageDirector';
 import type { WeaponLevel, WeaponFamily } from '../systems/weaponSystem';
-import { formatDashIndicator } from '../systems/dashSystem';
+import { getPilot } from '../data/pilots';
 
 const sectors: Record<SectorId, string> = {
   evacuacao: 'ÁGUAS COSTEIRAS', destrocos: 'RECIFE DOS CASULOS',
@@ -25,14 +25,15 @@ export class PremiumCombatHud {
     this.root.id = 'bw-combat-hud';
     this.root.innerHTML = `
       <aside class="bw-combat-side bw-combat-left" aria-label="Telemetria do piloto">
-        <div class="bw-combat-wordmark">BULLET <em>WAKE</em><small>COMBAT OPERATIONS // 01</small></div>
+        <div class="bw-combat-wordmark">BULLET <em>WAKE</em></div>
         <section class="bw-combat-panel bw-combat-identity">
           <img data-field="portrait" src="${import.meta.env.BASE_URL}assets/pilot-selection/portrait-nolan.webp" alt="Nolan Fitch" />
           <div><small>OPERADOR</small><strong data-field="name">NOLAN FITCH</strong><b data-field="ship">RIVET</b></div>
         </section>
-        <section class="bw-combat-panel bw-combat-health"><small>INTEGRIDADE <i data-field="shield"></i></small><div class="bw-hull-bar" role="progressbar" aria-label="Vida da nave" aria-valuemin="0" aria-valuemax="100"><i data-field="health"></i><b data-field="integrity">100 / 100</b></div></section>
-        <section class="bw-combat-panel bw-combat-survival"><small>RECURSOS DE SOBREVIVÊNCIA</small><div class="bw-combat-resource"><div class="bw-combat-line"><span>DASH <b data-field="dash-count">3/3</b></span></div><strong data-field="dash">◆ ◆ ◆</strong></div><div class="bw-combat-resource"><small>ESPECIAL </small><div class="bw-combat-line"><strong data-field="special-stock">2 / 3</strong><b data-field="special">PRONTO</b></div></div></section>
-        <div class="bw-combat-bottom"><button type="button" data-action="restart">PAUSAR / OPÇÕES</button><small>RIVET // VANGUARD SQUADRON</small></div>
+        <section class="bw-combat-panel bw-combat-score-panel"><small>PONTUAÇÃO <i data-field="combo"></i></small><strong class="bw-combat-score" data-field="score">000000</strong></section>
+        <section class="bw-combat-panel"><div class="bw-combat-line"><small>VIDAS</small><b data-field="lives-count">3</b></div><div class="bw-resource-icons bw-life-icons" data-field="lives" aria-label="3 vidas"><i></i><i></i><i></i></div><small data-field="shield"></small></section>
+        <section class="bw-combat-panel"><div class="bw-combat-line"><small>ESPECIAL</small><b data-field="special">PRONTO</b></div><div class="bw-resource-icons bw-special-icons" data-field="special-stock" aria-label="2 especiais"><i></i><i></i><i></i></div></section>
+        <div class="bw-combat-bottom"><button type="button" data-action="restart">PAUSAR / OPÇÕES</button></div>
       </aside>
       <div class="bw-combat-center">
         <div class="bw-combat-boss" hidden><small data-field="boss-name"></small><div><i data-field="boss-fill"></i></div></div>
@@ -40,9 +41,9 @@ export class PremiumCombatHud {
       </div>
       <aside class="bw-combat-side bw-combat-right" aria-label="Telemetria de armamento">
         <div class="bw-combat-mission"><small>OPERAÇÃO PELÁGICA</small><strong>FENDA PELÁGICA</strong><span data-field="sector">ÁGUAS COSTEIRAS</span></div>
-        <section class="bw-combat-panel bw-combat-armament"><small>ARMA EQUIPADA</small><strong class="bw-combat-weapon" data-field="weapon">DISPERSÃO AZUL</strong><div class="bw-combat-line"><span>POTÊNCIA</span><b data-field="level">NV 1/4</b></div><div class="bw-combat-pips" data-field="pips"><i></i><i></i><i></i><i></i></div><div class="bw-combat-evolution"><div class="bw-combat-line"><small data-field="power-title">PRÓXIMO NÍVEL · P</small><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i>P</i><i>P</i><i>P</i></div></div></section>
-        <section class="bw-combat-panel bw-combat-results"><small>PONTUAÇÃO <i data-field="combo"></i></small><strong class="bw-combat-score" data-field="score">000000</strong><small>AVANÇO DA OPERAÇÃO</small><div class="bw-combat-progress"><i data-field="progress"></i></div></section>
-        <div class="bw-combat-bottom"><span class="bw-combat-hint" data-field="charge"></span><small>EVOLUÇÃO EM CASCATA</small><span>AZUL → VERDE → RUBRO</span></div>
+        <section class="bw-combat-panel bw-combat-armament"><small>ARMA EQUIPADA</small><strong class="bw-combat-weapon" data-field="weapon">DISPERSÃO AZUL</strong><div class="bw-combat-line"><span>POTÊNCIA</span><b data-field="level">NV 1/4</b></div><div class="bw-combat-pips" data-field="pips"><i></i><i></i><i></i><i></i></div><div class="bw-combat-evolution"><div class="bw-combat-line"><small data-field="power-title">PRÓXIMO NÍVEL</small><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i>P</i><i>P</i><i>P</i></div></div></section>
+        <section class="bw-combat-panel bw-combat-results"><small>TRAJETO DA MISSÃO</small><div class="bw-combat-progress"><i data-field="progress"></i></div></section>
+        <div class="bw-combat-bottom"><small>FENDA PELÁGICA // FASE 01</small></div>
       </aside>`;
     this.root.querySelectorAll<HTMLElement>('[data-field]').forEach(node => this.fields.set(node.dataset.field!, node));
     document.body.append(this.root);
@@ -64,37 +65,38 @@ export class PremiumCombatHud {
     this.field(name).querySelectorAll('i').forEach((node, i) => node.classList.toggle('bw-active', i < active));
   }
   setPilot(id: string, shipName: string): void {
-    const name = id === 'cora' ? 'Cora Wren' : id === 'harlan' ? 'Harlan Greer' : 'Nolan Fitch';
+    const name = getPilot(id).name;
     const portrait = this.field('portrait') as HTMLImageElement;
     portrait.src = `${import.meta.env.BASE_URL}assets/pilot-selection/portrait-${id}.webp`; portrait.alt = name;
     this.text('name', name.toUpperCase()); this.text('ship', shipName.toUpperCase());
+    this.field('lives').style.setProperty('--life-image', `url('${new URL(`${import.meta.env.BASE_URL}assets/combat-hd/${id==='lyra'?'kestrel':'rivet'}.webp`, document.baseURI).href}')`);
   }
   setScore(score: number, comboCount = 0, multiplier = 1): void {
     this.text('score', String(Math.max(0, Math.floor(score))).padStart(6, '0'));
     this.text('combo', comboCount > 1 ? `×${multiplier.toFixed(1)}` : '');
   }
   setHealth(state: PlayerHealth, shield = false): void {
-    const percent=Math.max(0,Math.min(100,state.hp/MAX_HP*100)); this.field('health').style.width=percent+'%';this.field('health').parentElement!.setAttribute('aria-valuenow',String(percent));this.text('integrity',Math.ceil(state.hp)+' / '+MAX_HP); this.text('shield', shield ? 'ESCUDO' : '');
-  }
-  setDash(remaining: number, max = 3): void {
-    const n = Math.max(0, Math.min(max, remaining));
-    this.text('dash', formatDashIndicator(n, max)); this.text('dash-count', `${n}/${max}`); this.field('dash').style.opacity = n === 0 ? '.35' : '1';
+    this.text('lives-count',String(state.lives));this.segments('lives',state.lives);
+    this.field('lives').setAttribute('aria-label',`${state.lives} vidas`);
+    this.text('shield',shield?'ESCUDO ATIVO':'');
   }
   setWeapon(family: WeaponFamily, level: WeaponLevel, powerMeter = 0): void {
     const color = family === 'ion' ? '#79deff' : family === 'green' ? '#86efac' : '#ff735e';
     this.text('weapon', family === 'ion' ? 'DISPERSÃO AZUL' : family === 'green' ? 'ENERGIA ESPIRALADA' : 'LASER RUBRO');
     this.field('weapon').style.color = color; this.field('pips').style.setProperty('--weapon', color);
     this.text('level', `NV ${level}/4`); this.segments('pips', level); this.setPowerMeter(powerMeter, level);
-    this.text('power-title',level<4?'PRÓXIMO NÍVEL · P':family==='red'?'POTÊNCIA MÁXIMA':'EVOLUÇÃO LIBERADA');
+    this.text('power-title',level<4?'PRÓXIMO NÍVEL':family==='red'?'POTÊNCIA MÁXIMA':'EVOLUÇÃO LIBERADA');
   }
   setPowerMeter(meter: number, level: WeaponLevel): void {
     this.text('power', level >= 4 ? `RESERVA ${Math.max(0, Math.min(3, meter))}/3` : `${Math.max(0, Math.min(3, meter))} / 3`); this.segments('power-segments', meter);
   }
   setHeat(_heat: number, _isOverheated: boolean): void { /* Autofire never blocks for heat. */ }
-  setSpecialStock(n: number, active=false): void { this.text('special-stock', `${Math.max(0,Math.min(3,n))} / 3`); this.text('special', active?'ATIVO':n>0?'PRONTO':'VAZIO'); }
-  setMissileReady(_ready: boolean): void { /* M keeps its existing binding. */ }
+  setSpecialStock(n: number, active=false): void {
+    const count=Math.max(0,Math.min(3,n));this.segments('special-stock',count);
+    this.field('special-stock').setAttribute('aria-label',`${count} especiais`);
+    this.text('special',active?'ATIVO':count>0?'PRONTO':'VAZIO');
+  }
   setProgress(ratio: number): void { this.field('progress').style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`; }
-  setCharge(_ms: number, _max: number, charging: boolean): void { this.text('charge', charging ? 'CARREGANDO WAVE CANNON…' : ''); }
   setSector(sector: SectorId): void { this.text('sector', sectors[sector]); this.flash(`SETOR: ${sectors[sector]}`, '#dedede', 650); }
   showBossBar(name: string, hp: number, max: number): void {
     this.root.querySelector<HTMLElement>('.bw-combat-boss')!.hidden = false;

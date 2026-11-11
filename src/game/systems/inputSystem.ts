@@ -1,6 +1,6 @@
 import { connectedPad, GamepadReader } from './gamepadInput.ts';
-/** Keyboard: WASD/arrows, Space fire, Shift dash, X special, C charge, M missile, Esc pause.
- * Standard gamepad: left stick/D-pad, South fire, West special, RB dash, LT charge, North missile, Menu pause.
+/** Keyboard: WASD/arrows, held Space rapid fire, X special, Esc pause.
+ * Standard gamepad: left stick/D-pad, South fire, West special, Menu pause.
  * Mouse remains menu-only; Android controls are deferred until Phase 1 approval.
  */
 export interface RawInputFrame {
@@ -113,18 +113,18 @@ export function processInputFrame(input: RawInputFrame): PlayerActionCommands {
   const firePrimaryTap = Boolean(input.keySpaceJustDown);
 
   // 5. Dash / Propulsão de Emergência: SHIFT
-  const dashTrigger = Boolean(input.keyShiftJustDown);
+  const dashTrigger = false;
 
   // 6. Carga de Arma: Tecla C
-  const chargeHeld = Boolean(input.keyC);
-  const chargeReleased = Boolean(input.keyCJustUp);
+  const chargeHeld = false;
+  const chargeReleased = false;
 
   // 7. One canonical special key; legacy aliases must not consume charges.
   const bomb = false;
   const special = Boolean(input.keyXJustDown);
 
   // 8. Secundário / Mísseis (M)
-  const missile = Boolean(input.keyMJustDown);
+  const missile = false;
 
   // 9. Reinício (R) e Pausa (ESC)
   const restart = false; // Restart is deliberate through the pause menu.
@@ -168,7 +168,7 @@ export class InputManager {
   private prevCDown = false;
   private pad = new GamepadReader();
   private hadPad = false;
-  resetPad(): void { this.pad.sample(connectedPad()); }
+  resetPad(): void { const pad=connectedPad();this.pad.sample(pad);this.hadPad=!!pad; }
 
   private keys?: Record<
     'W' | 'A' | 'S' | 'D' | 'SPACE' | 'SHIFT' | 'C' | 'X' | 'V' | 'M' | 'B' | 'R' | 'ESC',
@@ -260,9 +260,9 @@ export class InputManager {
       moveY: keyboard.moveX || keyboard.moveY ? keyboard.moveY : pad.moveY,
       firePrimary: keyboard.firePrimary || pad.firePrimary,
       firePrimaryTap: keyboard.firePrimaryTap || pad.firePrimaryTap,
-      special: keyboard.special || pad.special, dashTrigger: keyboard.dashTrigger || pad.dashTrigger,
-      chargeHeld: keyboard.chargeHeld || pad.chargeHeld, chargeReleased: keyboard.chargeReleased || pad.chargeReleased,
-      missile: keyboard.missile || pad.missile, menuOrBack: keyboard.menuOrBack || pad.menuOrBack || disconnected,
+      special: keyboard.special || pad.special, dashTrigger: false,
+      chargeHeld: false, chargeReleased: false,
+      missile: false, menuOrBack: keyboard.menuOrBack || pad.menuOrBack || disconnected,
     };
   }
 }

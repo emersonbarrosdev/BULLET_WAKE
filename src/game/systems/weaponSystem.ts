@@ -11,7 +11,7 @@ import { getPilot, type PilotId } from '../data/pilots.ts';
 
 export type WeaponFamily = 'green' | 'ion' | 'red';
 export type WeaponLevel = 1 | 2 | 3 | 4;
-export type SpecialType = 'prism' | 'phantom' | 'nova';
+export type SpecialType = 'prism' | 'phantom' | 'nova' | 'orbital';
 
 export interface ProjectileSpawnDef {
   texture: string;
@@ -82,14 +82,14 @@ export interface WeaponSpecs {
 
 export const WEAPON_FAMILY_SPECS: Record<WeaponFamily, WeaponSpecs> = {
   green: {
-    autoIntervalMs: 310,
+    autoIntervalMs: 180,
     burstIntervalMs: 180,
     heatPerShot: 7,
     coolingRatePerSec: 45,
     displayName: 'ENERGIA ESPIRALADA',
   },
   ion: {
-    autoIntervalMs: 280,
+    autoIntervalMs: 160,
     burstIntervalMs: 160,
     heatPerShot: 8,
     coolingRatePerSec: 50,
@@ -114,6 +114,7 @@ export const PILOT_WEAPON_SPECS: Record<string, WeaponSpecs> = {
 };
 
 export const SPECIAL_DURATIONS: Record<SpecialType, number> = {
+  orbital: 2200,
   prism: 3000,  // Nolan: Tempestade Prismática
   phantom: 650, // Cora: Salto Fantasma
   nova: 900,    // Harlan: Ruptura Nova
@@ -122,7 +123,7 @@ export const SPECIAL_DURATIONS: Record<SpecialType, number> = {
 export function createPlayerWeapons(pilotId: PilotId = 'nolan', initialFamily: WeaponFamily = 'ion'): PlayerWeaponsState {
   const pilot = getPilot(pilotId);
   const specialType: SpecialType =
-    pilot.id === 'cora' ? 'phantom' : pilot.id === 'harlan' ? 'nova' : 'prism';
+    pilot.id === 'lyra' ? 'orbital' : pilot.id === 'cora' ? 'phantom' : pilot.id === 'harlan' ? 'nova' : 'prism';
 
   // Arma inicial canônica da Fase 1: TODOS os pilotos iniciam no Nível 1 com medidor P zerado.
   const family: WeaponFamily = initialFamily;
@@ -428,7 +429,7 @@ export function getPrimaryProjectiles(
     return Array.from({length:components},(_,i)=>({
       texture:'shot-rivet', animation:'shot-rivet-loop',
       x:originX, y:originY, velocityX:0, velocityY:-460,
-      damage:4.6/Math.sqrt(level), hitRadius:4, scale:1,
+      damage:8/Math.sqrt(level), hitRadius:4, scale:1,
       waveAmplitude:16+level*8, waveVerticalAmplitude:9+level*5,
       waveFrequency:.014, wavePhase:i*Math.PI*2/components,
     }));
@@ -720,18 +721,9 @@ export function getSecondaryProjectiles(
   originY: number,
 ): ProjectileSpawnDef[] {
   if (pilotId === 'nolan') {
-    return [{
-      texture: 'rivet-v3-missile',
-      animation: 'rivet-v3-missile-anim',
-      x: originX,
-      y: originY - 12,
-      velocityX: 0,
-      velocityY: -460,
-      damage: 8.0,
-      hitRadius: 6,
-      scale: 0.8,
-    }];
+    return [-1,1].map(side=>({texture:'rivet-v3-missile',animation:'rivet-v3-missile-loop',x:originX+side*11,y:originY-4,velocityX:side*28,velocityY:-460,damage:4,hitRadius:3,scale:.65}));
   }
+
   if (pilotId === 'cora') {
     return [
       {

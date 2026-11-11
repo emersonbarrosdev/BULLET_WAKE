@@ -19,7 +19,6 @@ export class GamepadReader {
     if (connected && this.id !== pad.id) { this.previous.clear(); this.id = pad.id; }
     const held = (i: number) => connected && !!(pad.buttons[i]?.pressed || pad.buttons[i]?.value > .5);
     const down = (i: number) => held(i) && !this.previous.has(i);
-    const released = (i: number) => connected && !held(i) && this.previous.has(i);
     let x = connected ? pad.axes[0] || 0 : 0, y = connected ? pad.axes[1] || 0 : 0;
     const length = Math.hypot(x, y);
     const magnitude = Math.min(1, Math.max(0, (length - .2) / .8));
@@ -28,8 +27,8 @@ export class GamepadReader {
     const norm = Math.max(1, Math.hypot(x, y));
     const nav=new Set<string>();if(x<-.55)nav.add('left');if(x>.55)nav.add('right');if(y<-.55)nav.add('up');if(y>.55)nav.add('down');
     const result = { connected, moveX: x / norm, moveY: y / norm, firePrimary: held(0), firePrimaryTap: down(0),
-      special: down(2), dashTrigger: down(5), chargeHeld: held(6), chargeReleased: released(6),
-      missile: down(3), menuOrBack: down(9), confirm: down(0), back: down(1),
+      special: down(2), dashTrigger: false, chargeHeld: false, chargeReleased: false,
+      profile: down(3), missile: false, menuOrBack: down(9), confirm: down(0), back: down(1),
       left: nav.has('left')&&!this.nav.has('left'), right: nav.has('right')&&!this.nav.has('right'),
       up: nav.has('up')&&!this.nav.has('up'), down: nav.has('down')&&!this.nav.has('down') };
     this.nav=nav;

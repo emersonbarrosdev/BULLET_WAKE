@@ -1,5 +1,7 @@
 # 09 — UI, HUD, input, áudio e experiência
 
+> Estado vigente: [Bíblia V2](27_BULLET_WAKE_V2_DEFINITIVO.md) e [revisão de ritmo/elenco/contornos](38_RITMO_ELENCO_E_CONTORNOS.md). As definições históricas abaixo não substituem quatro pilotos, três vidas sem barra, especial único, ausência de dash/carga/míssil manual e foco exclusivo na Fase 1.
+
 ## HUD do combate
 Superior esquerdo: SCORE 00000000 e combo. Superior centro: 3 segmentos de INTEGRIDADE; superior direita: VIDAS ×03. Inferior esquerdo: arma + LV; inferior centro: barra RESSONÂNCIA; inferior direito: BOMBA ×02. Boss HP aparece sobre área segura, não encima da zona de tiros. Layout responsivo sem virar interface gigante.
 

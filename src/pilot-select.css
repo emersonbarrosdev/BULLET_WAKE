@@ -42,7 +42,7 @@
   margin: 0 0 clamp(10px, 1.3vh, 15px); font-size: clamp(13px, 1.2vw, 17px); letter-spacing: .15em; color: #ffb56e;
 }
 #bw-pilot-select .bw-pilot-cards {
-  width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(9px, 1.15vw, 20px); flex: 1 1 auto; min-height: 0;
   margin-top: clamp(18px, 2.2vh, 28px); margin-bottom: clamp(10px, 1.5vh, 18px);
 }
@@ -309,4 +309,18 @@
   #bw-pilot-select .bw-pilot-card {min-height:310px;}
   #bw-pilot-select .bw-pilot-profile {min-height:360px;max-height:none;}
   #bw-pilot-select .bw-pilot-profile-art {min-height:0;}
+}
+
+/* Four pilots: retain breathing space and fit complete controls at desktop sizes. */
+@media(min-width:951px){
+#bw-pilot-select .bw-pilot-cards{width:100%;max-width:1480px;}
+#bw-pilot-select .bw-pilot-card-head strong{font-size:clamp(18px,1.5vw,27px);}
+#bw-pilot-select .bw-pilot-card-head small{font-size:clamp(11px,.94vw,16px);letter-spacing:.025em;}
+#bw-pilot-select .bw-pilot-card-special{font-size:clamp(11px,1vw,17px);white-space:normal;min-height:1.1em;}
+#bw-pilot-select .bw-pilot-card-role{font-size:clamp(14px,1.2vw,21px);}
+#bw-pilot-select .bw-pilot-stat{gap:3px;}#bw-pilot-select .bw-pilot-stat-bars{gap:1px;}
+#bw-pilot-select .bw-pilot-stat-bars i{width:clamp(5px,.52vw,9px);}
+#bw-pilot-select .bw-pilot-stat b{font-size:clamp(11px,.9vw,16px);}
+#bw-pilot-select .bw-pilot-portrait-wrap{width:min(66%,185px);}
+#bw-pilot-select .bw-pilot-ship-row span{font-size:clamp(12px,1vw,17px);}
 }

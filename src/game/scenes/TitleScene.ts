@@ -62,6 +62,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
+    const audioSettings=saveSystem.getSaveData().settings;globalAudio.setMix(audioSettings.musicVolume,audioSettings.sfxVolume);
     this.pad.sample(connectedPad());
     this.cameras.main.setBackgroundColor(GAME_BACKGROUND);
     this.mode = 'attract';
@@ -148,7 +149,7 @@ export class TitleScene extends Phaser.Scene {
 
   private renderActions(): string {
     if (this.mode === 'guide') {
-      return `<p class="bw-guide-intro">Colete por contato. 3 P por nível. Azul NV4 libera verde; verde NV4 libera rubro. Os itens nunca recuperam dash.</p><div class="bw-item-guide" tabindex="0" aria-label="Legenda de itens, role para ver todos">${NORMAL_GUIDE_ITEMS.map(type => {
+      return `<p class="bw-guide-intro">Colete por contato. 3 P por nível. Azul NV4 libera verde; verde NV4 libera rubro. 3 vidas; ao ser abatido, recupere o armamento no campo.</p><div class="bw-item-guide" tabindex="0" aria-label="Legenda de itens, role para ver todos">${NORMAL_GUIDE_ITEMS.map(type => {
         const item = PICKUP_GUIDE[type];
         return `<article><div class="bw-guide-icon bw-guide-raster" style="background-image:url('${import.meta.env.BASE_URL}assets/combat-hd/review/pickups-${type}.webp')" role="img" aria-label="${item.label}"></div><div><h2 style="color:${item.color}">${item.letter} · ${item.label}</h2><p>${item.description}</p></div></article>`;
       }).join('')}</div>${this.actionButton('back', 'VOLTAR', '', 0)}`;
@@ -161,18 +162,14 @@ export class TitleScene extends Phaser.Scene {
         this.actionButton('difficulty', 'DIFICULDADE', 'NORMAL · EM AJUSTE', 2),
         this.actionButton('controls', 'CONTROLES', '', 3),
         this.actionButton('guide', 'GUIA DE ITENS E ARMAS', '', 4),
-        this.actionButton('rapid', 'RAPID · DISPARO AUTOMÁTICO', settings.rapidFire ? 'LIGADO' : 'DESLIGADO', 5),
-        this.actionButton('back', 'VOLTAR', '', 6),
+        this.actionButton('back', 'VOLTAR', '', 5),
       ].join('');
     }
     return `
       <div class="bw-controls-list">
         <div><span>${connectedPad()?'ANALÓGICO / DIRECIONAL':'WASD / SETAS'}</span><strong>MOVIMENTO</strong></div>
-        <div><span>${connectedPad()?padLabels(connectedPad()?.id).shoot:'ESPAÇO'}</span><strong>DISPARAR</strong></div>
-        <div><span>${connectedPad()?padLabels(connectedPad()?.id).dash:'SHIFT ESQUERDO'}</span><strong>DASH (3 POR FASE)</strong></div>
+        <div><span>${connectedPad()?padLabels(connectedPad()?.id).shoot:'ESPAÇO'}</span><strong>SEGURAR PARA DISPARO RÁPIDO</strong></div>
         <div><span>${connectedPad()?padLabels(connectedPad()?.id).special:'X'}</span><strong>ESPECIAL · 2 INICIAIS / MÁX. 3</strong></div>
-        <div><span>${connectedPad()?padLabels(connectedPad()?.id).charge:'C'}</span><strong>CARREGAR (SE DISPONÍVEL)</strong></div>
-        <div><span>${connectedPad()?padLabels(connectedPad()?.id).missile:'M'}</span><strong>MÍSSIL SECUNDÁRIO</strong></div>
         <div><span>${connectedPad()?padLabels(connectedPad()?.id).pause:'ESC'}</span><strong>PAUSA</strong></div>
       </div>
       ${this.actionButton('back', 'VOLTAR', '', 0)}
@@ -228,7 +225,7 @@ export class TitleScene extends Phaser.Scene {
     switch (action) {
       case 'pilots':
         this.cleanup();
-        this.scene.start('PilotSelectScene', { stageNumber: 1 });
+        this.scene.start('StageSelectScene');
         return;
       case 'options':
         this.showMode('options');
@@ -262,6 +259,7 @@ export class TitleScene extends Phaser.Scene {
         break;
       }
     }
+    const audioSettings=saveSystem.getSaveData().settings;globalAudio.setMix(audioSettings.musicVolume,audioSettings.sfxVolume);
     this.renderMode();
   }
 }

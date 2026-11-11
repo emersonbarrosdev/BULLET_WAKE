@@ -15,7 +15,7 @@ test('Anti-Camping: Player standing still is threatened by aimed shots and sprea
     const tick = director.update(25, playerX, playerY);
     for (const shot of tick.shots) {
       // Projétil que se move em direção à metade esquerda da tela (onde o jogador está)
-      if (shot.velocityX < -100) {
+      if ((playerX-shot.x)*shot.velocityX+(playerY-shot.y)*shot.velocityY>0) {
         shotsTargetingPlayer++;
       }
     }
@@ -23,7 +23,7 @@ test('Anti-Camping: Player standing still is threatened by aimed shots and sprea
 
   assert.ok(
     shotsTargetingPlayer >= 2,
-    `Jogador parado deve receber pelo menos 2 ameaças balísticas nos primeiros 5s (recebeu ${shotsTargetingPlayer})`,
+    `Jogador parado deve receber pelo menos 2 ameaças balísticas nos primeiros 10s (recebeu ${shotsTargetingPlayer})`,
   );
 });
 

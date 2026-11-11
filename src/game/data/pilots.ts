@@ -2,7 +2,7 @@
  * T06 — pilotos aprovados. Valores iniciais para balanceamento de gameplay.
  * Visual da nave e especiais serão implementados nas etapas de arte e T07.
  */
-export type PilotId = 'nolan' | 'cora' | 'harlan';
+export type PilotId = 'nolan' | 'cora' | 'harlan' | 'lyra';
 
 export interface PilotDefinition {
   id: PilotId;
@@ -47,7 +47,7 @@ export const PILOTS: readonly PilotDefinition[] = [
     shipName: 'Moth',
     role: 'ALTA AGILIDADE',
     specialName: 'SALTO FANTASMA',
-    specialDescription: 'Dash ultrassônico invulnerável com pós-imagens e dano por contato.',
+    specialDescription: 'Deslocamento de fase invulnerável com pós-imagens e dano por contato.',
     bio: 'Navegadora de vanguarda com leitura precisa de fendas e anomalias do Wake.',
     portraitKey: 'portrait-cora',
     speed: 215,
@@ -73,6 +73,13 @@ export const PILOTS: readonly PilotDefinition[] = [
     hullColor: 0x35404a,
     accentColor: 0xf6be75,
     projectileColor: 0xffb56e,
+  },
+  {
+    id:'lyra',name:'Lyra Voss',callsign:'JADE SENTINEL',shipName:'Kestrel',role:'PRECISÃO TÁTICA',
+    specialName:'COROA ORBITAL',specialDescription:'Lanças orbitais convergem sobre alvos prioritários e abrem um corredor de passagem.',
+    bio:'Especialista em resgate de plataformas oceânicas e instrumentação do Wake. Prefere precisão a cobertura indiscriminada.',
+    portraitKey:'portrait-lyra',speed:200,shotsPerSecond:6.4,damage:1.25,
+    hullColor:0xd8dfd5,accentColor:0x66e5aa,projectileColor:0x66e5aa,
   },
 ];
 

@@ -1,5 +1,7 @@
 # 12 — Pipeline de assets e inventário
 
+> Estado vigente: [Bíblia V2](27_BULLET_WAKE_V2_DEFINITIVO.md) e [revisão de ritmo/elenco/contornos](38_RITMO_ELENCO_E_CONTORNOS.md). As definições históricas abaixo não substituem quatro pilotos, três vidas sem barra, especial único, ausência de dash/carga/míssil manual e foco exclusivo na Fase 1.
+
 ## Fluxo de produção
 Brief funcional → desenho de silhueta monocromático → aprovação de perfil lateral → paleta de material → frames-chave → inbetweens → PNG RGBA → manifesto/atlas → preview em jogo → QA screenshots/vídeo → revisão → commit com arquivo fonte.
 

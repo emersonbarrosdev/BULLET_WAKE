@@ -44,6 +44,8 @@ export interface LaserTargetCircle {
   y: number;
   radius: number;
   stopsBeam?: boolean;
+  /** Render integration supplies the actual animated silhouette, including holes. */
+  contact?: (ax:number,ay:number,bx:number,by:number,radius:number)=>number|null;
 }
 
 export interface LaserDamageEvent {
@@ -365,6 +367,12 @@ function closestPointOnSegment(
  * 4. Avalia colisões contínuas dos feixes com todos os alvos circulares (inimigos e chefe).
  * Se um alvo tiver `stopsBeam: true` (ex.: casco principal de chefe/miniboss), trunca o feixe no impacto.
  */
+function targetContact(target:LaserTargetCircle,a:LaserPoint,b:LaserPoint,radius:number):{x:number;y:number;dist:number} {
+  if(!target.contact)return closestPointOnSegment(target.x,target.y,a.x,a.y,b.x,b.y);
+  const t=target.contact(a.x,a.y,b.x,b.y,radius);
+  return t===null?{x:a.x,y:a.y,dist:Infinity}:{x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,dist:0};
+}
+
 export function evaluateLaserCollisions(
   beams: LaserBeamGeometry[],
   targets: readonly LaserTargetCircle[],
@@ -388,7 +396,7 @@ export function evaluateLaserCollisions(
       for (let i = 0; i < pts.length - 1; i++) {
         const a = pts[i];
         const b = pts[i + 1];
-        const cp = closestPointOnSegment(target.x, target.y, a.x, a.y, b.x, b.y);
+        const cp = targetContact(target,a,b,beamHitRadius);
         if (cp.dist <= target.radius + beamHitRadius) {
           pts = [...pts.slice(0, i + 1), { x: cp.x, y: cp.y }];
           break;
@@ -404,7 +412,7 @@ export function evaluateLaserCollisions(
       for (let i = 0; i < pts.length - 1; i++) {
         const a = pts[i];
         const b = pts[i + 1];
-        const cp = closestPointOnSegment(target.x, target.y, a.x, a.y, b.x, b.y);
+        const cp = targetContact(target,a,b,beamHitRadius);
         if (cp.dist <= target.radius + beamHitRadius) {
           if (!bestHit || cp.dist < bestHit.dist) {
             bestHit = cp;

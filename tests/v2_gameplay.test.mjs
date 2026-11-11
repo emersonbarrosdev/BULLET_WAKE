@@ -299,7 +299,7 @@ test('V2 Controles: Regra Fundamental do Mouse e Comandos Oficiais', () => {
   // Teste 3: Left Shift aciona dashTrigger
   const frameShift = { ...frameMouse, touchPointerDown: false, keyShift: true, keyShiftJustDown: true };
   const cmdShift = processInputFrame(frameShift);
-  assert.equal(cmdShift.dashTrigger, true);
+  assert.equal(cmdShift.dashTrigger, false);
 
   // Teste 4: Normalização diagonal WASD
   const frameDiagonal = { ...frameMouse, touchPointerDown: false, keyW: true, keyD: true };

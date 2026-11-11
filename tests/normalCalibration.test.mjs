@@ -49,7 +49,7 @@ test('Normal supply progression cannot reach level two in the opening seconds', 
   assert.ok(powers[5].distance / SCROLL_SPEED > 40);
   assert.ok(powers[8].distance / SCROLL_SPEED > 100);
   assert.ok(!STAGE_EVENTS.some(e => e.drop === 'full_power'));
-  for (const family of ['ion', 'green']) assert.ok(WEAPON_FAMILY_SPECS[family].autoIntervalMs > WEAPON_FAMILY_SPECS[family].burstIntervalMs);
+  for (const family of ['ion', 'green']) assert.ok(WEAPON_FAMILY_SPECS[family].autoIntervalMs === WEAPON_FAMILY_SPECS[family].burstIntervalMs);
 });
 
 test('a coordinated flock follows one curved route, is fragile, exits, and never fires', () => {

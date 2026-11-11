@@ -1,0 +1,315 @@
+{
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "geometry": {
+        "count": 4,
+        "scroll": false,
+        "overflow": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "bounds": [
+          {
+            "x": 40.96875,
+            "y": 178.671875,
+            "right": 350.203125,
+            "bottom": 578.03125
+          },
+          {
+            "x": 365.90625,
+            "y": 178.671875,
+            "right": 675.140625,
+            "bottom": 578.03125
+          },
+          {
+            "x": 690.84375,
+            "y": 178.671875,
+            "right": 1000.078125,
+            "bottom": 578.03125
+          },
+          {
+            "x": 1015.78125,
+            "y": 178.671875,
+            "right": 1325.015625,
+            "bottom": 578.03125
+          }
+        ]
+      },
+      "hud": {
+        "sidebars": 2,
+        "text": "BULLET WAKE\nOPERADOR\nNOLAN FITCH\nRIVET\nPONTUAÇÃO\n000000\nVIDAS\n3\nESPECIAL\nPRONTO\nPAUSAR / OPÇÕES\n\nFASE 01 - FENDA PELÁGICA [NORMAL]\n\nOPERAÇÃO PELÁGICA\nFENDA PELÁGICA\nÁGUAS COSTEIRAS\nARMA EQUIPADA\nDISPERSÃO AZUL\nPOTÊNCIA\nNV 1/4\nPRÓXIMO NÍVEL\n0 / 3\nP\nP\nP\nTRAJETO DA MISSÃO\nFENDA PELÁGICA // FASE 01",
+        "guide": "BULLET WAKE\nOPERADOR\nNOLAN FITCH\nRIVET\nPONTUAÇÃO\n000000\nVIDAS\n3\nESPECIAL\nPRONTO\nPAUSAR / OPÇÕES\n\nFASE 01 - FENDA PELÁGICA [NORMAL]\n\nOPERAÇÃO PELÁGICA\nFENDA PELÁGICA\nÁGUAS COSTEIRAS\nARMA EQUIPADA\nDISPERSÃO AZUL\nPOTÊNCIA\nNV 1/4\nPRÓXIMO NÍVEL\n0 / 3\nP\nP\nP\nTRAJETO DA MISSÃO\nFENDA PELÁGICA // FASE 01",
+        "canvas": 1366
+      },
+      "contact": {
+        "missed": {
+          "x": 298.5,
+          "y": 148.5,
+          "hp": 100
+        },
+        "hit": {
+          "x": 303,
+          "y": 157.5,
+          "hp": 99.64
+        },
+        "gap": {
+          "x": 25,
+          "y": 25
+        },
+        "solid": {
+          "x": 34,
+          "y": 43
+        },
+        "frame": {
+          "width": 256,
+          "height": 256,
+          "originX": 128,
+          "originY": 128
+        }
+      },
+      "moving": {
+        "status": 5,
+        "input": true,
+        "keyboard": true,
+        "keys": {
+          "space": true,
+          "d": true
+        },
+        "brief": false,
+        "paused": false,
+        "frameCount": 509,
+        "rotation": 0,
+        "frame": 1,
+        "shots": 31,
+        "fired": 56,
+        "missileCooldown": 2315.3199999999997,
+        "x": 555.2602999999997
+      },
+      "boss": {
+        "width": 561.6,
+        "modules": 3,
+        "layer": "inner"
+      },
+      "pickup": {
+        "x": 584,
+        "y": 414,
+        "vx": -34,
+        "vy": -24
+      },
+      "survival": {
+        "event": "respawn",
+        "lives": 2,
+        "drops": 3,
+        "recovered": {
+          "family": "green",
+          "level": 3,
+          "meter": 2
+        },
+        "protectedEvent": "ignored"
+      },
+      "gamepad": {
+        "moveX": 0.7500000000000001,
+        "moveY": 0,
+        "firePrimary": true,
+        "firePrimaryTap": true,
+        "dashTrigger": false,
+        "chargeHeld": false,
+        "chargeReleased": false,
+        "bomb": false,
+        "special": true,
+        "missile": false,
+        "restart": false,
+        "menuOrBack": false
+      }
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "geometry": {
+        "count": 4,
+        "scroll": false,
+        "overflow": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "bounds": [
+          {
+            "x": 220,
+            "y": 310.015625,
+            "right": 575,
+            "bottom": 750.015625
+          },
+          {
+            "x": 595,
+            "y": 310.015625,
+            "right": 950,
+            "bottom": 750.015625
+          },
+          {
+            "x": 970,
+            "y": 310.015625,
+            "right": 1325,
+            "bottom": 750.015625
+          },
+          {
+            "x": 1345,
+            "y": 310.015625,
+            "right": 1700,
+            "bottom": 750.015625
+          }
+        ]
+      },
+      "hud": {
+        "sidebars": 2,
+        "text": "BULLET WAKE\nOPERADOR\nNOLAN FITCH\nRIVET\nPONTUAÇÃO\n000000\nVIDAS\n3\nESPECIAL\nPRONTO\nPAUSAR / OPÇÕES\n\nFASE 01 - FENDA PELÁGICA [NORMAL]\n\nOPERAÇÃO PELÁGICA\nFENDA PELÁGICA\nÁGUAS COSTEIRAS\nARMA EQUIPADA\nDISPERSÃO AZUL\nPOTÊNCIA\nNV 1/4\nPRÓXIMO NÍVEL\n0 / 3\nP\nP\nP\nTRAJETO DA MISSÃO\nFENDA PELÁGICA // FASE 01",
+        "guide": "BULLET WAKE\nOPERADOR\nNOLAN FITCH\nRIVET\nPONTUAÇÃO\n000000\nVIDAS\n3\nESPECIAL\nPRONTO\nPAUSAR / OPÇÕES\n\nFASE 01 - FENDA PELÁGICA [NORMAL]\n\nOPERAÇÃO PELÁGICA\nFENDA PELÁGICA\nÁGUAS COSTEIRAS\nARMA EQUIPADA\nDISPERSÃO AZUL\nPOTÊNCIA\nNV 1/4\nPRÓXIMO NÍVEL\n0 / 3\nP\nP\nP\nTRAJETO DA MISSÃO\nFENDA PELÁGICA // FASE 01",
+        "canvas": 1920
+      },
+      "contact": {
+        "missed": {
+          "x": 298.5,
+          "y": 148.5,
+          "hp": 100
+        },
+        "hit": {
+          "x": 303,
+          "y": 157.5,
+          "hp": 99.64
+        },
+        "gap": {
+          "x": 25,
+          "y": 25
+        },
+        "solid": {
+          "x": 34,
+          "y": 43
+        },
+        "frame": {
+          "width": 256,
+          "height": 256,
+          "originX": 128,
+          "originY": 128
+        }
+      },
+      "moving": {
+        "status": 5,
+        "input": true,
+        "keyboard": true,
+        "keys": {
+          "space": true,
+          "d": true
+        },
+        "brief": false,
+        "paused": false,
+        "frameCount": 1659,
+        "rotation": 0,
+        "frame": 1,
+        "shots": 31,
+        "fired": 112,
+        "missileCooldown": 2315.2600000000034,
+        "x": 555.2755000000001
+      },
+      "boss": {
+        "width": 561.6,
+        "modules": 3,
+        "layer": "inner"
+      },
+      "pickup": {
+        "x": 584,
+        "y": 414,
+        "vx": -34,
+        "vy": -24
+      },
+      "survival": {
+        "event": "respawn",
+        "lives": 2,
+        "drops": 3,
+        "recovered": {
+          "family": "green",
+          "level": 3,
+          "meter": 2
+        },
+        "protectedEvent": "ignored"
+      },
+      "gamepad": {
+        "moveX": 0.7500000000000001,
+        "moveY": 0,
+        "firePrimary": true,
+        "firePrimaryTap": true,
+        "dashTrigger": false,
+        "chargeHeld": false,
+        "chargeReleased": false,
+        "bomb": false,
+        "special": true,
+        "missile": false,
+        "restart": false,
+        "menuOrBack": false
+      }
+    }
+  ],
+  "regression": {
+    "title": true,
+    "missionSelection": true,
+    "realContourTTK": [
+      {
+        "family": "ion",
+        "level": 2,
+        "seconds": 59.04,
+        "phases": {
+          "intro": 0,
+          "shell": 1780,
+          "metamorphosis": 36340,
+          "inner": 38740,
+          "defeated": 59040
+        },
+        "defeated": true
+      },
+      {
+        "family": "ion",
+        "level": 3,
+        "seconds": 32,
+        "phases": {
+          "intro": 0,
+          "shell": 1780,
+          "metamorphosis": 19360,
+          "inner": 21760,
+          "defeated": 32000
+        },
+        "defeated": true
+      },
+      {
+        "family": "ion",
+        "level": 4,
+        "seconds": 21.28,
+        "phases": {
+          "intro": 0,
+          "shell": 1780,
+          "metamorphosis": 12640,
+          "inner": 15040,
+          "defeated": 21280
+        },
+        "defeated": true
+      },
+      {
+        "family": "green",
+        "level": 1,
+        "seconds": 22.5,
+        "phases": {
+          "intro": 0,
+          "shell": 1780,
+          "metamorphosis": 13500,
+          "inner": 15900,
+          "defeated": 22500
+        },
+        "defeated": true
+      }
+    ]
+  },
+  "errors": []
+}

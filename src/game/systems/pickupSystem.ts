@@ -6,7 +6,8 @@
  * - Itens aparecem fisicamente na arena de combate e flutuam descendo suavemente.
  * - Coleta por contato, sem atração magnética ou troca involuntária de arma.
  */
-import { PLAYFIELD_X, PLAYFIELD_RIGHT } from '../constants.ts';
+import type { RecoveryPayload } from './recoverySystem.ts';
+import { PLAYFIELD_X, PLAYFIELD_RIGHT, GAME_HEIGHT } from '../constants.ts';
 import { circleHitsHull } from './hullCollision.ts';
 
 export type PickupType =
@@ -23,6 +24,7 @@ export type PickupType =
   | 'special';      // E: Uma carga de especial (máximo três)
 
 export interface PickupModel {
+  recovery?: RecoveryPayload;
   id: number;
   type: PickupType;
   x: number;
@@ -31,6 +33,7 @@ export interface PickupModel {
   ageMs: number;
   collected: boolean;
   velocityX: number;
+  velocityY: number;
 }
 
 export const PICKUP_RADIUS = 10;
@@ -48,11 +51,12 @@ export class PickupSystem {
       id: this.nextId++,
       type,
       x: clampedX,
-      y,
+      y: Math.max(20,Math.min(GAME_HEIGHT-20,y)),
       baseX: clampedX,
       ageMs: 0,
       collected: false,
-      velocityX: this.nextId % 2 ? -38 : 38,
+      velocityX: this.nextId % 2 ? -34 : 34,
+      velocityY: PICKUP_FLOAT_SPEED_Y,
     };
     this.pickups.push(pickup);
     return pickup;
@@ -64,22 +68,13 @@ export class PickupSystem {
       const p = this.pickups[i];
       p.ageMs += dt;
 
-      // Movimento de descida com oscilação horizontal senoidal suave
-      const sway = Math.sin(p.ageMs / 280) * 8;
-      if (p.type.startsWith('weapon_') || p.type === 'speed') {
-        p.baseX += p.velocityX * dt / 1000;
-        if (p.baseX < PLAYFIELD_X + 20 || p.baseX > PLAYFIELD_RIGHT - 20) {
-          p.baseX = Math.max(PLAYFIELD_X + 20, Math.min(PLAYFIELD_RIGHT - 20, p.baseX));
-          p.velocityX *= -1;
-        }
-      }
-      // Contact only: collecting a color must be a deliberate movement.
-      p.y += PICKUP_FLOAT_SPEED_Y * (dt / 1000);
-
-      p.x = Math.max(PLAYFIELD_X + 16, Math.min(PLAYFIELD_RIGHT - 16, p.baseX + sway));
+      p.x += p.velocityX*dt/1000;p.y += p.velocityY*dt/1000;
+      if(p.x<PLAYFIELD_X+16||p.x>PLAYFIELD_RIGHT-16){p.x=Math.max(PLAYFIELD_X+16,Math.min(PLAYFIELD_RIGHT-16,p.x));p.velocityX*=-1;}
+      if(p.y<18||p.y>GAME_HEIGHT-18){p.y=Math.max(18,Math.min(GAME_HEIGHT-18,p.y));p.velocityY*=-1;}
+      p.baseX=p.x;
 
       // Remove se ultrapassar a borda inferior da tela ou se coletado
-      if (p.y > 450 || p.y < -50 || p.ageMs > 10000 || p.collected) {
+      if (p.y > 450 || p.y < -50 || p.ageMs > 16000 || p.collected) {
         this.pickups.splice(i, 1);
       }
     }

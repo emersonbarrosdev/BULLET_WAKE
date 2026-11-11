@@ -61,6 +61,12 @@ export class AudioSystem {
     }
   }
 
+  setMix(music: number, effects: number): void {
+    this.musicVolume=Math.max(0,Math.min(1,music))*.55;
+    this.sfxVolume=Math.max(0,Math.min(1,effects))*.85;
+    if(this.ctx){this.musicGain?.gain.setTargetAtTime(this.musicVolume,this.ctx.currentTime,.03);this.sfxGain?.gain.setTargetAtTime(this.sfxVolume,this.ctx.currentTime,.03);}
+  }
+
   toggleMute(): boolean {
     this.setMute(!this.isMuted);
     return this.isMuted;
@@ -68,7 +74,7 @@ export class AudioSystem {
 
   // --- EFEITOS SONOROS (SFX) ---
 
-  playShot(pilotId: 'nolan' | 'cora' | 'harlan', level = 1): void {
+  playShot(pilotId: 'nolan' | 'cora' | 'harlan' | 'lyra', level = 1): void {
     this.unlock();
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
     if(!this.allowSound('player-shot',.065))return;
@@ -220,12 +226,12 @@ export class AudioSystem {
     this.tone('sine',isLarge?150:220,35,isLarge?.35:.16,isLarge?.38:.22);
   }
 
-  playSpecial(type: 'prism' | 'phantom' | 'nova'): void {
+  playSpecial(type: 'prism' | 'phantom' | 'nova' | 'orbital'): void {
     this.unlock();
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
     const now = this.ctx.currentTime;
 
-    if (type === 'prism') {
+    if (type === 'prism'||type==='orbital') {
       // Acorde harmônico cristalino
       for (const freq of [440, 554, 659, 880]) {
         const osc = this.ctx.createOscillator();

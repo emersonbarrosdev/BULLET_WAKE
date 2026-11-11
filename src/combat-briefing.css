@@ -8,3 +8,14 @@
 .bw-brief-panel nav{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}.bw-brief-panel button{flex:1 1 220px;padding:14px;color:#eeeeee;background:#242424;border:1px solid #626262;font:800 17px 'Rajdhani',sans-serif;cursor:pointer}.bw-brief-panel button:hover,.bw-brief-panel button:focus-visible{outline:2px solid #d6d6d6;outline-offset:3px;background:#383838;color:#fff}
 .bw-brief-items{max-height:48vh;overflow:auto;display:grid;gap:12px}.bw-brief-items article{display:flex;align-items:center;gap:16px;border-bottom:1px solid #444444;padding-bottom:12px}.bw-brief-items img{width:45px;height:45px;object-fit:cover;object-position:left;/* atlas first cell */clip-path:inset(0)}.bw-brief-items p{margin:4px 0;font-size:17px;color:#bdbdbd}
 @media(max-width:600px){.bw-brief-controls{grid-template-columns:1fr}.bw-brief-panel{padding:20px}.bw-briefing{padding:8px}}
+
+.bw-mission-card{display:flex;width:100%;height:230px;max-height:32vh;position:relative;flex-direction:column;align-items:flex-start;justify-content:flex-end;overflow:hidden;border:1px solid #9b9f9c;background:#080a09;color:#fff;padding:20px;cursor:pointer;text-shadow:0 2px 6px #000;}
+.bw-mission-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.5);pointer-events:none;}
+.bw-mission-card span,.bw-mission-card strong,.bw-mission-card small{position:relative;z-index:1;}.bw-mission-card strong{font:800 clamp(22px,2.5vw,38px) Oxanium,sans-serif;}.bw-mission-card small{font:600 17px Rajdhani,sans-serif;}
+
+.bw-brief-item-icon{display:block;flex:0 0 45px;width:45px;height:45px;background-size:400% 100%;background-position:left center;background-repeat:no-repeat}
+.bw-brief-controls>div{font-size:18px}.bw-brief-note{font-size:16px}.bw-brief-panel nav{margin-top:20px}
+
+.bw-brief-items{grid-template-columns:minmax(0,1fr);overflow-x:hidden;scrollbar-color:#777 #161616}
+.bw-brief-items article,.bw-brief-items article>div{min-width:0}
+.bw-brief-items article>div{flex:1}.bw-brief-items p{overflow-wrap:anywhere}

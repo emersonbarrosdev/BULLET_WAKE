@@ -13,18 +13,18 @@ import {
 } from '../src/game/systems/stageDirector.ts';
 import { getPrimaryProjectiles } from '../src/game/systems/weaponSystem.ts';
 
-test('one integrity pool reaches game over, without automatic extra lives', () => {
-  let h = initialPlayerHealth();
-  assert.equal(h.hp, 100);
-  assert.equal(h.lives, 1);
-  for (let i = 1; i <= 5; i++) {
-    const hit = applyPlayerHit(h, 20);
-    assert.equal(hit.event, i < 5 ? 'damaged' : 'game-over');
-    h = advanceHealth(hit.state, 2000);
+test('three lives: each unprotected contact downs a craft; respawn protection prevents chain deaths', () => {
+  let h=initialPlayerHealth();assert.equal(h.lives,3);
+  assert.equal(applyPlayerHit(h,0).event,'ignored');
+  for(let i=1;i<=3;i++){
+    const hit=applyPlayerHit(h,1);assert.equal(hit.event,i<3?'respawn':'game-over');
+    assert.equal(hit.state.lives,3-i);
+    if(i<3)assert.equal(applyPlayerHit(hit.state,100).event,'ignored');
+    h=advanceHealth(hit.state,2100);
   }
-  assert.equal(h.hp, 0);
-  assert.equal(h.gameOver, true);
+  assert.equal(h.gameOver,true);assert.equal(h.hp,0);
 });
+
 test('visible nose and wings take hits; empty sprite corners do not', () => {
   assert.equal(circleHitsHull(100, 80, 1, 100, 100), true);
   assert.equal(circleHitsHull(117, 110, 1, 100, 100), true);

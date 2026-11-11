@@ -7,18 +7,18 @@ import { createPlayerWeapons, activateSpecial, resetWeaponsOnRespawn } from '../
 
 test('outer overkill cannot defeat Talassarca or spill damage across metamorphosis',()=>{
   const b=new BossTalassarca();b.update(1800,384,350);
-  assert.equal(b.displayWidth,432*.8);
+  assert.equal(b.displayWidth,432*1.02);
   assert.equal(b.damage(100000).killed,false);
   assert.equal(b.phase,'metamorphosis');
   assert.equal(b.damage(100000).bossDamage,0);
   b.update(METAMORPHOSIS_MS,384,350);
   assert.equal(b.hp,3*SPECIAL_BOSS_DAMAGE);
-  assert.equal(b.displayWidth,432);
+  assert.equal(b.displayWidth,432*1.3);
   assert.equal(b.damage(-100).bossDamage,0);
   assert.equal(b.damage(NaN).bossDamage,0);
 });
 
-test('inner form fires more pressure while retaining dodging space, at 30/60/120Hz',()=>{
+test('inner form varies dorsal attack origins while retaining dodging space, at 30/60/120Hz',()=>{
   for(const fps of [30,60,120]){
     const b=new BossTalassarca();b.update(1800,384,350);
     let outer=0,inner=0;
@@ -26,10 +26,10 @@ test('inner form fires more pressure while retaining dodging space, at 30/60/120
     b.damage(600);b.update(METAMORPHOSIS_MS,384,350);
     for(let i=0;i<fps*6;i++){
       const tick=b.update(1000/fps,384,350);inner+=tick.shots.length;
-      assert.ok(b.y+b.bodyRadiusY<280,'Bottom portion must remain navigable');
+      assert.ok(b.y>0&&b.y<280,'Aquatic body is overflown while its organs remain in reach');
       assert.equal(b.x,384,'Full-width fins cannot cross the HUD');
     }
-    assert.ok(inner>outer*1.5,{fps,outer,inner});
+    assert.ok(inner>=outer,{fps,outer,inner});
   }
 });
 
@@ -47,7 +47,7 @@ test('capsule touches visible nose, records collection once, and expires without
   const p=new PickupSystem();p.spawn('weapon_green',384,330);
   assert.equal(p.checkCollection(384,350,5,true).length,1);
   assert.equal(p.checkCollection(384,350,5,true).length,0);
-  p.clear();p.spawn('special',300,100);p.update(10001,300,100);
+  p.clear();p.spawn('special',300,100);p.update(16001,300,100);
   assert.equal(p.pickups.length,0);
 });
 

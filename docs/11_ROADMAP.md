@@ -1,5 +1,7 @@
 # 11 — Roadmap de produção (BULLET WAKE)
 
+> Estado vigente: [Bíblia V2](27_BULLET_WAKE_V2_DEFINITIVO.md) e [revisão de ritmo/elenco/contornos](38_RITMO_ELENCO_E_CONTORNOS.md). As definições históricas abaixo não substituem quatro pilotos, três vidas sem barra, especial único, ausência de dash/carga/míssil manual e foco exclusivo na Fase 1.
+
 > **Prioridade vigente — 10/11/2026:** [Fase 1 orgânica](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md) e sua [lista do que falta](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md#o-que-ainda-falta). Duas camadas e metamorfose implementadas somente em Talassarca; demais chefes ficam para depois da aprovação da Fase 1. As regras antigas de bomba separada e ressonância foram substituídas por um estoque único de especiais.
 
 > **Prioridade vigente:** [pendências após a revisão da Fase 1](31_FASE1_REVISAO_COMBATE.md#o-que-ainda-falta). Arte de Raia-Dente, Talassarca e efeitos auxiliares da RIVET implementada. Aprovação da Fase 1 ainda depende do usuário; não iniciar produção da Fase 2.

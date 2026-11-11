@@ -1,4 +1,7 @@
-import { continueWeapons, segmentEllipseHit, NORMAL_BOSS_SHOT_SCALE, RIVET_MISSILE_INTERVAL_MS } from '../systems/normalBalance';
+import { recoveryPayloads, recoverArmament } from '../systems/recoverySystem';
+import { spriteContact } from '../render/SpriteSilhouette';
+import { RIVET_HULL } from '../systems/hullCollision';
+import { continueWeapons, NORMAL_BOSS_SHOT_SCALE, RIVET_MISSILE_INTERVAL_MS } from '../systems/normalBalance';
 import { PrismStrike } from '../render/PrismStrike';
 import { CombatBriefing } from '../ui/CombatBriefing';
 import { CombatLoading } from '../ui/CombatLoading';
@@ -27,14 +30,6 @@ import { saveSystem } from '../systems/saveSystem.ts';
 import { VectorShip } from '../render/VectorShip';
 import { enableCombatResolution } from '../render/combatResolution';
 import {
-  createInitialDashState,
-  triggerDash,
-  advanceDash,
-  isDashActive,
-  isDashInvulnerable,
-  type DashState,
-} from '../systems/dashSystem.ts';
-import {
   createPlayerWeapons,
   collectPowerItem,
   collectWeaponCapsule,
@@ -47,11 +42,8 @@ import {
   advanceWeapons,
   getPrimaryProjectiles,
   getSecondaryProjectiles,
-  getChargedProjectiles,
-  updateWeaponCharge,
-  releaseWeaponCharge,
   WEAPON_FAMILY_SPECS,
-  MAX_CHARGE_MS,
+  resetWeaponsOnRespawn,
   type PlayerWeaponsState,
   type ProjectileSpawnDef,
   type WeaponFamily,
@@ -68,7 +60,7 @@ import { CrimsonLaserRenderer } from '../render/CrimsonLaserRenderer.ts';
 import { CombatParticles } from '../render/CombatParticles';
 import { PICKUP_GUIDE } from '../data/pickupGuide';
 import { stepTriggerCadence, type TriggerCadence } from '../systems/fireCadence';
-import { circleHitsHull, sweptHullContact } from '../systems/hullCollision';
+import { sweptHullContact } from '../systems/hullCollision';
 import { InputManager } from '../systems/inputSystem.ts';
 import { PickupSystem, type PickupType } from '../systems/pickupSystem.ts';
 import {
@@ -121,7 +113,7 @@ interface BossVisual {
 /**
  * Cena principal de combate do BULLET WAKE V2.
  * Shmup vertical top-down em corredor central protegido (384px),
- * 3 dashes fixos por fase, armas Fire Shark evoluindo LV1-4,
+ * Três vidas, armas em cascata LV1-4,
  * coletáveis físicos e chefes da Fenda Pelágica.
  */
 export class PrototypeScene extends Phaser.Scene {
@@ -140,7 +132,6 @@ export class PrototypeScene extends Phaser.Scene {
   private weapons: PlayerWeaponsState = createPlayerWeapons('nolan');
   private scoreCombo: ScoreComboState = initialScoreCombo();
   private health: PlayerHealth = initialPlayerHealth();
-  private dashState: DashState = createInitialDashState();
 
   private hud!: PremiumCombatHud;
   private backdrop!: StageBackdrop;
@@ -163,7 +154,6 @@ export class PrototypeScene extends Phaser.Scene {
   private specialBossHit = false;
   private checkpointDistance = 0;
   private resumeWeapons?: PlayerWeaponsState;
-  private resumeDashes?: DashState;
   private triggerCadence: TriggerCadence = {holdMs:0,tapMs:0};
   private totalKills = 0;
   private completed = false;
@@ -177,12 +167,12 @@ export class PrototypeScene extends Phaser.Scene {
     super({ key: 'PrototypeScene' });
   }
 
-  init(data: { pilotId?: string; stageNumber?: number; skipBriefing?: boolean; checkpointDistance?:number; resumeWeapons?:PlayerWeaponsState; resumeDashes?:DashState } = {}): void {
+  init(data: { pilotId?: string; stageNumber?: number; skipBriefing?: boolean; checkpointDistance?:number; resumeWeapons?:PlayerWeaponsState } = {}): void {
     this.pilot = getPilot(data.pilotId);
     this.skipBriefing = !!data.skipBriefing || !!data.resumeWeapons;
     this.stageNumber = 1;
     this.checkpointDistance = data.checkpointDistance ?? 0;
-    this.resumeWeapons=data.resumeWeapons;this.resumeDashes=data.resumeDashes;
+    this.resumeWeapons=data.resumeWeapons;
     this.entryLoadFailed=false;
     if(!this.skipBriefing){
       this.entryLoading=new CombatLoading('CARREGANDO OPERAÇÃO', 'Preparando a Fenda Pelágica e o guia de comandos.');
@@ -225,7 +215,6 @@ export class PrototypeScene extends Phaser.Scene {
     this.scoreCombo = initialScoreCombo();
     this.health = initialPlayerHealth();
     if(this.resumeWeapons)this.health.invulnerableMs=2000;
-    this.dashState = this.resumeDashes??createInitialDashState();
     this.totalKills = 0;
     this.completed = false;
 
@@ -250,7 +239,6 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.setPilot(this.pilot.id, this.pilot.shipName);
     this.hud.setScore(0);
     this.hud.setHealth(this.health, false);
-    this.hud.setDash(this.dashState.remainingDashes);
     this.hud.setProgress(0);
     this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
     this.hud.setSpecialStock(this.weapons.specialCharges, this.weapons.specialActiveMs > 0);
@@ -384,37 +372,22 @@ export class PrototypeScene extends Phaser.Scene {
     this.health = advanceHealth(this.health, dt);
     this.weapons = advanceWeapons(this.weapons, dt);
     this.scoreCombo = advanceCombo(this.scoreCombo, dt);
-    this.dashState = advanceDash(this.dashState, dt);
 
     this.hitPoseMs = Math.max(0, this.hitPoseMs - dt);
     this.missilePoseMs = Math.max(0, this.missilePoseMs - dt);
     this.prismPoseMs = Math.max(0, this.prismPoseMs - dt);
     this.phantomDashTimerMs = Math.max(0, this.phantomDashTimerMs - dt);
 
-    // 0. Acionamento do Dash de Emergência (LEFT SHIFT no PC)
-    if (commands.dashTrigger) {
-      const dashResult = triggerDash(this.dashState);
-      if (dashResult.triggered) {
-        this.dashState = dashResult.state;
-        this.hud.setDash(this.dashState.remainingDashes);
-        this.hud.flash('DASH DE EMERGÊNCIA!', '#38bdf8', 400);
-        this.spawnPhantomAfterimage();
-        globalAudio.playSpecial('phantom');
-      }
-    }
-
     // Atualiza o HUD
     this.hud.update(dt);
     this.hud.setHealth(this.health, this.weapons.hasShield);
-    this.hud.setDash(this.dashState.remainingDashes);
     this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
     this.hud.setSpecialStock(this.weapons.specialCharges, this.weapons.specialActiveMs > 0);
     this.hud.setScore(this.scoreCombo.score, this.scoreCombo.comboCount, getComboMultiplier(this.scoreCombo.comboCount));
     this.hud.setHeat(this.weapons.heat, this.weapons.isOverheated);
-    this.hud.setCharge(this.weapons.chargeMs, MAX_CHARGE_MS, this.weapons.isCharging);
 
     // Efeito de invulnerabilidade (piscar transparente)
-    const isInvuln = this.health.invulnerableMs > 0 || isDashInvulnerable(this.dashState);
+    const isInvuln = this.health.invulnerableMs > 0;
     this.vectorShip.setAlpha(
       isInvuln && Math.floor(Date.now() / 80) % 2 === 0 ? 0.35 : 1,
     );
@@ -424,14 +397,9 @@ export class PrototypeScene extends Phaser.Scene {
     let dy = commands.moveY;
 
     let speed = this.pilot.speed * PLAYER_SPEED_FACTOR * (1 + this.weapons.speedLevel * 0.08);
-    const dashing = isDashActive(this.dashState);
-    if (dashing) {
-      speed *= 2.8;
-      this.spawnPhantomAfterimage();
-    } else if (this.phantomDashTimerMs > 0) {
-      dy = -1.6; // Dash frontal para o Norte
-      speed = 650;
-      this.spawnPhantomAfterimage();
+    // Cora's limited special retains its invulnerable phase shift; there is no dash action.
+    if (this.phantomDashTimerMs > 0) {
+      dy = -1.6; speed = 650; this.spawnPhantomAfterimage();
     }
 
     const halfW = this.vectorShip.halfWidth;
@@ -447,23 +415,7 @@ export class PrototypeScene extends Phaser.Scene {
       },
     );
     this.vectorShip.setPosition(moved.x, moved.y);
-    this.vectorShip.updateShip(dt, dx, dy, this.hitPoseMs, this.weapons.hasShield, dashing);
-
-    // 1. Atualização e Liberação de Disparo Carregado (Wave Cannon - tecla C)
-    this.weapons = updateWeaponCharge(this.weapons, dt, commands.chargeHeld);
-    if (this.weapons.isCharging && this.weapons.chargeMs > 250) {
-      const chargeRatio = this.weapons.chargeMs / MAX_CHARGE_MS;
-      globalAudio.playChargeWindup(chargeRatio);
-      this.vectorShip.triggerMuzzleFlash();
-    }
-
-    if (commands.chargeReleased) {
-      const result = releaseWeaponCharge(this.weapons);
-      this.weapons = result.state;
-      if (result.chargeLevel === 1 || result.chargeLevel === 2) {
-        this.fireChargedShot(result.chargeLevel);
-      }
-    }
+    this.vectorShip.updateShip(dt, dx, dy, this.hitPoseMs, this.weapons.hasShield, false);
 
     // 2. Disparos Primários:
     // - Se LASER RUBRO ('red') estiver equipado, NUNCA dispara bolas/projéteis vermelhos avulsos!
@@ -471,12 +423,12 @@ export class PrototypeScene extends Phaser.Scene {
     // - Se RAIO ESMERALDA ('green') ou DISPERSÃO AZUL ('ion') estiver equipado, usa cadência de projéteis.
     const specs = WEAPON_FAMILY_SPECS[this.weapons.weaponFamily] || WEAPON_FAMILY_SPECS.green;
     const mayFire=!this.weapons.isCharging&&this.weapons.weaponFamily!=='red';
-    const cadence=stepTriggerCadence(this.triggerCadence,dt,mayFire&&commands.firePrimary,mayFire&&commands.firePrimaryTap,saveSystem.getSaveData().settings.rapidFire,specs.autoIntervalMs,specs.burstIntervalMs);
+    const cadence=stepTriggerCadence(this.triggerCadence,dt,mayFire&&commands.firePrimary,mayFire&&commands.firePrimaryTap,true,specs.autoIntervalMs*8/this.pilot.shotsPerSecond,specs.burstIntervalMs*8/this.pilot.shotsPerSecond);
     this.triggerCadence=cadence;
     for(let i=0;i<cadence.volleys;i++)this.firePrimary();
 
-      // 3. Disparo Secundário / Mísseis (tecla M)
-      if (commands.missile && this.weapons.missileCooldownMs <= 0) {
+      // Paired automatic missiles at NV3+, independent of primary family.
+      if (this.pilot.id==='nolan' && this.weapons.weaponLevel>=3 && commands.firePrimary && this.weapons.missileCooldownMs <= 0) {
         this.fireSecondary();
       }
 
@@ -539,7 +491,7 @@ export class PrototypeScene extends Phaser.Scene {
         this.hud.hideBossBar();
         globalAudio.stopMusic();
 
-        const bonusPoints = 5000 + 1000 + Math.floor(this.health.hp/10) * 500;
+        const bonusPoints = 6000 + this.health.lives * 1000;
         this.scoreCombo = addRawScore(this.scoreCombo, bonusPoints);
         this.hud.setScore(this.scoreCombo.score);
 
@@ -564,7 +516,7 @@ export class PrototypeScene extends Phaser.Scene {
   private continueFromCheckpoint():void {
     const distance=this.director.scrollPx;
     const checkpoint=distance>=3200?3200:distance>=2100?2100:distance>=1000?1000:0;
-    this.scene.restart({pilotId:this.pilot.id,stageNumber:1,checkpointDistance:checkpoint,resumeWeapons:continueWeapons(this.weapons,checkpoint),resumeDashes:{...createInitialDashState(),remainingDashes:this.dashState.remainingDashes}});
+    this.scene.restart({pilotId:this.pilot.id,stageNumber:1,checkpointDistance:checkpoint,resumeWeapons:continueWeapons(this.weapons,checkpoint)});
   }
 
   private choosePilot(): void {
@@ -610,7 +562,7 @@ export class PrototypeScene extends Phaser.Scene {
       velocityX: def.velocityX,
       velocityY: def.velocityY,
       damage: def.damage,
-      hitRadius: def.piercing?6:2.5,
+      hitRadius: Math.min(def.hitRadius,def.piercing?6:effect==='missile'?3:2.5),
       hitTargets:new Set(),
       piercing: def.piercing,
       waveAmplitude: def.waveAmplitude,
@@ -643,6 +595,7 @@ export class PrototypeScene extends Phaser.Scene {
         x: enemy.x,
         y: enemy.y,
         radius: enemyBodyRadius(enemy),
+        contact:(ax,ay,bx,by,r)=>{const v=this.enemyVisuals.get(enemy.id);return v?spriteContact(v.body,ax,ay,bx,by,r):null;},
         stopsBeam: !isSmall && this.weapons.weaponLevel < 3,
       });
     }
@@ -650,13 +603,14 @@ export class PrototypeScene extends Phaser.Scene {
     if (
       this.director.boss &&
       this.director.boss.phase !== 'intro' &&
-      this.director.boss.phase !== 'defeated'
+      this.director.boss.phase !== 'defeated' && this.director.boss.phase !== 'metamorphosis'
     ) {
       targets.push({
         id: 'boss',
         x: this.director.boss.x,
         y: this.director.boss.y,
         radius: this.director.boss.bodyRadiusY ?? 65,
+        contact:(ax,ay,bx,by,r)=>this.bossVisual?spriteContact(this.bossVisual.main,ax,ay,bx,by,r):null,
         stopsBeam: true, // Feixes colidem e geram fagulhas intensas no casco blindado do chefe/miniboss
       });
     }
@@ -755,33 +709,12 @@ export class PrototypeScene extends Phaser.Scene {
         : 0xff4d6d;
     const defs = getPrimaryProjectiles(this.weapons.weaponFamily, this.weapons.weaponLevel, originX, originY);
     for (const def of defs) {
-      this.createPlayerProjectile(def, familyTint);
+      const focus=this.pilot.id==='lyra'?.36:this.pilot.id==='harlan'?.6:this.pilot.id==='cora'?.8:1;
+      this.createPlayerProjectile({...def,velocityX:def.velocityX*focus,damage:def.damage*this.pilot.damage}, familyTint);
     }
 
-    this.playEffect('muzzle', originX, originY);
+    // Painted projectiles originate at the current, unrotated nose.
     globalAudio.playShot(this.pilot.id, this.weapons.weaponLevel);
-  }
-
-  private fireChargedShot(chargeLevel: 1 | 2): void {
-    const originX = this.vectorShip.x;
-    const originY = this.vectorShip.y - this.vectorShip.halfHeight - 4;
-    this.vectorShip.triggerMuzzleFlash();
-
-    const defs = getChargedProjectiles(this.pilot.id, chargeLevel, originX, originY);
-    for (const def of defs) {
-      this.createPlayerProjectile(def);
-    }
-
-    globalAudio.playChargedShot(this.pilot.id, chargeLevel);
-    this.playEffect('muzzle', originX, originY);
-
-    const shotName = this.pilot.id === 'nolan'
-      ? (chargeLevel === 2 ? 'FEIXE PRISMÁTICO MÁXIMO!' : 'FEIXE PENETRANTE')
-      : this.pilot.id === 'cora'
-        ? (chargeLevel === 2 ? 'OVERDRIVE AGULHAS (VENTILADO)!' : 'RAJADA AGULHAS')
-        : (chargeLevel === 2 ? 'MEGA-CANHÃO CINÉTICO!' : 'IMPACTO PESADO');
-
-    this.hud.flash(shotName, chargeLevel === 2 ? '#00f0ff' : '#ffd166', 800);
   }
 
   private fireSecondary(): void {
@@ -794,7 +727,7 @@ export class PrototypeScene extends Phaser.Scene {
     }
 
     globalAudio.playMissile();
-    this.hud.flash('ARMA SECUNDÁRIA / MÍSSEIS', '#ffd19f', 650);
+
   }
 
   private triggerSpecial(): void {
@@ -820,6 +753,9 @@ export class PrototypeScene extends Phaser.Scene {
     } else if (this.weapons.specialType === 'phantom') {
       this.phantomDashTimerMs = 650;
       this.hud.flash('SALTO FANTASMA!', '#7df9ff', 1200);
+    } else if (this.weapons.specialType === 'orbital') {
+      this.hud.flash('COROA ORBITAL!', '#90f5c0', 1400);
+      for(let i=0;i<6;i++){const x=PLAYFIELD_X+PLAYFIELD_WIDTH*(i+1)/7;const lance=this.add.sprite(x,-30,'review-effects-charge',0).play('review-effects-charge-loop').setTint(0x85ffba).setDisplaySize(28,110).setDepth(12);this.tweens.add({targets:lance,x:boss?.x??this.ship.x,y:boss?.y??80,delay:i*120,duration:700,onComplete:()=>{this.playEffect('explosion',lance.x,lance.y);lance.destroy();}});}
     } else if (this.weapons.specialType === 'nova') {
       this.hud.flash('RUPTURA NOVA!', '#ffb66a', 1500);
       this.emitRupturaNova();
@@ -899,12 +835,12 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private makeEnemyVisual(enemy: EnemyModel): void {
-    const texture = 'polish-'+(enemy.carrier?'carrier':enemy.layer?(enemy.surfaceVariant==='ambush'?'ambush':'surface'):enemy.kind);
-    const size = enemy.carrier?72:enemy.layer?68:({ scout: 38, dart: 48, lancer: 46, cutter: 50 }[enemy.kind]) * (enemy.flight ? 0.74 : 1);
+    const texture = enemy.carrier?'hd-supply-parachute':'polish-'+(enemy.layer?(enemy.surfaceVariant==='ambush'?'ambush':'surface'):enemy.kind);
+    const size = enemy.carrier?72:enemy.layer?68:({ scout: 32, dart: 40, lancer: 39, cutter: 42 }[enemy.kind]) * (enemy.flight ? 0.74 : 1);
     const body = this.add.sprite(0, 0, texture, 0)
       .setDisplaySize(size, size);
     // Painted sheets already face south; do not rotate their top-down anatomy.
-    if (!enemy.layer) body.play({key:texture+'-loop',startFrame:enemy.id%8});
+    if (!enemy.layer) body.play({key:texture+'-loop',startFrame:enemy.id%(enemy.carrier?4:8)});
     const warning = this.add.sprite(0, 22, 'hd-shot-enemy', 'orb')
       .setDisplaySize(10, 10).setVisible(false);
     const container = this.add.container(enemy.x, enemy.y, [body, warning]).setDepth(enemy.layer === 'surface' ? -3 : 5);
@@ -921,18 +857,8 @@ export class PrototypeScene extends Phaser.Scene {
     for (const enemy of this.director.enemies) {
       const visual = this.enemyVisuals.get(enemy.id);
       if (!visual) continue;
-      const previousX=visual.container.x,previousY=visual.container.y;
       visual.container.setPosition(enemy.x, enemy.y);
-      if(!enemy.flight&&!enemy.layer&&!enemy.carrier){
-        const target=Phaser.Math.Clamp(Math.atan2(-(enemy.x-previousX),Math.max(.1,enemy.y-previousY)),-.22,.22);
-        visual.body.rotation+=(target-visual.body.rotation)*.18;
-      }
-      if (enemy.flight) {
-        const t = enemy.ageMs / 3400;
-        const vx = (enemy.flight === 'sweep-left' ? 1 : -1) * (PLAYFIELD_WIDTH + 48);
-        const vy = Math.PI * 245 * Math.cos(Math.PI * t) + Math.PI * 40 * Math.cos(Math.PI * 2 * t);
-        visual.body.setRotation(Math.atan2(vy, vx) - Math.PI / 2);
-      }
+      visual.body.rotation=0;
       const preparing = enemy.phase === 'telegraph';
       if (enemy.layer) visual.body.setFrame(enemy.animationFrame??0);
       if (preparing && !visual.warning.visible) {
@@ -981,6 +907,12 @@ export class PrototypeScene extends Phaser.Scene {
       const feedback=this.add.image(item.x,item.y,'review-pickups-'+(item.type==='full_power'?'power':item.type),0).setDisplaySize(25,25).setDepth(22);
       this.tweens.add({targets:feedback,alpha:0,scaleX:feedback.scaleX*.3,scaleY:feedback.scaleY*.3,x:this.ship.x,y:this.ship.y,duration:110,onComplete:()=>feedback.destroy()});
 
+      if (item.recovery) {
+        this.weapons = recoverArmament(this.weapons,item.recovery);
+        this.hud.setWeapon(this.weapons.weaponFamily,this.weapons.weaponLevel,this.weapons.powerMeter);
+        this.hud.flash('ARMAMENTO RECUPERADO', '#ffd23f',700);
+        continue;
+      }
       if (item.type === 'power') {
         const res = collectPowerItem(this.weapons);
         globalAudio.playPickup(res.levelIncreased?'upgrade':'power');
@@ -1014,14 +946,9 @@ export class PrototypeScene extends Phaser.Scene {
         if (alreadyMax) this.scoreCombo = addRawScore(this.scoreCombo, 5000);
         this.hud.flash(alreadyMax ? 'VELOCIDADE MÁXIMA: +5000 PONTOS' : 'VELOCIDADE S: ' + this.weapons.speedLevel + '/3', '#a5b7ff', 1100);
       } else if (item.type === 'health') {
-        if (this.health.hp < 100) {
-          this.health = { ...this.health, hp: Math.min(100,this.health.hp + 30) };
-          this.hud.setHealth(this.health, this.weapons.hasShield);
-          this.hud.flash('REPARO! +30% DE INTEGRIDADE', '#88ffaa', 1000);
-        } else {
-          this.scoreCombo = addRawScore(this.scoreCombo, 300);
-          this.hud.flash('INTEGRIDADE MÁXIMA (+300 PTS)', '#aaffee', 900);
-        }
+        if (this.weapons.hasShield) this.scoreCombo = addRawScore(this.scoreCombo, 300);
+        else this.weapons = setShield(this.weapons, true);
+        this.hud.flash('ESCUDO ATIVO', '#88ffaa', 900);
       } else if (item.type === 'bomb' || item.type === 'special') {
         const wasFull = this.weapons.specialCharges >= 3;
         this.weapons = collectSpecialCharge(this.weapons);
@@ -1061,19 +988,28 @@ export class PrototypeScene extends Phaser.Scene {
   private syncBossVisual(boss:NonNullable<StageDirector['boss']>):void {
     if(this.bossVisual?.name!==boss.name){this.bossVisual?.container.destroy();this.bossVisual=undefined;}
     const transforming = boss.phase === 'metamorphosis';
-    const key = boss.name==='RAIA-DENTE' ? 'polish-raia' : transforming ? 'polish-metamorphosis' : boss.layer==='inner' ? 'polish-inner' : 'polish-talassarca';
+    const key = boss.name==='RAIA-DENTE' ? 'polish-raia' : boss.layer==='inner' ? 'hd-inner-top' : 'hd-talassarca-top';
     const size = transforming
-      ? PLAYFIELD_WIDTH*(.8+.2*(boss.metamorphosisMs??0)/METAMORPHOSIS_MS)
+      ? PLAYFIELD_WIDTH*(1.02+.28*(boss.metamorphosisMs??0)/METAMORPHOSIS_MS)
       : boss.displayWidth ?? 175;
     if(!this.bossVisual){
       const main=this.add.sprite(0,0,key,0);
       this.bossVisual={name:boss.name,main,container:this.add.container(boss.x,boss.y,[main]).setDepth(6)};
     }
     this.bossVisual.container.setPosition(boss.x,boss.y);
+    if(boss.name==='TALASSARCA'){
+      for(const [i,key]of ['sub1','sub2','sub3'].entries()){
+        const slot=key as 'sub1'|'sub2'|'sub3';
+        let organ=this.bossVisual[slot];if(!organ){organ=this.add.sprite(0,0,'review-hostile-raia',0).setDisplaySize(22,22).setDepth(7);this.bossVisual.container.add(organ);this.bossVisual[slot]=organ;}
+        const module=boss.modules?.[i];if(!module){organ.setVisible(false);continue;}
+        organ.setPosition(module.offsetX,module.offsetY).setVisible(!module.destroyed&&!transforming).setFrame(Math.floor(this.time.now/130)%4).setAlpha(boss.isTelegraphing?.9:.45);
+      }
+    }
     const frameMs=boss.name==='RAIA-DENTE'?125:boss.layer==='inner'?110:160;
-    const frame=transforming ? Math.min(7,Math.floor((boss.metamorphosisMs??0)/METAMORPHOSIS_MS*8)) : Math.floor(this.time.now/frameMs)%8;
+    const frame=transforming ? Math.floor(this.time.now/180)%4 : Math.floor(this.time.now/frameMs)%(boss.name==='RAIA-DENTE'?8:4);
     this.bossVisual.main.setTexture(key,frame).setDisplaySize(size,size);
-    if(boss.isTelegraphing&&!transforming) this.bossVisual.main.setTint(0xffcab4);else this.bossVisual.main.clearTint();
+    if(boss.isTelegraphing&&!transforming) this.bossVisual.main.setTint(0xffdfcc);else this.bossVisual.main.clearTint();
+    this.bossVisual.main.setAlpha(transforming?.6+.3*Math.sin((boss.metamorphosisMs??0)/90):1);
     if(transforming) this.clearEnemyShots();
   }
 
@@ -1110,7 +1046,7 @@ export class PrototypeScene extends Phaser.Scene {
       // Only the final evolution cargo adapts to the current cascade gate.
       const dropType = targetBefore?.carrier ? targetBefore.drop : null;
       if (dropType) {
-        this.pickups.spawn(dropType === 'weapon_green' ? evolutionCargo(this.weapons) : dropType==='health'&&this.health.hp===100?'speed':dropType, x, y);
+        this.pickups.spawn(dropType === 'weapon_green' ? evolutionCargo(this.weapons) : dropType==='health'&&this.weapons.hasShield?'speed':dropType, x, y);
       }
       this.syncEnemyVisuals();
     } else {
@@ -1156,13 +1092,13 @@ export class PrototypeScene extends Phaser.Scene {
       const contacts:Array<{id:number|'boss';t:number}>=[];
       for(const enemy of this.director.enemies){
         if(enemy.submerged||shot.hitTargets?.has(enemy.id))continue;
-        const radius=enemyBodyRadius(enemy)+shot.hitRadius;
-        const t=segmentEllipseHit(fromX,fromY,shot.node.x,shot.node.y,enemy.x,enemy.y,radius,radius);
+        const visual=this.enemyVisuals.get(enemy.id);
+        const t=visual?spriteContact(visual.body,fromX,fromY,shot.node.x,shot.node.y,shot.hitRadius):null;
         if(t!==null)contacts.push({id:enemy.id,t});
       }
       const boss=this.director.boss;
       if(boss&&!['intro','metamorphosis','defeated'].includes(boss.phase)&&!shot.hitTargets?.has('boss')){
-        const t=segmentEllipseHit(fromX,fromY,shot.node.x,shot.node.y,boss.x,boss.y,(boss.bodyRadiusX??95)+shot.hitRadius,(boss.bodyRadiusY??65)+shot.hitRadius);
+        const t=this.bossVisual?spriteContact(this.bossVisual.main,fromX,fromY,shot.node.x,shot.node.y,shot.hitRadius):null;
         if(t!==null)contacts.push({id:'boss',t});
       }
       contacts.sort((a,b)=>a.t-b.t);
@@ -1187,21 +1123,30 @@ export class PrototypeScene extends Phaser.Scene {
     }
   }
 
+  private hullTouchesSprite(body:Phaser.GameObjects.Sprite):boolean {
+    const scale=this.pilot.id==='nolan'?.87:1;
+    for(let i=0;i<RIVET_HULL.length;i++){
+      const a=RIVET_HULL[i],b=RIVET_HULL[(i+1)%RIVET_HULL.length];
+      if(spriteContact(body,this.ship.x+a.x*scale,this.ship.y+a.y*scale,this.ship.x+b.x*scale,this.ship.y+b.y*scale,0)!==null)return true;
+    }
+    return spriteContact(body,this.ship.x,this.ship.y,this.ship.x,this.ship.y)!==null;
+  }
+
   private checkEnemyContacts(): void {
     for(const enemy of [...this.director.enemies]) {
       if(enemy.layer==='surface')continue;
-      if(!circleHitsHull(enemy.x,enemy.y,enemyBodyRadius(enemy),this.ship.x,this.ship.y))continue;
+      const body=this.enemyVisuals.get(enemy.id)?.body;
+      if(!body||!this.hullTouchesSprite(body))continue;
       this.director.remove(enemy.id);
       this.playEffect('explosion',enemy.x,enemy.y);globalAudio.playExplosion(false);
-      this.damageShip(isDashActive(this.dashState)?0:30);
+      this.damageShip(30);
       this.syncEnemyVisuals();
       if(this.health.gameOver)return;
     }
     const boss=this.director.boss;
     if(boss&&!['intro','metamorphosis','defeated'].includes(boss.phase)){
-      const rx=boss.bodyRadiusX??75,ry=boss.bodyRadiusY??55;
-      const points=[[this.ship.x,this.ship.y-20],[this.ship.x-17,this.ship.y+9],[this.ship.x+17,this.ship.y+9]];
-      if(points.some(([x,y])=>Math.hypot((x-boss.x)/rx,(y-boss.y)/ry)<=1))this.damageShip(35);
+      // Talassarca is an aquatic organism beneath the aircraft; its body is overflown.
+      if(boss.name!=='TALASSARCA'&&this.bossVisual&&this.hullTouchesSprite(this.bossVisual.main))this.damageShip(35);
     }
   }
 
@@ -1214,7 +1159,9 @@ export class PrototypeScene extends Phaser.Scene {
       shot.node.y += (shot.velocityY * dt) / 1000;
 
       // The visible hull includes the nose and wings, excluding empty sprite corners.
-      const hit = sweptHullContact(previous,{x:shot.node.x,y:shot.node.y},shot.hitRadius,this.ship.x,this.ship.y);
+      const painted=this.ship.hullSprite;
+      const t=painted?spriteContact(painted,previous.x,previous.y,shot.node.x,shot.node.y,shot.hitRadius):null;
+      const hit=painted?(t===null?null:{x:previous.x+(shot.node.x-previous.x)*t,y:previous.y+(shot.node.y-previous.y)*t}):sweptHullContact(previous,{x:shot.node.x,y:shot.node.y},shot.hitRadius,this.ship.x,this.ship.y);
 
       const outside =
         shot.node.x < PLAYFIELD_X - 20 ||
@@ -1229,7 +1176,7 @@ export class PrototypeScene extends Phaser.Scene {
       }
       if (hit) {
         // Se estiver em janela de invulnerabilidade do dash ou pós-acerto, ignora o dano
-        if (this.health.invulnerableMs > 0 || isDashInvulnerable(this.dashState)) {
+        if (this.health.invulnerableMs > 0) {
           continue;
         }
         const result = this.damageShip(shot.damage,impactX,impactY);
@@ -1242,7 +1189,7 @@ export class PrototypeScene extends Phaser.Scene {
     if(damage<=0)return 'ignored';
     if(this.weapons.specialActiveMs>0 || this.director.boss?.phase==='metamorphosis')return 'ignored';
     // Se o jogador estiver em invulnerabilidade ativa, descarta qualquer dano
-    if (this.health.invulnerableMs > 0 || isDashInvulnerable(this.dashState)) {
+    if (this.health.invulnerableMs > 0) {
       return 'ignored';
     }
 
@@ -1269,6 +1216,17 @@ export class PrototypeScene extends Phaser.Scene {
       this.hitPoseMs = 180;
       this.particles.burst(impactX,impactY,.4,false,0xff8855);
       this.playEffect('hit', impactX, impactY);
+    } else if (outcome.event === 'respawn') {
+      this.releaseRecoveryItems();
+      this.weapons = {...resetWeaponsOnRespawn(this.weapons), weaponLevel:1, powerMeter:0};
+      this.specialVisual?.destroy(); this.specialVisual=undefined;
+      this.crimsonLaserRenderer.clear(); this.clearPlayerShots(); this.clearEnemyShots();
+      globalAudio.playExplosion(true);
+      this.playEffect('explosion', this.ship.x, this.ship.y);
+      this.particles.burst(this.ship.x,this.ship.y,1.3,true,0xffa43b);
+      this.vectorShip.setPosition(PLAYFIELD_X+PLAYFIELD_WIDTH/2,GAME_HEIGHT-65);
+      this.hud.setWeapon(this.weapons.weaponFamily,1,0);
+      this.hud.flash('NAVE ABATIDA · RECUPERE SEU ARMAMENTO', '#ffca80',1200);
     } else if (outcome.event === 'game-over') {
       this.specialVisual?.destroy();this.specialVisual=undefined;
       globalAudio.playExplosion(true);
@@ -1288,6 +1246,15 @@ export class PrototypeScene extends Phaser.Scene {
       );
     }
     return outcome.event;
+  }
+
+  private releaseRecoveryItems(): void {
+    recoveryPayloads(this.weapons).forEach((recovery,i,items)=>{
+      const item=this.pickups.spawn(recovery.family==='ion'?'power':('weapon_'+recovery.family) as PickupType,
+        this.ship.x+(i-(items.length-1)/2)*28,this.ship.y-30-i*10);
+      item.recovery=recovery;
+    });
+    this.syncPickupVisuals();
   }
 
   private clearEnemyShots(): void {

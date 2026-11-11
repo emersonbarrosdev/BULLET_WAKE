@@ -9,7 +9,7 @@ export interface PlayerHealth {
 export type HitEvent = 'ignored' | 'damaged' | 'respawn' | 'game-over';
 
 export const MAX_HP = 100;
-export const START_LIVES = 1;
+export const START_LIVES = 3;
 export const HIT_INVULNERABILITY_MS = 1500;
 export const RESPAWN_INVULNERABILITY_MS = 2000;
 
@@ -32,16 +32,10 @@ export function applyPlayerHit(
     return { state, event: 'ignored' };
   }
 
-  const remaining = Math.max(0,state.hp-Math.max(0,damage));
-  if (remaining > 0) {
-    return {
-      state: { ...state, hp: remaining, invulnerableMs: HIT_INVULNERABILITY_MS },
-      event: 'damaged',
-    };
-  }
-
+  if (damage <= 0) return { state, event: 'ignored' };
+  const lives = Math.max(0, state.lives - 1);
   return {
-    state: { hp: 0, lives: 0, invulnerableMs: 0, gameOver: true },
-    event: 'game-over',
+    state: { hp: lives ? MAX_HP : 0, lives, invulnerableMs: lives ? RESPAWN_INVULNERABILITY_MS : 0, gameOver: lives === 0 },
+    event: lives ? 'respawn' : 'game-over',
   };
 }

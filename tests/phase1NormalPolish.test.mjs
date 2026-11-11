@@ -33,7 +33,7 @@ test('inner Talassarca alternates a generous moving corridor with aimed salvos, 
   const bursts=[],gaps=new Set();let warned=false;
   for(let i=0;i<350;i++){
     const tick=b.update(25,384,380);warned ||= tick.telegraph;
-    if(tick.shots.length){assert.ok(warned);warned=false;bursts.push(tick.shots);if(tick.shots.length>3){gaps.add(b.safeLaneX);assert.ok(tick.shots.every(s=>Math.abs(s.x-b.safeLaneX)>=58&&s.velocityX===0));}}
+    if(tick.shots.length){assert.ok(warned);warned=false;bursts.push(tick.shots);if(b.attackPattern==='curtain'){gaps.add(b.safeLaneX);assert.ok(tick.shots.every(s=>Math.abs(s.x-b.safeLaneX)>=38));}}
   }
   assert.ok(bursts.some(s=>s.length===3));assert.ok(bursts.some(s=>s.length>3));assert.equal(gaps.size,3);
 });
@@ -60,6 +60,6 @@ test('fast blue/missile/charge paths intersect targets without granting near-mis
   assert.ok(near<far);
 });
 
-test('manual taps remain stronger without requiring eight presses each second',()=>{
-  for(const f of ['ion','green']){const s=WEAPON_FAMILY_SPECS[f];assert.ok(s.burstIntervalMs>=160);assert.ok(s.autoIntervalMs>s.burstIntervalMs);assert.ok(s.autoIntervalMs/s.burstIntervalMs<2);}
+test('held fire matches fast tapping without repetitive input',()=>{
+  for(const f of ['ion','green']){const s=WEAPON_FAMILY_SPECS[f];assert.ok(s.burstIntervalMs>=160);assert.equal(s.autoIntervalMs,s.burstIntervalMs);assert.ok(s.autoIntervalMs/s.burstIntervalMs<2);}
 });

@@ -64,3 +64,9 @@ test('normal enemy fire crosses 250 world pixels in under 1.5 seconds after warn
   const combat=shots.filter(s=>Math.hypot(s.velocityX,s.velocityY)>=168);
   assert.ok(combat.length>10);assert.ok(combat.every(s=>250/Math.hypot(s.velocityX,s.velocityY)<1.5));
 });
+
+test('north button opens a pilot profile without enabling the removed missile action',()=>{
+ const pad={id:'Xbox',mapping:'standard',axes:[0,0],buttons:Array.from({length:17},()=>({pressed:false,value:0}))};
+ const r=new GamepadReader();r.sample(pad);pad.buttons[3].pressed=true;
+ const action=r.sample(pad);assert.equal(action.profile,true);assert.equal(action.missile,false);assert.equal(r.sample(pad).profile,false);
+});

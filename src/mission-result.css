@@ -15,3 +15,13 @@
 .bw-mission-result kbd {font:600 .85em 'Rajdhani',sans-serif;white-space:nowrap;}
 .bw-result-defeat h1 {color:#ff734d;}
 @media(max-height:600px) {.bw-result-panel {padding:20px;}.bw-result-eyebrow,.bw-result-message {margin-bottom:14px;}.bw-result-score {margin:16px 0;}.bw-mission-result h1 {margin-bottom:12px;}}
+
+/* Combat dialogs share the matte carbon vocabulary of preflight and sidebars. */
+.bw-mission-result{background:linear-gradient(#070707e8,#080808f5),url('/assets/combat-hd/carbon-wreckage.webp') center/cover;color:#ededed}
+.bw-result-panel{border-color:#575757;background:repeating-linear-gradient(135deg,#ffffff02 0 1px,transparent 1px 5px),linear-gradient(135deg,#1b1b1b,#101010);box-shadow:0 24px 100px #000c}
+.bw-result-panel::before{background:linear-gradient(90deg,transparent,#aaa,transparent);box-shadow:none}
+.bw-result-eyebrow,.bw-result-caption,.bw-result-message{color:#bdbdbd}
+.bw-mission-result h1{color:#f1f1f1;text-shadow:none;font-style:normal}
+.bw-result-defeat h1{color:#ff896e}.bw-result-score{color:#e9ca85}
+.bw-mission-result button,.bw-mission-result button:first-child{background:#242424;border-color:#707070;color:#eee;box-shadow:none}
+.bw-mission-result button:hover,.bw-mission-result button:focus-visible{background:#383838;outline-color:#ddd;box-shadow:none}

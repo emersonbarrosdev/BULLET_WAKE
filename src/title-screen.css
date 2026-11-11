@@ -267,3 +267,12 @@
 #bw-title-screen .bw-item-guide h2 {font:700 clamp(14px,1.15vw,20px)/1.2 'Oxanium',sans-serif;margin:0 0 5px;}
 #bw-title-screen .bw-item-guide p {font:600 clamp(14px,1vw,19px)/1.25 'Rajdhani',sans-serif;color:#d0d9df;margin:0;}
 @media(max-width:700px) {#bw-title-screen .bw-item-guide {grid-template-columns:1fr;max-height:57vh;}}
+
+/* Submenus use matte carbon; the approved opening artwork stays intact. */
+#bw-title-screen .bw-submenu-shade{background:repeating-linear-gradient(135deg,#ffffff02 0 1px,transparent 1px 5px),linear-gradient(135deg,#111111f5,#070707f7);backdrop-filter:blur(5px)}
+#bw-title-screen .bw-submenu-shell h1{color:#eee;text-shadow:none}
+#bw-title-screen .bw-submenu-choice{border-bottom:1px solid #ffffff14;color:#ddd;letter-spacing:.035em}
+#bw-title-screen .bw-submenu-choice.bw-active,#bw-title-screen .bw-submenu-choice:hover,#bw-title-screen .bw-submenu-choice:focus-visible{color:#fff;text-shadow:none;background:#ffffff08;outline:1px solid #ffffff44}
+#bw-title-screen .bw-submenu-marker,#bw-title-screen .bw-submenu-state,#bw-title-screen .bw-controls-list>div,#bw-title-screen .bw-submenu-help{color:#bdbdbd}
+#bw-title-screen .bw-item-guide article{background:#111;border-color:#444}
+#bw-title-screen .bw-guide-intro{color:#ccc}

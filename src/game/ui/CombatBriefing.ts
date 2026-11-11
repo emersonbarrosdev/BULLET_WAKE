@@ -1,8 +1,9 @@
+import { globalAudio } from '../audio/audioSystem';
+import { saveSystem } from '../systems/saveSystem';
 import Phaser from 'phaser';
 import { CombatLoading } from './CombatLoading';
 import { connectedPad, GamepadReader, padLabels } from '../systems/gamepadInput';
 import { NORMAL_GUIDE_ITEMS, PICKUP_GUIDE } from '../data/pickupGuide';
-import { saveSystem } from '../systems/saveSystem';
 import '../../combat-briefing.css';
 
 /** One device-aware guide for preflight, pause and options. Simulation is frozen. */
@@ -36,8 +37,11 @@ export class CombatBriefing {
     const pad=connectedPad(), device=pad?.id ?? 'keyboard';
     if(device!==this.device){this.device=device;this.render();}
     const p=this.reader.sample(pad);
-    if(p.left||p.up){this.selection--;this.focus();}
-    if(p.right||p.down){this.selection++;this.focus();}
+    if(this.page==='items'&&(p.up||p.down))this.scrollItems(p.up?-1:1);
+    else {
+      if(p.left||p.up){this.selection--;this.focus();}
+      if(p.right||p.down){this.selection++;this.focus();}
+    }
     if(p.confirm)this.buttons()[this.selection]?.click();
     if(p.back||p.menuOrBack)this.back();
     if(!this.closed)this.raf=requestAnimationFrame(this.tick);
@@ -47,9 +51,11 @@ export class CombatBriefing {
     if(!['Escape','Enter',' ','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Tab'].includes(e.key))return;
     e.preventDefault(); e.stopImmediatePropagation(); if(e.repeat)return;
     if(e.key==='Escape'){this.back();return;}
+    if(this.page==='items'&&(e.key==='ArrowUp'||e.key==='ArrowDown')){this.scrollItems(e.key==='ArrowUp'?-1:1);return;}
     if(e.key==='Enter'||e.key===' '){this.buttons()[this.selection]?.click();return;}
     this.selection += e.key==='ArrowLeft'||e.key==='ArrowUp'||(e.key==='Tab'&&e.shiftKey)?-1:1; this.focus();
   };
+  private scrollItems(direction:number) { this.root.querySelector('.bw-brief-items')?.scrollBy({top:direction*110}); }
   private back() {
     if(this.loading)return;
     if(this.page==='flight')return; // Starting combat always requires explicit confirmation.
@@ -59,10 +65,8 @@ export class CombatBriefing {
   private controls(): string {
     const pad=connectedPad(), l=padLabels(pad?.id);
     const rows=[['Movimentar',pad?'ANALÓGICO / DIRECIONAL':'WASD / SETAS'],['Disparar',pad?l.shoot:'ESPAÇO'],
-      ['Especial',pad?l.special:'X'],['Dash',pad?l.dash:'SHIFT'],['Carregar / soltar',pad?l.charge:'C'],
-      ['Míssil secundário',pad?l.missile:'M'],['Pausar',pad?l.pause:'ESC']];
-    const cadence=saveSystem.getSaveData().settings.rapidFire?'RAPID ligado: segurar mantém a cadência rápida.':'Toques ritmados: cadência rápida. Segurar: cadência reduzida.';
-    return `<p class="bw-brief-device">${pad?'CONTROLE CONECTADO':'TECLADO'} · ${pad?'CONFIRMAR '+l.shoot:'CONFIRMAR ENTER'}</p><div class="bw-brief-controls">${rows.map(([a,b])=>`<div><span>${a}</span><kbd>${b}</kbd></div>`).join('')}</div><p class="bw-brief-note">${cadence} O Laser Rubro mantém o fluxo contínuo.</p><p class="bw-brief-note">Carga: atravessa inimigos alinhados. Míssil: impacto concentrado, recarga de 3,2 s na RIVET. Especial: ataque de emergência limitado por cargas.</p>`;
+      ['Especial',pad?l.special:'X'],['Pausar',pad?l.pause:'ESC']];
+    return `<p class="bw-brief-device">${pad?'CONTROLE CONECTADO':'TECLADO'} · ${pad?'CONFIRMAR '+l.shoot:'CONFIRMAR ENTER'}</p><div class="bw-brief-controls">${rows.map(([a,b])=>`<div><span>${a}</span><kbd>${b}</kbd></div>`).join('')}</div><p class="bw-brief-note">Segure o disparo para atirar na cadência rápida. RIVET: dois mísseis automáticos a partir do nível 3 de cada arma.</p><p class="bw-brief-note">Especial: ataque de emergência limitado por cargas. Destrua caixas com paraquedas para liberar itens. Ao perder uma vida, recupere seu armamento no campo.</p>`;
   }
   private render() {
     if(this.closed||this.loading)return;
@@ -70,15 +74,19 @@ export class CombatBriefing {
     let body='', actions: Array<[string,()=>void]>=[];
     if(this.page==='flight'||this.page==='controls'){
       body=this.controls();
-      if(this.page==='flight')body+='<p class="bw-brief-rule">AZUL NV4 → VERDE NV1 · VERDE NV4 → RUBRO NV1<br>3 P por nível. Especial: 2 cargas iniciais, máximo 3.</p>';
+      if(this.page==='flight')body+='<p class="bw-brief-rule">AZUL NV4 → VERDE NV1 · VERDE NV4 → RUBRO NV1<br>3 vidas · 3 P por nível · 2 especiais iniciais, máximo 3.</p>';
       actions=this.page==='flight'?[['ENTENDI · INICIAR OPERAÇÃO',()=>this.launch()]]:[['VOLTAR',()=>this.back()]];
     }else if(this.page==='pause'){
       body='<p class="bw-brief-note">A operação está suspensa. Retome quando estiver pronto.</p>';
       actions=[['CONTINUAR',()=>this.finish(this.resume)],['OPÇÕES',()=>this.show('options')],['REINICIAR FASE',()=>this.finish(this.restart)],['ESCOLHER PILOTO',()=>this.finish(this.leave)]];
     }else if(this.page==='options'){
-      actions=[['VER COMANDOS',()=>this.show('controls')],['GUIA DE COLETÁVEIS',()=>this.show('items')],['VOLTAR',()=>this.back()]];
+      const settings=saveSystem.getSaveData().settings;
+      body='<p class="bw-brief-note">Dificuldade Normal · ajustes de áudio e consulta rápida.</p>';
+      actions=[['VER COMANDOS',()=>this.show('controls')],['GUIA DE COLETÁVEIS',()=>this.show('items')],
+        ['MÚSICA · '+(settings.musicVolume?'LIGADA':'DESLIGADA'),()=>{saveSystem.updateSettings({musicVolume:settings.musicVolume?0:1});const mix=saveSystem.getSaveData().settings;globalAudio.setMix(mix.musicVolume,mix.sfxVolume);this.render();}],
+        ['EFEITOS · '+(settings.sfxVolume?'LIGADOS':'DESLIGADOS'),()=>{saveSystem.updateSettings({sfxVolume:settings.sfxVolume?0:1});const mix=saveSystem.getSaveData().settings;globalAudio.setMix(mix.musicVolume,mix.sfxVolume);this.render();}],['VOLTAR',()=>this.back()]];
     }else{
-      body=`<div class="bw-brief-items">${NORMAL_GUIDE_ITEMS.map(type=>`<article><img src="${import.meta.env.BASE_URL}assets/combat-hd/review/pickups-${type}.webp" alt=""/><div><strong>${PICKUP_GUIDE[type].label}</strong><p>${PICKUP_GUIDE[type].description}</p></div></article>`).join('')}</div>`;
+      body=`<div class="bw-brief-items">${NORMAL_GUIDE_ITEMS.map(type=>`<article><span class="bw-brief-item-icon" style="background-image:url('${import.meta.env.BASE_URL}assets/combat-hd/review/pickups-${type}.webp')" aria-hidden="true"></span><div><strong>${PICKUP_GUIDE[type].label}</strong><p>${PICKUP_GUIDE[type].description}</p></div></article>`).join('')}</div>`;
       actions=[['VOLTAR',()=>this.back()]];
     }
     this.root.innerHTML=`<section class="bw-brief-panel"><p class="bw-brief-eyebrow">BULLET <em>WAKE</em> // FASE 01</p><h1>${title}</h1>${body}<nav>${actions.map(([label],i)=>`<button data-brief-action="${i}">${label}</button>`).join('')}</nav></section>`;

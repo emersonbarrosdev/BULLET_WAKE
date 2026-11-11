@@ -149,7 +149,7 @@ test('TESTE C: Movimentação respeita estritamente o teclado e cliques de mouse
 // ============================================================================
 // TESTE D: Dash de Emergência via Shift Esquerdo
 // ============================================================================
-test('TESTE D: Tecla Shift Esquerdo aciona dashTrigger com precisão instantânea', () => {
+test('TESTE D: Shift não aciona dash removido', () => {
   const frameShift = createBlankFrame({
     keyShift: true,
     keyShiftJustDown: true,
@@ -157,7 +157,7 @@ test('TESTE D: Tecla Shift Esquerdo aciona dashTrigger com precisão instantâne
   });
 
   const cmd = processInputFrame(frameShift);
-  assert.equal(cmd.dashTrigger, true, 'Left Shift deve acionar dashTrigger');
+  assert.equal(cmd.dashTrigger, false, 'Left Shift não deve acionar dash');
 });
 
 // ============================================================================
@@ -165,8 +165,8 @@ test('TESTE D: Tecla Shift Esquerdo aciona dashTrigger com precisão instantâne
 // ============================================================================
 test('TESTE E: Disparo manual mais rápido e contínuo compartilham cadência; calor legado resfria', () => {
   const specs = PILOT_WEAPON_SPECS.nolan;
-  assert.ok(specs.burstIntervalMs < specs.autoIntervalMs);
-  assert.equal(specs.autoIntervalMs, 280);
+  assert.ok(specs.burstIntervalMs === specs.autoIntervalMs);
+  assert.equal(specs.autoIntervalMs, 160);
   assert.equal(specs.burstIntervalMs, 160);
 
   let w = createPlayerWeapons('nolan');

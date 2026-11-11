@@ -1,56 +1,76 @@
-# IMPORTANTE — BULLET WAKE V2: IDENTIDADE, CAMPANHA E GAMEPLAY DEFINITIVOS
+# BULLET WAKE V2 — Bíblia vigente
 
-> **Revisão vigente do Normal — 10/11/2026:** [Ritmo, progressão e polimento fino](37_FASE1_NORMAL_RITMO_POLIMENTO.md). Doze transportadores, especial único com uma reposição, progressão mais espaçada, chefes recalibrados, tiros com colisão contínua e recuperação no Continue. Esta revisão prevalece sobre os números anteriores.
+Revisão de 11/11/2026. Este documento consolida as decisões atuais e substitui os trechos conflitantes das revisões anteriores. Detalhamento de produção e validação: [ritmo, elenco e contornos](38_RITMO_ELENCO_E_CONTORNOS.md).
 
-> **Carregamento e carbono fosco — 10/11/2026:** [revisão de apresentação](36_FASE1_CASCATA_CONTROLES_POLIMENTO.md#revisão-carregamento-e-carbono-fosco-10112026). Confirmar piloto mostra progresso dos recursos antes do guia; confirmar o guia mostra decolagem por 2,5 s com simulação pausada. Guia, pausa, opções e HUD passam a preto fosco/carbono com detalhes neutros; cores funcionais de combate permanecem.
+## Estado e identidade
 
-> **Atualização prioritária:** [Fase 1 — cascata, controles e polimento](36_FASE1_CASCATA_CONTROLES_POLIMENTO.md). Azul NV4 libera verde NV1; verde NV4 libera rubro NV1. Especial apenas X no teclado, guia antes da partida, pause/opções e controle padrão. Esta decisão mais recente substitui a troca livre e os atalhos V/B citados historicamente abaixo.
+- Shooter vertical 2D, visão superior ortográfica. Nariz da nave ao norte; movimento lateral não inclina o plano da imagem. Arte em três quartos fica restrita aos menus.
+- Invasão da Terra por organismos alienígenas. Inimigos da Fase 1 são criaturas vivas, sem cockpit, fuselagem ou aparência de veículos humanos.
+- Somente Fenda Pelágica está liberada. As demais fases e rotas abaixo são planejamento; produção da Fase 2 depende da aprovação explícita da primeira.
+- Quatro pilotos: Nolan/RIVET, Cora/MOTH, Harlan/KNUCKLE e Lyra/KESTREL. Cada especial tem entrega própria e estoque inicial 2/máximo 3. Sem bomba independente.
+- Tipografia: Oxanium para títulos/destaques e Rajdhani para leitura/menus. Preservar a abertura e a identidade dos pilotos; opções, preparação, resultados e laterais usam preto fosco/carbono.
 
-> **Polimento vigente da Fase 1:** [Contato, água, áudio e explosões](35_FASE1_POLIMENTO_CONTATO_AGUA_AUDIO.md). Água com fluxo contínuo sem emenda, explosões de fogo curtas sem fumaça cinza, projéteis transparentes, áudio alienígena e HUD agrupado por sobrevivência/armamento. Somente a primeira fase continua em produção.
+## Regras atuais da Fase 1
 
-> **Diretriz vigente — 10/11/2026:** [Fase 1: alienígenas, camadas e oceano vivo](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md). Somente organismos alienígenas; sem bombas separadas ou recarga por ressonância. Dois especiais iniciais, máximo três, reposição física E. Chefes colossais com casca de cinco especiais, metamorfose e forma interna de três, preservando tiros convencionais e área de esquiva. Oceano calmo → invasão/turbulência/destroços → fenda antes do chefe. Esta diretriz prevalece sobre números e descrições históricas abaixo. Apenas Talassarca recebeu as duas camadas; futuros chefes, biomas e modos dependem da aprovação da Fase 1. [Pendências reais](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md#o-que-ainda-falta) e [prompts dos assets](34_FASE1_PROMPTS_POLIMENTO.md).
+### Vidas, morte e recuperação
 
-> **Revisão vigente da Fase 1:** [Combate, arte e confirmação](31_FASE1_REVISAO_COMBATE.md). Barra única de integridade com Continue explícito; ícones raster sem legendas; fundo de superfície em movimento; chefes e especial próprios; confirmação sobre o card. Esta revisão substitui as definições conflitantes abaixo e do documento 30. Fase 2 depende de aprovação explícita da Fase 1.
+Início com **três vidas**, sem barra de integridade. Um impacto não protegido abate a nave. Um escudo absorve um impacto; após o abate, a nave reaparece no mesmo combate com dois segundos de proteção, arma azul NV1 e sem velocidade acumulada. O especial não ganha cargas gratuitamente.
 
-> **Revisão vigente de HUD, potência e dificuldade (09/11/2026):** [Fase 1 — carbono e Normal](30_FASE1_NORMAL_FIRE_SHARK.md). Laterais pretas de carbono em tela cheia; cor repetida dá pontos, P evolui sozinho, S é velocidade e $ é pontuação. O modo de produção atual é Normal. Fácil, Difícil e Real são planos posteriores. Esta revisão prevalece sobre as descrições históricas conflitantes abaixo.
+O armamento conquistado retorna como itens físicos que quicam nas bordas. Até quatro marcos de recuperação restituem família, nível e P parcial por contato. Itens recuperados não compram uma família nova nem duplicam potência; recolher fora de ordem não reduz o nível já restaurado. Nenhum item sai de inimigos comuns.
 
-> [!IMPORTANT]
-> **DIRETRIZ CANÔNICA PERMANENTE — BULLET WAKE V2 (PRIORIDADE MÁXIMA)**
-> Esta seção substitui todas as definições conflitantes anteriores e consolida a identidade definitiva do jogo.
->
-> 1. **Gênero e Orientação:** Shoot 'em up 2D de visão superior (TOP-DOWN) com rolagem vertical estrita. A visão lateral foi totalmente revogada.
-> 2. **Tema Estrito:** Invasão extraterrestre à Terra por organismos alienígenas, monstros voadores e entidades colossais. Na Fase 1, inimigos são criaturas vivas; proibidos caças convencionais, tanques, dirigíveis mecânicos e máquinas da campanha horizontal anterior. Quitina e órgãos biológicos não devem parecer fuselagem, cockpit ou propulsores.
-> 3. **Controles Oficiais no PC:**
->    - `WASD` ou `Setas`: Movimentação da nave (diagonais normalizadas).
->    - `ESPAÇO`: Disparo principal (contínuo segurando, manual tapando).
->    - `SHIFT Esquerdo`: Dash / Propulsão de emergência (exatamente 3 por fase).
->    - `C`: Carregar arma (Wave Cannon / Carga quando aplicável).
->    - `X`: Mesmo especial do piloto; duas cargas iniciais, máximo três, sem ressonância.
->    - `ESC`: Pausa / Menu.
->    - **MOUSE NÃO ATIRA NO PC:** Cliques do mouse (esquerdo ou direito) e movimento do ponteiro são 100% desvinculados do voo durante o gameplay. O mouse serve unicamente para menus e interfaces.
-> 4. **Mecânica Oficial do Dash:** Exatamente **3 DASHES POR FASE** (`DASH: ◆ ◆ ◆`). Sem recarga temporal, sem recarga por abate, sem power-up de dash e sem recuperação ao morrer dentro da fase. Restauração exclusiva ao reiniciar a fase do zero ou iniciar nova fase.
-> 5. **Sistema de Armas (Estilo Fire Shark — Separação Canônica):** Três famílias com identidade visual e mecânica distinta, evoluindo independentemente dos Níveis 1 a 4:
->    - **Dispersão Azul (`ion` — ARMA INICIAL CANÔNICA):** Começa no NV1, 0/3 P. Projéteis individuais em leque crescente; quatro estados de potência. O máximo de 16 disparos é descrito no manual Mega Drive. Parâmetros atuais e limites de equivalência estão na diretriz 33.
->    - **Energia Espiralada (`green`):** Componentes de energia entrelaçados com movimento helicoidal e rastro contínuo, crescendo em quatro estados; não bolinhas ou laser reto estático. Contagens internas são calibração, não medidas da ROM.
->    - **Laser Rubro (`red` — ARMAMENTO ENERGÉTICO CONTÍNUO DE MULTIFEIXES EVOLUTIVOS):** Fluxo contínuo de energia vermelha intensa emitido enquanto `ESPAÇO` estiver pressionado, multiplicando suas colunas e adicionando varredura lateral e cobertura diagonal/traseira nos níveis superiores (LV1: 1 fluxo frontal concentrado; LV2: 2 fluxos paralelos; LV3: 4 fluxos com 2 laterais oscilantes; LV4 — **Asas de Energia**: 6 fluxos com 2 frontais + 2 asas laterais de varredura ampla + 2 feixes diagonais traseiros `rear-wing`). **Proibido representar como bolas vermelhas ou projéteis discretos.**
-> 6. **Sistema de Power-ups (`3 P` por Nível + Cápsulas de Cor Independentes):** Portadores alienígenas (ex: Casulos Marinhos) soltam cápsulas físicas no campo:
->    - `P` (Power): **Três P aumentam um nível** (`1 -> 2 -> 3 -> 4`), nove até NV4. No máximo, três P adicionais formam reserva para a próxima vida. P parcial sobrevive à perda de vida. `P★` fica exclusivamente no sandbox, fora do roteiro Normal.
->    - `W` (Weapon Capsule): Cápsulas coloridas separadas (`AZUL` = Dispersão Azul, `VERDE` = Energia Espiralada, `RUBRO` = Laser Rubro) que trocam imediatamente a arma equipada mantendo o nível (`1..4`) e o progresso do medidor `P` (`0..2`), sem exigir maximizar uma cor antes de coletar outra.
->    - `H` (Health): Recupera blindagem.
->    - `M` (Missile): Reabastece mísseis.
->    - `S` (Speed): Velocidade, até três incrementos; `$` representa pontos.
->    - `E` (Special): Repõe uma carga do especial, máximo três; substitui a bomba separada e a antiga barra de energia.
->    - *Nenhum coletável recupera dash.*
-> 7. **Primeira Fase Oficial (Escopo Atual):** `STAGE_01_PELAGIC` — **FENDA PELÁGICA**. Voo baixo sobre oceano inicialmente calmo, invasão/turbulência/destroços crescentes e fenda revelada antes do chefe. Miniboss: *Raia-Dente*. Chefe: *Talassarca*, casca e forma interna com barras completas separadas por metamorfose.
-> 8. **Campanha Completa Documentada:** 15 fases principais (1 a 3 selecionáveis; 4 a 15 sequenciais; 3 chefes finais na fase 15: Thalor, Morhiza e Prisma Órfão) + 2 Finais Secretos (Fase 16: Abismo Subterrâneo; Fase 17: Lua: Origem da Colmeia — Matriz Primordial). Somente a Fase 1 é implementada nesta versão.
-> 9. **Arquitetura de HUD:** Widescreen com corredor central de combate vertical (`432px` de largura, `X: 168..600`) e painéis laterais de telemetria (`168px` cada), separando completamente as informações vitais do campo de tiro.
-> 10. **Tipografia Estrita:** Máximo de duas famílias legítimas carregadas:
->     - **Oxanium** (600, 700, 800): Títulos, cabeçalhos, destaques, chefes e alertas.
->     - **Rajdhani** (500, 600, 700): Menus, botões, labels, HUD e telemetria.
+Ao acabar a terceira vida, mostrar derrota e Continue explícito por checkpoint. Continue começa com três vidas, preserva apenas a recuperação prevista pelo balanceamento e não reabastece especiais. A sobrevivência sem barra é a regra do Normal atual; modos futuros ainda não estão produzidos.
 
----
+### Comandos e armamento
 
-## 1. CAMPANHA OFICIAL: AS 15 FASES E FINAIS SECRETOS
+- WASD/setas ou analógico/direcional: movimento com diagonal normalizada.
+- Espaço mantido ou botão sul do controle: disparo na cadência rápida; não exigir apertos repetidos.
+- X ou botão oeste: especial único. Esc/Menu: pausa e opções.
+- **Dash, tiro carregado e míssil manual removidos**, incluindo diálogos. Cora mantém deslocamento de fase como especial limitado, sem uma ação extra de dash.
+- RIVET dispara dois mísseis automaticamente ao segurar disparo em NV3/NV4 de qualquer família. Não há botão nem coletável de míssil na Fase 1.
+- Cascata autoral aprovada: azul NV4 libera cápsula verde NV1; verde NV4 libera rubro NV1. Cada troca evolutiva zera P. Três P sobem um nível, nove P do NV1 ao NV4; até três P de reserva no máximo. Cápsula repetida concede pontos.
+- Azul: leque de projéteis 3/5/9/16. Verde: ondas entrelaçadas 2/4/6/8, com dano calibrado para a troca não ser uma perda de poder. Rubro: fluxos contínuos móveis, com expansões laterais/traseiras nos níveis avançados. Quantidades/dano/intervalos são calibração de Bullet Wake, não valores medidos das ROMs de referência.
+
+A cascata acima é uma escolha de Bullet Wake solicitada posteriormente. **Fire Shark permite troca de cores independente da potência**, portanto não apresentar nossa cascata como reprodução fiel daquele sistema.
+
+### Coletáveis e apresentação
+
+Caixas com paraquedas entram como suprimento. O jogador precisa destruí-las; o item liberado quica nas quatro bordas e permanece por até 16 segundos. P, cápsulas, velocidade, proteção e especial possuem spritesheets distintas. O antigo H funciona agora como escudo de um impacto; não cura uma barra inexistente.
+
+HUD sem legendas sob os itens nem atalhos espalhados. Laterais preservadas: arena lógica X168..600, largura 432, laterais 168 cada, canvas 768×432. Esquerda agrupa piloto, pontuação, três ícones de vida e até três ícones de especial. Direita agrupa missão, família, nível, P e avanço. Barra do chefe permanece sobre a arena. Tela inteira ocupada pelo conjunto, sem margens externas.
+
+Seleção de missão antes dos quatro pilotos; somente Fenda disponível. Perfil dentro de cada card e confirmação sobre o card escolhido exigem ações distintas. Guia de comandos conforme dispositivo antes da primeira partida, loading de recursos antes do guia e transição de 2,5 segundos para decolagem. Pausa oferece comandos, guia de itens e áudio. Derrota/conclusão usam diálogos de carbono sobre a tela inteira, com ações acessíveis por teclado, mouse e controle.
+
+### Câmera, contato e efeitos
+
+RIVET mantém casco branco/vermelho, três motores, frames neutros superiores e escala menor. Remover propulsão duplicada e efeitos de muzzle que ficam no mundo enquanto a nave se move. Tiros nascem da posição atual do bico.
+
+Projéteis e laser atingem o contorno opaco do frame atual, incluindo extremidades e preservando vazios/concavidades. Usar varredura para não atravessar alvos entre frames. Máscaras de alfa ficam em cache; não usar o retângulo inteiro da spritesheet nem somente um círculo central. Contato físico aéreo explode o inimigo; criaturas de superfície podem ser sobrevoadas.
+
+Sem tremor de câmera. Explosões de fogo curtas, partículas limitadas e dissipação rápida. Projéteis alienígenas mantêm cores/formas próprias e transparência. Água usa sheets animadas com fluxo contínuo, sem depender de uma imagem estática rolando: oceano calmo → invasão/turbulência/destroços → fenda revelada antes de Talassarca.
+
+### Chefes
+
+Raia-Dente permanece miniboss aéreo. Talassarca é corpo aquático colossal visto por cima, abaixo da nave, com órgãos dorsais destrutíveis em posições distintas; órgãos destruídos param de disparar. A nave pode atravessar visualmente o corpo, mas os projéteis continuam perigosos.
+
+Casca de 600 HP (cinco especiais de 120), metamorfose de 2,4 s sem transferência de dano excedente, forma interna de 360 HP (três especiais). Arte útil ocupa aproximadamente 80%/100% da largura da arena; o padding do atlas não conta como corpo. Segunda forma altera origens/padrões e preserva corredor de esquiva. Tiros convencionais também vencem ambas as formas; especiais não são requisito obrigatório.
+
+## Ritmo e duração
+
+| Fases | Alvo total por fase |
+|---|---|
+| 1–3 | 3–4 minutos |
+| 4–7 | 4–5 minutos |
+| 8–12 | 4–5 minutos |
+| 13–15 | 5–6 minutos |
+| Secretas | 5–7 minutos |
+
+Campanha principal planejada em 60–75 min, dependendo dos confrontos. Mudança perceptível a cada 30–45 s, acontecimento relevante a cada 60–90 s e uma situação/mecânica exclusiva por fase. Nunca preencher duração artificialmente. Rotas alternativas/partidas curtas devem ser avaliadas. Fases de 7–9 min exigem acontecimentos suficientes e recuperação justa perto do final.
+
+Na Fenda: oceano aberto → águas contaminadas → Raia-Dente → intensificação/destroços → fenda → Talassarca. O roteiro de cinco minutos é uma proposta de expansão, não um cronômetro já implementado. Medir partidas reais antes de prolongar a fase.
+
+## Campanha planejada: quinze fases e finais secretos
+
+Somente a primeira fase está produzida. As regiões, chefes e rotas seguintes permanecem planejamento.
 
 ### Fases 1 a 3 — Regiões Iniciais Selecionáveis
 1. **Fase 01 — Fenda Pelágica (Oceano Terrestre):**
@@ -99,265 +119,11 @@ A ordem completa de conclusão das três regiões iniciais determina a rota da t
 
 ---
 
-## 2. REGRAS DE GAMEPLAY DA FASE 1: FENDA PELÁGICA
 
-### 2.1. O Novo Dash (Propulsão de Emergência)
-- **Cargas Iniciais:** Exatamente 3 cargas por tentativa (`remainingDashes = 3`).
-- **Comando:** Tecla `SHIFT` esquerdo no PC ou botão de Dash no Gamepad/Mobile.
-- **Vetor:** Segue a direção do movimento atual da nave. Se a nave estiver parada, projeta para a frente (+Y).
-- **Velocidade e Tempo:** Multiplicador de velocidade de ~2.8x durante 160ms.
-- **Janela de Evasão:** Invulnerabilidade a projéteis inimigos por 130ms. Não atravessa as bordas laterais do campo de combate.
-- **Rastro Visual:** Rastro translúcido ciano com partículas de plasma.
-- **Regra de Não-Recarga:** Cargas **NUNCA** se regeneram por tempo, morte de inimigos ou power-ups. Apenas o reinício completo da fase restaura as 3 cargas.
+## Referências e histórico
 
-### 2.2. As 3 Famílias de Armamentos e Sistema de Power-ups (Estilo Fire Shark)
-- **Dispersão Azul (`ion` — Wide Shot / Arma Inicial Canônica):** O jogador inicia sempre equipado com Dispersão Azul Nível 1 (`0/3 P`). Disparos direcionais azul-safira/ciano em leque amplo cobrindo mais direções conforme o nível aumenta.
-  - *LV1:* 3 direções em leque frontal.
-  - *LV2:* 5 direções em leque aberto.
-  - *LV3:* Leque mais preenchido, nove projéteis no modelo atual.
-  - *LV4:* Cobertura máxima, dezesseis projéteis no modelo atual. Ver limites de medição da diretriz 33.
-- **Energia Espiralada (`green` — Beam / Emerald Spiral):** Feixes de energia verde concentrados e ondulantes (helicoidais/sinusoidais) que sobem entrelaçados.
-  - *LV1:* 2 ondas esmeralda entrelaçadas em contrafase.
-  - *LV2–4:* Mais componentes helicoidais pareados, com cobertura crescente. Modelo atual 4/6/8 componentes; calibração interna, sem afirmar equivalência exata da ROM.
-- **Laser Rubro (`red` — ARMAMENTO ENERGÉTICO CONTÍNUO DE MULTIFEIXES EVOLUTIVOS):**
-  - Inspirado diretamente no *Fire / Super Fire* do *Fire Shark* original (Toaplan), reinterpretado como **fluxos energéticos vermelhos contínuos** com núcleo luminoso incandescente, bordas de plasma animadas e impacto contínuo.
-  - **Proibição Estrita:** Nunca representar como bolas vermelhas, projéteis discretos separados, explosões de fogo ou sprites estáticos.
-  - *LV1 — Laser Rubro Inicial:* 1 fluxo frontal contínuo, fino e concentrado.
-  - *LV2 — Laser Rubro Duplo:* 2 fluxos frontais paralelos contínuos próximos, com maior espessura energética e DPS.
-  - *LV3 — Laser Rubro Expandido:* 4 fluxos contínuos (2 fluxos frontais principais + 2 fluxos laterais com movimento oscilante de varredura controlada).
-  - *LV4 — Asas de Energia:* 6 fluxos contínuos sincronizados (2 fluxos centrais pesados + 2 asas laterais de varredura ampla + 2 feixes diagonais traseiros `rear-wing` que protegem flancos e retaguarda da aeronave).
-- **Sistema de Coletáveis (`3 P` por Nível + Cápsulas de Cor Independentes):**
-  - Casulos e transportadores deixam cair cápsulas físicas no cenário.
-  - `P`: três coletas por nível, nove do NV1 ao NV4. No máximo, até três P de reserva; P parcial permanece no Continue. P★ fica no sandbox, fora do Normal. Não se apresenta o P vermelho raro como regra confirmada.
-  - `W` (Cápsulas Coloridas): Cápsulas Azul (`Dispersão Azul`), Verde (`Energia Espiralada`) e Vermelha (`Laser Rubro`) alternam imediatamente o tipo da arma sem resetar o nível ou o medidor `P`, e sem exigir maximizar uma cor antes de coletar outra.
-  - `H` (Reparo), `M` (Míssil), `S` (Velocidade), `$` (Pontos), `E` (+1 carga de especial, máximo três). Bomba separada removida.
-  - *Nenhum coletável concede dash.*
+- [Fire Shark — manual Mega Drive](https://www.retrogames.cz/manualy/Genesis/Fire_Shark_-_Genesis_-_Manual.pdf).
+- [Sonic Wings 2 — manual](https://db.hfsplay.fr/files/2019/06/14/1aa6199e-35d2-456a-8a2f-e3513f37594e.pdf).
+- [Normal e suprimentos anteriores](37_FASE1_NORMAL_RITMO_POLIMENTO.md), [água/contato/áudio](35_FASE1_POLIMENTO_CONTATO_AGUA_AUDIO.md), [camadas e invasão](33_FASE1_ALIENIGENAS_CAMADAS_OCEANO.md).
 
-### 2.3. Inimigos da Fenda Pelágica
-1. **Agulha Pelágica (Pelagic Needle):** Pequeno organismo voador de quitina rubi, membranas e mandíbulas; não é um caça mecânico. Cardumes frágeis seguem rotas coordenadas sem disparar; indivíduos combatentes anunciam suas salvas.
-2. **Raia de Fenda (Rift Ray):** Criatura biomecânica alada, movimentos sinusoidais suaves, leques laterais de 3 projéteis.
-3. **Parasita Abissal (Abyssal Parasite):** Organismo alienígena luminescente, lança esporos ácidos lentos que cobrem corredores.
-4. **Casulo Marinho (Sea Cocoon):** Portador blindado de alta resistência. Ao ser destruído, eclode liberando drones ou cápsulas de power-up.
-
-### 2.4. Miniboss e Boss Colossal
-- **Miniboss (Raia-Dente):** Emerge no meio da fase; alterna salvas de asas, arcos de projéteis com aberturas de esquiva e investidas laterais. Possui barra de HP dedicada no topo do HUD.
-- **Boss Colossal (Talassarca — O Devorador das Marés):**
-  - *Casca:* 600 HP, cinco especiais de referência, leques alternados e aviso legível.
-  - *Metamorfose:* placas se rompem e desprendem, membranas se desdobram, projéteis são limpos; dano excedente não passa à camada seguinte.
-  - *Forma interna:* nova barra completa de 360 HP, três especiais de referência; mais pressão com corredores de esquiva. Só esta derrota encerra a fase. Mesma regra documentada para futuros chefes, ainda não produzidos.
-
----
-
-## 3. IDENTIDADE VISUAL E TIPOGRAFIA DEFINITIVA
-
-### Arquitetura Widescreen TATE / Arcade Bezel
-- Resolução lógica: 768 × 432 pixels.
-- **Painel Esquerdo (X: 0 a 168):** Piloto, única barra contínua 0–100 de integridade, pontuação, combo e os três indicadores do Dash. Sem três vidas ou três segmentos de HP.
-- **Campo de Combate Central (X: 168 a 600, Y: 0 a 432):** 432 pixels de largura vertical desobstruída para manobras, naves, projéteis e coletáveis, com fundo oceânico abissal centralizado (`tilePositionX = 168`).
-- **Painel Direito (X: 600 a 768):** Arma, NV1–4, progresso P em três círculos identificados, estoque único de especiais V/X, progresso da fase e barra do chefe identificando a camada. Sem barra de ressonância.
-
-### Tipografia
-- **Família Display / Títulos:** `Oxanium` (Google Fonts: 600, 700, 800).
-- **Família Interface / Menus / HUD:** `Rajdhani` (Google Fonts: 500, 600, 700).
-
----
-
-## 4. DIRETRIZ DE CALIBRAÇÃO CRÍTICA DE GAMEPLAY E CENÁRIO (V2.1 — FENDA PELÁGICA)
-
-### 4.1. Calibração de Ritmo e Controle Fino
-- **Velocidade da Aeronave:** `PLAYER_SPEED_FACTOR = 1.0` (velocidade pura do piloto entre 190 e 215 px/s, garantindo leitura tática sem deslizamentos desenfreados).
-- **Dash Tático:** Impulso controlado de `1.85x` de velocidade por 160ms (~56px de deslocamento por carga) com 130ms de invulnerabilidade. Impede que o caça atravesse o corredor de 384px instantaneamente.
-- **Buffer de Blindagem e Escudo:**
-  - A quebra do escudo de energia concede imediatamente `1200ms` de invulnerabilidade protetora, impedindo que múltiplos projéteis no mesmo frame destruam simultaneamente escudo e blindagem.
-  - O dano na blindagem concede `1500ms` de invulnerabilidade com piscar visual da nave.
-
-### 4.2. Telegrafia e Projéteis Inimigos
-- **Velocidade de Inimigos:**
-  - *Agulha Pelágica (Scout):* 105 px/s (mergulho suave e previsível). Aviso visual (telegraph): 500ms.
-  - *Raia de Fenda (Dart):* 120 px/s (curvas em arco cadenciadas). Aviso visual: 550ms.
-  - *Parasita Abissal (Lancer):* 85 px/s (posicionamento estratégico). Aviso visual do leque: 750ms.
-  - *Casulo Marinho (Cutter):* 70 px/s (avanço pesado). Aviso visual da investida: 700ms.
-- **Velocidade de Projéteis:** Calibrada entre 120 e 150 px/s (tempo de travessia do campo de ~3 segundos), permitindo esquiva deliberada e justa.
-
-### 4.3. Progressão de Armamento e Nomes Canônicos
-- **Início Obrigatório (Regra Canônica Fire Shark #1):** O jogador inicia equipado com **Wide Shot azul (`DISPERSÃO AZUL`, Nível 1, `powerMeter = 0`)**.
-- **Independência entre Troca de Arma e Potência (Regras Canônicas Fire Shark #2, #3, #4 e #5):**
-  - Cápsulas coloridas coletadas fisicamente alteram a arma equipada (Azul → `DISPERSÃO AZUL`, Verde → `ENERGIA ESPIRALADA`, Vermelha → `LASER RUBRO`).
-  - **Não é necessário maximizar o azul para obter o verde, nem o verde para obter o vermelho.**
-  - Cada item `P` coletado incrementa o Medidor `P` (`0/3 -> 1/3 -> 2/3 -> 3/3`). Três itens `P` aumentam 1 nível de potência, até 4 estados totais (`NV 1 -> NV 2 -> NV 3 -> NV 4`).
-  - Troca de arma e evolução de potência são mecanismos independentes.
-  - P★ (`full_power`) existe somente para inspeção no sandbox; não integra os drops da campanha Normal. Cor repetida concede 5.000 pontos e nunca aumenta P. Nenhuma cápsula de arma é convertida em P no NV1.
-- **Nomes Canônicos das 5 Regiões V2:**
-  - Fase 01: Fenda Pelágica (Chefe: *Talassarca — O Devorador das Marés*)
-  - Fase 02: Bosque da Névoa Viva (Chefe: *Arborion — O Coração Vegetal*)
-  - Fase 03: Metrópole do Silêncio (Chefe: *Catedral de Vidro*)
-  - Fase 04: Dunas de Silício (Chefe: *Sifão das Dunas*)
-  - Fase 05: Cânion das Sombras (Chefe: *Mandíbula do Horizonte*)
-
-### 4.4. Direção Visual do Oceano Alienígena (HD 2D)
-- **Superfície oceânica:** voo baixo sobre água viva, com ondas e espuma animadas. Começa relativamente calma, recebe turbulência, biomassa e estruturas destruídas; só na aproximação do chefe surge a fenda profunda bioluminescente. A nave não está submersa; spritesheets e partículas continuam animados com a rolagem parada.
-- **Recifes Submersos:** Formações rochosas orgânicas com gradientes de profundidade, colônias de cianobactérias brilhantes e arcos biomecânicos ancestrais.
-- **Superfície e Wake:** Malha de reflexos e cáusticas de luz solar submarina, ondulação suave e partículas de espuma marinha.
-- **Rolagem Estável:** Sincronização direta de scroll `tilePositionY = -scrollPx * fator` que elimina qualquer aceleração descontrolada de cenário.
-
----
-
-## 5. PROTOCOLO PERMANENTE DE BLOQUEIO DE QUALIDADE E VALIDAÇÃO REAL (P0)
-
-> [!CAUTION]
-> **IMPORTANTE — NENHUMA ENTREGA PODE SER DECLARADA CONCLUÍDA SE O JOGO NÃO INICIAR E SUAS FUNCIONALIDADES PRINCIPAIS NÃO TIVEREM SIDO VALIDADAS.**
-
-### 5.1. Regra de Bloqueio de Qualidade (Quality Gate Obrigatório)
-Nenhuma alteração estrutural ou visual pode ser considerada concluída sem cumprir integralmente os 8 critérios:
-1. **TypeScript válido:** `npm run typecheck` com zero erros.
-2. **Build funcional:** `npm run build` gerando artefatos limpos em `dist/`.
-3. **Testes automatizados aplicáveis:** `npm test` com 100% de aprovação (125/125 na validação de 09/11/2026).
-4. **Abertura da aplicação no navegador:** Verificação real contra o servidor ativo (`http://localhost:5173` / `http://127.0.0.1:4174`).
-5. **Ausência de erros críticos no console:** Monitoramento via Chrome DevTools Protocol (`Runtime.exceptionThrown`, `Runtime.consoleAPICalled` error, `Log.entryAdded` error) exigindo zero erros.
-6. **Teste real da funcionalidade modificada:** Simulação de navegação, seleção, movimentação e disparo em tempo de execução.
-7. **Teste de regressão das principais cenas:** Validação encadeada de `TitleScene`, `StageSelectScene`, `PilotSelectScene` e `PrototypeScene`.
-8. **Captura de tela real:** Geração e inspeção visual das capturas em `docs/screenshots/`.
-
-### 5.2. Registro de Diagnóstico e Correção P0 (`StageBackdrop` & Indicadores)
-- **Causa Raiz Identificada:**
-  - O arquivo `src/game/scenes/StageBackdrop.ts` na branch `master` já continha `export class StageBackdrop` válido, porém um processo órfão do Vite Dev Server (`PID 24060`, iniciado às 18:25 na porta `5173`) havia capturado o arquivo durante o instante de truncamento de escrita (0 bytes) e retido em memória um módulo vazio (`sourcesContent: [""]`) com o socket em estado inconsistente. Isso fazia o navegador receber um módulo vazio ao requisitar `/src/game/scenes/StageBackdrop.ts`, disparando `Uncaught SyntaxError: The requested module '/src/game/scenes/StageBackdrop.ts' does not provide an export named 'StageBackdrop'`.
-- **Regressões Secundárias Encontradas e Corrigidas:**
-  1. **Indicador Falso de FPS em `TitleScene.ts`:** Removida a string fixa `SISTEMA ESTÁVEL [60-240 FPS]` e o aviso estático de taxa de quadros no modal de configurações. No `CombatHud.ts`, removido o fallback artificial `|| 60` para exibir exclusivamente a medição real de `scene.game.loop.actualFps`.
-  2. **Conflito de Tecla `S` em `TitleScene.ts`:** A tecla `S` estava registrada duas vezes (`this.navigate(1)` e `this.openStageSelect()`), fazendo com que tentar descer no menu principal abrisse imediatamente a seleção de fases. Corrigido separando o atalho de fases para `[M]`.
-  3. **Orientação de Projéteis e Muzzle Flash em `PrototypeScene.ts`:** Os sprites de projéteis primários (`shot-rivet`) e `fx-muzzle` eram desenhados horizontalmente (+X) e subiam de lado; foram corrigidos com `node.setRotation(Math.atan2(def.velocityY, def.velocityX))` e coloração por família (`0x4ade80` Pulso Verde, `0x00f0ff` Laser de Íons, `0xff4d6d` Plasma Vermelho).
-  4. **Configuração de `StageBackdrop` em `EndingScene.ts`:** Ajustado para `{ fullWidth: true, showBezels: false }` e nave em modo `'profile'`.
-- **Arquivos Corrigidos:**
-  - `src/game/scenes/TitleScene.ts`
-  - `src/game/ui/CombatHud.ts`
-  - `src/game/scenes/PrototypeScene.ts`
-  - `src/game/scenes/EndingScene.ts`
-  - `scripts/capture-verification-screenshots.mjs`
-  - `docs/27_BULLET_WAKE_V2_DEFINITIVO.md`
-- **Testes Realizados e Resultados:**
-  - `npm run typecheck`: Aprovado (0 erros).
-  - `npm run build`: Aprovado (`dist/` compilado com sucesso).
-  - `npm test`: Aprovado (124/124 testes passando).
-  - Reinicialização limpa do Vite Dev Server na porta `5173` (`npx vite --host 0.0.0.0 --port 5173 --force`) após limpeza de `node_modules/.vite`.
-  - Validação automatizada via navegador headless (`node scripts/capture-verification-screenshots.mjs`) na porta `5173`: 0 erros de console, 0 exceções, navegação de menu funcional, 3 pilotos selecionáveis com naves em perfil, Fase 1 iniciando com Pulso Verde LV1, movimentação lateral e disparos destruindo inimigos em combate real.
-- **Tarefas Pendentes (Fora do Escopo Atual da Fase 1):**
-  - Implementação jogável das Fases 2 a 15 e das 2 rotas secretas documentadas na Bíblia (mantidas bloqueadas conforme regra estrita de escopo da Fase 1 — Fenda Pelágica).
-
----
-
-## 6. LASER RUBRO — ARMAMENTO ENERGÉTICO CONTÍNUO DE MULTIFEIXES EVOLUTIVOS
-
-> [!IMPORTANT]
-> **SUBSTITUIÇÃO DEFINITIVA NA BÍBLIA OFICIAL**
-> Ficam permanentemente revogadas todas as referências anteriores a "Plasma Vermelho", "Chama Rubra", bolas vermelhas, projéteis discretos ou explosões sequenciais para o armamento vermelho (`weaponFamily = 'red'`). O armamento vermelho oficial do BULLET WAKE é o **LASER RUBRO**.
-
-### 6.1. Definição e Comportamento Geral (`src/game/systems/crimsonLaserSystem.ts`)
-- **Emissão Contínua:** Ativado e mantido continuamente enquanto o jogador segurar `ESPAÇO` (`LASER_RAMP_UP_MS = 35ms`).
-- **Encerramento Imediato com Fade-Out Curto:** Ao soltar `ESPAÇO`, a emissão cessa imediatamente com decaimento visual curto (`LASER_DECAY_MS = 110ms`).
-- **Sem Lacunas e Sem Superaquecimento:** Feixes contínuos de polilinhas (`16` segmentos verticais por feixe) sem buracos entre segmentos e com `heatPerShot = 0` para nunca sofrer corte arbitrário durante o uso normal.
-- **Rastreamento Imediato:** Origem ancorada diretamente aos emissores frontais da nave (`vectorShip.x`, `vectorShip.y`), acompanhando instantaneamente movimentação lateral, diagonal e Dash.
-- **Dano por Tick Independente de FPS:** Acumulador determinístico (`LASER_DAMAGE_TICK_MS = 60ms`, ~16,67 ticks/s) que garante o mesmo DPS exato em 30 FPS, 60 FPS, 120 FPS ou 240 FPS.
-
-### 6.2. Os 4 Níveis Progressivos do Laser Rubro
-1. **Nível 1 — Fluxo Inicial (`beamCount = 1`):**
-   - 1 coluna energética frontal contínua de plasma rubro-alaranjado em movimento, com volumes luminosos conectados subindo rapidamente pelo fluxo, bordas irregulares animadas e núcleo incandescente (`totalDps = 18`).
-2. **Nível 2 — Fluxo Duplo (`beamCount = 2`):**
-   - 2 fluxos frontais visivelmente separados (`±11.5px`) com pulsação independente em contrafase, maior cobertura frontal e sensação clara de evolução (`totalDps = 27`).
-3. **Nível 3 — Expansão Lateral (`beamCount = 4`, `hasLateralSweep = true`, `hasRearCoverage = false`):**
-   - 2 fluxos principais frontais + 2 ramificações laterais que abrem para fora e retornam ciclicamente durante o disparo, criando varredura lateral orgânica (`totalDps = 38`).
-4. **Nível 4 — Asas de Energia (`beamCount = 6`, `hasLateralSweep = true`, `hasRearCoverage = true`):**
-   - Transformação geométrica completa: 2 fluxos principais frontais reforçados (`central`) + 2 ramificações laterais expressivas que abrem e fecham como asas luminosas de plasma (`lateral-sweep`) + **2 novos fluxos voltados para a diagonal traseira/flancos (`rear-wing`)**, protegendo contra ameaças laterais e próximas da retaguarda com comprimento e dano controlados (`totalDps = 50`).
-
-### 6.3. Renderização, Impactos e Legibilidade (`src/game/render/CrimsonLaserRenderer.ts`)
-- **Zero Alocação por Frame:** Utiliza um único `Phaser.GameObjects.Graphics` reutilizável em `depth = 8`.
-- **Camadas Visuais:** Bainha energética rubra-alaranjada externa com espessura variável por segmento (`0x991b1b` / `0xea580c`), fluxo principal de plasma rubro-alaranjado (`0xff1e42` / `0xf97316`), volumes luminosos conectados ascendentes (`0xff2a1f`, `0xfb923c`, `0xfef08a`), espinha dorsal incandescente contínua (`0xfff7ed`), coronas nos canhões da nave e centelhas rotativas nas coordenadas exatas de impacto (`LaserImpactPoint`).
-- **Legibilidade Absoluta de Projéteis Inimigos:** Projéteis hostis são renderizados em `depth = 18` (acima do Laser Rubro em `depth = 8` e da nave em `depth = 15`), garantindo leitura clara mesmo durante o Nível 4 máximo.
-- **Modo de Validação Rápida (Sandbox Teclas `1–5`):** Durante o gameplay na `PrototypeScene`, as teclas `1`, `2`, `3` e `4` selecionam imediatamente os Níveis 1 a 4 da arma ativa, e a tecla `5` alterna entre `LASER RUBRO`, `ENERGIA ESPIRALADA` e `DISPERSÃO AZUL`.
-
----
-
-## 7. IMPORTANTE — REFERÊNCIA VISUAL FIRE SHARK E PROGRESSÃO DEFINITIVA DE ARMAMENTOS
-
-> [!IMPORTANT]
-> **SEPARAÇÃO RIGOROSA ENTRE AS REGRAS COMPROVADAS DE *FIRE SHARK* (TOAPLAN) E AS ADAPTAÇÕES PRÓPRIAS DO *BULLET WAKE***
-> Esta seção documenta separadamente os mecanismos comprovados da referência histórica (*Fire Shark*, Toaplan) e as adaptações autorais originais do *BULLET WAKE*, proibindo atribuir ao jogo original suposições não verificadas (como uma suposta progressão obrigatória `Azul N4 → Verde N4 → Vermelho`).
-
-### 7.1. Regras Confirmadas de *Fire Shark* (Reproduzidas Conceitualmente)
-1. **Arma Inicial Padrão:** O jogador inicia a partida equipado com o **Wide Shot azul** (`DISPERSÃO AZUL` / `'ion'` no Nível 1, com medidor `P` em `0/3`).
-2. **Troca por Cápsulas Coloridas:** Cápsulas coloridas coletadas fisicamente no campo de combate alteram imediatamente a arma equipada:
-   - Cápsula Azul (`weapon_ion`) → **DISPERSÃO AZUL**
-   - Cápsula Verde (`weapon_green`) → **ENERGIA ESPIRALADA**
-   - Cápsula Vermelha (`weapon_red`) → **LASER RUBRO**
-3. **Ausência de Trava Linear entre Cores:** **Não é necessário maximizar o azul para obter o verde, nem maximizar o verde para obter o vermelho.** Qualquer cápsula coletada ativa sua respectiva arma imediatamente.
-4. **Evolução por 3 Itens `P` (4 Estados de Potência):** Coletar **três itens `P`** (`0/3 → 1/3 → 2/3 → 3/3`) aumenta **1 nível de potência** da arma, até **quatro estados totais** (`Nível 1`, `Nível 2`, `Nível 3` e `Nível 4`).
-5. **Independência entre Troca de Arma e Evolução de Potência:** A troca de família de arma (cápsulas coloridas) e a evolução de nível de potência (itens `P`) são mecanismos **independentes**. Trocar de arma mantém o nível de potência atual e o progresso acumulado no medidor `P`.
-6. **Comportamento da Arma Azul (`DISPERSÃO AZUL`):** Dispara projéteis energéticos direcionais independentes em leque crescente conforme o nível de potência sobe (`3`, `5`, `7` e `9` direções), cobrindo progressivamente mais ângulos frontais e diagonais.
-7. **Comportamento da Arma Verde (`ENERGIA ESPIRALADA`):** Dispara feixes e ondas energéticas ondulantes/espiraladas concentradas (`2`, `3`, `5` e `7` ondas helicoidais com fitas luminosas e anéis de fase), com deslocamento ondulante real e foco frontal/semi-frontal.
-8. **Comportamento da Arma Vermelha (`LASER RUBRO`):** Utiliza fluxos contínuos de energia semelhantes a fogo/plasma em movimento contínuo (nunca projéteis avulsos ou linha reta estática), que se expandem por nível (`Fluxo Inicial` → `Fluxo Duplo` → `Expansão Lateral` cíclica → `Asas de Energia` no Nível 4 com cobertura lateral ampla e **2 fluxos posteriores/diagonais `rear-wing`**).
-9. **Autofire Contínuo:** Manter o comando de disparo (`ESPAÇO`) pressionado garante **autofire contínuo** em todas as armas.
-10. **Sem Superaquecimento no Disparo Principal:** Superaquecimento **não** faz parte do sistema principal documentado de *Fire Shark* e não interrompe nem bloqueia o autofire contínuo durante o combate no *BULLET WAKE*.
-
-### 7.2. Adaptações Originais Próprias do *BULLET WAKE*
-1. **Reinterpretação Visual Neo-Arcade HD 2D (*Laser Rubro*):** Enquanto o *Fire Shark* original apresenta o *Super Fire* com estética de chamas clássicas, o *BULLET WAKE* reinterpreta o ataque vermelho como **colunas vivas de plasma rubro-alaranjado em movimento** (`#ff1e42`, `#fb923c`, `#fef08a`, `#fff7ed`), com volumes luminosos conectados subindo pelo feixe, bordas irregulares animadas e asas energéticas curvas, sem copiar sprites ou assets da Toaplan.
-2. **Dash Tático de Emergência (`SHIFT Esquerdo`):** Sistema autoral do *BULLET WAKE* com exatamente **3 cargas fixas por fase** (`DASH 3/3`), janela curta de evasão (`130ms`) e zero recarga por tempo ou itens.
-3. **Controles Exclusivos de Teclado no PC:** Movimentação em 8 direções via `WASD`/Setas e disparo via `ESPAÇO`, com o mouse estritamente desabilitado para tiro ou movimentação da nave no PC.
-4. **Sistemas Táticos dos Operadores (Nolan, Cora, Harlan):** Habilidade Especial de Ressonância (`V`), Wave Cannon carregável (`C`) e Bomba Defensiva (`X`), além de balanceamento de DPS por tick determinístico (`60ms`) e alcance traseiro limitado nos fluxos `rear-wing` do Nível 4 para preservar o desafio do Miniboss *Raia-Dente* e do Chefe *Talassarca*.
-5. **HUD Widescreen de Alta Legibilidade (1366×768 e 1920×1080):** Corredor central expandido (`432px`, `X: 168..600`) ladeado por painéis táticos (`168px`) com carregamento explícito de `Oxanium` e `Rajdhani`, renderização `antialias: true` para textos/gráficos vetoriais (`FilterMode.NEAREST` restrito apenas às texturas de sprites) e eliminação total de textos ilegíveis de `10px/11px`.
-
-## 8. SELEÇÃO DE PILOTOS — CORREÇÃO FINAL DOS ASSETS (09/11/2026)
-
-- **RIVET de menu:** ilustração independente com transparência real; casco branco, detalhes vermelhos, três propulsores e silhueta agressiva. Vista elevada em três quartos, com frente voltada à esquerda/baixo, escala e iluminação compatíveis com Moth e Knuckle. Nenhum pixel da key art foi usado como recorte. A máscara radial que disfarçava o cenário promocional foi removida.
-- **Nolan, Cora e Harlan:** retratos repintados em concept art 2D/2.5D, com pinceladas visíveis, pele fosca e sombras gráficas. Identidades, cicatrizes, cabelos, trajes e cores individuais preservados. O acabamento vem dos arquivos, sem filtro CSS simulando pintura.
-- **Layout aprovado preservado:** mesma paleta da UI, tipografia, estrutura, dimensões dos cards e espaçamentos. Comparação automatizada das medidas reais com o CSS anterior: nenhuma mudança em cards, perfis ou rodapé.
-- **Validação:** TypeScript e build aprovados; 125/125 testes; Chrome real em 1366×768 e 1920×1080; os três perfis sem scroll, cortes ou sobreposição em ambas as resoluções; roda do mouse sem deslocamento; seleção, abertura/fechamento de perfil, início de operação, movimento/disparo, seleção de fases e retorno à abertura funcionando; zero erros de console/runtime.
-- **Inspeção visual:** RIVET sem fundo ou moldura promocional, três naves no mesmo conjunto de menu, retratos claramente ilustrados e espaço livre preservado.
-- **Rastreabilidade:** [assets e prompts](28_CORRECAO_FINAL_PILOTOS.md), [capturas](screenshots/pilot-selection-final/) e [medidas da validação](screenshots/pilot-selection-final/validation.json). Reexecutar com `node scripts/validate-pilot-selection.mjs` após `npm run build`.
-
-### 8.1. Pendências reais da campanha V2
-
-Esta lista substitui as declarações de campanha completa da versão horizontal no roadmap antigo. A Fase 1 é o único setor jogável liberado na versão atual; definições de nomes ou chefes herdados não equivalem à implementação das fases canônicas.
-
-1. **Fases 2 e 3:** implementar Bosque da Névoa Viva e Metrópole do Silêncio com cenários, inimigos, minibosses e chefes canônicos Arborion e Catedral de Vidro. As classes antigas Serpent/Fortress ainda usadas pela fábrica não representam esses chefes.
-2. **Fases 4 a 15:** construir conteúdo jogável, cenários, padrões inimigos, minibosses e chefes próprios; incluir Thalor, Morhiza e Prisma Órfão como variantes da Fase 15.
-3. **Seleção e progressão V2:** disponibilizar a escolha das três regiões iniciais quando seus conteúdos estiverem prontos, registrar a ordem das regiões e encadear as Fases 4–15. A seleção atual tem cinco cards e libera somente a Fase 1; os dados de fases terminam em 5.
-4. **Rotas e finais secretos:** implementar as condições das seis ordens iniciais, Fase 16 (Coração Telúrico), Fase 17 (Matriz Primordial em quatro fases) e os finais correspondentes.
-5. **Salvamento e vitória V2:** expandir o schema limitado às cinco fases antigas para a campanha canônica e migrar saves. A revisão Normal removeu o registro falso de Fase 5 no epílogo; a cena de combate grava a fase realmente concluída.
-6. **Controles e distribuição planejados:** implementar suporte efetivo a gamepad, controles táteis completos para dash/bomba/especial/carga e empacotamento Android. A entrada atual cobre teclado e movimento/tiro por toque.
-
-## 9. FASE 1 — ETAPA VISUAL DA RIVET (09/11/2026)
-
-Prioridade de produção: concluir e revisar visualmente a Fase 1 antes de avançar à Fase 2. Nesta etapa, apenas a nave de Nolan recebe novo acabamento de combate; Moth e Knuckle preservam suas implementações atuais.
-
-- **Cenário:** oceano e recifes alienígenas pintados em 2D, centro escuro livre e continuidade vertical sem emendas.
-- **HUD do Nolan:** retrato ilustrado, Oxanium/Rajdhani e informações nas laterais sem reduzir a arena. A revisão seguinte substitui o bordô por preto/carbono com destruição discreta, preservando os acentos de telemetria.
-- **RIVET:** spritesheet de combate próprio em vista superior, branca/vermelha, três motores, voo e inclinações; framebuffer Full HD com coordenadas lógicas preservadas.
-- **Inimigos comuns:** sheets animados de Agulha Pelágica, Raia de Fenda, Parasita Abissal e Casulo Marinho, com voo e telegrafia de ataque.
-- **Tiros e itens:** Dispersão Azul visualmente renovada nos quatro níveis (3/5/7/9 direções), bomba pintada com expansão/dissipação, cápsulas de P/W/H/B/M/S/E identificáveis. Três P por nível, dano e colisões preservados.
-- **QA:** build/TypeScript e 125 testes aprovados; Chrome real em 1366×768 e 1920×1080, HUD sem cortes/scroll, quatro frames distintos por sheet, coleta/bomba/movimento/dash e ciclo de saída/reinício verificados; zero erros de navegador.
-
-Inventário, prompts, evidências e limites em [Fase 1 — revisão visual da RIVET](29_FASE_1_VISUAL_RIVET.md). Antes de considerar toda a arte da Fase 1 encerrada, ainda revisar Raia-Dente/Talassarca e as artes auxiliares de carga, mísseis e especial. A campanha além da Fase 1 permanece bloqueada.
-
-## 10. SELEÇÃO DE PILOTOS — ESCOLHER E CONFIRMAR (09/11/2026)
-
-- Cada card contém seu próprio botão **VER PERFIL**. Card e perfil são botões independentes, sem botões aninhados.
-- Ao abrir a seleção, nenhum piloto está confirmado e o botão de iniciar fica oculto. Setas e números navegam; hover apenas destaca visualmente, sem escolher.
-- Clique, toque ou primeiro Enter escolhe o piloto e revela **CONFIRMAR NOLAN/CORA/HARLAN [ENTER]**. A operação só começa por um segundo Enter ou ativação explícita desse botão.
-- Clique repetido no card e repetição automática da tecla não iniciam a operação. Mudar de candidato apaga a escolha pendente; Esc cancela a escolha antes de sair da tela.
-- Ver perfil não escolhe outro piloto automaticamente. O perfil oferece **ESCOLHER ESTE PILOTO**, que retorna aos cards com a confirmação disponível; a confirmação final continua separada.
-- Dimensões dos cards, paleta e tipografia preservadas; o espaço interno foi redistribuído para acomodar o botão. Perfis continuam sem scroll.
-- **Validação:** build/TypeScript aprovados, 125 testes aprovados, Chrome real em 1366×768 e 1920×1080 com mouse, teclado e eventos de toque; todos os perfis conferidos, confirmação bloqueada antes da escolha, pilotos corretos iniciados e zero erros de navegador. [Capturas e relatório](screenshots/pilot-confirmation/).
-- Reexecutar com `node scripts/validate-pilot-selection.mjs --confirmation` após o build. O modo padrão também verifica este fluxo; `--stage1` mantém a validação visual da Fase 1.
-
-
-
-
-
-
-## 11. FASE 1 — NORMAL E PROFUNDIDADE (09/11/2026)
-
-A diretriz atual está em [Carbono, progressão e combate Normal](30_FASE1_NORMAL_FIRE_SHARK.md): HUD preto opaco em tela cheia, vitória sem cortes, ícones distintos com legenda nas Opções, suprimentos roteirizados, nove bandos sem disparos e cinco organismos de superfície. P e cor são independentes; nove P para NV4, sem P★ no Normal. Corrigidos reserva e respawn.
-
-**Regras para os próximos biomas:** terra/mar terão ameaças ancoradas ao cenário; nuvens/espaço terão inimigos atirando do plano profundo, crescendo durante a aproximação e podendo investir ao alcançar o plano da nave. A origem e o corredor de aproximação devem ser anunciados; nenhum contato letal antes da transição de profundidade.
-
-**Dificuldades futuras:** Fácil, Normal, Difícil e Real. Nesta etapa somente Normal fica ativo. Real terá uma vida, dano por tipo de ataque e possibilidade de sobreviver com avarias até um reparo. Esses sistemas ainda serão implementados.
-
-**Pendências antes de avançar:** arte definitiva dos chefes da Fase 1 e efeitos auxiliares da RIVET, playtests do Normal e controles completos de outras plataformas. Os demais itens da seção 8.1 permanecem pendentes.
+Histórico de decisões antigas e implementações removidas pode ser consultado no Git. Esta versão não conserva regras conflitantes como se estivessem ativas.
