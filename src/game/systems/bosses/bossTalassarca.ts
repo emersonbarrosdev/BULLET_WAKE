@@ -1,3 +1,4 @@
+import { talassarcaRegions } from './talassarcaRig.ts';
 ﻿import type { StageBoss, BossTick, BossShot, BossHitResult, BossModule } from './types.ts';
 import { PLAYFIELD_X, PLAYFIELD_WIDTH } from '../../constants.ts';
 
@@ -14,15 +15,7 @@ export class BossTalassarca implements StageBoss {
   private makeModules(inner:boolean):BossModule[]{
     const hp=(inner?INNER_HP:SHELL_HP)/6;
     const scale=PLAYFIELD_WIDTH*(inner?1.30:1.02)/512;
-    const points:Array<[string,string,number,number,'organic'|'weapon']>=[
-      ['left','Órgão esquerdo',inner?-49:-68,inner?-111:-94,'organic'],
-      ['right','Órgão direito',inner?49:64,inner?-111:-97,'organic'],
-      ['vent','Ventre dorsal',0,74,'organic'],
-      ['battery-left','Bateria esquerda',inner?-98:-105,-22,'weapon'],
-      ['battery-right','Bateria direita',inner?98:105,-22,'weapon'],
-      ['battery-core','Artilharia central',0,-38,'weapon'],
-    ];
-    return points.map(([id,name,x,y,kind])=>({id,name,kind,offsetX:x*scale,offsetY:y*scale,width:kind==='weapon'?34:22,height:kind==='weapon'?34:22,hp,maxHp:hp,destroyed:false}));
+    return talassarcaRegions(inner).map(r=>({id:r.id,name:r.name,kind:r.kind,offsetX:(r.x-256)*scale,offsetY:(r.y-256)*scale,width:r.width*scale,height:r.height*scale,hp,maxHp:hp,destroyed:false}));
   }
 
   layer: 'shell' | 'inner' = 'shell';
@@ -103,26 +96,34 @@ export class BossTalassarca implements StageBoss {
     return { phase: this.phase, phaseChanged, shots, spawns: [], hp: this.hp, maxHp: this.maxHp, x: this.x, y: this.y, telegraph: this.isTelegraphing, defeated: this.phase === 'defeated' };
   }
 
+  private finishDamage(applied:number,broken:string|null):BossHitResult {
+    this.hp=this.modules.reduce((n,m)=>n+m.hp,0);
+    if(this.hp<1e-7){this.hp=0;this.modules.forEach(m=>{m.hp=0;m.destroyed=true;});}
+    if(!this.hp&&this.layer==='shell'){
+      this.phase='metamorphosis';this.metamorphosisMs=0;this.isTelegraphing=false;
+      return {bossDamage:applied,moduleDestroyed:'Casca rompida',killed:false};
+    }
+    if(!this.hp)this.phase='defeated';
+    return {bossDamage:applied,moduleDestroyed:broken,killed:this.phase==='defeated'};
+  }
   damageArea(amount:number):BossHitResult {
     if(!['shell','inner'].includes(this.phase)||!Number.isFinite(amount)||amount<=0)return {bossDamage:0,moduleDestroyed:null,killed:false};
-    const live=this.modules.filter(m=>!m.destroyed),share=Math.min(amount,this.hp)/Math.max(1,live.length);
-    for(const m of live){m.hp=Math.max(0,m.hp-share);if(m.hp===0)m.destroyed=true;}
-    return this.damage(amount,this.x,this.y);
-  }
-
-  damage(amount: number, hitX = this.x, hitY = this.y, moduleId?:string|null): BossHitResult {
-    if (!Number.isFinite(amount) || amount <= 0 || !['shell', 'inner'].includes(this.phase)) return { bossDamage: 0, moduleDestroyed: null, killed: false };
-    const applied = Math.min(amount, this.hp);
-    let broken:string|null=null;
-    // Only the actual piece under the impact receives local damage. No nearest-piece fallback or spill.
-    const organ=moduleId!==undefined?this.modules.find(m=>!m.destroyed&&m.id===moduleId):this.modules.find(m=>!m.destroyed&&((hitX-this.x-m.offsetX)/(m.width/2))**2+((hitY-this.y-m.offsetY)/(m.height/2))**2<=1.12);
-    if(organ){organ.hp=Math.max(0,organ.hp-applied);if(organ.hp===0){organ.destroyed=true;broken=organ.name;}}
-    this.hp = Math.max(0, this.hp - applied);
-    if (!this.hp && this.layer === 'shell') {
-      this.phase = 'metamorphosis'; this.metamorphosisMs = 0; this.isTelegraphing = false;
-      return { bossDamage: applied, moduleDestroyed: 'Casca rompida', killed: false };
+    let remaining=Math.min(amount,this.hp);const applied=remaining;
+    // Redistribute only the area attack's unused budget, never a conventional shot's overkill.
+    while(remaining>1e-7){
+      const live=this.modules.filter(m=>m.hp>0);if(!live.length)break;
+      const share=remaining/live.length;let spent=0;
+      for(const m of live){const hit=Math.min(m.hp,share);m.hp-=hit;spent+=hit;if(m.hp<=1e-7){m.hp=0;m.destroyed=true;}}
+      remaining-=spent;
     }
-    if (!this.hp) this.phase = 'defeated';
-    return { bossDamage: applied, moduleDestroyed: broken, killed: this.phase === 'defeated' };
+    return this.finishDamage(applied,null);
+  }
+  damage(amount:number,hitX=this.x,hitY=this.y,moduleId?:string|null):BossHitResult {
+    if(!Number.isFinite(amount)||amount<=0||!['shell','inner'].includes(this.phase))return {bossDamage:0,moduleDestroyed:null,killed:false};
+    const organ=moduleId!==undefined?this.modules.find(m=>!m.destroyed&&m.id===moduleId):this.modules.find(m=>!m.destroyed&&((hitX-this.x-m.offsetX)/(m.width/2))**2+((hitY-this.y-m.offsetY)/(m.height/2))**2<=1);
+    if(!organ)return {bossDamage:0,moduleDestroyed:null,killed:false};
+    const applied=Math.min(amount,organ.hp);organ.hp-=applied;
+    if(!organ.hp)organ.destroyed=true;
+    return this.finishDamage(applied,organ.destroyed?organ.name:null);
   }
 }

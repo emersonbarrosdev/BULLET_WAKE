@@ -29,7 +29,7 @@ test('boss encounters stop stage events and preserve the next carrier until the 
 });
 
 test('inner Talassarca alternates a generous moving corridor with aimed salvos, never a closed curtain',()=>{
-  const b=new BossTalassarca();b.update(1800,384,350);b.damage(600);b.update(2400,384,350);
+  const b=new BossTalassarca();b.update(1800,384,350);b.damageArea(600);b.update(2400,384,350);
   const bursts=[],gaps=new Set();let warned=false;
   for(let i=0;i<350;i++){
     const tick=b.update(25,384,380);warned ||= tick.telegraph;

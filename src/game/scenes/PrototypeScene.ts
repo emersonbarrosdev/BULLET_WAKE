@@ -1,3 +1,4 @@
+import { talassarcaRegions } from '../systems/bosses/talassarcaRig';
 import { destructionPlan } from '../systems/destructionSystem';
 import { DamageRegions } from '../systems/damageRegions';
 import { PilotRadio, type RadioSnapshot } from '../systems/pilotRadioSystem';
@@ -34,6 +35,8 @@ import { enableCombatResolution } from '../render/combatResolution';
 import {
   createPlayerWeapons,
   collectPowerItem,
+  maxWeaponLevel,
+  powerItemsForNextLevel,
   collectWeaponCapsule,
   evolutionCargo,
   collectSpeedItem,
@@ -85,6 +88,7 @@ interface Projectile {
   velocityY: number;
   damage: number;
   hitRadius: number;
+  homing?: boolean;
   piercing?: boolean;
   waveAmplitude?: number;
   waveFrequency?: number;
@@ -352,7 +356,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
     const label =
       family === 'red'
-        ? `LASER RUBRO — NV ${level} (${LASER_RUBRO_SPECS[level].title})`
+        ? `LASER RUBRO — NV ${level} (${LASER_RUBRO_SPECS[Math.min(4,level) as 1|2|3|4].title})`
         : family === 'green'
           ? `ENERGIA ESPIRALADA — NÍVEL ${level}`
           : `DISPERSÃO AZUL — NÍVEL ${level}`;
@@ -560,7 +564,7 @@ export class PrototypeScene extends Phaser.Scene {
     const animation=effect==='blue'?'polish-blue-single':key+'-loop';
     const node=this.add.sprite(def.x,def.y,key,0).setDepth(9).play(animation);
     node.setRotation(Math.atan2(def.velocityY,def.velocityX)+Math.PI/2);
-    const size=effect==='missile'?30:effect==='charge'?50:effect==='green'?32:this.weapons.weaponLevel>=3?23:17;
+    const size=effect==='missile'?25:effect==='charge'?50:effect==='green'?32:this.weapons.weaponLevel>=4?29:this.weapons.weaponLevel>=3?25:19;
     node.setDisplaySize(effect==='blue'?size*(this.weapons.weaponLevel>=3?.72:.5):size,size);
     if(effect==='blue')node.setOrigin(.84,.5);
     if(tint&&this.pilot.id!=='nolan')node.setTint(tint);
@@ -575,6 +579,7 @@ export class PrototypeScene extends Phaser.Scene {
       damage: def.damage,
       hitRadius: Math.min(def.hitRadius,def.piercing?6:effect==='missile'?3:2.5),
       hitTargets:new Set(),
+      homing:def.homing,
       piercing: def.piercing,
       waveAmplitude: def.waveAmplitude,
       waveFrequency: def.waveFrequency,
@@ -616,14 +621,15 @@ export class PrototypeScene extends Phaser.Scene {
       this.director.boss.phase !== 'intro' &&
       this.director.boss.phase !== 'defeated' && this.director.boss.phase !== 'metamorphosis'
     ) {
-      targets.push({
-        id: 'boss',
-        x: this.director.boss.x,
-        y: this.director.boss.y,
-        radius: this.director.boss.bodyRadiusY ?? 65,
-        contact:(ax,ay,bx,by,r)=>this.bossContact(ax,ay,bx,by,r),
-        stopsBeam: true, // Feixes colidem e geram fagulhas intensas no casco blindado do chefe/miniboss
-      });
+      const boss=this.director.boss;
+      if(boss.name==='TALASSARCA'){
+        for(const region of talassarcaRegions(boss.layer==='inner')){
+          const m=boss.modules?.find(m=>m.id===region.id);if(!m||m.destroyed)continue;
+          targets.push({id:`boss:${m.id}`,x:boss.x+m.offsetX,y:boss.y+m.offsetY,radius:m.width/2,stopsBeam:true,
+            contact:(ax,ay,bx,by,r)=>this.bossVisual?spriteContact(this.bossVisual.main,ax,ay,bx,by,r,region):null});
+        }
+      }else targets.push({id:'boss',x:boss.x,y:boss.y,radius:boss.bodyRadiusY??65,
+        contact:(ax,ay,bx,by,r)=>this.bossContact(ax,ay,bx,by,r),stopsBeam:true});
     }
 
     const originX = this.vectorShip.x;
@@ -678,18 +684,17 @@ export class PrototypeScene extends Phaser.Scene {
         if (stillAlive) {
           this.applyDamageToEnemy(dmgEvent.targetId, dmgEvent.damage*this.pilot.damage, dmgEvent.hitX, dmgEvent.hitY);
         }
-      } else if (dmgEvent.targetId === 'boss' && this.director.boss) {
-        this.applyBossDamage(dmgEvent.damage*this.pilot.damage*primaryBossFactor(this.pilot.id,this.director.boss.name), dmgEvent.hitX, dmgEvent.hitY);
+      } else if (typeof dmgEvent.targetId==='string' && this.director.boss) {
+        this.applyBossDamage(dmgEvent.damage*this.pilot.damage*primaryBossFactor(this.pilot.id,this.director.boss.name), dmgEvent.hitX, dmgEvent.hitY,false,dmgEvent.targetId.startsWith('boss:')?dmgEvent.targetId.slice(5):undefined);
       }
     }
   }
 
-  private applyBossDamage(damage: number, hitX: number, hitY: number, area = false): void {
+  private applyBossDamage(damage: number, hitX: number, hitY: number, area = false, exactModuleId?:string): void {
     const boss = this.director.boss;
     if (!boss || ['intro', 'metamorphosis', 'defeated'].includes(boss.phase)) return;
 
-    const moduleIndex=this.bossVisual?.mounts?.findIndex(m=>spriteContact(m,hitX,hitY,hitX,hitY,3)!==null)??-1;
-    const moduleId=moduleIndex>=0?boss.modules?.[moduleIndex]?.id??null:null;
+    const moduleId=exactModuleId??this.bossPartContact(hitX,hitY,hitX,hitY,3)?.moduleId;
     const bossHit = area&&boss.damageArea ? boss.damageArea(damage) : this.director.damageBoss(damage, hitX, hitY,moduleId);
     if (bossHit.bossDamage > 0) {
       this.trackDamage(boss.name+boss.layer,hitX-boss.x,hitY-boss.y,bossHit.bossDamage);
@@ -724,7 +729,7 @@ export class PrototypeScene extends Phaser.Scene {
       : this.weapons.weaponFamily === 'ion'
         ? 0x00f0ff
         : 0xff4d6d;
-    const defs = getPrimaryProjectiles(this.weapons.weaponFamily, this.weapons.weaponLevel, originX, originY);
+    const defs = getPrimaryProjectiles(this.pilot.id, this.weapons.weaponLevel, originX, originY,this.weapons.weaponFamily);
     const barrel=this.bentoBarrel;this.bentoBarrel*=-1;
     for (const def of defs) {
       if(this.pilot.id==='bento')def.x+=barrel*5;
@@ -737,10 +742,10 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private fireSecondary(): void {
-    this.weapons.missileCooldownMs = this.pilot.id==='nolan'?RIVET_MISSILE_INTERVAL_MS:1700;
+    this.weapons.missileCooldownMs = this.pilot.id==='nolan'?(this.weapons.weaponLevel===5?1100:RIVET_MISSILE_INTERVAL_MS):1700;
     this.missilePoseMs = 280;
 
-    const defs = getSecondaryProjectiles(this.pilot.id, this.vectorShip.x, this.vectorShip.y);
+    const defs = getSecondaryProjectiles(this.pilot.id, this.vectorShip.x, this.vectorShip.y,this.weapons.weaponLevel);
     for (const def of defs) {
       this.createPlayerProjectile(def);
     }
@@ -859,7 +864,7 @@ export class PrototypeScene extends Phaser.Scene {
 
   private makeEnemyVisual(enemy: EnemyModel): void {
     const texture = enemy.carrier?'hd-supply-parachute':'polish-'+(enemy.layer?(enemy.surfaceVariant==='ambush'?'ambush':'surface'):enemy.kind);
-    const size = enemy.carrier?72:enemy.layer?68:({ scout: 32, dart: 40, lancer: 39, cutter: 42 }[enemy.kind]) * (enemy.flight ? 0.74 : 1);
+    const size = (enemy.carrier?72:enemy.layer?68:({ scout: 32, dart: 40, lancer: 39, cutter: 42 }[enemy.kind]) * (enemy.flight ? 0.74 : 1))*.88;
     const body = this.add.sprite(0, 0, texture, 0)
       .setDisplaySize(size, size);
     // Painted sheets already face south; do not rotate their top-down anatomy.
@@ -943,14 +948,14 @@ export class PrototypeScene extends Phaser.Scene {
         this.hud.setWeapon(this.weapons.weaponFamily, this.weapons.weaponLevel, this.weapons.powerMeter);
         if (res.levelIncreased) {
           this.radio.offer('upgrade');
-          this.hud.flash(`UPGRADE DE ARMA! NÍVEL ${this.weapons.weaponLevel} [3/3 P]`, '#facc15', 1400);
+          this.hud.flash(`UPGRADE DE ARMA! NÍVEL ${this.weapons.weaponLevel}`, '#facc15', 1400);
         } else if (!res.meterIncreased) {
           this.scoreCombo = addRawScore(this.scoreCombo, 5000);
           this.hud.flash('POTÊNCIA E RESERVA COMPLETAS (+5000 PTS)', '#fbbf24', 1000);
-        } else if (this.weapons.weaponLevel >= 4) {
-          this.hud.flash('RESERVA P: ' + this.weapons.powerMeter + '/3', '#fbbf24', 1000);
+        } else if (this.weapons.weaponLevel >= maxWeaponLevel(this.pilot.id)) {
+          this.hud.flash('POTÊNCIA MÁXIMA · +5.000', '#fbbf24', 1000);
         } else {
-          this.hud.flash(`ITEM P COLETADO [${this.weapons.powerMeter}/3]`, '#fde047', 950);
+          this.hud.flash(`ITEM P COLETADO [${this.weapons.powerMeter}/${powerItemsForNextLevel(this.pilot.id,this.weapons.weaponLevel)}]`, '#fde047', 950);
         }
       } else if (item.type === 'full_power') {
         const res = collectFullPowerItem(this.weapons);
@@ -1023,20 +1028,28 @@ export class PrototypeScene extends Phaser.Scene {
       this.bossVisual={name:boss.name,main,container:this.add.container(boss.x,boss.y,[main]).setDepth(6)};
     }
     this.bossVisual.container.setPosition(boss.x,boss.y);
-    if(boss.name==='TALASSARCA'){
-      this.bossVisual.mounts??=[];
-      for(const [i,module]of (boss.modules??[]).entries()){
-        let mount=this.bossVisual.mounts[i];
-        if(!mount){mount=this.add.sprite(0,0,module.kind==='weapon'?'hd-biogun':'review-hostile-raia',0);this.bossVisual.mounts.push(mount);this.bossVisual.container.add(mount);}
-        mount.setPosition(module.offsetX,module.offsetY).setDisplaySize(module.kind==='weapon'?34:22,module.kind==='weapon'?34:22)
-          .setVisible(!module.destroyed&&!transforming).setFrame(module.kind==='weapon'?((module.firedMs??0)>70?2:(module.firedMs??0)>0?3:boss.isTelegraphing?1:0):Math.floor(this.time.now/130)%4)
-          .setAlpha(module.kind==='weapon'?1:boss.isTelegraphing?.9:.45);
-      }
-
-    }
     const frameMs=boss.name==='RAIA-DENTE'?125:boss.layer==='inner'?110:160;
     const frame=transforming ? Math.min(3,Math.floor((boss.metamorphosisMs??0)/(METAMORPHOSIS_MS/4))) : Math.floor(this.time.now/frameMs)%(boss.name==='RAIA-DENTE'?8:4);
     this.bossVisual.main.setTexture(key,frame).setDisplaySize(size,size);
+    if(boss.name==='TALASSARCA'){
+      this.bossVisual.mounts??=[];
+      const regions=talassarcaRegions(boss.layer==='inner');
+      for(const [i,m]of(boss.modules??[]).entries()){
+        let scar=this.bossVisual.mounts[i];
+        const r=regions[i],scarKey=key+'-scar-'+i;
+        if(!this.textures.exists(scarKey)&&!transforming){
+          const tex=this.textures.createCanvas(scarKey,r.width+12,r.height+12)!;
+          const ctx=tex.context,source=this.bossVisual.main.frame;
+          ctx.drawImage(source.source.image as CanvasImageSource,source.cutX+r.x-r.width/2-6,source.cutY+r.y-r.height/2-6,r.width+12,r.height+12,0,0,r.width+12,r.height+12);
+          ctx.globalCompositeOperation='destination-in';
+          const g=ctx.createRadialGradient((r.width+12)/2,(r.height+12)/2,0,(r.width+12)/2,(r.height+12)/2,(r.width+12)/2);
+          g.addColorStop(.50,'#fff');g.addColorStop(1,'#fff0');ctx.fillStyle=g;ctx.fillRect(0,0,r.width+12,r.height+12);tex.refresh();
+        }
+        if(!scar){scar=this.add.sprite(0,0,'hd-talassarca-top',0);this.bossVisual.mounts.push(scar);this.bossVisual.container.add(scar);}
+        if(!transforming)scar.setTexture(scarKey).setDisplaySize((r.width+12)*size/512,(r.height+12)*size/512).setPosition(m.offsetX,m.offsetY).setTint(0x251912);
+        scar.setVisible(m.destroyed&&!transforming);
+      }
+    }
     if(transforming){
       this.bossVisual.morphNext??=this.add.sprite(0,0,key,0);
       if(!this.bossVisual.container.exists(this.bossVisual.morphNext))this.bossVisual.container.add(this.bossVisual.morphNext);
@@ -1098,6 +1111,12 @@ export class PrototypeScene extends Phaser.Scene {
     for (let i = this.shots.length - 1; i >= 0; i--) {
       const shot = this.shots[i];
       const fromX=shot.node.x,fromY=shot.node.y;
+      if(shot.homing){
+        const boss=this.director.boss;
+        const targets=[...this.director.enemies.filter(e=>!e.submerged).map(e=>({x:e.x,y:e.y})),...(boss&&!['intro','metamorphosis','defeated'].includes(boss.phase)?boss.name==='TALASSARCA'?(boss.modules??[]).filter(m=>!m.destroyed).map(m=>({x:boss.x+m.offsetX,y:boss.y+m.offsetY})):[{x:boss.x,y:boss.y}]:[])].filter(p=>p.y<shot.node.y+12);
+        targets.sort((a,b)=>Math.hypot(a.x-shot.node.x,a.y-shot.node.y)-Math.hypot(b.x-shot.node.x,b.y-shot.node.y));
+        const target=targets[0];if(target){const angle=Math.atan2(shot.velocityY,shot.velocityX),desired=Math.atan2(target.y-shot.node.y,target.x-shot.node.x),turn=Phaser.Math.Angle.Wrap(desired-angle),next=angle+Phaser.Math.Clamp(turn,-dt*.0032,dt*.0032),speed=Math.hypot(shot.velocityX,shot.velocityY);shot.velocityX=Math.cos(next)*speed;shot.velocityY=Math.sin(next)*speed;shot.node.setRotation(next+Math.PI/2);}
+      }
       shot.ageMs += dt;
       shot.baseX += (shot.velocityX * dt) / 1000;
       shot.baseY += (shot.velocityY * dt) / 1000;
@@ -1128,7 +1147,7 @@ export class PrototypeScene extends Phaser.Scene {
       let collided = false;
 
       // Resolve crossings in physical order, including the boss and thin fast targets.
-      const contacts:Array<{id:number|'boss';t:number}>=[];
+      const contacts:Array<{id:number|'boss';t:number;moduleId?:string}>=[];
       for(const enemy of this.director.enemies){
         if(enemy.submerged||shot.hitTargets?.has(enemy.id))continue;
         const visual=this.enemyVisuals.get(enemy.id);
@@ -1137,14 +1156,14 @@ export class PrototypeScene extends Phaser.Scene {
       }
       const boss=this.director.boss;
       if(boss&&!['intro','metamorphosis','defeated'].includes(boss.phase)&&!shot.hitTargets?.has('boss')){
-        const t=this.bossContact(fromX,fromY,shot.node.x,shot.node.y,shot.hitRadius);
-        if(t!==null)contacts.push({id:'boss',t});
+        const hit=this.bossPartContact(fromX,fromY,shot.node.x,shot.node.y,shot.hitRadius);
+        if(hit)contacts.push({id:'boss',...hit});
       }
       contacts.sort((a,b)=>a.t-b.t);
       for(const contact of contacts){
         const x=fromX+(shot.node.x-fromX)*contact.t,y=fromY+(shot.node.y-fromY)*contact.t;
         shot.hitTargets?.add(contact.id);
-        if(contact.id==='boss')this.applyBossDamage(shot.damage*NORMAL_BOSS_SHOT_SCALE*primaryBossFactor(this.pilot.id,boss!.name),x,y);
+        if(contact.id==='boss')this.applyBossDamage(shot.damage*NORMAL_BOSS_SHOT_SCALE*primaryBossFactor(this.pilot.id,boss!.name),x,y,false,contact.moduleId);
         else this.applyDamageToEnemy(contact.id,shot.damage*(shot.piercing?.5:.36),x,y);
         if(!shot.piercing){collided=true;break;}
       }
@@ -1162,21 +1181,19 @@ export class PrototypeScene extends Phaser.Scene {
     }
   }
 
-  private bossContact(ax:number,ay:number,bx:number,by:number,radius:number):number|null {
-    if(!this.bossVisual)return null;
-    let first:number|null=null;
-    const boss=this.director.boss;
-    const parts=boss?.name==='TALASSARCA'?(this.bossVisual.mounts??[]):[this.bossVisual.main];
-    for(const sprite of parts){
-      const t=spriteContact(sprite,ax,ay,bx,by,radius);if(t!==null&&(first===null||t<first))first=t;
-    }
-    if(boss?.name==='TALASSARCA'){
-      const dx=bx-ax,dy=by-ay,ox=ax-boss.x,oy=ay-boss.y;
-      const r=32+radius,A=dx*dx+dy*dy,B=2*(ox*dx+oy*dy),C=ox*ox+oy*oy-r*r,D=B*B-4*A*C;
-      const t=C<=0?0:A>0&&D>=0?(-B-Math.sqrt(D))/(2*A):-1;
-      if(t>=0&&t<=1&&(first===null||t<first))first=t;
+  private bossPartContact(ax:number,ay:number,bx:number,by:number,radius:number):{t:number;moduleId?:string}|null {
+    const boss=this.director.boss,visual=this.bossVisual;if(!boss||!visual)return null;
+    if(boss.name!=='TALASSARCA'){const t=spriteContact(visual.main,ax,ay,bx,by,radius);return t===null?null:{t};}
+    let first:{t:number;moduleId:string}|null=null;
+    for(const r of talassarcaRegions(boss.layer==='inner')){
+      if(boss.modules?.find(m=>m.id===r.id)?.destroyed)continue;
+      const t=spriteContact(visual.main,ax,ay,bx,by,radius,r);
+      if(t!==null&&(!first||t<first.t))first={t,moduleId:r.id};
     }
     return first;
+  }
+  private bossContact(ax:number,ay:number,bx:number,by:number,radius:number):number|null {
+    return this.bossPartContact(ax,ay,bx,by,radius)?.t??null;
   }
 
   private hullTouchesSprite(body:Phaser.GameObjects.Sprite):boolean {

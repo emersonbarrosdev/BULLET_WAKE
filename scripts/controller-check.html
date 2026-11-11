@@ -1,0 +1,29 @@
+<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>BULLET WAKE — teste físico de controle</title>
+<style>body{margin:12px;background:#111;color:#eee;font:16px monospace}button{padding:10px;background:#333;color:white;border:1px solid #999}iframe{display:block;margin-top:10px;width:min(100%,1200px);height:67vh;border:0}pre{white-space:pre-wrap;font-size:14px;margin:8px 0}</style>
+<h1 style="font-size:20px">BULLET WAKE — teste físico de controle</h1>
+<button id="start">INICIAR TESTE NA GAMEPLAY</button>
+<span> Mova nas quatro direções, segure disparo, use especial e pause/continue.</span>
+<pre id="status">Pressione um botão do controle para o navegador reconhecê-lo.</pre>
+<iframe id="game" src="/" title="Gameplay real da Fase 1"></iframe>
+<script type="module">
+const frame=document.querySelector('#game'),status=document.querySelector('#status');
+const seen=new Set(),range={x:[Infinity,-Infinity],y:[Infinity,-Infinity]},checks={moved:false,fired:false,special:false,paused:false,resumed:false};
+let started=false,wasPaused=false,initialX=384,initialY=350,maxShots=0;
+document.querySelector('#start').onclick=()=>{
+ const game=frame.contentWindow.__GAME__;if(!game?.isBooted)return;
+ (game.scene.getScenes(true)[0]??game.scene.getScene('TitleScene')).scene.start('PrototypeScene',{pilotId:'nolan',skipBriefing:true});started=true;frame.contentWindow.focus();
+};
+setInterval(()=>{
+ const pads=Array.from(navigator.getGamepads?.()??[]).filter(Boolean),p=pads[0];
+ if(p){p.buttons.forEach((b,i)=>{if(b.pressed)seen.add(i)});for(let i=0;i<2;i++){const r=i===0?range.x:range.y;r[0]=Math.min(r[0],p.axes[i]??0);r[1]=Math.max(r[1],p.axes[i]??0)}}
+ const g=frame.contentWindow.__GAME__,s=g?.scene.getScene('PrototypeScene');
+ if(started&&s?.ship){
+  const x=s.ship.x,y=s.ship.y,paused=g.scene.isPaused('PrototypeScene');
+  checks.moved||=Math.hypot(x-initialX,y-initialY)>8;maxShots=Math.max(maxShots,s.shots.length);
+  checks.fired||=s.shots.length>0;checks.special||=s.weapons.specialCharges<2;checks.paused||=paused;
+  if(wasPaused&&!paused)checks.resumed=true;wasPaused=paused;
+ }
+ const result={controller:p?{id:p.id,connected:p.connected,mapping:p.mapping}:null,buttonsSeen:[...seen].sort((a,b)=>a-b),axesRange:range,checks,gameplay:started&&s?.ship?{x:Math.round(s.ship.x),y:Math.round(s.ship.y),maxShots,specials:s.weapons.specialCharges,paused:g.scene.isPaused('PrototypeScene')}:null,source:'physical navigator.getGamepads; no virtual override'};
+ status.textContent=JSON.stringify(result,null,1);window.controllerEvidence=result;
+},100);
+</script></html>

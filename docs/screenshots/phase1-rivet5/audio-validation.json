@@ -1,0 +1,75 @@
+{
+  "completed": true,
+  "viewports": [],
+  "regression": {
+    "title": true,
+    "renderedAudio": [
+      {
+        "name": "menu",
+        "seconds": 97.62710416666667,
+        "channels": 2,
+        "peakDb": -2.7842373611027864,
+        "rmsDb": -15.08914384557819,
+        "expectedSeconds": 97.62711864406779,
+        "guitarSource": "Unreal Instruments METAL-GTX, sampled humbucker DI, alternate down/up strokes, palm mute/sustain, round robins",
+        "replyRegister": "one octave below the rejected lead; short notes, -5.4 dB relative reply stem gain; approved rhythm guitars unchanged"
+      },
+      {
+        "name": "stage1",
+        "seconds": 81.12675,
+        "channels": 2,
+        "peakDb": -2.91216429917187,
+        "rmsDb": -14.746563388512286,
+        "expectedSeconds": 81.12676056338029,
+        "guitarSource": "Unreal Instruments METAL-GTX, sampled humbucker DI, alternate down/up strokes, palm mute/sustain, round robins",
+        "replyRegister": "one octave below the rejected lead; short notes, -5.4 dB relative reply stem gain; approved rhythm guitars unchanged"
+      },
+      {
+        "name": "boss",
+        "seconds": 73.846125,
+        "channels": 2,
+        "peakDb": -2.41112198492168,
+        "rmsDb": -14.436953818300074,
+        "expectedSeconds": 73.84615384615384,
+        "guitarSource": "Unreal Instruments METAL-GTX, sampled humbucker DI, alternate down/up strokes, palm mute/sustain, round robins",
+        "replyRegister": "one octave below the rejected lead; short notes, -5.4 dB relative reply stem gain; approved rhythm guitars unchanged"
+      }
+    ],
+    "audioTransport": [
+      {
+        "environment": "atmosphere",
+        "track": "menu",
+        "position": 1.0106666666666668,
+        "paused": false,
+        "voices": 1,
+        "musicLoadFailed": false,
+        "master": 0.800000011920929,
+        "sfx": 0.7224999999999999,
+        "music": 0.30250000000000005
+      },
+      {
+        "environment": "atmosphere",
+        "track": "stage1",
+        "position": 0.07200000000000006,
+        "paused": false,
+        "voices": 1,
+        "musicLoadFailed": false,
+        "master": 0.800000011920929,
+        "sfx": 0.7224999999999999,
+        "music": 0.30250000000000005
+      },
+      {
+        "environment": "atmosphere",
+        "track": "boss",
+        "position": 0.008000000000000007,
+        "paused": false,
+        "voices": 1,
+        "musicLoadFailed": false,
+        "master": 0.800000011920929,
+        "sfx": 0.7224999999999999,
+        "music": 0.30250000000000005
+      }
+    ]
+  },
+  "errors": []
+}

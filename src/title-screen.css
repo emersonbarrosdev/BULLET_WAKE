@@ -17,8 +17,9 @@
 #bw-title-screen .bw-art-frame {
   position: absolute;
   left: 50%; top: 50%;
-  width: max(100vw, 177.683vh);
-  height: max(100vh, 56.28vw);
+  width: min(100vw, 177.683dvh);
+  height: min(100dvh, 56.28vw);
+  container-type: inline-size;
   transform: translate(-50%, -50%);
   background-position: center;
   background-repeat: no-repeat;
@@ -46,7 +47,7 @@
 }
 #bw-title-screen .bw-press-text-label {
   font-family: 'Oxanium', 'Rajdhani', sans-serif;
-  font-size: clamp(27px, 3.05vw, 60px);
+  font-size: clamp(27px, 3.05cqw, 60px);
   font-weight: 800;
   font-style: italic;
   line-height: 1;
@@ -57,7 +58,7 @@
 }
 #bw-title-screen .bw-press-text-arrow {
   font-family: 'Oxanium', 'Rajdhani', sans-serif;
-  font-size: clamp(19px, 2.05vw, 35px);
+  font-size: clamp(19px, 2.05cqw, 35px);
   font-weight: 800;
   line-height: 1;
   color: #ffdbb7;
@@ -122,7 +123,7 @@
   top: 45.6%;
   transform: translate(-50%, -50%);
   color: #fff1da;
-  font-size: clamp(15px, 2.3vw, 38px);
+  font-size: clamp(15px, 2.3cqw, 38px);
   line-height: 1;
   text-shadow: 0 0 7px #ffad59, 0 0 15px #ff4e10;
   transition: left .19s ease-out, top .19s ease-out;

@@ -1,53 +1,77 @@
 {
   "menu": {
-    "arrangement": "piano introduction, guitar melody, bass-led reply, clean bridge and full-band return",
+    "arrangement": "low B/F# nu-metal riffs with short low-mid guitar replies, sampled palm mutes and down/up picks, four-stage distortion, 4x12 convolution, bass, acoustic drums and DJ accents",
     "bpm": 118,
     "bars": 48,
     "seconds": 97.62711864406779,
     "instruments": [
-      "grand piano",
-      "electric lead guitar",
-      "rhythm guitar",
+      "Unreal Instruments METAL-GTX humbucker DI",
+      "four-stage high-gain distortion and real 4x12 IR",
+      "palm-muted rhythm guitars L/R",
       "fingered bass",
-      "strings",
-      "clean guitar",
-      "acoustic drums"
+      "acoustic drums",
+      "original scratch/noise samples"
     ],
-    "peakDbfs": -1.21,
-    "rmsDbfs": -17.19
+    "stems": [
+      "guitar-left",
+      "guitar-right",
+      "lead",
+      "rhythm"
+    ],
+    "guitarSource": "Unreal Instruments METAL-GTX, sampled humbucker DI, alternate down/up strokes, palm mute/sustain, round robins",
+    "processing": "4x oversampling; four nonlinear gain stages; recorded 4x12 IR; independent stereo takes; low-mid replies with 3.8 kHz rolloff",
+    "replyRegister": "one octave below the rejected lead; short notes, -5.4 dB relative reply stem gain; approved rhythm guitars unchanged",
+    "pcmPeakDb": -2.9,
+    "pcmRmsDb": -15.1
   },
   "stage1": {
-    "arrangement": "piano introduction, guitar melody, bass-led reply, clean bridge and full-band return",
+    "arrangement": "low B/F# nu-metal riffs with short low-mid guitar replies, sampled palm mutes and down/up picks, four-stage distortion, 4x12 convolution, bass, acoustic drums and DJ accents",
     "bpm": 142,
     "bars": 48,
     "seconds": 81.12676056338029,
     "instruments": [
-      "grand piano",
-      "electric lead guitar",
-      "rhythm guitar",
+      "Unreal Instruments METAL-GTX humbucker DI",
+      "four-stage high-gain distortion and real 4x12 IR",
+      "palm-muted rhythm guitars L/R",
       "fingered bass",
-      "strings",
-      "clean guitar",
-      "acoustic drums"
+      "acoustic drums",
+      "original scratch/noise samples"
     ],
-    "peakDbfs": -1.21,
-    "rmsDbfs": -16.51
+    "stems": [
+      "guitar-left",
+      "guitar-right",
+      "lead",
+      "rhythm"
+    ],
+    "guitarSource": "Unreal Instruments METAL-GTX, sampled humbucker DI, alternate down/up strokes, palm mute/sustain, round robins",
+    "processing": "4x oversampling; four nonlinear gain stages; recorded 4x12 IR; independent stereo takes; low-mid replies with 3.8 kHz rolloff",
+    "replyRegister": "one octave below the rejected lead; short notes, -5.4 dB relative reply stem gain; approved rhythm guitars unchanged",
+    "pcmPeakDb": -2.91,
+    "pcmRmsDb": -14.76
   },
   "boss": {
-    "arrangement": "piano introduction, guitar melody, bass-led reply, clean bridge and full-band return",
+    "arrangement": "low B/F# nu-metal riffs with short low-mid guitar replies, sampled palm mutes and down/up picks, four-stage distortion, 4x12 convolution, bass, acoustic drums and DJ accents",
     "bpm": 156,
     "bars": 48,
     "seconds": 73.84615384615384,
     "instruments": [
-      "grand piano",
-      "electric lead guitar",
-      "rhythm guitar",
+      "Unreal Instruments METAL-GTX humbucker DI",
+      "four-stage high-gain distortion and real 4x12 IR",
+      "palm-muted rhythm guitars L/R",
       "fingered bass",
-      "strings",
-      "clean guitar",
-      "acoustic drums"
+      "acoustic drums",
+      "original scratch/noise samples"
     ],
-    "peakDbfs": -1.21,
-    "rmsDbfs": -16.54
+    "stems": [
+      "guitar-left",
+      "guitar-right",
+      "lead",
+      "rhythm"
+    ],
+    "guitarSource": "Unreal Instruments METAL-GTX, sampled humbucker DI, alternate down/up strokes, palm mute/sustain, round robins",
+    "processing": "4x oversampling; four nonlinear gain stages; recorded 4x12 IR; independent stereo takes; low-mid replies with 3.8 kHz rolloff",
+    "replyRegister": "one octave below the rejected lead; short notes, -5.4 dB relative reply stem gain; approved rhythm guitars unchanged",
+    "pcmPeakDb": -2.61,
+    "pcmRmsDb": -14.45
   }
 }

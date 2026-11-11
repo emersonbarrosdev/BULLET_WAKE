@@ -1,17 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createPlayerWeapons,collectPowerItem,collectWeaponCapsule,evolutionCargo} from '../src/game/systems/weaponSystem.ts';
+import {maxWeaponLevel,powerItemsForNextLevel,createPlayerWeapons,collectPowerItem,collectWeaponCapsule,evolutionCargo} from '../src/game/systems/weaponSystem.ts';
 import {GamepadReader,padLabels} from '../src/game/systems/gamepadInput.ts';
 import {processInputFrame} from '../src/game/systems/inputSystem.ts';
 import {computeLaserBeams} from '../src/game/systems/crimsonLaserSystem.ts';
 import {SUPPLY_EVENTS,SCROLL_SPEED,StageDirector} from '../src/game/systems/stageDirector.ts';
 
-test('all owned primary weapons evolve through four levels at three P per upgrade',()=>{
+test('each owned weapon evolves at its documented P thresholds without color swaps',()=>{
  for(const pilot of ['nolan','cora','harlan','lyra']){
   let w=createPlayerWeapons(pilot);const family=w.weaponFamily;
-  for(let level=1;level<=4;level++){
+  for(let level=1;level<=maxWeaponLevel(pilot);level++){
    assert.equal(w.weaponLevel,level);assert.equal(w.weaponFamily,family);
-   if(level<4)for(let i=0;i<3;i++)w=collectPowerItem(w).state;
+   if(level<maxWeaponLevel(pilot))for(let i=0;i<powerItemsForNextLevel(pilot,level);i++)w=collectPowerItem(w).state;
   }
   assert.equal(collectPowerItem(w).meterIncreased,false);assert.equal(evolutionCargo(w),'power');
  }

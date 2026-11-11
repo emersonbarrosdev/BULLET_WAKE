@@ -17,7 +17,7 @@ test('canonical cast order keeps the protagonist and Japanese secret pilot on th
 });
 test('body hits never damage distant organs; local overkill cannot spill into another piece',()=>{
  const b=new BossTalassarca();b.update(1800,384,350);const before=b.modules.map(m=>m.hp);
- b.damage(10,b.x,b.y+140);assert.deepEqual(b.modules.map(m=>m.hp),before);assert.equal(b.hp,590);
+ b.damage(10,b.x,b.y+140);assert.deepEqual(b.modules.map(m=>m.hp),before);assert.equal(b.hp,600);
  const m=b.modules[0];b.damage(100,b.x+m.offsetX,b.y+m.offsetY);assert.equal(m.destroyed,true);
  assert.deepEqual(b.modules.slice(1).map(m=>m.hp),before.slice(1));
 });
@@ -50,7 +50,7 @@ test('destruction follows cumulative local damage, not the final weak hit or old
 test('missing one, two or three scheduled P keeps reachable NV3; late Continue remains viable for every owner',()=>{
  for(const id of PILOTS.map(p=>p.id))for(const missed of [0,1,2,3]){
   let w=createPlayerWeapons(id);for(let i=0;i<9-missed;i++)w=collectPowerItem(w).state;
-  assert.equal(w.weaponLevel,missed===0?4:3);const resume=continueWeapons(w,3200);
+  assert.equal(w.weaponLevel,id==='nolan'?(missed===0?5:4):(missed===0?4:3));const resume=continueWeapons(w,3200);
   assert.equal(resume.pilotId,w.pilotId);assert.ok(resume.weaponLevel>=2);assert.equal(resume.specialCharges,w.specialCharges);
  }
 });
@@ -60,7 +60,7 @@ test('collection uses the passed actual hull test instead of forcing the shared 
  assert.equal(p.checkCollection(500,400,5,false,(x,y)=>x===384&&y===300).length,1);
 });
 test('recovery cannot combine a lower milestone meter with the higher milestone level to invent P',()=>{
- const current={...createPlayerWeapons('nolan'),weaponLevel:2,powerMeter:2};
+ const current={...createPlayerWeapons('lyra'),weaponLevel:2,powerMeter:2};
  const next=recoverArmament(current,{family:'ion',level:3,meter:0});assert.equal(next.weaponLevel,3);assert.equal(next.powerMeter,0);
  assert.equal(recoverArmament(next,{family:'ion',level:2,meter:2}),next);
 });

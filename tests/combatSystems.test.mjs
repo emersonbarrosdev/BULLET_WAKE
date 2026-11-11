@@ -35,7 +35,7 @@ test('weapons start at LV1 with two special charges', () => {
   assert.equal(w.specialType, 'prism');
 });
 
-test('weapons upgrade up to LV4 and no further', () => {
+test('RIVET upgrades to FULL LV5 and no further', () => {
   let w = createPlayerWeapons('nolan');
   const u1 = upgradeWeapon(w);
   assert.equal(u1.upgraded, true);
@@ -50,8 +50,9 @@ test('weapons upgrade up to LV4 and no further', () => {
   assert.equal(u3.state.weaponLevel, 4);
 
   const u4 = upgradeWeapon(u3.state);
-  assert.equal(u4.upgraded, false);
-  assert.equal(u4.state.weaponLevel, MAX_WEAPON_LEVEL);
+  assert.equal(u4.upgraded, true);
+  assert.equal(u4.state.weaponLevel, 5);
+  assert.equal(upgradeWeapon(u4.state).upgraded,false);
 });
 
 test('special consumes one charge, cannot retrigger active, caps at five, and empties', () => {

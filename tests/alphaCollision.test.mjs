@@ -30,7 +30,7 @@ test('released supplies bounce on all four boundaries and remain physical',()=>{
 });
 test('Talassarca organs absorb a fixed budget and destroyed organs stop firing',()=>{
   const b=new BossTalassarca();b.update(1800,384,350);const organ=b.modules[0];
-  b.damage(200,b.x+organ.offsetX,b.y+organ.offsetY);assert.equal(organ.destroyed,true);assert.equal(b.hp,400);
+  b.damage(200,b.x+organ.offsetX,b.y+organ.offsetY);assert.equal(organ.destroyed,true);assert.equal(b.hp,500);
   for(let i=0;i<160;i++){const tick=b.update(25,384,380);assert.ok(tick.shots.every(s=>Math.abs(s.x-(b.x+organ.offsetX))>1));}
-  b.damage(400);b.update(2400,384,350);assert.equal(b.modules.filter(m=>m.destroyed).length,0);assert.equal(b.hp,360);
+  b.damageArea(500);b.update(2400,384,350);assert.equal(b.modules.filter(m=>m.destroyed).length,0);assert.equal(b.hp,360);
 });

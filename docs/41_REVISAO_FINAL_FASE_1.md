@@ -1,6 +1,6 @@
 # Fase 1 — elenco e correções após a auditoria
 
-Revisão de 11/11/2026. Esta entrega continua restrita à Fenda Pelágica. A produção das fases seguintes depende da aprovação do usuário.
+Registro histórico de 11/11/2026, substituído pela [revisão de chefe, RIVET FULL e nu metal](44_CHEFE_RIVET5_ESCALA_E_NU_METAL.md). Esta entrega continua restrita à Fenda Pelágica. A produção das fases seguintes depende da aprovação do usuário.
 
 ## Elenco vigente
 

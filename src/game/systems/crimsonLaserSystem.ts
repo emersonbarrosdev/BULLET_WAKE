@@ -11,7 +11,9 @@
  * 7. Efeitos de impacto nas coordenadas exatas de contato.
  */
 import { GAME_HEIGHT, PLAYFIELD_X, PLAYFIELD_RIGHT } from '../constants.ts';
-import type { WeaponLevel } from './weaponSystem.ts';
+import type { WeaponLevel, ClassicWeaponLevel } from './weaponSystem.ts';
+
+export type LaserTargetId = number | 'boss' | `boss:${string}`;
 
 export type BeamRole = 'central' | 'inner-wave' | 'lateral-sweep';
 
@@ -32,14 +34,14 @@ export interface LaserBeamGeometry {
 
 export interface LaserImpactPoint {
   beamId: string;
-  targetId: number | 'boss';
+  targetId: LaserTargetId;
   x: number;
   y: number;
   intensity: number;
 }
 
 export interface LaserTargetCircle {
-  id: number | 'boss';
+  id: LaserTargetId;
   x: number;
   y: number;
   radius: number;
@@ -49,7 +51,7 @@ export interface LaserTargetCircle {
 }
 
 export interface LaserDamageEvent {
-  targetId: number | 'boss';
+  targetId: LaserTargetId;
   damage: number;
   hitX: number;
   hitY: number;
@@ -90,7 +92,7 @@ export const LASER_DECAY_MS = 110;
 /** Número de subdivisões por feixe para curvatura orgânica e colisão precisa */
 export const LASER_SEGMENTS = 18;
 
-export const LASER_RUBRO_SPECS: Record<WeaponLevel, LaserLevelSpec> = {
+export const LASER_RUBRO_SPECS: Record<ClassicWeaponLevel, LaserLevelSpec> = {
   1: {
     level: 1,
     title: 'FLUXO INICIAL',
@@ -380,10 +382,10 @@ export function evaluateLaserCollisions(
 ): {
   clippedBeams: LaserBeamGeometry[];
   impacts: LaserImpactPoint[];
-  hitDpsByTarget: Map<number | 'boss', { dps: number; hitX: number; hitY: number }>;
+  hitDpsByTarget: Map<LaserTargetId, { dps: number; hitX: number; hitY: number }>;
 } {
   const impacts: LaserImpactPoint[] = [];
-  const hitDpsByTarget = new Map<number | 'boss', { dps: number; hitX: number; hitY: number }>();
+  const hitDpsByTarget = new Map<LaserTargetId, { dps: number; hitX: number; hitY: number }>();
   const clippedBeams: LaserBeamGeometry[] = [];
 
   for (const beam of beams) {

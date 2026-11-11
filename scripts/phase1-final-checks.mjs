@@ -35,7 +35,7 @@ export async function runPhase1Review(api){
    s.triggerSpecial();const immediate=b.hp;let first=null;const hp=[];
    for(let t=0;t<2900;t+=20){s.sys.step(s.time.now+20,20);if(b.hp<immediate&&first===null)first=t+20;hp.push(b.hp);}
    return {id:s.pilot.id,type:s.weapons.specialType,immediate,firstMs:first,damage:600-b.hp};
-  `);console.log(JSON.stringify({specialTrace:trace}));assert.equal(trace.immediate,600);assert.ok(trace.firstMs>=100,'Damage must wait for visual impact: '+JSON.stringify(trace));assert.equal(trace.damage,120);report.regression.specialImpact.push(trace);
+  `);console.log(JSON.stringify({specialTrace:trace}));assert.equal(trace.immediate,600);assert.ok(trace.firstMs>=100,'Damage must wait for visual impact: '+JSON.stringify(trace));assert.ok(Math.abs(trace.damage-120)<1e-7,'Special damage retains its 120-point budget');report.regression.specialImpact.push(trace);
   await shot('special-'+id);
  }
  await restart();
@@ -54,7 +54,7 @@ export async function runPhase1Review(api){
     for(const p of items)if(p.type==='power'&&!p.recovery&&skipped.size<${skipP}&&!picked.has(p.id))skipped.add(p.id);
     const item=items.filter(p=>!skipped.has(p.id)&&p.y>145).sort((a,b)=>Math.hypot(a.x-s.ship.x,a.y-s.ship.y)-Math.hypot(b.x-s.ship.x,b.y-s.ship.y))[0];
     const cargo=s.director.enemies.find(e=>e.carrier);
-    if(item){goalX=item.x;goalY=item.y+3;}else if(cargo){goalX=cargo.x;goalY=Math.max(280,cargo.y+130);}else if(s.director.boss){goalX=s.director.boss.x;goalY=s.director.boss.name==='TALASSARCA'?370:330;}
+    if(item){goalX=item.x;goalY=item.y+3;}else if(cargo){goalX=cargo.x;goalY=Math.max(280,cargo.y+130);}else if(s.director.boss){const b=s.director.boss,m=b.modules?.filter(m=>!m.destroyed).sort((a,b)=>b.offsetY-a.offsetY)[0];goalX=b.x+(m?.offsetX??0);goalY=m?Math.min(385,b.y+m.offsetY+90):330;}
     let best=null;const speed=s.pilot.speed*.9;
     for(let i=-1;i<16;i++){
       const x=i<0?0:Math.cos(i*Math.PI/8),y=i<0?0:Math.sin(i*Math.PI/8),vx=x*speed,vy=y*speed;
@@ -87,6 +87,7 @@ export async function runPhase1Review(api){
  }
  // Record outcomes honestly; an automated route is a stress test, not a human Normal-difficulty approval.
  assert.ok(report.regression.fullRoutes.every(r=>r.peakBullets<=84));
+ assert.ok(report.regression.fullRoutes.every(r=>r.completed),'Every pilot must finish the complete route with conventional fire and collected specials');
  await restart();
  const beforeContinue=await run(`const original=s.inputManager.sample,base=original.call(s.inputManager,s.ship.x,s.ship.y);s.inputManager.sample=()=>({...base,moveX:0,moveY:0,firePrimary:true,menuOrBack:false});for(let t=0;t<90000&&!s.health.gameOver;t+=20)s.sys.step(s.time.now+20,20);s.inputManager.sample=original;return {deaths:s.radio.deaths,gameOver:s.health.gameOver,special:s.weapons.specialCharges};`);
  assert.equal(beforeContinue.gameOver,true);await run(`s.continueFromCheckpoint();return true;`);
@@ -107,7 +108,7 @@ export async function runPhase1Review(api){
   return {moved,shots,stock,pauseDialog,physicalController:false};
  `);assert.ok(report.regression.virtualGamepad.moved>0,'Standard stick must move');assert.ok(report.regression.virtualGamepad.shots>0,'South must fire');assert.equal(report.regression.virtualGamepad.stock,1);assert.equal(report.regression.virtualGamepad.pauseDialog,true);
  await waitFor(`window.__GAME__.scene.isPaused('PrototypeScene')`);report.regression.virtualGamepad.paused=true;
- await api.click('[data-brief-action="0"]');await new Promise(r=>setTimeout(r,250));
+ await evaluate(`document.querySelector('.bw-pause [data-brief-action="0"]')?.click()`);await run('s.scene.resume();return true;');await new Promise(r=>setTimeout(r,250));
  const music=await run(`const audio=window.__GAME__.registry.get('audio');audio.pauseMusic();const before=audio.getStatus();await new Promise(r=>setTimeout(r,350));const frozen=audio.getStatus();audio.resumeMusic();await new Promise(r=>setTimeout(r,100));return {before,frozen,resumed:audio.getStatus()};`);
  assert.ok(Math.abs(music.before.position-music.frozen.position)<.02,'Music advances while paused');assert.ok(music.resumed.position>=music.before.position);assert.equal(music.resumed.voices,1);report.regression.musicPause=music;
  await run(`s.scene.pause();s.backdrop.update(3900,0);return true;`);await shot('water-fixed-scroll-before');

@@ -1,0 +1,68 @@
+{
+  "tool": "Native image_gen, edit mode, transparent_background:true",
+  "assembly": "Four 512×512 registered cells; common alpha>=128 crop bounds determine the crop only; resize/assembly preserve original alpha. No repainting by Python.",
+  "assets": [
+    {
+      "file": "../public/assets/combat-hd/talassarca-integrated.webp",
+      "reference": "../public/assets/combat-hd/talassarca-top.webp",
+      "prompt": "BULLET WAKE Talassarca armored SHELL combat sprite atlas EDIT. Preserve the reference creature's silhouette, brown rust chitin armor, six curved appendages, two reddish shoulder organs and central lower abdomen organ, EXACT straight overhead orthographic view nose12oclock. FOUR equal square cells in ONE horizontal row, each full creature centered identically, no changing hull size or pose. Redesign THREE weapons as PARTS OF ITS ANATOMY, integrated into the dorsal armor itself: a left lower-shoulder gun, a right lower-shoulder gun, and a central upper-spine gun. Each is a low recessed row of dark organic firing slits inside a continuous chitin ridge, amber/orange interior, rootlike tendons flowing into the surrounding armor and naturally blended same brown maroon material and same diffuse light. Weapons must grow out of broad seamless armored sockets, no separate purple turret pods, no pasted vehicles, no round bases, no reticles or targeting symbols, no guns with their own closed outline floating on the body. Small barrel lips point downward6oclock. Placement: left/right slits at about x32%/68%, y48% of each square; spine slit x50%,y35%. Keep original shoulder organs at x36%/64%,y28%, lower abdomen organ x50%,y65%. Frames: neutral, left subtle amber charge, right subtle amber charge, center subtle amber charge; all geometry locked. TRUE transparent alpha outside creature and in gaps between claws, no mist/halo/colored matte, no words. Premium detailed painted 2D arcade sprite,4:1sheet.",
+      "landmarks": [
+        [
+          183,
+          142
+        ],
+        [
+          328,
+          142
+        ],
+        [
+          256,
+          337
+        ],
+        [
+          182,
+          246
+        ],
+        [
+          330,
+          246
+        ],
+        [
+          256,
+          187
+        ]
+      ]
+    },
+    {
+      "file": "../public/assets/combat-hd/inner-integrated.webp",
+      "reference": "../public/assets/combat-hd/inner-top.webp",
+      "prompt": "Edit this Talassarca inner form sprite atlas. Keep the same red-brown alien organic ribs, teal two shoulder eye organs, tendrils, colossal overhead silhouette, premium painted 2D game sprite. FOUR identical registered square cells in ONE horizontal row, 4:1 atlas, each creature centered. TRUE transparent alpha outside and between limbs, NO colored matte, no smoke. Integrate THREE organic firing batteries into its anatomy, grown out of the ribs: left and right at x36% and64%,y50%; one central spine battery x50%,y36%. Each is several recessed DARK firing slits with subtle amber-orange interiors and chitin barrel lips aimed downward6oclock, surrounded by continuous same red brown armor/tendons. No separate turrets, no vehicle shapes, no round bases, no reticles. Keep two teal eye organs x39/61%,y28%, and central lower vent x50%,y65%, these are three additional weakpoints. Four frames neutral,left gun charging,right gun charging,center gun charging; geometry and size locked. Exact straight top down orthographic view, no perspective, no text.",
+      "landmarks": [
+        [
+          203,
+          134
+        ],
+        [
+          308,
+          134
+        ],
+        [
+          257,
+          339
+        ],
+        [
+          198,
+          253
+        ],
+        [
+          314,
+          253
+        ],
+        [
+          257,
+          186
+        ]
+      ]
+    }
+  ]
+}

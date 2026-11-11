@@ -1,0 +1,611 @@
+{
+  "completed": true,
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "levels": [
+        {
+          "level": 1,
+          "shots": 1,
+          "missiles": 0,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 1/5"
+        },
+        {
+          "level": 2,
+          "shots": 2,
+          "missiles": 0,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 2/5"
+        },
+        {
+          "level": 3,
+          "shots": 5,
+          "missiles": 2,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 3/5"
+        },
+        {
+          "level": 4,
+          "shots": 8,
+          "missiles": 2,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 4/5"
+        },
+        {
+          "level": 5,
+          "shots": 10,
+          "missiles": 3,
+          "homing": 3,
+          "shipWidth": 34,
+          "hud": "FULL"
+        }
+      ],
+      "targets": {
+        "crossing": {
+          "t": 0.46174907758977213,
+          "moduleId": "battery-left"
+        },
+        "overflight": null,
+        "before": 600,
+        "after": 598.255125,
+        "gunHp": 98.25512499999999,
+        "unhit": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ],
+        "legacyGuns": false
+      },
+      "broken": {
+        "destroyed": true,
+        "scar": true,
+        "next": "left"
+      },
+      "guided": {
+        "before": 0,
+        "after": -149.8528602758966
+      },
+      "laser": {
+        "hp": 584.0563199999999,
+        "gun": 89.86239999999995,
+        "events": [
+          "boss:battery-left",
+          "boss:battery-left",
+          "boss:battery-right"
+        ]
+      }
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "levels": [
+        {
+          "level": 1,
+          "shots": 1,
+          "missiles": 0,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 1/5"
+        },
+        {
+          "level": 2,
+          "shots": 2,
+          "missiles": 0,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 2/5"
+        },
+        {
+          "level": 3,
+          "shots": 5,
+          "missiles": 2,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 3/5"
+        },
+        {
+          "level": 4,
+          "shots": 8,
+          "missiles": 2,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 4/5"
+        },
+        {
+          "level": 5,
+          "shots": 10,
+          "missiles": 3,
+          "homing": 3,
+          "shipWidth": 34,
+          "hud": "FULL"
+        }
+      ],
+      "targets": {
+        "crossing": {
+          "t": 0.46174907758977213,
+          "moduleId": "battery-left"
+        },
+        "overflight": null,
+        "before": 600,
+        "after": 598.255125,
+        "gunHp": 98.25512499999999,
+        "unhit": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ],
+        "legacyGuns": false
+      },
+      "broken": {
+        "destroyed": true,
+        "scar": true,
+        "next": "left"
+      },
+      "guided": {
+        "before": 0,
+        "after": -149.8528602758966
+      },
+      "laser": {
+        "hp": 584.0563199999999,
+        "gun": 89.86239999999995,
+        "events": [
+          "boss:battery-left",
+          "boss:battery-left",
+          "boss:battery-right"
+        ]
+      }
+    }
+  ],
+  "regression": {
+    "title": true,
+    "titleContain": [
+      {
+        "width": 1364.59375,
+        "height": 768,
+        "x": 0.703125,
+        "y": 0,
+        "right": 1365.296875,
+        "bottom": 768
+      },
+      {
+        "width": 1918.96875,
+        "height": 1080,
+        "x": 0.515625,
+        "y": 0,
+        "right": 1919.484375,
+        "bottom": 1080
+      },
+      {
+        "width": 1918.96875,
+        "height": 1080,
+        "x": 320.515625,
+        "y": 0,
+        "right": 2239.484375,
+        "bottom": 1080
+      },
+      {
+        "width": 1280,
+        "height": 720.375,
+        "x": 0,
+        "y": 151.8125,
+        "right": 1280,
+        "bottom": 872.1875
+      }
+    ],
+    "physicalGamepads": [],
+    "silhouettes": [
+      {
+        "key": "hd-rivet",
+        "width": 256,
+        "height": 256,
+        "frames": 4
+      },
+      {
+        "key": "hd-moth",
+        "width": 256,
+        "height": 256,
+        "frames": 4
+      },
+      {
+        "key": "hd-kestrel",
+        "width": 256,
+        "height": 256,
+        "frames": 4
+      },
+      {
+        "key": "hd-knuckle",
+        "width": 256,
+        "height": 256,
+        "frames": 4
+      },
+      {
+        "key": "hd-peregrine",
+        "width": 256,
+        "height": 256,
+        "frames": 4
+      }
+    ],
+    "specialImpact": [
+      {
+        "id": "lyra",
+        "type": "orbital",
+        "immediate": 600,
+        "firstMs": 720,
+        "damage": 119.99999999999989
+      },
+      {
+        "id": "bento",
+        "type": "comet",
+        "immediate": 600,
+        "firstMs": 420,
+        "damage": 120
+      },
+      {
+        "id": "cora",
+        "type": "phantom",
+        "immediate": 600,
+        "firstMs": 160,
+        "damage": 120.00000000000006
+      },
+      {
+        "id": "harlan",
+        "type": "nova",
+        "immediate": 600,
+        "firstMs": 180,
+        "damage": 120
+      }
+    ],
+    "fullRoutes": [
+      {
+        "pilot": "Bayek",
+        "skipPolicy": 0,
+        "actuallySkipped": 0,
+        "seconds": 194.78,
+        "completed": true,
+        "gameOver": false,
+        "lives": 1,
+        "level": 5,
+        "powerMeter": 0,
+        "collected": 15,
+        "pickedTypes": {
+          "power": 13,
+          "life": 1,
+          "special": 1
+        },
+        "kills": 102,
+        "levels": [
+          {
+            "seconds": 36.64,
+            "level": 2
+          },
+          {
+            "seconds": 54.1,
+            "level": 1
+          },
+          {
+            "seconds": 54.78,
+            "level": 2
+          },
+          {
+            "seconds": 57.32,
+            "level": 1
+          },
+          {
+            "seconds": 57.48,
+            "level": 2
+          },
+          {
+            "seconds": 68.7,
+            "level": 3
+          },
+          {
+            "seconds": 97.6,
+            "level": 1
+          },
+          {
+            "seconds": 98.58,
+            "level": 2
+          },
+          {
+            "seconds": 98.78,
+            "level": 3
+          },
+          {
+            "seconds": 105.1,
+            "level": 4
+          },
+          {
+            "seconds": 151.5,
+            "level": 5
+          }
+        ],
+        "deaths": [
+          54.1,
+          57.32,
+          97.6
+        ],
+        "peakEnemies": 7,
+        "peakBullets": 9,
+        "updateP95Ms": 0.3999999761581421
+      },
+      {
+        "pilot": "Tita",
+        "skipPolicy": 0,
+        "actuallySkipped": 0,
+        "seconds": 203.42,
+        "completed": true,
+        "gameOver": false,
+        "lives": 3,
+        "level": 4,
+        "powerMeter": 0,
+        "collected": 12,
+        "pickedTypes": {
+          "power": 10,
+          "life": 1,
+          "special": 1
+        },
+        "kills": 103,
+        "levels": [
+          {
+            "seconds": 49.24,
+            "level": 2
+          },
+          {
+            "seconds": 96.8,
+            "level": 1
+          },
+          {
+            "seconds": 97.68,
+            "level": 2
+          },
+          {
+            "seconds": 106.18,
+            "level": 3
+          },
+          {
+            "seconds": 151.36,
+            "level": 4
+          }
+        ],
+        "deaths": [
+          96.8
+        ],
+        "peakEnemies": 6,
+        "peakBullets": 12,
+        "updateP95Ms": 0.30000007152557373
+      },
+      {
+        "pilot": "Leona",
+        "skipPolicy": 0,
+        "actuallySkipped": 0,
+        "seconds": 197.34,
+        "completed": true,
+        "gameOver": false,
+        "lives": 4,
+        "level": 4,
+        "powerMeter": 0,
+        "collected": 11,
+        "pickedTypes": {
+          "power": 9,
+          "life": 1,
+          "special": 1
+        },
+        "kills": 104,
+        "levels": [
+          {
+            "seconds": 54.82,
+            "level": 2
+          },
+          {
+            "seconds": 107.22,
+            "level": 3
+          },
+          {
+            "seconds": 152.82,
+            "level": 4
+          }
+        ],
+        "deaths": [],
+        "peakEnemies": 7,
+        "peakBullets": 9,
+        "updateP95Ms": 0.5
+      },
+      {
+        "pilot": "Osvald",
+        "skipPolicy": 0,
+        "actuallySkipped": 0,
+        "seconds": 221.02,
+        "completed": true,
+        "gameOver": false,
+        "lives": 3,
+        "level": 4,
+        "powerMeter": 0,
+        "collected": 12,
+        "pickedTypes": {
+          "power": 10,
+          "life": 1,
+          "special": 1
+        },
+        "kills": 106,
+        "levels": [
+          {
+            "seconds": 54.32,
+            "level": 2
+          },
+          {
+            "seconds": 105.6,
+            "level": 3
+          },
+          {
+            "seconds": 151.54,
+            "level": 4
+          }
+        ],
+        "deaths": [
+          53.32
+        ],
+        "peakEnemies": 6,
+        "peakBullets": 12,
+        "updateP95Ms": 0.9000000953674316
+      },
+      {
+        "pilot": "Hien",
+        "skipPolicy": 0,
+        "actuallySkipped": 0,
+        "seconds": 209.32,
+        "completed": true,
+        "gameOver": false,
+        "lives": 4,
+        "level": 4,
+        "powerMeter": 0,
+        "collected": 11,
+        "pickedTypes": {
+          "power": 9,
+          "life": 1,
+          "special": 1
+        },
+        "kills": 110,
+        "levels": [
+          {
+            "seconds": 53.08,
+            "level": 2
+          },
+          {
+            "seconds": 105.86,
+            "level": 3
+          },
+          {
+            "seconds": 151.4,
+            "level": 4
+          }
+        ],
+        "deaths": [],
+        "peakEnemies": 6,
+        "peakBullets": 12,
+        "updateP95Ms": 0.3999999761581421
+      },
+      {
+        "pilot": "Bayek",
+        "skipPolicy": 3,
+        "actuallySkipped": 1,
+        "seconds": 201.42,
+        "completed": true,
+        "gameOver": false,
+        "lives": 2,
+        "level": 4,
+        "powerMeter": 2,
+        "collected": 13,
+        "pickedTypes": {
+          "power": 11,
+          "life": 1,
+          "special": 1
+        },
+        "kills": 104,
+        "levels": [
+          {
+            "seconds": 61.46,
+            "level": 2
+          },
+          {
+            "seconds": 90.42,
+            "level": 3
+          },
+          {
+            "seconds": 98.44,
+            "level": 1
+          },
+          {
+            "seconds": 99.32,
+            "level": 2
+          },
+          {
+            "seconds": 99.64,
+            "level": 3
+          },
+          {
+            "seconds": 120.22,
+            "level": 4
+          }
+        ],
+        "deaths": [
+          57.4,
+          98.44
+        ],
+        "peakEnemies": 6,
+        "peakBullets": 9,
+        "updateP95Ms": 0.20000004768371582
+      }
+    ],
+    "continue": {
+      "before": {
+        "deaths": 3,
+        "gameOver": true,
+        "special": 2
+      },
+      "after": {
+        "deaths": 3,
+        "lives": 3,
+        "special": 2
+      }
+    },
+    "virtualGamepad": {
+      "moved": 38.000000000000114,
+      "shots": 2,
+      "stock": 1,
+      "pauseDialog": true,
+      "physicalController": false,
+      "paused": true
+    },
+    "musicPause": {
+      "before": {
+        "environment": "atmosphere",
+        "track": "stage1",
+        "position": 0.018666666666668164,
+        "paused": true,
+        "voices": 0,
+        "musicLoadFailed": false,
+        "master": 0.800000011920929,
+        "sfx": 0.7224999999999999,
+        "music": 0.30250000000000005
+      },
+      "frozen": {
+        "environment": "atmosphere",
+        "track": "stage1",
+        "position": 0.018666666666668164,
+        "paused": true,
+        "voices": 0,
+        "musicLoadFailed": false,
+        "master": 0.800000011920929,
+        "sfx": 0.7224999999999999,
+        "music": 0.30250000000000005
+      },
+      "resumed": {
+        "environment": "atmosphere",
+        "track": "stage1",
+        "position": 0.11999999999999744,
+        "paused": false,
+        "voices": 1,
+        "musicLoadFailed": false,
+        "master": 0.800000011920929,
+        "sfx": 0.7224999999999999,
+        "music": 0.30250000000000005
+      }
+    },
+    "water": {
+      "before": 717.8500000000003,
+      "after": 2717.8500000000004,
+      "scroll": 3900
+    }
+  },
+  "errors": []
+}

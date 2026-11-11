@@ -1,0 +1,208 @@
+{
+  "completed": true,
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "levels": [
+        {
+          "level": 1,
+          "shots": 1,
+          "missiles": 0,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 1/5"
+        },
+        {
+          "level": 2,
+          "shots": 2,
+          "missiles": 0,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 2/5"
+        },
+        {
+          "level": 3,
+          "shots": 5,
+          "missiles": 2,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 3/5"
+        },
+        {
+          "level": 4,
+          "shots": 8,
+          "missiles": 2,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 4/5"
+        },
+        {
+          "level": 5,
+          "shots": 10,
+          "missiles": 3,
+          "homing": 3,
+          "shipWidth": 34,
+          "hud": "FULL"
+        }
+      ],
+      "targets": {
+        "crossing": {
+          "t": 0.46174907758977213,
+          "moduleId": "battery-left"
+        },
+        "overflight": null,
+        "before": 600,
+        "after": 598.255125,
+        "gunHp": 98.25512499999999,
+        "unhit": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ],
+        "legacyGuns": false
+      },
+      "broken": {
+        "destroyed": true,
+        "scar": true,
+        "next": "left"
+      },
+      "guided": {
+        "before": 0,
+        "after": -149.8528602758966
+      },
+      "laser": {
+        "hp": 584.0563199999999,
+        "gun": 89.86239999999995,
+        "events": [
+          "boss:battery-left",
+          "boss:battery-left",
+          "boss:battery-right"
+        ]
+      }
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "levels": [
+        {
+          "level": 1,
+          "shots": 1,
+          "missiles": 0,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 1/5"
+        },
+        {
+          "level": 2,
+          "shots": 2,
+          "missiles": 0,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 2/5"
+        },
+        {
+          "level": 3,
+          "shots": 5,
+          "missiles": 2,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 3/5"
+        },
+        {
+          "level": 4,
+          "shots": 8,
+          "missiles": 2,
+          "homing": 0,
+          "shipWidth": 34,
+          "hud": "NV 4/5"
+        },
+        {
+          "level": 5,
+          "shots": 10,
+          "missiles": 3,
+          "homing": 3,
+          "shipWidth": 34,
+          "hud": "FULL"
+        }
+      ],
+      "targets": {
+        "crossing": {
+          "t": 0.46174907758977213,
+          "moduleId": "battery-left"
+        },
+        "overflight": null,
+        "before": 600,
+        "after": 598.255125,
+        "gunHp": 98.25512499999999,
+        "unhit": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ],
+        "legacyGuns": false
+      },
+      "broken": {
+        "destroyed": true,
+        "scar": true,
+        "next": "left"
+      },
+      "guided": {
+        "before": 0,
+        "after": -149.8528602758966
+      },
+      "laser": {
+        "hp": 584.0563199999999,
+        "gun": 89.86239999999995,
+        "events": [
+          "boss:battery-left",
+          "boss:battery-left",
+          "boss:battery-right"
+        ]
+      }
+    }
+  ],
+  "regression": {
+    "title": true,
+    "titleContain": [
+      {
+        "width": 1364.59375,
+        "height": 768,
+        "x": 0.703125,
+        "y": 0,
+        "right": 1365.296875,
+        "bottom": 768
+      },
+      {
+        "width": 1918.96875,
+        "height": 1080,
+        "x": 0.515625,
+        "y": 0,
+        "right": 1919.484375,
+        "bottom": 1080
+      },
+      {
+        "width": 1918.96875,
+        "height": 1080,
+        "x": 320.515625,
+        "y": 0,
+        "right": 2239.484375,
+        "bottom": 1080
+      },
+      {
+        "width": 1280,
+        "height": 720.375,
+        "x": 0,
+        "y": 151.8125,
+        "right": 1280,
+        "bottom": 872.1875
+      }
+    ],
+    "physicalGamepads": []
+  },
+  "errors": []
+}

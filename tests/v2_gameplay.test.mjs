@@ -130,7 +130,7 @@ test('V2 Armas: Três famílias distintas (Raio Esmeralda, Dispersão Azul, Lase
 
 test('V2 Medidor P (3 itens P por nível) & Bloqueio de salto de cor antes do máximo', () => {
   assert.equal(POWER_ITEMS_PER_LEVEL, 3, 'Três itens P aumentam 1 nível');
-  let weapons = createPlayerWeapons('nolan');
+  let weapons = createPlayerWeapons('lyra');
   assert.equal(weapons.weaponLevel, 1);
   assert.equal(weapons.powerMeter, 0);
   assert.equal(weapons.weaponFamily, 'ion');
@@ -203,7 +203,7 @@ test('V2 Laser Rubro: Emissão contínua, varredura lateral (LV3/LV4) e ticks de
   assert.ok(returningWings.every(b=>b.points.at(-1).y>340));
 
   // Item P vermelho raro (collectFullPowerItem) eleva diretamente para LV4 sem trocar a família da arma
-  const greenLv1 = createPlayerWeapons('nolan', 'green');
+  const greenLv1 = createPlayerWeapons('cora', 'green');
   const fullP = collectFullPowerItem(greenLv1);
   assert.equal(fullP.upgradedToMax, true);
   assert.equal(fullP.state.weaponLevel, 4);
@@ -342,13 +342,13 @@ test('phase one bosses: Raia-Dente remains distinct; Talassarca has two complete
   assert.equal(mini.hp,180);assert.equal(mini.phase,'active');
   const boss=new BossTalassarca();boss.update(1800,384,350);
   assert.equal(boss.hp,600);assert.equal(boss.phase,'shell');
-  for(let i=0;i<4;i++)assert.equal(boss.damage(120).killed,false);
+  for(let i=0;i<4;i++)assert.equal(boss.damageArea(120).killed,false);
   assert.equal(boss.hp,120);
-  const crack=boss.damage(120);
+  const crack=boss.damageArea(120);
   assert.equal(crack.killed,false);assert.equal(boss.phase,'metamorphosis');
-  assert.equal(boss.damage(9999).bossDamage,0);
+  assert.equal(boss.damageArea(9999).bossDamage,0);
   boss.update(2399,384,350);assert.equal(boss.phase,'metamorphosis');
   boss.update(1,384,350);assert.equal(boss.phase,'inner');assert.equal(boss.hp,360);
-  assert.equal(boss.damage(120).killed,false);assert.equal(boss.damage(120).killed,false);
-  assert.equal(boss.damage(120).killed,true);assert.equal(boss.phase,'defeated');
+  assert.equal(boss.damageArea(120).killed,false);assert.equal(boss.damageArea(120).killed,false);
+  assert.equal(boss.damageArea(120).killed,true);assert.equal(boss.phase,'defeated');
 });

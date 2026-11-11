@@ -6,7 +6,7 @@ import { loadPolishArt, registerPolishArt } from './polishArt';
 export const COMBAT_SHEETS = ['special-orbital','special-comet','rivet', 'moth', 'knuckle', 'peregrine', 'biogun', 'kestrel', 'supply-parachute', 'scout', 'dart', 'lancer', 'cutter', 'bomb'] as const;
 
 export function loadCombatArt(scene: Phaser.Scene, base: string): void {
-  for(const name of ['talassarca-top','inner-top','metamorphosis-top'])if(!scene.textures.exists('hd-'+name))scene.load.spritesheet('hd-'+name,`${base}/assets/combat-hd/${name}.webp`,{frameWidth:512,frameHeight:512});
+  for(const name of ['talassarca-top','inner-top','metamorphosis-top'])if(!scene.textures.exists('hd-'+name))scene.load.spritesheet('hd-'+name,`${base}/assets/combat-hd/${name==='talassarca-top'?'talassarca-integrated':name==='inner-top'?'inner-integrated':name}.webp`,{frameWidth:512,frameHeight:512});
   loadReviewArt(scene,base);
   loadPolishArt(scene,base);
   for (const name of COMBAT_SHEETS) {

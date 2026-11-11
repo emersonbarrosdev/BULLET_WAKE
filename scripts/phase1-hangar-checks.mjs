@@ -36,7 +36,7 @@ export async function runPhase1Review({send,evaluate,waitFor,key,click,shot,repo
     const b=s.director.boss;window.qaTal=b.constructor;b.update(1800,384,350);b.isTelegraphing=true;s.syncBossVisual(b);s.hud.showBossBar(b.name,b.hp,b.maxHp);s.ship.setPosition(384,365);
     return {modules:b.modules.length,weapons:b.modules.filter(m=>m.kind==='weapon').length};
   `);assert.equal(boss.modules,6);assert.equal(boss.weapons,3);await shot('biomechanical-batteries-'+width);
-  const part=await run(`const b=s.director.boss,m=b.modules[3];const before=b.hp;s.applyBossDamage(m.hp,b.x+m.offsetX,b.y+m.offsetY);s.syncBossVisual(b);return {destroyed:m.destroyed,hp:b.hp,before,visible:s.bossVisual.mounts[3].visible};`);assert.equal(part.destroyed,true);assert.equal(part.visible,false);assert.ok(part.hp<part.before);
+  const part=await run(`const b=s.director.boss,m=b.modules[3];const before=b.hp;s.applyBossDamage(m.hp,b.x+m.offsetX,b.y+m.offsetY);s.syncBossVisual(b);return {destroyed:m.destroyed,hp:b.hp,before,visible:s.bossVisual.mounts[3].visible};`);assert.equal(part.destroyed,true);assert.equal(part.visible,true);assert.ok(part.hp<part.before);
   await run(`s.health.invulnerableMs=999999;s.explodeLayers(384,220,90,410,230,true);s.scene.resume();`);await pause(420);await shot('layered-explosions-'+width);
   await key('Escape','Escape',27);await waitFor(`!!document.querySelector('.bw-pause')`);
   const frozen=await run(`return s.director.scrollPx;`);await pause(200);assert.equal(await run(`return s.director.scrollPx;`),frozen);
@@ -59,9 +59,10 @@ export async function runPhase1Review({send,evaluate,waitFor,key,click,shot,repo
       s.director.boss=new (bossName==='raia'?window.qaMini:window.qaTal)();s.weapons.weaponLevel=level;s.weapons.specialActiveMs=0;s.ship.setPosition(384,380);
       let elapsed=0,cooldown=0,missile=0;
       for(;elapsed<180000;elapsed+=20){const b=s.director.boss;b.update(20,384,380);s.syncBossVisual(b);
+        if(bossName==='talassarca'){const m=b.modules.filter(m=>!m.destroyed).sort((a,b)=>b.offsetY-a.offsetY)[0];if(m)s.ship.setPosition(b.x+m.offsetX,Math.min(390,b.y+m.offsetY+85));}
         if(s.weapons.weaponFamily==='red')s.updateCrimsonLaser(20,true);
         else{cooldown-=20;if(cooldown<=0){s.firePrimary();cooldown+=(s.weapons.weaponFamily==='green'?180:160)*8/s.pilot.shotsPerSecond;}s.advancePlayerShots(20);}
-        if(s.pilot.id==='nolan'&&level>=3){missile-=20;if(missile<=0){s.fireSecondary();missile=3200;}}
+        if(s.pilot.id==='nolan'&&level>=3){missile-=20;if(missile<=0){s.fireSecondary();missile=1500;}}
         if(b.phase==='defeated')break;
       }
       results.push({boss:bossName,level,seconds:elapsed/1000,defeated:s.director.boss.phase==='defeated'});

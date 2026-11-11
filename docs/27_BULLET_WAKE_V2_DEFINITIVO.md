@@ -1,10 +1,10 @@
 # BULLET WAKE — Bíblia vigente
 
-Revisão de 11/11/2026. Esta revisão substitui regras conflitantes anteriores. Correções atuais e evidências em [revisão da Fase 1](41_REVISAO_FINAL_FASE_1.md); [relatório anterior](39_ELENCO_COMBATE_AUDIO.md) é histórico. Somente Fenda Pelágica está produzida; nenhuma fase seguinte deve ser produzida antes de sua aprovação.
+Revisão de 11/11/2026. Esta revisão substitui regras conflitantes anteriores. Correções atuais e evidências em [chefe, RIVET FULL, escala e nu metal](44_CHEFE_RIVET5_ESCALA_E_NU_METAL.md); [revisão anterior](41_REVISAO_FINAL_FASE_1.md) é histórica; [relatório anterior](39_ELENCO_COMBATE_AUDIO.md) é histórico. Somente Fenda Pelágica está produzida; nenhuma fase seguinte deve ser produzida antes de sua aprovação.
 
 ## Identidade e câmera
 
-Shooter vertical arcade 2D. Tudo no combate é visto diretamente de cima, em projeção ortográfica: água, criaturas, caças e armas instaladas. Movimento lateral não inclina a imagem. Menu pode usar naves em três quartos. RIVET mantém casco branco, detalhes vermelhos, três motores e arte própria; nenhum crop da abertura é utilizado.
+Shooter vertical arcade 2D. Tudo no combate é visto diretamente de cima, em projeção ortográfica: água, criaturas, caças e armas instaladas. Movimento lateral não inclina a imagem. Naves usam arte de 34 unidades (redução de 15%); inimigos comuns e portadores, redução de 12%, preservando o chefe colossal e a arena. Menu pode usar naves em três quartos. RIVET mantém casco branco, detalhes vermelhos, três motores e arte própria; nenhum crop da abertura é utilizado.
 
 Invasores são organismos alienígenas, inclusive criaturas biomecânicas. Distinguir voadores de organismos aquáticos: os primeiros compartilham o plano da nave, os segundos emergem, permanecem ancorados ao cenário e voltam a submergir. Não dar a todos aparência de naves humanas.
 
@@ -24,10 +24,10 @@ Cada piloto tem desejo, ferida, conflito, fala de missão e final próprio. A se
 
 ### Armas
 
-Cada nave mantém **um armamento próprio**, que evolui do NV1 ao NV4. Esta decisão substitui a cascata azul→verde→vermelho. Os efeitos verdes/vermelhos foram preservados e transferidos para MOTH/KNUCKLE. P aumenta potência, nunca troca a nave para a arma de outro piloto.
+Cada nave mantém **um armamento próprio**, que evolui do NV1 ao NV5/FULL na RIVET e ao NV4 nos demais conjuntos. Esta decisão substitui a cascata azul→verde→vermelho. Os efeitos verdes/vermelhos foram preservados e transferidos para MOTH/KNUCKLE. P aumenta potência, nunca troca a nave para a arma de outro piloto.
 
-- 3 P por nível; 9 P do NV1 ao NV4. No máximo, P extra concede 5.000 pontos; não cria reserva invisível.
-- RIVET: leque azul 3/5/9/16, mais espesso em NV3/NV4. Dois mísseis automáticos em NV3+; nenhuma ação manual extra.
+- RIVET: melhorias com 2/2/2/3 P, nove P do NV1 ao NV5/FULL. Demais conjuntos: três P por melhoria, nove P do NV1 ao NV4. No máximo, P extra concede 5.000 pontos; não cria reserva invisível.
+- RIVET: salvas de 1/2/3/6/7 tiros, com três pares no NV4 e sete tiros encorpados no FULL. Dois mísseis automáticos juntos no NV3/NV4 (intervalo 1,5 s); três guiados no FULL (intervalo 1,1 s), com giro limitado e busca de alvos/peças vivos. Nenhuma ação manual extra. Os nove P existentes chegam ao FULL sem aumentar as onze caixas.
 - MOTH: ondas verdes entrelaçadas, componentes 2/4/6/8. Dano reequilibrado para estar disponível desde o início.
 - KNUCKLE: fogo rubro contínuo, com varreduras móveis nos níveis superiores; alcança o teto da arena, sem bolas vermelhas.
 - KESTREL: menor dispersão, exige alinhamento e favorece alvos prioritários.
@@ -58,7 +58,7 @@ Mudança perceptível a cada 30–45 s; acontecimento relevante a cada 60–90 s
 
 ### Chefes e contato
 
-Raia-Dente é miniboss aéreo. Talassarca é organismo aquático colossal abaixo da nave, com seis partes destrutíveis: três órgãos e três baterias biomecânicas. Tiros partem de cada origem; destruir uma parte impede seus disparos. A nave pode sobrevoar o corpo. Armas/órgãos só perdem HP por acertos reais em suas silhuetas; não existe transferência ao módulo mais próximo nem do excedente para outro módulo. O núcleo exposto é um alvo independente, e a casca externa permite passagem dos tiros até essas partes. Especiais têm dano de área explícito, separado dos impactos locais.
+Raia-Dente é miniboss aéreo. Talassarca é organismo aquático colossal abaixo da nave, com seis partes destrutíveis: três órgãos e três baterias biomecânicas. Tiros partem de cada origem; destruir uma parte impede seus disparos. A nave pode sobrevoar o corpo. Armas/órgãos só perdem HP por acertos reais em suas silhuetas; não existe transferência ao módulo mais próximo nem do excedente para outro módulo. Somente as seis regiões anatômicas interceptam tiros; a casca externa permite passagem até elas. O identificador exato da peça segue com o impacto, inclusive o contato da borda larga do laser. HP total é a soma das seis peças, sem dano global em casco vazio. As três baterias estão pintadas na anatomia completa das duas camadas, sem torres ou retículas sobrepostas. Especiais têm dano de área explícito, separado dos impactos locais.
 
 Casca: 600 HP, equivalente a cinco especiais de 120. Metamorfose: 2,4 s, sem transferência do dano excedente. Forma interna: 360 HP, três especiais. Arte útil ocupa aproximadamente 80%/100% da largura da arena. Segunda camada altera padrões/origens e oferece corredor de esquiva; tiros convencionais vencem ambas. Especiais não são requisito. Metamorfose possui sequência desenhada de rachadura/abertura/separação da casca e emergência do interior, sem piscar a imagem ou simular a mudança só aumentando escala.
 
@@ -72,13 +72,13 @@ Laterais preservadas em preto fosco/carbono; arena lógica de 432 px dentro do c
 
 Pausa congela a gameplay e abre card menor/translúcido com botões verticais: **Continuar / Controles / Voltar ao menu**. Controles no mesmo card. Sair exige **Cancelar / Confirmar saída**, informando perda do progresso da fase atual. Sem reiniciar fase ou trocar piloto nesse card.
 
-Movimento: WASD/setas ou analógico/direcional. Disparo: Espaço ou botão sul, segurar mantém cadência rápida. Especial: X/botão oeste. Pausa: Esc/Menu. Mostrar identificação conforme controle conectado. Validar menus/perfis/resultados sem scroll/corte em 1366×768 e 1920×1080. Tipografia Oxanium/Rajdhani e abertura preservadas.
+Movimento: WASD/setas ou analógico/direcional. Disparo: Espaço ou botão sul, segurar mantém cadência rápida. Especial: X/botão oeste. Pausa: Esc/Menu. Mostrar identificação conforme controle conectado. Validar menus/perfis/resultados sem scroll/corte em 1366×768 e 1920×1080. Tipografia Oxanium/Rajdhani e arte da abertura preservadas. Enquadrar a arte inteira, sem cortar logotipo, nave ou assinatura; aceitar respiro nas proporções diferentes. Verificar também 2560×1080 e 1280×1024.
 
 ## Áudio
 
-Trilha autoral de rock de aviação: melodias próprias, guitarra elétrica, baixo, piano, cordas e bateria acústica amostrada, sem reproduzir música de Top Gun, Fire Shark ou Sonic Wings. Três arranjos produzidos: abertura/menus, oceano, chefe. Alternar piano, guitarra e respostas melódicas ao longo de 48 compassos, com ponte mais contida e retorno da banda; evitar um único motivo curto repetido.
+Trilha autoral orientada a nu metal: riffs graves em B/F♯, síncopes, cortes secos, palm mute e respostas melódicas curtas. Guitarras General MIDI e solos anteriores foram substituídos por humbuckers gravados da METAL-GTX, com palhetadas down/up, round robins e tomadas independentes à esquerda e à direita. Distorção em quatro estágios, sobreamostragem 4× e gabinete 4×12 por convolução. Baixo e bateria acústica amostrada continuam na instrumentação; scratches pontuais completam o arranjo. Três músicas: abertura/menu, oceano e chefe, com 48 compassos cada. Composições próprias, sem copiar melodias ou gravações de Slipknot, filmes ou jogos. A escuta do usuário decide a aprovação; processamento e métricas de áudio não a substituem.
 
-Renderização: FluidSynth + GeneralUser GS; arquivos finais OGG, transporte com cache e uma faixa por vez. Pausa preserva a posição musical, incluindo carregamento em andamento. Créditos/licença em [áudio e produção](39_ELENCO_COMBATE_AUDIO.md) e [licença original](licenses/GeneralUser-GS.txt). Efeitos humanos de canhão com transientes mecânicos; alienígenas com cores/timbres diferenciados; impactos curtos e explosões com ataque definido e corpo grave. Limitar sobreposição.
+Renderização: amostrador local de guitarra METAL-GTX + cadeia de alto ganho/IR; FluidSynth + GeneralUser GS para baixo/bateria; arquivos finais OGG, transporte com cache e uma faixa por vez. Pausa preserva a posição musical, incluindo carregamento em andamento. Créditos/licença em [áudio e produção](39_ELENCO_COMBATE_AUDIO.md) e [licença original](licenses/GeneralUser-GS.txt), [METAL-GTX](licenses/METAL-GTX.txt) e [gabinetes](licenses/4x12-IR.txt). Só os arranjos finais são distribuídos; a biblioteca bruta de guitarra fica fora do pacote. Efeitos humanos de canhão com transientes mecânicos; alienígenas com cores/timbres diferenciados; impactos curtos e explosões com ataque definido e corpo grave. Limitar sobreposição.
 
 **Espaço: silêncio absoluto**, incluindo música, tiros, explosões e UI. A API de ambiente já silencia todo o master e impede reativação por mute. Fases espaciais permanecem planejamento e deverão usar esse ambiente.
 

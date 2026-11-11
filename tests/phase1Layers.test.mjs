@@ -8,9 +8,9 @@ import { createPlayerWeapons, activateSpecial, resetWeaponsOnRespawn } from '../
 test('outer overkill cannot defeat Talassarca or spill damage across metamorphosis',()=>{
   const b=new BossTalassarca();b.update(1800,384,350);
   assert.equal(b.displayWidth,432*1.02);
-  assert.equal(b.damage(100000).killed,false);
+  assert.equal(b.damageArea(100000).killed,false);
   assert.equal(b.phase,'metamorphosis');
-  assert.equal(b.damage(100000).bossDamage,0);
+  assert.equal(b.damageArea(100000).bossDamage,0);
   b.update(METAMORPHOSIS_MS,384,350);
   assert.equal(b.hp,3*SPECIAL_BOSS_DAMAGE);
   assert.equal(b.displayWidth,432*1.3);
@@ -23,7 +23,7 @@ test('inner form varies dorsal attack origins while retaining dodging space, at 
     const b=new BossTalassarca();b.update(1800,384,350);
     let outer=0,inner=0;
     for(let i=0;i<fps*6;i++)outer+=b.update(1000/fps,384,350).shots.length;
-    b.damage(600);b.update(METAMORPHOSIS_MS,384,350);
+    b.damageArea(600);b.update(METAMORPHOSIS_MS,384,350);
     for(let i=0;i<fps*6;i++){
       const tick=b.update(1000/fps,384,350);inner+=tick.shots.length;
       assert.ok(b.y>0&&b.y<280,'Aquatic body is overflown while its organs remain in reach');

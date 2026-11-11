@@ -89,8 +89,8 @@ export class VectorShip extends Phaser.GameObjects.Container {
     this.viewMode = viewMode;
     this.palette = PALETTES[pilotId] || PALETTES.nolan;
 
-    this.halfWidth = viewMode === 'profile' ? 22 : pilotId==='nolan'?16:14;
-    this.halfHeight = viewMode === 'profile' ? 10 : pilotId==='nolan'?17:16;
+    this.halfWidth = viewMode === 'profile' ? 22 : pilotId==='nolan'?13.6:11.9;
+    this.halfHeight = viewMode === 'profile' ? 10 : pilotId==='nolan'?14.45:13.6;
 
     this.graphics = scene.add.graphics();
     this.shieldGraphics = scene.add.graphics();
@@ -99,7 +99,7 @@ export class VectorShip extends Phaser.GameObjects.Container {
     this.add([this.shieldGraphics, this.graphics, this.coreDot]);
     const texture=({nolan:'rivet',cora:'moth',harlan:'knuckle',lyra:'kestrel',bento:'peregrine'} as Record<string,string>)[pilotId]??'rivet';
     if (viewMode === 'top-down' && scene.textures.exists('hd-'+texture)) {
-      this.paintedRivet = scene.add.sprite(0,0,'hd-'+texture,0).setDisplaySize(40,40);
+      this.paintedRivet = scene.add.sprite(0,0,'hd-'+texture,0).setDisplaySize(34,34);
       this.paintedRivet.setData('hullBottom',pilotId==='cora'?.78:pilotId==='harlan'?.86:.91);
       this.addAt(this.paintedRivet,2);
     }

@@ -1,22 +1,27 @@
 import Phaser from 'phaser';
 import { makeAlphaMask, sweepAlpha, type AlphaMask } from '../systems/alphaCollision';
+import type { AnatomicalRegion } from '../systems/bosses/talassarcaRig';
 
-const cache=new WeakMap<Phaser.Textures.Frame,Map<number,AlphaMask>>();
+const cache=new WeakMap<Phaser.Textures.Frame,Map<string,AlphaMask>>();
 /** One CPU read per animation frame, cached; no GPU reads in the combat loop. */
-function maskFor(frame:Phaser.Textures.Frame,bottom=1):AlphaMask {
-  const variants=cache.get(frame)??new Map<number,AlphaMask>();cache.set(frame,variants);
-  const previous=variants.get(bottom);if(previous)return previous;
-  const ratio=Math.min(1,96/Math.max(frame.cutWidth,frame.cutHeight));
+function maskFor(frame:Phaser.Textures.Frame,bottom=1,region?:AnatomicalRegion):AlphaMask {
+  const variants=cache.get(frame)??new Map<string,AlphaMask>();cache.set(frame,variants);
+  const key=JSON.stringify([bottom,region]);
+  const previous=variants.get(key);if(previous)return previous;
+  const ratio=Math.min(1,(region?256:96)/Math.max(frame.cutWidth,frame.cutHeight));
   const canvas=document.createElement('canvas');canvas.width=Math.ceil(frame.cutWidth*ratio);canvas.height=Math.ceil(frame.cutHeight*ratio);
   const ctx=canvas.getContext('2d',{willReadFrequently:true})!;
   ctx.drawImage(frame.source.image as CanvasImageSource,frame.cutX,frame.cutY,frame.cutWidth,frame.cutHeight,0,0,canvas.width,canvas.height);
   const rgba=ctx.getImageData(0,0,canvas.width,canvas.height).data;
-  const alpha=Uint8Array.from({length:canvas.width*canvas.height},(_,i)=>Math.floor(i/canvas.width)>=canvas.height*bottom?0:rgba[i*4+3]);
-  const mask=makeAlphaMask(canvas.width,canvas.height,alpha);variants.set(bottom,mask);return mask;
+  const alpha=Uint8Array.from({length:canvas.width*canvas.height},(_,i)=>{
+    const x=(i%canvas.width+.5)/ratio,y=(Math.floor(i/canvas.width)+.5)/ratio;
+    return y>=frame.cutHeight*bottom||region&&((x-region.x)/(region.width/2))**2+((y-region.y)/(region.height/2))**2>1?0:rgba[i*4+3];
+  });
+  const mask=makeAlphaMask(canvas.width,canvas.height,alpha);variants.set(key,mask);return mask;
 }
-export function spriteContact(sprite:Phaser.GameObjects.Sprite,ax:number,ay:number,bx:number,by:number,radius=0):number|null {
+export function spriteContact(sprite:Phaser.GameObjects.Sprite,ax:number,ay:number,bx:number,by:number,radius=0,region?:AnatomicalRegion):number|null {
   if(!sprite.active||!sprite.visible)return null;
-  const mask=maskFor(sprite.frame,sprite.getData('hullBottom')??1),matrix=sprite.getWorldTransformMatrix();
+  const mask=maskFor(sprite.frame,sprite.getData('hullBottom')??1,region),matrix=sprite.getWorldTransformMatrix();
   const a=matrix.applyInverse(ax,ay),b=matrix.applyInverse(bx,by);
   const sx=mask.width/sprite.frame.cutWidth,sy=mask.height/sprite.frame.cutHeight;
   const px=sprite.displayOriginX,py=sprite.displayOriginY;

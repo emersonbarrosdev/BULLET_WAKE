@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import '../../combat-hud.css';
 import { type PlayerHealth } from '../systems/combat';
 import type { SectorId } from '../systems/stageDirector';
-import type { WeaponLevel, WeaponFamily } from '../systems/weaponSystem';
+import { maxWeaponLevel, powerItemsForNextLevel, type WeaponLevel, type WeaponFamily } from '../systems/weaponSystem';
 import { getPilot } from '../data/pilots';
 
 const sectors: Record<SectorId, string> = {
@@ -15,6 +15,7 @@ export class PremiumCombatHud {
   private readonly root: HTMLDivElement;
   private readonly fields = new Map<string, HTMLElement>();
   private statusRemainingMs = 0;
+  private pilotId="nolan";
   private readonly align = (): void => {
     const r = this.scene.game.canvas.getBoundingClientRect();
     Object.assign(this.root.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
@@ -28,7 +29,7 @@ export class PremiumCombatHud {
         <div class="bw-combat-wordmark">BULLET <em>WAKE</em></div>
         <section class="bw-combat-panel bw-combat-identity">
           <img data-field="portrait" src="${import.meta.env.BASE_URL}assets/pilot-selection/portrait-nolan.webp" alt="Bayek" />
-          <div><small>OPERADOR</small><strong data-field="name">TERRY</strong><b data-field="ship">RIVET</b></div>
+          <div><small>OPERADOR</small><strong data-field="name">BAYEK</strong><b data-field="ship">RIVET</b></div>
         </section>
         <section class="bw-combat-panel bw-combat-score-panel"><small>PONTUAÇÃO <i data-field="combo"></i></small><strong class="bw-combat-score" data-field="score">000000</strong></section>
         <section class="bw-combat-panel"><div class="bw-combat-line"><small>VIDAS</small><b data-field="lives-count">3</b></div><div class="bw-resource-icons bw-life-icons" data-field="lives" aria-label="3 vidas"><i></i><i></i><i></i><i></i><i></i></div></section>
@@ -65,6 +66,8 @@ export class PremiumCombatHud {
     this.field(name).querySelectorAll('i').forEach((node, i) => node.classList.toggle('bw-active', i < active));
   }
   setPilot(id: string, shipName: string): void {
+    this.pilotId=id;
+    this.field("pips").innerHTML="<i></i>".repeat(maxWeaponLevel(id));
     const name = getPilot(id).name;
     const portrait = this.field('portrait') as HTMLImageElement;
     portrait.src = `${import.meta.env.BASE_URL}assets/pilot-selection/portrait-${id}.webp`; portrait.alt = name;
@@ -84,11 +87,14 @@ export class PremiumCombatHud {
     const color = family === 'ion' ? '#79deff' : family === 'green' ? '#86efac' : '#ff735e';
     this.text('weapon', family === 'ion' ? 'DISPERSÃO AZUL' : family === 'green' ? 'ENERGIA ESPIRALADA' : 'LASER RUBRO');
     this.field('weapon').style.color = color; this.field('pips').style.setProperty('--weapon', color);
-    this.text('level', `NV ${level}/4`); this.segments('pips', level); this.setPowerMeter(powerMeter, level);
-    this.text('power-title',level<4?'PRÓXIMO NÍVEL':'POTÊNCIA MÁXIMA');
+    this.text('level', level>=maxWeaponLevel(this.pilotId)?'FULL':`NV ${level}/${maxWeaponLevel(this.pilotId)}`); this.segments('pips', level); this.setPowerMeter(powerMeter, level);
+    this.text('power-title',level<maxWeaponLevel(this.pilotId)?'PRÓXIMO NÍVEL':'POTÊNCIA MÁXIMA');
   }
   setPowerMeter(meter: number, level: WeaponLevel): void {
-    this.text('power', level >= 4 ? 'MÁXIMO' : `${Math.max(0, Math.min(3, meter))} / 3`); this.segments('power-segments', meter);
+    const next=powerItemsForNextLevel(this.pilotId,level);
+    this.text('power', level >= maxWeaponLevel(this.pilotId) ? 'MÁXIMO' : `${Math.max(0, Math.min(next, meter))} / ${next}`);
+    this.field('power-segments').hidden=level>=maxWeaponLevel(this.pilotId);
+    this.field('power-segments').querySelectorAll<HTMLElement>('i').forEach((n,i)=>{n.hidden=i>=next;n.style.display=i>=next?'none':'';});this.segments('power-segments', meter);
   }
   setHeat(_heat: number, _isOverheated: boolean): void { /* Autofire never blocks for heat. */ }
   setSpecialStock(n: number, active=false): void {

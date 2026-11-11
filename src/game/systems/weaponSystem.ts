@@ -10,7 +10,8 @@
 import { getPilot, type PilotId } from '../data/pilots.ts';
 
 export type WeaponFamily = 'green' | 'ion' | 'red';
-export type WeaponLevel = 1 | 2 | 3 | 4;
+export type ClassicWeaponLevel = 1 | 2 | 3 | 4;
+export type WeaponLevel = ClassicWeaponLevel | 5;
 export type SpecialType = 'prism' | 'phantom' | 'nova' | 'orbital' | 'comet';
 
 export interface ProjectileSpawnDef {
@@ -24,6 +25,7 @@ export interface ProjectileSpawnDef {
   hitRadius: number;
   scale: number;
   piercing?: boolean;
+  homing?: boolean;
   /** Amplitude em pixels para oscilação senoidal do Raio Esmeralda */
   waveAmplitude?: number;
   /** Frequência em rad/ms para oscilação senoidal do Raio Esmeralda */
@@ -62,6 +64,12 @@ export interface PlayerWeaponsState {
 
 export const MAX_WEAPON_LEVEL: WeaponLevel = 4;
 export const POWER_ITEMS_PER_LEVEL = 3;
+/** RIVET has five stages; nine scheduled P still reach FULL without extra carriers. */
+export function maxWeaponLevel(pilotId:string):WeaponLevel { return pilotId==='nolan'?5:4; }
+export function powerItemsForNextLevel(pilotId:string,level:WeaponLevel):number { return pilotId==='nolan'&&level<4?2:3; }
+export function powerProgress(pilotId:string,level:WeaponLevel,meter=0):number {
+  let n=meter;for(let i=1;i<level;i++)n+=powerItemsForNextLevel(pilotId,i as WeaponLevel);return n;
+}
 export const MAX_SPECIAL_CHARGES = 5;
 export const START_SPECIAL_CHARGES = 2;
 export const MISSILE_COOLDOWN_MS = 1500;
@@ -173,7 +181,7 @@ export function collectPowerItem(state: PlayerWeaponsState): {
   meterIncreased: boolean;
   levelIncreased: boolean;
 } {
-  if (state.weaponLevel >= MAX_WEAPON_LEVEL) {
+  if (state.weaponLevel >= maxWeaponLevel(state.pilotId)) {
     return {
       state,
       meterIncreased: false,
@@ -182,7 +190,7 @@ export function collectPowerItem(state: PlayerWeaponsState): {
   }
 
   const nextMeter = state.powerMeter + 1;
-  if (nextMeter >= POWER_ITEMS_PER_LEVEL) {
+  if (nextMeter >= powerItemsForNextLevel(state.pilotId,state.weaponLevel)) {
     const nextLevel = (state.weaponLevel + 1) as WeaponLevel;
     return {
       state: {
@@ -210,7 +218,7 @@ export function upgradeWeapon(state: PlayerWeaponsState): {
   state: PlayerWeaponsState;
   upgraded: boolean;
 } {
-  if (state.weaponLevel >= MAX_WEAPON_LEVEL) {
+  if (state.weaponLevel >= maxWeaponLevel(state.pilotId)) {
     return { state, upgraded: false };
   }
   const nextLevel = (state.weaponLevel + 1) as WeaponLevel;
@@ -229,11 +237,11 @@ export function collectFullPowerItem(state: PlayerWeaponsState): {
   state: PlayerWeaponsState;
   upgradedToMax: boolean;
 } {
-  const alreadyMax = state.weaponLevel >= MAX_WEAPON_LEVEL;
+  const alreadyMax = state.weaponLevel >= maxWeaponLevel(state.pilotId);
   return {
     state: {
       ...state,
-      weaponLevel: MAX_WEAPON_LEVEL,
+      weaponLevel: maxWeaponLevel(state.pilotId),
       powerMeter: POWER_ITEMS_PER_LEVEL,
     },
     upgradedToMax: !alreadyMax,
@@ -295,7 +303,7 @@ export function advanceWeapons(state: PlayerWeaponsState, deltaMs: number): Play
 }
 
 export function resetWeaponsOnRespawn(state: PlayerWeaponsState): PlayerWeaponsState {
-  const reserveReady = state.weaponLevel === MAX_WEAPON_LEVEL && state.powerMeter === POWER_ITEMS_PER_LEVEL;
+  const reserveReady = state.weaponLevel === maxWeaponLevel(state.pilotId) && state.powerMeter === POWER_ITEMS_PER_LEVEL;
   return {
     ...state,
     weaponFamily: pilotWeaponFamily(state.pilotId),
@@ -404,6 +412,13 @@ export function getPrimaryProjectiles(
   overrideFamily?: WeaponFamily,
 ): ProjectileSpawnDef[] {
   const family:WeaponFamily=overrideFamily??(familyOrPilot==='ion'||familyOrPilot==='green'||familyOrPilot==='red'?familyOrPilot:pilotWeaponFamily(familyOrPilot));
+
+  if(familyOrPilot==='nolan'&&family==='ion'){
+    const lanes=level===1?[[0,0]]:level===2?[[-3,0],[3,0]]:level===3?[[0,-14],[0,0],[0,14]]:level===4?[[-3,-18],[3,-18],[-3,0],[3,0],[-3,18],[3,18]]:[[0,-24],[0,-16],[0,-8],[0,0],[0,8],[0,16],[0,24]];
+    return lanes.map(([x,angle])=>({texture:'shot-moth',animation:'shot-moth-loop',x:originX+x,y:originY,
+      velocityX:640*Math.sin(angle*Math.PI/180),velocityY:-640*Math.cos(angle*Math.PI/180),
+      damage:level===1?2.35:level===2?1.65:level===3?1.8:level===4?1.35:1.5,hitRadius:2.5,scale:1}));
+  }
 
   // Paired, phase-shifted wave components form the forward Shark Beam.
   // World-unit timings are Bullet Wake calibration, not claimed ROM constants.
@@ -702,9 +717,10 @@ export function getSecondaryProjectiles(
   pilotId: PilotId,
   originX: number,
   originY: number,
+  level:WeaponLevel=3,
 ): ProjectileSpawnDef[] {
   if (pilotId === 'nolan') {
-    return [-1,1].map(side=>({texture:'rivet-v3-missile',animation:'rivet-v3-missile-loop',x:originX+side*11,y:originY-4,velocityX:side*28,velocityY:-460,damage:4,hitRadius:3,scale:.65}));
+    return (level===5?[-1,0,1]:[-1,1]).map(side=>({texture:'rivet-v3-missile',animation:'rivet-v3-missile-loop',x:originX+side*9,y:originY-4,velocityX:side*28,velocityY:-400,damage:3.2,hitRadius:3,scale:.65,homing:level===5}));
   }
 
   if (pilotId === 'cora') {
