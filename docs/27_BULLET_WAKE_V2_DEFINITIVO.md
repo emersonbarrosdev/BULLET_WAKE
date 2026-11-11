@@ -72,7 +72,7 @@ Laterais preservadas em preto fosco/carbono; arena lógica de 432 px dentro do c
 
 Pausa congela a gameplay e abre card menor/translúcido com botões verticais: **Continuar / Controles / Voltar ao menu**. Controles no mesmo card. Sair exige **Cancelar / Confirmar saída**, informando perda do progresso da fase atual. Sem reiniciar fase ou trocar piloto nesse card.
 
-Movimento: WASD/setas ou analógico/direcional. Disparo: Espaço ou botão sul, segurar mantém cadência rápida. Especial: X/botão oeste. Pausa: Esc/Menu. Mostrar identificação conforme controle conectado. Validar menus/perfis/resultados sem scroll/corte em 1366×768 e 1920×1080. Tipografia Oxanium/Rajdhani e arte da abertura preservadas. Enquadrar a arte inteira, sem cortar logotipo, nave ou assinatura; aceitar respiro nas proporções diferentes. Verificar também 2560×1080 e 1280×1024.
+Movimento: WASD/setas ou analógico/direcional. Disparo: Espaço ou botão sul, segurar mantém cadência rápida. Especial: X/botão oeste. Pausa: Esc/Menu. Mostrar identificação conforme controle conectado. Validar menus/perfis/resultados sem scroll/corte em 1366×768 e 1920×1080. Tipografia Oxanium/Rajdhani e arte da abertura preservadas. Enquadrar a arte inteira, sem cortar logotipo, nave ou assinatura; aceitar respiro nas proporções diferentes. A abertura usa o caça atual branco/escarlate de dois motores, centralizado, com asas niveladas e envergadura ilustrada de aproximadamente 32% da tela; [arte e validação da abertura](50_ABERTURA_RIVET_CACA.md). Verificar também 2560×1080 e 1280×1024.
 
 ## Áudio
 

@@ -7,9 +7,9 @@ import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 
 const root = resolve('dist');
-const review = ['--scarlet','--red-rivet','--rivet','--final','--hangar','--arcade','--review','--normal','--stage1','--polish','--fine','--cascade','--loading','--balance'].some(flag=>process.argv.includes(flag));
+const review = ['--title-hornet','--scarlet','--red-rivet','--rivet','--final','--hangar','--arcade','--review','--normal','--stage1','--polish','--fine','--cascade','--loading','--balance'].some(flag=>process.argv.includes(flag));
 const confirmation = !review;
-const screenshots = resolve(review ? (process.argv.includes('--scarlet')?'docs/screenshots/phase1-scarlet':process.argv.includes('--red-rivet')?'docs/screenshots/phase1-rivet-red':process.argv.includes('--rivet')?'docs/screenshots/phase1-rivet5':process.argv.includes('--final')?'docs/screenshots/phase1-final':process.argv.includes('--hangar') ? 'docs/screenshots/phase1-hangar' : process.argv.includes('--arcade') ? 'docs/screenshots/phase1-arcade' : process.argv.includes('--balance') ? 'docs/screenshots/phase1-normal' : process.argv.includes('--loading') ? 'docs/screenshots/phase1-loading' : process.argv.includes('--cascade') ? 'docs/screenshots/phase1-cascade' : process.argv.includes('--fine') ? 'docs/screenshots/phase1-fine' : process.argv.includes('--polish') ? 'docs/screenshots/phase1-polish' : 'docs/screenshots/phase1-review') : 'docs/screenshots/pilot-confirmation');
+const screenshots = resolve(review ? (process.argv.includes('--title-hornet')?'docs/screenshots/title-hornet':process.argv.includes('--scarlet')?'docs/screenshots/phase1-scarlet':process.argv.includes('--red-rivet')?'docs/screenshots/phase1-rivet-red':process.argv.includes('--rivet')?'docs/screenshots/phase1-rivet5':process.argv.includes('--final')?'docs/screenshots/phase1-final':process.argv.includes('--hangar') ? 'docs/screenshots/phase1-hangar' : process.argv.includes('--arcade') ? 'docs/screenshots/phase1-arcade' : process.argv.includes('--balance') ? 'docs/screenshots/phase1-normal' : process.argv.includes('--loading') ? 'docs/screenshots/phase1-loading' : process.argv.includes('--cascade') ? 'docs/screenshots/phase1-cascade' : process.argv.includes('--fine') ? 'docs/screenshots/phase1-fine' : process.argv.includes('--polish') ? 'docs/screenshots/phase1-polish' : 'docs/screenshots/phase1-review') : 'docs/screenshots/pilot-confirmation');
 mkdirSync(screenshots, { recursive: true });
 const reportFileName=process.argv.includes('--audio-only')?'audio-validation.json':process.argv.includes('--visual-only')?'visual-validation.json':'validation.json';
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png' };
@@ -111,18 +111,18 @@ try {
   report.regression.title = await evaluate(`window.__GAME__.scene.isActive('TitleScene')`);
   await click('.bw-press-activation');
   await click('[data-action="pilots"]');
-  if(!process.argv.includes('--scarlet')&&!process.argv.includes('--red-rivet')&&!process.argv.includes('--rivet')&&!process.argv.includes('--hangar')&&!process.argv.includes('--final')){
+  if(!process.argv.includes('--title-hornet')&&!process.argv.includes('--scarlet')&&!process.argv.includes('--red-rivet')&&!process.argv.includes('--rivet')&&!process.argv.includes('--hangar')&&!process.argv.includes('--final')){
     await waitFor(`Boolean(document.querySelector('[data-mission-action="launch"]'))`);
     report.regression.missionSelection=true;
     await click('[data-mission-action="launch"]');
   }
   await waitFor(`Boolean(document.querySelector('.bw-pilot-card'))`);
   if (review) {
-    const {runPhase1Review}=await import(process.argv.includes('--scarlet')?'./phase1-scarlet-checks.mjs':process.argv.includes('--red-rivet')?'./phase1-rivet-red-checks.mjs':process.argv.includes('--rivet')?'./phase1-rivet5-checks.mjs':process.argv.includes('--final')?'./phase1-final-checks.mjs':process.argv.includes('--hangar')?'./phase1-hangar-checks.mjs':process.argv.includes('--arcade')?'./phase1-arcade-checks.mjs':process.argv.includes('--balance')?'./phase1-normal-checks.mjs':process.argv.includes('--loading')?'./phase1-loading-checks.mjs':process.argv.includes('--cascade')?'./phase1-cascade-checks.mjs':process.argv.includes('--fine')?'./phase1-fine-checks.mjs':process.argv.includes('--polish')?'./phase1-polish-checks.mjs':'./phase1-review-checks.mjs');
+    const {runPhase1Review}=await import(process.argv.includes('--title-hornet')?'./title-hornet-checks.mjs':process.argv.includes('--scarlet')?'./phase1-scarlet-checks.mjs':process.argv.includes('--red-rivet')?'./phase1-rivet-red-checks.mjs':process.argv.includes('--rivet')?'./phase1-rivet5-checks.mjs':process.argv.includes('--final')?'./phase1-final-checks.mjs':process.argv.includes('--hangar')?'./phase1-hangar-checks.mjs':process.argv.includes('--arcade')?'./phase1-arcade-checks.mjs':process.argv.includes('--balance')?'./phase1-normal-checks.mjs':process.argv.includes('--loading')?'./phase1-loading-checks.mjs':process.argv.includes('--cascade')?'./phase1-cascade-checks.mjs':process.argv.includes('--fine')?'./phase1-fine-checks.mjs':process.argv.includes('--polish')?'./phase1-polish-checks.mjs':'./phase1-review-checks.mjs');
     await runPhase1Review({send,evaluate,waitFor,key,click,shot,report,errors});
     report.completed=true;
     writeFileSync(join(screenshots,reportFileName),JSON.stringify(report,null,2)+'\n');
-    if(!process.argv.includes('--polish')&&!process.argv.includes('--fine'))console.log(process.argv.includes('--audio-only')?'PASS: three final OGG tracks decoded with headroom; one music voice per track; zero browser errors.':'PASS: phase-one review checks; both desktop viewports; zero browser errors.');
+    if(!process.argv.includes('--polish')&&!process.argv.includes('--fine'))console.log(process.argv.includes('--title-hornet')?'PASS: title artwork contained in four viewports; decoded assets and mouse/keyboard navigation; zero browser errors.':process.argv.includes('--audio-only')?'PASS: three final OGG tracks decoded with headroom; one music voice per track; zero browser errors.':'PASS: phase-one review checks; both desktop viewports; zero browser errors.');
   } else if (confirmation) {
     const baseline = JSON.parse(readFileSync(resolve('docs/screenshots/pilot-selection-final/validation.json'),'utf8'));
     const ready = () => evaluate("document.querySelectorAll('[data-confirm-index]:not([hidden])').length === 1");

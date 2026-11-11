@@ -1,4 +1,4 @@
-.bw-mission-result {position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:clamp(16px,4vw,72px);background:linear-gradient(110deg,#0b0206ee,#210a06df),url('/assets/title/title-apocalyptic-base-v3.webp') center/cover;color:#fce9d4;font:600 clamp(15px,1.35vw,23px)/1.45 'Rajdhani',sans-serif;overflow:auto;}
+.bw-mission-result {position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:clamp(16px,4vw,72px);background:linear-gradient(110deg,#0b0206ee,#210a06df),url('/assets/title/title-rivet-hornet.webp') center/cover;color:#fce9d4;font:600 clamp(15px,1.35vw,23px)/1.45 'Rajdhani',sans-serif;overflow:auto;}
 .bw-result-panel {position:relative;width:min(100%,1080px);padding:clamp(22px,4vw,64px);text-align:center;border:1px solid #a74a26;background:linear-gradient(130deg,#230d0cf2,#090407f5);box-shadow:0 24px 100px #000c,inset 0 1px #ffad5a50;}
 .bw-result-panel::before {content:'';position:absolute;top:0;left:8%;right:8%;height:3px;background:linear-gradient(90deg,transparent,#ff8d35,transparent);box-shadow:0 0 24px #ff7d2544;}
 .bw-result-eyebrow {color:#c79775;font-size:.72em;letter-spacing:.22em;margin:0 0 24px;}

@@ -12,7 +12,7 @@
 #bw-pilot-select [hidden] { display: none !important; }
 #bw-pilot-select .bw-pilot-backdrop {
   position: fixed; inset: -12px;
-  background: url('/assets/title/title-apocalyptic-base-v3.webp') center center / cover no-repeat;
+  background: url('/assets/title/title-rivet-hornet.webp') center center / cover no-repeat;
   filter: blur(3px) brightness(.46) saturate(1.25);
   pointer-events: none;
 }

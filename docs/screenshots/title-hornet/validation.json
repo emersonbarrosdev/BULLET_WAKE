@@ -1,0 +1,281 @@
+{
+  "completed": true,
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "states": [
+        {
+          "mode": "attract",
+          "url": "http://127.0.0.1:50538/assets/title/title-rivet-hornet.webp",
+          "naturalWidth": 1672,
+          "naturalHeight": 941,
+          "box": {
+            "x": 0.703125,
+            "y": 0,
+            "right": 1365.296875,
+            "bottom": 768,
+            "width": 1364.59375,
+            "height": 768
+          },
+          "page": {
+            "width": 1366,
+            "height": 768
+          },
+          "buttons": [
+            {
+              "label": "PRESS START — abrir menu principal",
+              "x": 0,
+              "y": 0,
+              "right": 1366,
+              "bottom": 768
+            }
+          ]
+        },
+        {
+          "mode": "main",
+          "url": "http://127.0.0.1:50538/assets/title/menu-no-pointer.webp",
+          "naturalWidth": 1672,
+          "naturalHeight": 941,
+          "box": {
+            "x": 0.703125,
+            "y": 0,
+            "right": 1365.296875,
+            "bottom": 768,
+            "width": 1364.59375,
+            "height": 768
+          },
+          "page": {
+            "width": 1366,
+            "height": 768
+          },
+          "buttons": [
+            {
+              "label": "Selecionar piloto",
+              "x": 442.828125,
+              "y": 313.34375,
+              "right": 975.015625,
+              "bottom": 390.140625
+            },
+            {
+              "label": "Opções",
+              "x": 553.359375,
+              "y": 392.4375,
+              "right": 826.265625,
+              "bottom": 469.234375
+            }
+          ]
+        }
+      ],
+      "mouseKeyboardNavigation": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "states": [
+        {
+          "mode": "attract",
+          "url": "http://127.0.0.1:50538/assets/title/title-rivet-hornet.webp",
+          "naturalWidth": 1672,
+          "naturalHeight": 941,
+          "box": {
+            "x": 0.515625,
+            "y": 0,
+            "right": 1919.484375,
+            "bottom": 1080,
+            "width": 1918.96875,
+            "height": 1080
+          },
+          "page": {
+            "width": 1920,
+            "height": 1080
+          },
+          "buttons": [
+            {
+              "label": "PRESS START — abrir menu principal",
+              "x": 0,
+              "y": 0,
+              "right": 1920,
+              "bottom": 1080
+            }
+          ]
+        },
+        {
+          "mode": "main",
+          "url": "http://127.0.0.1:50538/assets/title/menu-no-pointer.webp",
+          "naturalWidth": 1672,
+          "naturalHeight": 941,
+          "box": {
+            "x": 0.515625,
+            "y": 0,
+            "right": 1919.484375,
+            "bottom": 1080,
+            "width": 1918.96875,
+            "height": 1080
+          },
+          "page": {
+            "width": 1920,
+            "height": 1080
+          },
+          "buttons": [
+            {
+              "label": "Selecionar piloto",
+              "x": 622.25,
+              "y": 440.625,
+              "right": 1370.640625,
+              "bottom": 548.625
+            },
+            {
+              "label": "Opções",
+              "x": 777.6875,
+              "y": 551.875,
+              "right": 1161.46875,
+              "bottom": 659.875
+            }
+          ]
+        }
+      ],
+      "mouseKeyboardNavigation": true
+    },
+    {
+      "width": 2560,
+      "height": 1080,
+      "states": [
+        {
+          "mode": "attract",
+          "url": "http://127.0.0.1:50538/assets/title/title-rivet-hornet.webp",
+          "naturalWidth": 1672,
+          "naturalHeight": 941,
+          "box": {
+            "x": 320.515625,
+            "y": 0,
+            "right": 2239.484375,
+            "bottom": 1080,
+            "width": 1918.96875,
+            "height": 1080
+          },
+          "page": {
+            "width": 2560,
+            "height": 1080
+          },
+          "buttons": [
+            {
+              "label": "PRESS START — abrir menu principal",
+              "x": 0,
+              "y": 0,
+              "right": 2560,
+              "bottom": 1080
+            }
+          ]
+        },
+        {
+          "mode": "main",
+          "url": "http://127.0.0.1:50538/assets/title/menu-no-pointer.webp",
+          "naturalWidth": 1672,
+          "naturalHeight": 941,
+          "box": {
+            "x": 320.515625,
+            "y": 0,
+            "right": 2239.484375,
+            "bottom": 1080,
+            "width": 1918.96875,
+            "height": 1080
+          },
+          "page": {
+            "width": 2560,
+            "height": 1080
+          },
+          "buttons": [
+            {
+              "label": "Selecionar piloto",
+              "x": 942.25,
+              "y": 440.625,
+              "right": 1690.640625,
+              "bottom": 548.625
+            },
+            {
+              "label": "Opções",
+              "x": 1097.6875,
+              "y": 551.875,
+              "right": 1481.46875,
+              "bottom": 659.875
+            }
+          ]
+        }
+      ],
+      "mouseKeyboardNavigation": true
+    },
+    {
+      "width": 1280,
+      "height": 1024,
+      "states": [
+        {
+          "mode": "attract",
+          "url": "http://127.0.0.1:50538/assets/title/title-rivet-hornet.webp",
+          "naturalWidth": 1672,
+          "naturalHeight": 941,
+          "box": {
+            "x": 0,
+            "y": 151.8125,
+            "right": 1280,
+            "bottom": 872.1875,
+            "width": 1280,
+            "height": 720.375
+          },
+          "page": {
+            "width": 1280,
+            "height": 1024
+          },
+          "buttons": [
+            {
+              "label": "PRESS START — abrir menu principal",
+              "x": 0,
+              "y": 0,
+              "right": 1280,
+              "bottom": 1024
+            }
+          ]
+        },
+        {
+          "mode": "main",
+          "url": "http://127.0.0.1:50538/assets/title/menu-no-pointer.webp",
+          "naturalWidth": 1672,
+          "naturalHeight": 941,
+          "box": {
+            "x": 0,
+            "y": 151.8125,
+            "right": 1280,
+            "bottom": 872.1875,
+            "width": 1280,
+            "height": 720.375
+          },
+          "page": {
+            "width": 1280,
+            "height": 1024
+          },
+          "buttons": [
+            {
+              "label": "Selecionar piloto",
+              "x": 414.71875,
+              "y": 445.71875,
+              "right": 913.90625,
+              "bottom": 517.75
+            },
+            {
+              "label": "Opções",
+              "x": 518.390625,
+              "y": 519.921875,
+              "right": 774.390625,
+              "bottom": 591.953125
+            }
+          ]
+        }
+      ],
+      "mouseKeyboardNavigation": true
+    }
+  ],
+  "regression": {
+    "title": true
+  },
+  "errors": []
+}
