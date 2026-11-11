@@ -1,12 +1,13 @@
 /**
- * T06 — pilotos aprovados. Valores iniciais para balanceamento de gameplay.
- * Visual da nave e especiais serão implementados nas etapas de arte e T07.
+ * IDs persistentes identificam os conjuntos de nave; nomes são a apresentação atual.
+ * Ordem de seleção: Bayek, Tita, Leona, Osvald e Hien.
  */
 export type PilotId = 'nolan' | 'cora' | 'harlan' | 'lyra' | 'bento';
 
 export interface PilotDefinition {
   id: PilotId;
   name: string;
+  nationality: string;
   callsign: string;
   shipName: string;
   role: string;
@@ -25,13 +26,14 @@ export interface PilotDefinition {
 export const PILOTS: readonly PilotDefinition[] = [
   {
     id: 'nolan',
-    name: 'Terry',
+    name: 'Bayek',
+    nationality: 'Egípcio',
     callsign: 'CORRIDOR VANGUARD',
     shipName: 'Rivet',
     role: 'DISPERSÃO AZUL',
     specialName: 'TEMPESTADE PRISMATICA',
     specialDescription: 'Três salvas de bombardeio prismático: varredura da arena, impactos e proteção temporária.',
-    bio: 'Desonrado por abandonar uma ordem e salvar civis, procura o irmão que o comando declarou perdido.',
+    bio: 'Piloto egípcio. Desonrado por abandonar uma ordem e salvar civis, procura o irmão que o comando declarou perdido.',
     portraitKey: 'portrait-nolan',
     speed: 190,
     shotsPerSecond: 8,
@@ -43,6 +45,7 @@ export const PILOTS: readonly PilotDefinition[] = [
   {
     id: 'cora',
     name: 'Tita',
+    nationality: 'Origem não divulgada',
     callsign: 'WAKE WEAVER',
     shipName: 'Moth',
     role: 'ONDAS ESPIRAIS',
@@ -58,14 +61,22 @@ export const PILOTS: readonly PilotDefinition[] = [
     projectileColor: 0x9bf5e6,
   },
   {
+    id:'lyra',name:'Leona',nationality:'Brasileira',callsign:'JADE SENTINEL',shipName:'Kestrel',role:'PRECISÃO TÁTICA',
+    specialName:'COROA ORBITAL',specialDescription:'Lanças orbitais convergem sobre alvos prioritários e abrem um corredor de passagem.',
+    bio:'Brasileira, pilota por dinheiro para salvar a clínica da família. Procura o pai e descobre que fama não substitui quem volta para casa.',
+    portraitKey:'portrait-lyra',speed:200,shotsPerSecond:6.4,damage:1.25,
+    hullColor:0xd8dfd5,accentColor:0x66e5aa,projectileColor:0x66e5aa,
+  },
+  {
     id: 'harlan',
     name: 'Osvald',
+    nationality: 'Russo',
     callsign: 'IRON BULWARK',
     shipName: 'Knuckle',
     role: 'FLUXO RUBRO',
     specialName: 'RUPTURA NOVA',
     specialDescription: 'Detonação cinética radial que anula balas hostis e causa dano maciço.',
-    bio: 'Pai e antigo mecânico de salvamento. Busca a filha levada pelos invasores e teme o que precisará destruir para resgatá-la.',
+    bio: 'Russo, pai e antigo mecânico de salvamento. Busca a filha levada pelos invasores e teme o que precisará destruir para resgatá-la.',
     portraitKey: 'portrait-harlan',
     speed: 175,
     shotsPerSecond: 5,
@@ -75,16 +86,9 @@ export const PILOTS: readonly PilotDefinition[] = [
     projectileColor: 0xffb56e,
   },
   {
-    id:'lyra',name:'Luma',callsign:'JADE SENTINEL',shipName:'Kestrel',role:'PRECISÃO TÁTICA',
-    specialName:'COROA ORBITAL',specialDescription:'Lanças orbitais convergem sobre alvos prioritários e abrem um corredor de passagem.',
-    bio:'Pilota por dinheiro para salvar a clínica da família. Procura o pai e descobre que fama não substitui quem volta para casa.',
-    portraitKey:'portrait-lyra',speed:200,shotsPerSecond:6.4,damage:1.25,
-    hullColor:0xd8dfd5,accentColor:0x66e5aa,projectileColor:0x66e5aa,
-  },
-  {
-    id:'bento',name:'Bento',callsign:'ÚLTIMO CORREIO',shipName:'Peregrine',role:'RAJADA ALTERNADA',
+    id:'bento',name:'Hien',nationality:'Japonês',callsign:'VENTO ESCARLATE',shipName:'Peregrine',role:'RAJADA ALTERNADA',
     specialName:'CHUVA DE COMETAS',specialDescription:'Uma esquadrilha remota cruza a arena em diagonais, suprimindo projéteis e bombardeando alvos.',
-    bio:'Ex-contrabandista e carteiro de emergência. Procura a esposa desaparecida levando cartas de famílias que se recusa a declarar perdidas.',
+    bio:'Piloto japonês de uma unidade de resgate sigilosa. Procura a esposa que ficou nos abrigos, enfrentando a culpa de ter cumprido uma retirada.',
     portraitKey:'portrait-bento',speed:195,shotsPerSecond:7,damage:8/7,
     hullColor:0xe4deba,accentColor:0x68baff,projectileColor:0x86caff,
   },

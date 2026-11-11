@@ -13,7 +13,8 @@ export function recoveryPayloads(state: PlayerWeaponsState): RecoveryPayload[] {
 }
 export function recoverArmament(state: PlayerWeaponsState, item: RecoveryPayload): PlayerWeaponsState {
   if(state.weaponFamily!==item.family)return state;
-  const same=state.weaponFamily===item.family;
-  return {...state,weaponFamily:item.family,weaponLevel:same?Math.max(state.weaponLevel,item.level) as WeaponLevel:item.level,
-    powerMeter:same?Math.max(state.powerMeter,item.meter):item.meter};
+  const current=(state.weaponLevel-1)*3+state.powerMeter,recovered=(item.level-1)*3+item.meter;
+  // Level and partial meter form one milestone. Mixing two different milestones can invent extra P.
+  if(recovered<=current)return state;
+  return {...state,weaponLevel:item.level,powerMeter:item.meter};
 }

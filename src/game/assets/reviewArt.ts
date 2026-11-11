@@ -7,7 +7,7 @@ export const REVIEW_SHEETS: Record<string, number> = {
   surface: 256,
   swimmer: 256,
   special: 256,
-  ...Object.fromEntries([...NORMAL_GUIDE_ITEMS,'weapon_ion','weapon_green','weapon_red','health'].map((t) => ['pickups-' + t, 64])),
+  ...Object.fromEntries([...NORMAL_GUIDE_ITEMS,'speed','score','weapon_ion','weapon_green','weapon_red','health'].map((t) => ['pickups-' + t, 64])),
   ...Object.fromEntries(
     ['scout', 'dart', 'lancer', 'cutter', 'surface', 'raia'].map((t) => [
       'hostile-' + t,

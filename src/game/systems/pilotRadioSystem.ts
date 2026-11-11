@@ -6,6 +6,10 @@ export interface RadioContext {
     lives: number;
     specials: number;
 }
+export interface RadioSnapshot {
+    pilot:PilotId; message:string; remaining:number; deaths:number; now:number; next:number; nextIdle:number;
+    kills:number; comeback:boolean; bags:Array<[RadioEvent,number[]]>; last:Array<[RadioEvent,number]>;
+}
 /** Contextual text, not narration: no voice, no modal, no repeated line until its bag is exhausted. */
 export class PilotRadio {
     message = 'Canal aberto.';
@@ -21,6 +25,8 @@ export class PilotRadio {
     private pilot: PilotId;
     private random: () => number;
     constructor(pilot: PilotId, random: () => number = Math.random) { this.pilot = pilot; this.random = random; }
+    snapshot():RadioSnapshot {return {pilot:this.pilot,message:this.message,remaining:this.remaining,deaths:this.deaths,now:this.now,next:this.next,nextIdle:this.nextIdle,kills:this.kills,comeback:this.comeback,bags:[...this.bags].map(([k,v])=>[k,[...v]]),last:[...this.last]};}
+    restore(s:RadioSnapshot):void {if(s.pilot!==this.pilot)return;this.message=s.message;this.remaining=s.remaining;this.deaths=s.deaths;this.now=s.now;this.next=s.next;this.nextIdle=s.nextIdle;this.kills=s.kills;this.comeback=s.comeback;this.bags=new Map(s.bags.map(([k,v])=>[k,[...v]]));this.last=new Map(s.last);}
     offer(event: RadioEvent, urgent = false): boolean {
         if (!urgent && (this.now < this.next || this.now - (this.last.get(event) ?? -60000) < 45000))
             return false;
@@ -48,9 +54,9 @@ export class PilotRadio {
     update(dt: number, context: RadioContext): void {
         this.now += Math.max(0, dt);
         this.remaining = Math.max(0, this.remaining - dt);
-        if (context.enemies >= 7 && context.bullets >= 10 && context.specials > 0)
+        if (context.enemies >= 5 && context.bullets >= 7 && context.specials > 0)
             this.offer('crowd');
-        else if (context.lives === 1 && context.bullets >= 12)
+        else if (context.lives === 1 && context.bullets >= 8)
             this.offer('fear');
         if (this.now >= this.nextIdle) {
             this.nextIdle = this.now + 45000 + this.random() * 20000;

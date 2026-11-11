@@ -5,16 +5,16 @@ import { getPilot, PILOTS, shotIntervalMs } from '../src/game/data/pilots.ts';
 
 test('five cartoon pilot and ship names are preserved', () => {
   assert.deepEqual(PILOTS.map(p => [p.name, p.shipName]), [
-    ['Terry', 'Rivet'],
+    ['Bayek', 'Rivet'],
     ['Tita', 'Moth'],
-    ['Osvald', 'Knuckle'],
-    ['Luma','Kestrel'],['Bento','Peregrine'],
+    ['Leona','Kestrel'],
+    ['Osvald', 'Knuckle'],['Hien','Peregrine'],
   ]);
   assert.equal(new Set(PILOTS.map(p => p.id)).size, 5);
 });
 
 test('pilots have different speed, cadence and damage', () => {
-  const [nolan, cora, harlan] = PILOTS;
+  const nolan=getPilot('nolan'),cora=getPilot('cora'),harlan=getPilot('harlan');
   assert.ok(cora.speed > nolan.speed && nolan.speed > harlan.speed);
   assert.ok(nolan.shotsPerSecond > cora.shotsPerSecond);
   assert.ok(cora.shotsPerSecond > harlan.shotsPerSecond);
@@ -29,7 +29,7 @@ test('base theoretical DPS remains approximately equivalent', () => {
 test('fire intervals reflect cadence, with three valid distinct pilots', () => {
   assert.equal(shotIntervalMs(PILOTS[0]), 125);
   assert.ok(shotIntervalMs(PILOTS[1]) > shotIntervalMs(PILOTS[0]));
-  assert.ok(shotIntervalMs(PILOTS[2]) > shotIntervalMs(PILOTS[1]));
+  assert.ok(shotIntervalMs(getPilot('harlan')) > shotIntervalMs(getPilot('cora')));
   assert.equal(getPilot('cora').shipName, 'Moth');
   assert.equal(getPilot('harlan').shipName, 'Knuckle');
   assert.equal(getPilot('missing').shipName, 'Rivet');

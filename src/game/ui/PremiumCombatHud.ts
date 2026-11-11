@@ -27,7 +27,7 @@ export class PremiumCombatHud {
       <aside class="bw-combat-side bw-combat-left" aria-label="Telemetria do piloto">
         <div class="bw-combat-wordmark">BULLET <em>WAKE</em></div>
         <section class="bw-combat-panel bw-combat-identity">
-          <img data-field="portrait" src="${import.meta.env.BASE_URL}assets/pilot-selection/portrait-nolan.webp" alt="Terry" />
+          <img data-field="portrait" src="${import.meta.env.BASE_URL}assets/pilot-selection/portrait-nolan.webp" alt="Bayek" />
           <div><small>OPERADOR</small><strong data-field="name">TERRY</strong><b data-field="ship">RIVET</b></div>
         </section>
         <section class="bw-combat-panel bw-combat-score-panel"><small>PONTUAÇÃO <i data-field="combo"></i></small><strong class="bw-combat-score" data-field="score">000000</strong></section>

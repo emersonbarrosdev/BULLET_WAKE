@@ -1,5 +1,7 @@
 # Fase 1 — elenco, combate e áudio
 
+> Relatório histórico da versão c7e2a46. Elenco e correções vigentes em [revisão final](41_REVISAO_FINAL_FASE_1.md).
+
 Revisão de 11/11/2026. Complementa a [Bíblia vigente](27_BULLET_WAKE_V2_DEFINITIVO.md) e substitui as regras conflitantes das revisões 28–38. A Fase 2 continua aguardando aprovação da primeira.
 
 ## Decisão de armamento e referência

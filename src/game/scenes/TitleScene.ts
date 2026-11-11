@@ -1,3 +1,4 @@
+import { SECRET_PILOT_CODE } from '../data/pilotStories.ts';
 import { connectedPad, GamepadReader, padLabels } from '../systems/gamepadInput';
 import Phaser from 'phaser';
 import '../../title-screen.css';
@@ -34,7 +35,7 @@ export class TitleScene extends Phaser.Scene {
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
     if (!this.root || event.altKey || event.ctrlKey || event.metaKey) return;
     const key = event.key.toLowerCase();
-    if(this.mode==='attract'&&!event.repeat&&this.secretEligibleAtBoot&&/^[a-z]$/.test(key)){this.secretBuffer=(this.secretBuffer+key).slice(-9);if(saveSystem.enterSecretCode(this.secretBuffer)){globalAudio.playPickup('upgrade');this.root.setAttribute('aria-label','Bento desbloqueado');}}
+    if(this.mode==='attract'&&!event.repeat&&this.secretEligibleAtBoot&&/^[a-z]$/.test(key)){this.secretBuffer=(this.secretBuffer+key).slice(-SECRET_PILOT_CODE.length);if(saveSystem.enterSecretCode(this.secretBuffer)){globalAudio.playPickup('upgrade');this.root.setAttribute('aria-label','Hien desbloqueado');}}
     if (!['enter', ' ', 'escape', 'arrowup', 'arrowdown', 'w', 's'].includes(key)) return;
     event.preventDefault();
     event.stopPropagation();

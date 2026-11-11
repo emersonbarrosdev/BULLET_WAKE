@@ -1,8 +1,9 @@
 {
   "menu": {
+    "arrangement": "piano introduction, guitar melody, bass-led reply, clean bridge and full-band return",
     "bpm": 118,
-    "bars": 32,
-    "seconds": 65.08474576271186,
+    "bars": 48,
+    "seconds": 97.62711864406779,
     "instruments": [
       "grand piano",
       "electric lead guitar",
@@ -12,14 +13,14 @@
       "clean guitar",
       "acoustic drums"
     ],
-    "peakDbFS": -1.061038741215237,
-    "rmsDbFS": -16.394474444562366,
-    "samplesPerChannel": 2870237
+    "peakDbfs": -1.21,
+    "rmsDbfs": -17.19
   },
   "stage1": {
+    "arrangement": "piano introduction, guitar melody, bass-led reply, clean bridge and full-band return",
     "bpm": 142,
-    "bars": 32,
-    "seconds": 54.08450704225352,
+    "bars": 48,
+    "seconds": 81.12676056338029,
     "instruments": [
       "grand piano",
       "electric lead guitar",
@@ -29,14 +30,14 @@
       "clean guitar",
       "acoustic drums"
     ],
-    "peakDbFS": -1.061038741215237,
-    "rmsDbFS": -15.702361474317135,
-    "samplesPerChannel": 2385127
+    "peakDbfs": -1.21,
+    "rmsDbfs": -16.51
   },
   "boss": {
+    "arrangement": "piano introduction, guitar melody, bass-led reply, clean bridge and full-band return",
     "bpm": 156,
-    "bars": 32,
-    "seconds": 49.23076923076923,
+    "bars": 48,
+    "seconds": 73.84615384615384,
     "instruments": [
       "grand piano",
       "electric lead guitar",
@@ -46,8 +47,7 @@
       "clean guitar",
       "acoustic drums"
     ],
-    "peakDbFS": -1.061038741215237,
-    "rmsDbFS": -15.715992029454796,
-    "samplesPerChannel": 2171077
+    "peakDbfs": -1.21,
+    "rmsDbfs": -16.54
   }
 }

@@ -3,10 +3,10 @@ import { loadReviewArt, registerReviewArt } from './reviewArt';
 import { loadPolishArt, registerPolishArt } from './polishArt';
 
 /** Hand-painted combat art is separate from legacy pixel sheets and menu assets. */
-export const COMBAT_SHEETS = ['rivet', 'peregrine', 'biogun', 'kestrel', 'supply-parachute', 'scout', 'dart', 'lancer', 'cutter', 'bomb'] as const;
+export const COMBAT_SHEETS = ['special-orbital','special-comet','rivet', 'moth', 'knuckle', 'peregrine', 'biogun', 'kestrel', 'supply-parachute', 'scout', 'dart', 'lancer', 'cutter', 'bomb'] as const;
 
 export function loadCombatArt(scene: Phaser.Scene, base: string): void {
-  for(const name of ['talassarca-top','inner-top'])if(!scene.textures.exists('hd-'+name))scene.load.spritesheet('hd-'+name,`${base}/assets/combat-hd/${name}.webp`,{frameWidth:512,frameHeight:512});
+  for(const name of ['talassarca-top','inner-top','metamorphosis-top'])if(!scene.textures.exists('hd-'+name))scene.load.spritesheet('hd-'+name,`${base}/assets/combat-hd/${name}.webp`,{frameWidth:512,frameHeight:512});
   loadReviewArt(scene,base);
   loadPolishArt(scene,base);
   for (const name of COMBAT_SHEETS) {
@@ -41,7 +41,7 @@ export function registerCombatArt(scene: Phaser.Scene): void {
   createEnergyTextures(scene);
 }
 
-/** Energy is painted at 4× resolution, animated in-game, independent of damage. */
+/** Energy is painted at 4Ã— resolution, animated in-game, independent of damage. */
 function createEnergyTextures(scene: Phaser.Scene): void {
   const colors = { blue: '#38bdf8', green: '#4ade80', enemy: '#ff5675' };
   for (const [name, color] of Object.entries(colors)) {
@@ -57,7 +57,7 @@ function createEnergyTextures(scene: Phaser.Scene): void {
       ctx.fillStyle = halo; ctx.fillRect(32, 0, 64, 64);
       ctx.strokeStyle = '#ffddca'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(64, 32, 15, 0, Math.PI * 2); ctx.stroke();
       canvas.refresh(); canvas.setFilter(Phaser.Textures.FilterMode.LINEAR);
-      // A square source frame keeps a circular hostile projectile at 12×12.
+      // A square source frame keeps a circular hostile projectile at 12Ã—12.
       canvas.add('orb', 0, 32, 0, 64, 64);
       continue;
     }

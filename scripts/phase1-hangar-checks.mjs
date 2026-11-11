@@ -49,7 +49,7 @@ export async function runPhase1Review({send,evaluate,waitFor,key,click,shot,repo
   await key('Escape','Escape',27);await waitFor(`!!document.querySelector('.bw-pause')`);await click('[data-brief-action="2"]');await click('[data-brief-action="1"]');await waitFor(`!!document.querySelector('.bw-press-activation')`);
   await click('.bw-press-activation');await click('[data-action="pilots"]');await waitFor(`!!document.querySelector('.bw-pilot-card')`);
   const owners=[];
-  for(const [index,id,family]of [[0,'nolan','ion'],[1,'cora','green'],[2,'harlan','red'],[3,'lyra','ion'],[4,'bento','ion']]){
+  for(const [index,id,family]of [[0,'nolan','ion'],[1,'cora','green'],[2,'lyra','ion'],[3,'harlan','red'],[4,'bento','ion']]){
    await select(index);
    const owner=await run(`s.scene.pause();return {id:s.pilot.id,family:s.weapons.weaponFamily,level:s.weapons.weaponLevel};`);assert.equal(owner.id,id);assert.equal(owner.family,family);assert.equal(owner.level,1);owners.push(owner);
    const ttks=await run(`

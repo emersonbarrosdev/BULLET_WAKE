@@ -2,9 +2,9 @@
 
 Shooter arcade 2D de rolagem vertical e visão superior, com invasão alienígena sobre a Terra. Somente a Fase 1, Fenda Pelágica, está liberada nesta versão.
 
-[Bíblia vigente](docs/27_BULLET_WAKE_V2_DEFINITIVO.md) · [Revisão atual e pendências](docs/39_ELENCO_COMBATE_AUDIO.md).
+[Bíblia vigente](docs/27_BULLET_WAKE_V2_DEFINITIVO.md) · [Revisão atual e validação](docs/41_REVISAO_FINAL_FASE_1.md).
 
-Cinco pilotos cartoon: Terry/RIVET, Tita/MOTH, Osvald/KNUCKLE, Luma/KESTREL e Bento/PEREGRINE. Cada nave evolui sua própria arma com P, tem especial e história pessoal. Início com 3 vidas/2 especiais; limite 5/5, excesso vira pontos. Progresso por piloto, HUD lateral em carbono e rádio contextual. Sem escudo, dash, carga, bomba extra ou míssil manual; RIVET recebe mísseis automáticos em NV3+. Três trilhas originais com instrumentos amostrados.
+Cinco pilotos cartoon: Bayek/RIVET, Tita/MOTH, Leona/KESTREL, Osvald/KNUCKLE e Hien/PEREGRINE. Cada nave evolui sua própria arma com P, tem especial e história pessoal. Início com 3 vidas/2 especiais; limite 5/5, excesso vira pontos. Progresso por piloto, HUD lateral em carbono e rádio contextual. Sem escudo, dash, carga, bomba extra ou míssil manual; RIVET recebe mísseis automáticos em NV3+. Três trilhas originais com instrumentos amostrados.
 
 A campanha de quinze fases e as rotas secretas são planejamento documentado, não conteúdo produzido. O Normal é o único balanceamento ativo.
 

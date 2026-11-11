@@ -20,7 +20,7 @@ export const PICKUP_GUIDE: Record<PickupType, PickupGuideEntry> = {
   full_power: { letter: 'P★', label: 'P MÁXIMO · SANDBOX', color: '#ff83b8', shape: 'M32 2 40 19 59 20 46 34 50 55 32 45 14 55 18 34 5 20 24 19Z', glyph: 'M27 43V22H35C47 22 47 35 35 35H27', description: 'Somente para validação no sandbox. Não aparece no roteiro Normal e não acelera a campanha.' },
 };
 
-export const NORMAL_GUIDE_ITEMS: PickupType[] = ['power','life','special','speed','score'];
+export const NORMAL_GUIDE_ITEMS: PickupType[] = ['power','life','special'];
 
 export function pickupSvg(type: PickupType): string {
   const e = PICKUP_GUIDE[type];

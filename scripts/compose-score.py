@@ -1,4 +1,4 @@
-"""Original 32-bar aviation-rock scores. Render with FluidSynth + GeneralUser GS.
+"""Original 48-bar aviation-rock scores. Render with FluidSynth + GeneralUser GS.
 
 uv run --with mido python scripts/compose-score.py
 No melodies or recordings from existing games/films are used.
@@ -42,8 +42,10 @@ for theme, (bpm, root, progression, phrases) in SCORES.items():
         if pitch < 0: return
         events[c].append((round(at*480), mido.Message('note_on',channel=c,note=pitch,velocity=velocity)))
         events[c].append((round((at+length)*480), mido.Message('note_off',channel=c,note=pitch,velocity=0)))
-    for bar in range(32):
+    for bar in range(48):
         section = bar//8
+        bridge=section==4
+        intro=section==0 and theme=='menu'
         chord = root+progression[bar%8]
         minor = theme != 'menu' and bar%8 not in (1,5,6)
         third = 3 if minor else 4
@@ -51,9 +53,10 @@ for theme, (bpm, root, progression, phrases) in SCORES.items():
             t=bar*4+eighth/2
             human=((bar*11+eighth*7)%9)-4
             # Bass follows the kick, with a fifth pickup into the next chord.
-            note(3,chord-12+(7 if eighth==7 else 0),t,.43,92+human)
+            if not intro or eighth%2==0:
+                note(3,chord-12+(7 if eighth==7 else 0),t,.43,82+human if intro else 94+human)
             # Palm-muted rhythm, wide stereo clean guitar on offbeats.
-            if eighth in (0,3,4,6):
+            if eighth in (0,3,4,6) and not bridge and not intro:
                 for j,p in enumerate([chord,chord+7,chord+12]):
                     note(2,p,t+j*.008,.31,68+human)
             if eighth%2:
@@ -62,19 +65,20 @@ for theme, (bpm, root, progression, phrases) in SCORES.items():
             lead=phrases[bar%8][eighth]
             if lead>=0:
                 length=.78 if eighth%2==0 else .42
-                if section in (0,2):
+                if section in (0,2,4):
                     note(0,lead,t,length,84+human)
-                    if section==2 and eighth in (0,4): note(5,lead-12,t,.92,70)
+                    if section in (2,4) and eighth in (0,4): note(5,lead-12,t,.92,70)
                 else:
-                    note(1,lead+(12 if section==3 and eighth in (0,4) else 0),t,length,88+human)
+                    note(1,lead+(12 if section==5 and eighth in (0,4) else 0),t,length,88+human)
                     if eighth in (0,4): note(0,lead-12,t,.9,68)
             # Warm sustained string harmony, not a synthetic pad.
             if eighth==0:
                 for p in (chord+12,chord+12+third,chord+19): note(4,p,t,3.85,54)
             # Acoustic kit: kick, snare, closed/open hat, tom fills and crashes.
-            note(9,42 if eighth!=7 or bar%4!=3 else 46,t,.12,51+human)
+            if not intro or eighth%2==0: note(9,51 if bridge else 42 if eighth!=7 or bar%4!=3 else 46,t,.12,(37 if intro else 45 if bridge else 53)+human)
             if eighth in (0,4) or (theme=='boss' and eighth==7): note(9,36,t,.17,99)
-            if eighth in (2,6): note(9,38,t+.009,.17,104+human)
+            if eighth in (2,6): note(9,37 if bridge or intro else 38,t+.009,.17,(68 if bridge or intro else 100)+human)
+            if theme=='stage1' and section in (1,3,5) and eighth==5:note(9,38,t+.25,.12,46)
             if bar%8==7 and eighth>=5: note(9,[50,47,45][eighth-5],t+.21,.15,82)
         if bar%8==0: note(9,49,bar*4,.9,78)
     for c, channel_events in events.items():
@@ -85,9 +89,9 @@ for theme, (bpm, root, progression, phrases) in SCORES.items():
         previous=0
         for at,event in sorted(channel_events,key=lambda e:(e[0],e[1].type=='note_on')):
             event.time=at-previous; track.append(event);previous=at
-        track.append(mido.MetaMessage('end_of_track',time=32*4*480-previous))
+        track.append(mido.MetaMessage('end_of_track',time=48*4*480-previous))
     midi.save(OUT/f'{theme}.mid')
-    metadata[theme]={'bpm':bpm,'bars':32,'seconds':32*4*60/bpm,'instruments':['grand piano','electric lead guitar','rhythm guitar','fingered bass','strings','clean guitar','acoustic drums']}
+    metadata[theme]={'arrangement':'piano introduction, guitar melody, bass-led reply, clean bridge and full-band return','bpm':bpm,'bars':48,'seconds':48*4*60/bpm,'instruments':['grand piano','electric lead guitar','rhythm guitar','fingered bass','strings','clean guitar','acoustic drums']}
 Path('public/assets/audio').mkdir(parents=True,exist_ok=True)
 Path('public/assets/audio/score.json').write_text(json.dumps(metadata,indent=2),encoding='utf-8')
 print(json.dumps(metadata,indent=2))

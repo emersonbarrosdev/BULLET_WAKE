@@ -3,6 +3,13 @@ import { resetWeaponsOnRespawn, type PlayerWeaponsState } from './weaponSystem.t
 /** Bullet Wake Normal calibration. These are not measurements from a reference ROM. */
 export const NORMAL_BOSS_SHOT_SCALE = .55;
 export const RIVET_MISSILE_INTERVAL_MS = 3200;
+/** Compensate the wide fan's low hit rate against a small boss; preserve its weaker single-target identity. */
+export function primaryBossFactor(pilotId:string,bossName:string):number {
+  if(pilotId==='nolan')return bossName==='RAIA-DENTE'?1.4:1.35;
+  if(pilotId==='bento')return 1.08;
+  if(pilotId==='harlan'&&bossName==='RAIA-DENTE')return .82;
+  return 1;
+}
 
 /** A late Continue must remain viable with no special stock and no perfect P route. */
 export function continueWeapons(state: PlayerWeaponsState, checkpoint: number): PlayerWeaponsState {

@@ -65,6 +65,7 @@ export interface StageBoss {
   readonly displayWidth?: number;
   modules?: BossModule[];
   update(dt: number, playerX: number, playerY: number): BossTick;
-  damage(amount: number, hitX: number, hitY: number): BossHitResult;
+  damageArea?(amount:number):BossHitResult;
+  damage(amount: number, hitX: number, hitY: number, moduleId?:string|null): BossHitResult;
 }
 

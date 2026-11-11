@@ -81,12 +81,12 @@ export class PickupSystem {
     }
   }
 
-  checkCollection(playerX: number, playerY: number, collectRadius = 5, visibleHull = false): PickupModel[] {
+  checkCollection(playerX: number, playerY: number, collectRadius = 5, visibleHull = false, contact?:(x:number,y:number,radius:number)=>boolean): PickupModel[] {
     const collected: PickupModel[] = [];
     for (const p of this.pickups) {
       if (p.collected) continue;
       const dist = Math.hypot(playerX - p.x, playerY - p.y);
-      if (visibleHull ? circleHitsHull(p.x,p.y,PICKUP_RADIUS,playerX,playerY) : dist <= collectRadius + PICKUP_RADIUS) {
+      if (contact ? contact(p.x,p.y,PICKUP_RADIUS) : visibleHull ? circleHitsHull(p.x,p.y,PICKUP_RADIUS,playerX,playerY) : dist <= collectRadius + PICKUP_RADIUS) {
         p.collected = true;
         collected.push(p);
       }

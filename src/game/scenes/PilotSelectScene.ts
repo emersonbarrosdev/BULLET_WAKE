@@ -208,7 +208,7 @@ export class PilotSelectScene extends Phaser.Scene {
       <section class="bw-pilot-profile" aria-label="Perfil de ${pilot.name}">
         <div class="bw-pilot-profile-art"><img src="${portrait(pilot)}" alt="Retrato de ${pilot.name}" /></div>
         <div class="bw-pilot-profile-content">
-          <div class="bw-pilot-profile-name"><small>PERFIL DO PILOTO</small><h2 tabindex="-1">${pilot.name}</h2><p>${pilot.callsign}</p></div>
+          <div class="bw-pilot-profile-name"><small>PERFIL DO PILOTO</small><h2 tabindex="-1">${pilot.name}</h2><p>${pilot.callsign} · ${pilot.nationality}</p></div>
           <p class="bw-pilot-profile-bio">${pilot.bio}</p>
           <div class="bw-pilot-profile-ship"><span>NAVE: <b>${pilot.shipName}</b></span><img src="${ship(pilot)}" alt="Nave ${pilot.shipName}" /></div>
           <div class="bw-pilot-profile-special"><small>HABILIDADE ESPECIAL</small><strong>${pilot.specialName}</strong><p>${pilot.specialDescription}</p></div>

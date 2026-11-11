@@ -22,7 +22,7 @@ export class BossTalassarca implements StageBoss {
       ['battery-right','Bateria direita',inner?98:105,-22,'weapon'],
       ['battery-core','Artilharia central',0,-38,'weapon'],
     ];
-    return points.map(([id,name,x,y,kind])=>({id,name,kind,offsetX:x*scale,offsetY:y*scale,width:34,height:34,hp,maxHp:hp,destroyed:false}));
+    return points.map(([id,name,x,y,kind])=>({id,name,kind,offsetX:x*scale,offsetY:y*scale,width:kind==='weapon'?34:22,height:kind==='weapon'?34:22,hp,maxHp:hp,destroyed:false}));
   }
 
   layer: 'shell' | 'inner' = 'shell';
@@ -103,12 +103,20 @@ export class BossTalassarca implements StageBoss {
     return { phase: this.phase, phaseChanged, shots, spawns: [], hp: this.hp, maxHp: this.maxHp, x: this.x, y: this.y, telegraph: this.isTelegraphing, defeated: this.phase === 'defeated' };
   }
 
-  damage(amount: number, hitX = this.x, hitY = this.y): BossHitResult {
+  damageArea(amount:number):BossHitResult {
+    if(!['shell','inner'].includes(this.phase)||!Number.isFinite(amount)||amount<=0)return {bossDamage:0,moduleDestroyed:null,killed:false};
+    const live=this.modules.filter(m=>!m.destroyed),share=Math.min(amount,this.hp)/Math.max(1,live.length);
+    for(const m of live){m.hp=Math.max(0,m.hp-share);if(m.hp===0)m.destroyed=true;}
+    return this.damage(amount,this.x,this.y);
+  }
+
+  damage(amount: number, hitX = this.x, hitY = this.y, moduleId?:string|null): BossHitResult {
     if (!Number.isFinite(amount) || amount <= 0 || !['shell', 'inner'].includes(this.phase)) return { bossDamage: 0, moduleDestroyed: null, killed: false };
     const applied = Math.min(amount, this.hp);
-    let remaining=applied;let broken:string|null=null;
-    const organs=this.modules.filter(m=>!m.destroyed).sort((a,b)=>Math.hypot(hitX-this.x-a.offsetX,hitY-this.y-a.offsetY)-Math.hypot(hitX-this.x-b.offsetX,hitY-this.y-b.offsetY));
-    for(const organ of organs){const hit=Math.min(remaining,organ.hp);organ.hp-=hit;remaining-=hit;if(organ.hp<=0){organ.destroyed=true;broken=organ.name;}if(remaining<=0)break;}
+    let broken:string|null=null;
+    // Only the actual piece under the impact receives local damage. No nearest-piece fallback or spill.
+    const organ=moduleId!==undefined?this.modules.find(m=>!m.destroyed&&m.id===moduleId):this.modules.find(m=>!m.destroyed&&((hitX-this.x-m.offsetX)/(m.width/2))**2+((hitY-this.y-m.offsetY)/(m.height/2))**2<=1.12);
+    if(organ){organ.hp=Math.max(0,organ.hp-applied);if(organ.hp===0){organ.destroyed=true;broken=organ.name;}}
     this.hp = Math.max(0, this.hp - applied);
     if (!this.hp && this.layer === 'shell') {
       this.phase = 'metamorphosis'; this.metamorphosisMs = 0; this.isTelegraphing = false;

@@ -320,7 +320,7 @@ export class StageDirector {
         if (cycle < 3100) enemy.secondShotFired = false;
         if (cycle >= 3100 && cycle < 4600 && !enemy.secondShotFired && enemy.y > 25 && enemy.y < 360 && this.attackCooldownMs<=0) {
           this.attackCooldownMs=180;
-          for (const angle of [-.18,.18]) shots.push({...this.aim(enemy,playerX,playerY,175,angle),sourceLayer:'surface'});
+          for (const angle of (enemy.surfaceVariant==='ambush'?[-.14,0,.14]:[-.18,.18])) shots.push({...this.aim(enemy,playerX,playerY,enemy.surfaceVariant==='ambush'?195:175,angle),sourceLayer:'surface'});
           enemy.secondShotFired = true;
         }
         continue;
@@ -346,7 +346,7 @@ export class StageDirector {
                 this.attackCooldownMs=180;
                 enemy.phase = 'attack';
                 enemy.phaseMs = 220;
-                shots.push(this.aim(enemy, playerX, playerY, 150 * bulletSpeedMult));
+                for(const angle of this.scrollPx>=2400?[-.16,0,.16]:[0])shots.push(this.aim(enemy, playerX, playerY, 150 * bulletSpeedMult,angle));
               }
               break;
             case 'attack':
@@ -598,9 +598,9 @@ export class StageDirector {
     return { killed: true, score: enemy.flight ? 40 : scoreMap[enemy.kind] || 100 };
   }
 
-  damageBoss(amount: number, hitX: number, hitY: number) {
+  damageBoss(amount: number, hitX: number, hitY: number, moduleId?:string|null) {
     if (!this.boss) return { bossDamage: 0, moduleDestroyed: null, killed: false };
-    return this.boss.damage(amount, hitX, hitY);
+    return this.boss.damage(amount, hitX, hitY,moduleId);
   }
 
   remove(id: number): void {

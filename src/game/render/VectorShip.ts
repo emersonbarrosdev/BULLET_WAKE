@@ -97,9 +97,11 @@ export class VectorShip extends Phaser.GameObjects.Container {
     this.coreDot = scene.add.graphics();
 
     this.add([this.shieldGraphics, this.graphics, this.coreDot]);
-    if ((pilotId === 'nolan'||pilotId==='lyra'||pilotId==='bento') && viewMode === 'top-down' && scene.textures.exists(pilotId==='bento'?'hd-peregrine':pilotId==='lyra'?'hd-kestrel':'hd-rivet')) {
-      this.paintedRivet = scene.add.sprite(0, 0, pilotId==='bento'?'hd-peregrine':pilotId==='lyra'?'hd-kestrel':'hd-rivet', 0).setDisplaySize(40, 40);
-      this.addAt(this.paintedRivet, 2);
+    const texture=({nolan:'rivet',cora:'moth',harlan:'knuckle',lyra:'kestrel',bento:'peregrine'} as Record<string,string>)[pilotId]??'rivet';
+    if (viewMode === 'top-down' && scene.textures.exists('hd-'+texture)) {
+      this.paintedRivet = scene.add.sprite(0,0,'hd-'+texture,0).setDisplaySize(40,40);
+      this.paintedRivet.setData('hullBottom',pilotId==='cora'?.78:pilotId==='harlan'?.86:.91);
+      this.addAt(this.paintedRivet,2);
     }
     this.setDepth(15);
     scene.add.existing(this);
@@ -168,17 +170,17 @@ export class VectorShip extends Phaser.GameObjects.Container {
     const roll = 0;
 
     // Renderiza a silhueta top-down autêntica de cada caça
-    if (this.pilotId === 'cora') {
-      this.drawMothTopDown(g, p, roll, isDashing);
-    } else if (this.pilotId === 'harlan') {
-      this.drawKnuckleTopDown(g, p, roll, isDashing);
-    } else if (this.paintedRivet) {
+    if (this.paintedRivet) {
       const frame = Math.floor(this.flamePhase / 5) % 4;
       this.paintedRivet.setFrame(frame);
       if (this.isHit) this.paintedRivet.setTint(0xffbdb4);
       else this.paintedRivet.clearTint();
       // The animated muzzle sprite owns firing feedback; no flat oval over the nose.
 
+    } else if(this.pilotId==='cora') {
+      this.drawMothTopDown(g,p,roll,isDashing);
+    } else if(this.pilotId==='harlan') {
+      this.drawKnuckleTopDown(g,p,roll,isDashing);
     } else {
       this.drawRivetTopDown(g, p, roll, isDashing);
     }

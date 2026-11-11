@@ -115,10 +115,10 @@ export const PILOT_WEAPON_SPECS: Record<string, WeaponSpecs> = {
 
 export const SPECIAL_DURATIONS: Record<SpecialType, number> = {
   comet: 2400,
-  orbital: 2200,
+  orbital: 2400,
   prism: 3000,  // Nolan: Tempestade Prismática
-  phantom: 650, // Cora: Salto Fantasma
-  nova: 900,    // Harlan: Ruptura Nova
+  phantom: 2400, // Cora: Salto Fantasma
+  nova: 2400,    // Harlan: Ruptura Nova
 };
 
 /** Each pilot owns one evolving primary weapon; families no longer form a cascade. */

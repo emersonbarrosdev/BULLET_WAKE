@@ -1,13 +1,18 @@
 import type { MusicTheme } from './musicScore';
-/** Sampled original 32-bar rock arrangements. Decoding is cached; stop invalidates pending fetches. */
+import { MusicCursor } from './MusicCursor';
+/** Sampled original 48-bar rock arrangements. Decoding is cached; stop invalidates pending fetches. */
 export class MusicTransport {
     private source?: AudioBufferSourceNode;
     private generation = 0;
     private buffers = new Map<MusicTheme, Promise<AudioBuffer>>();
     private error = false;
+    private cursor=new MusicCursor();
+    private theme?:MusicTheme;
+    private suspended=false;
     constructor(private ctx: AudioContext, private bus: AudioNode) { }
     start(theme: MusicTheme): void {
-        this.stop();
+        if(this.theme!==theme||!this.suspended){this.stop();this.theme=theme;}
+        this.suspended=false;
         const generation = this.generation;
         this.error = false;
         let pending = this.buffers.get(theme);
@@ -30,11 +35,16 @@ export class MusicTransport {
             gain.connect(this.bus);
             this.source = source;
             source.onended = () => { source.disconnect(); gain.disconnect(); };
-            source.start();
+            source.start(0,this.cursor.start(this.ctx.currentTime,buffer.duration));
         }).catch(() => { if (generation === this.generation)
             this.error = true; this.buffers.delete(theme); });
     }
-    stop(): void { this.generation++; if (this.source) {
+    pause():void {if(this.suspended||!this.theme)return;this.cursor.pause(this.ctx.currentTime);this.suspended=true;this.halt();}
+    resume():void {if(this.suspended&&this.theme)this.start(this.theme);}
+    get position():number{return this.cursor.position(this.ctx.currentTime);}
+    get paused():boolean{return this.suspended;}
+    stop():void{this.halt();this.cursor.reset();this.theme=undefined;this.suspended=false;}
+    private halt(): void { this.generation++; if (this.source) {
         try {
             this.source.stop();
         }

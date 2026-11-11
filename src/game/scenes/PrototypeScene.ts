@@ -1,9 +1,9 @@
 import { destructionPlan } from '../systems/destructionSystem';
-import { PilotRadio } from '../systems/pilotRadioSystem';
+import { DamageRegions } from '../systems/damageRegions';
+import { PilotRadio, type RadioSnapshot } from '../systems/pilotRadioSystem';
 import { recoveryPayloads, recoverArmament } from '../systems/recoverySystem';
-import { spriteContact } from '../render/SpriteSilhouette';
-import { RIVET_HULL } from '../systems/hullCollision';
-import { continueWeapons, NORMAL_BOSS_SHOT_SCALE, RIVET_MISSILE_INTERVAL_MS } from '../systems/normalBalance';
+import { spriteContact, spritesOverlap } from '../render/SpriteSilhouette';
+import { continueWeapons, primaryBossFactor, NORMAL_BOSS_SHOT_SCALE, RIVET_MISSILE_INTERVAL_MS } from '../systems/normalBalance';
 import { PrismStrike } from '../render/PrismStrike';
 import { CombatBriefing } from '../ui/CombatBriefing';
 import { CombatLoading } from '../ui/CombatLoading';
@@ -102,6 +102,7 @@ interface EnemyVisual {
 }
 
 interface BossVisual {
+  morphNext?:Phaser.GameObjects.Sprite;
   mounts?: Phaser.GameObjects.Sprite[];
   name: string;
   container: Phaser.GameObjects.Container;
@@ -158,6 +159,8 @@ export class PrototypeScene extends Phaser.Scene {
   private specialBossHit = false;
   private checkpointDistance = 0;
   private resumeWeapons?: PlayerWeaponsState;
+  private resumeRadio?:RadioSnapshot;
+  private damageRegions=new Map<string|number,DamageRegions>();
   private triggerCadence: TriggerCadence = {holdMs:0,tapMs:0};
   private bentoBarrel=1;
   private totalKills = 0;
@@ -172,12 +175,12 @@ export class PrototypeScene extends Phaser.Scene {
     super({ key: 'PrototypeScene' });
   }
 
-  init(data: { pilotId?: string; stageNumber?: number; skipBriefing?: boolean; checkpointDistance?:number; resumeWeapons?:PlayerWeaponsState } = {}): void {
+  init(data: { pilotId?: string; stageNumber?: number; skipBriefing?: boolean; checkpointDistance?:number; resumeWeapons?:PlayerWeaponsState; radioSnapshot?:RadioSnapshot } = {}): void {
     this.pilot = getPilot(data.pilotId);
     this.skipBriefing = !!data.skipBriefing || !!data.resumeWeapons;
     this.stageNumber = 1;globalAudio.setEnvironment('atmosphere');
     this.checkpointDistance = data.checkpointDistance ?? 0;
-    this.resumeWeapons=data.resumeWeapons;
+    this.resumeWeapons=data.resumeWeapons;this.resumeRadio=data.radioSnapshot;
     this.entryLoadFailed=false;
     if(!this.skipBriefing){
       this.entryLoading=new CombatLoading('CARREGANDO OPERAÇÃO', 'Preparando a Fenda Pelágica.');
@@ -219,7 +222,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.weapons = this.resumeWeapons??createPlayerWeapons(this.pilot.id);
     this.scoreCombo = initialScoreCombo();
     this.health = initialPlayerHealth();
-    this.radio=new PilotRadio(this.pilot.id);this.radioBossLayer='';
+    this.radio=new PilotRadio(this.pilot.id);if(this.resumeRadio)this.radio.restore(this.resumeRadio);this.radioBossLayer='';this.damageRegions.clear();
     if(this.resumeWeapons)this.health.invulnerableMs=2000;
     this.totalKills = 0;this.bentoBarrel=1;
     this.completed = false;
@@ -277,9 +280,9 @@ export class PrototypeScene extends Phaser.Scene {
 
   private openBriefing(preflight: boolean): void {
     if (this.briefing || this.health.gameOver || this.completed) return;
-    globalAudio.stopMusic();
+    globalAudio.pauseMusic();
     this.briefing = new CombatBriefing(this, preflight,
-      () => { this.briefing=undefined;this.inputManager.resetPad();if(this.director.boss)globalAudio.startBossMusic();else globalAudio.startStageMusic(); },
+      () => { this.briefing=undefined;this.inputManager.resetPad();globalAudio.resumeMusic(); },
       () => { this.briefing=undefined;this.restart(); },
       () => { this.briefing=undefined;globalAudio.stopMusic();this.scene.start('TitleScene'); });
   }
@@ -511,6 +514,7 @@ export class PrototypeScene extends Phaser.Scene {
           () => this.scene.start('EndingScene',{pilotId:this.pilot.id,score:this.scoreCombo.score,stageNumber:1}),
           () => this.restart(),
           () => this.choosePilot(),
+          this.pilot.name+' — '+this.radio.message,
         ));
       }
     }
@@ -523,7 +527,7 @@ export class PrototypeScene extends Phaser.Scene {
   private continueFromCheckpoint():void {
     const distance=this.director.scrollPx;
     const checkpoint=distance>=3200?3200:distance>=2100?2100:distance>=1000?1000:0;
-    this.scene.restart({pilotId:this.pilot.id,stageNumber:1,checkpointDistance:checkpoint,resumeWeapons:continueWeapons(this.weapons,checkpoint)});
+    this.scene.restart({pilotId:this.pilot.id,stageNumber:1,checkpointDistance:checkpoint,resumeWeapons:continueWeapons(this.weapons,checkpoint),radioSnapshot:this.radio.snapshot()});
   }
 
   private choosePilot(): void {
@@ -675,29 +679,35 @@ export class PrototypeScene extends Phaser.Scene {
           this.applyDamageToEnemy(dmgEvent.targetId, dmgEvent.damage*this.pilot.damage, dmgEvent.hitX, dmgEvent.hitY);
         }
       } else if (dmgEvent.targetId === 'boss' && this.director.boss) {
-        this.applyBossDamage(dmgEvent.damage*this.pilot.damage, dmgEvent.hitX, dmgEvent.hitY);
+        this.applyBossDamage(dmgEvent.damage*this.pilot.damage*primaryBossFactor(this.pilot.id,this.director.boss.name), dmgEvent.hitX, dmgEvent.hitY);
       }
     }
   }
 
-  private applyBossDamage(damage: number, hitX: number, hitY: number): void {
+  private applyBossDamage(damage: number, hitX: number, hitY: number, area = false): void {
     const boss = this.director.boss;
     if (!boss || ['intro', 'metamorphosis', 'defeated'].includes(boss.phase)) return;
 
-    const bossHit = this.director.damageBoss(damage, hitX, hitY);
+    const moduleIndex=this.bossVisual?.mounts?.findIndex(m=>spriteContact(m,hitX,hitY,hitX,hitY,3)!==null)??-1;
+    const moduleId=moduleIndex>=0?boss.modules?.[moduleIndex]?.id??null:null;
+    const bossHit = area&&boss.damageArea ? boss.damageArea(damage) : this.director.damageBoss(damage, hitX, hitY,moduleId);
     if (bossHit.bossDamage > 0) {
+      this.trackDamage(boss.name+boss.layer,hitX-boss.x,hitY-boss.y,bossHit.bossDamage);
       this.playEffect(bossHit.killed ? 'explosion' : 'hit', hitX, hitY);
       globalAudio.playHit();
       this.hud.showBossBar(boss.name, boss.hp, boss.maxHp);
       if (bossHit.moduleDestroyed) {
-        this.clearEnemyShots();
+        if(boss.phase==='metamorphosis')this.clearEnemyShots();
         this.explodeLayers(hitX,hitY,boss.phase==='metamorphosis'?100:24,hitX,hitY,boss.phase==='metamorphosis');
         globalAudio.playExplosion(true);
         this.hud.flash(boss.phase==='metamorphosis' ? 'CASCA ROMPIDA · METAMORFOSE' : `PARTE DESTRUÍDA: ${bossHit.moduleDestroyed.toUpperCase()}`, '#ffd488', 1800);
       }
       if (bossHit.killed) {
+        this.bossVisual?.mounts?.forEach(m=>m.setVisible(false));this.bossVisual?.morphNext?.setVisible(false);
         this.radio.offer(boss.name==='RAIA-DENTE'?'miniboss':'victory',true);
-        this.explodeLayers(boss.x,boss.y,boss.name==='TALASSARCA'?150:65,hitX,hitY,true);
+        const hot=this.damageRegions.get(boss.name+boss.layer)?.strongest();
+        this.explodeLayers(boss.x,boss.y,boss.name==='TALASSARCA'?150:65,boss.x+(hot?.x??0),boss.y+(hot?.y??0),true);
+        this.fadeCorpse(this.bossVisual?.main,true);
         globalAudio.playExplosion(true);
         this.hud.flash(`${boss.name.toUpperCase()} ELIMINADO!`, '#a3ffb8', 2500);
       }
@@ -749,10 +759,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.weapons = result.state;
     this.hud.setSpecialStock(this.weapons.specialCharges, true);
     this.clearEnemyShots();
-    // Fixed budget per activation, independent of FPS and visual duration.
     const boss = this.director.boss;
-    if (boss && this.weapons.specialType !== 'prism') this.applyBossDamage(SPECIAL_BOSS_DAMAGE, boss.x, boss.y);
-    if(this.weapons.specialType !== 'prism')for (const e of [...this.director.enemies]) if (!e.submerged) this.applyDamageToEnemy(e.id, 8);
     globalAudio.playSpecial(this.weapons.specialType);
 
     if (this.weapons.specialType === 'prism') {
@@ -762,19 +769,30 @@ export class PrototypeScene extends Phaser.Scene {
     } else if (this.weapons.specialType === 'phantom') {
       this.phantomDashTimerMs = 650;
       this.hud.flash('SALTO FANTASMA!', '#7df9ff', 1200);
+      for(const delay of [150,350,550])this.time.delayedCall(delay,()=>{const target=this.director.boss;this.specialImpact(target?.x??this.ship.x,target?.y??this.ship.y,SPECIAL_BOSS_DAMAGE/3,150);});
     } else if (this.weapons.specialType === 'orbital') {
       this.hud.flash('COROA ORBITAL!', '#90f5c0', 1400);
-      for(let i=0;i<6;i++){const x=PLAYFIELD_X+PLAYFIELD_WIDTH*(i+1)/7;const lance=this.add.sprite(x,-30,'review-effects-charge',0).play('review-effects-charge-loop').setTint(0x85ffba).setDisplaySize(28,110).setDepth(12);this.tweens.add({targets:lance,x:boss?.x??this.ship.x,y:boss?.y??80,delay:i*120,duration:700,onComplete:()=>{this.playEffect('explosion',lance.x,lance.y);lance.destroy();}});}
+      for(let i=0;i<6;i++){
+        const x=PLAYFIELD_X+PLAYFIELD_WIDTH*(i+1)/7;
+        const target=boss??this.director.enemies.filter(e=>!e.submerged)[i%Math.max(1,this.director.enemies.length)];
+        const tx=target?.x??x,ty=target?.y??130;
+        const lance=this.add.sprite(x,-30,'hd-special-orbital',0).setDisplaySize(58,110).setDepth(12);
+        this.tweens.add({targets:lance,x:tx,y:ty,delay:i*120,duration:700,onUpdate:()=>lance.setFrame(Math.floor(this.time.now/120)%2),onComplete:()=>{this.specialImpact(tx,ty,SPECIAL_BOSS_DAMAGE/6,90);this.finishSpecialSprite(lance,'hd-special-orbital');}});
+      }
      } else if (this.weapons.specialType === 'comet') {
       this.hud.flash('CHUVA DE COMETAS!', '#99ceff', 1400);
       for(let i=0;i<8;i++)this.time.delayedCall(i*170,()=>{
         const fromLeft=i%2===0,x=fromLeft?PLAYFIELD_X-30:PLAYFIELD_RIGHT+30;
-        const comet=this.add.sprite(x,35+i*36,'review-effects-missile',0).play('review-effects-missile-loop').setTint(0x9bcfff).setDisplaySize(20,65).setRotation(fromLeft?Math.PI/3:-Math.PI/3).setDepth(18);
-        this.tweens.add({targets:comet,x:fromLeft?PLAYFIELD_RIGHT+30:PLAYFIELD_X-30,y:220+i*20,duration:650,onComplete:()=>{this.particles.burst(comet.x,comet.y,.6,false,0x8dcfff);comet.destroy();}});
+        const targetY=boss?.y??70+(i%4)*75;
+        const comet=this.add.sprite(x,targetY-45,'hd-special-comet',0).setDisplaySize(76,90).setRotation(fromLeft?Math.PI/3:-Math.PI/3).setDepth(18);
+        this.tweens.add({targets:comet,x:boss?.x??PLAYFIELD_X+PLAYFIELD_WIDTH/2,y:targetY,duration:400,onComplete:()=>{
+          this.specialImpact(comet.x,comet.y,SPECIAL_BOSS_DAMAGE/8,110);comet.setRotation(0);this.finishSpecialSprite(comet,'hd-special-comet');
+        }});
       });
     } else if (this.weapons.specialType === 'nova') {
       this.hud.flash('RUPTURA NOVA!', '#ffb66a', 1500);
       this.emitRupturaNova();
+      this.time.delayedCall(180,()=>{const target=this.director.boss;this.specialImpact(target?.x??this.ship.x,target?.y??this.ship.y,SPECIAL_BOSS_DAMAGE,500);});
     }
   }
 
@@ -799,31 +817,26 @@ export class PrototypeScene extends Phaser.Scene {
     if(elapsed>=580&&!this.specialBossHit){
       this.specialBossHit=true;
       const boss=this.director.boss;
-      if(boss)this.applyBossDamage(SPECIAL_BOSS_DAMAGE,boss.x,boss.y);
+      if(boss)this.applyBossDamage(SPECIAL_BOSS_DAMAGE,boss.x,boss.y,true);
     }
   }
 
+  private specialImpact(x:number,y:number,budget:number,radius:number):void {
+    if(this.completed||this.health.gameOver)return;
+    const boss=this.director.boss;
+    if(boss&&Math.hypot(boss.x-x,boss.y-y)<=radius+(boss.bodyRadiusY??65))this.applyBossDamage(budget,x,y,true);
+    for(const e of [...this.director.enemies])if(!e.submerged&&Math.hypot(e.x-x,e.y-y)<radius)this.applyDamageToEnemy(e.id,8*budget/SPECIAL_BOSS_DAMAGE,e.x,e.y);
+    this.clearEnemyShots();this.particles.burst(x,y,.8);globalAudio.playExplosion(budget>=100);
+  }
+  private finishSpecialSprite(sprite:Phaser.GameObjects.Sprite,key:string):void {
+    sprite.setTexture(key,2).setDisplaySize(95,95);
+    this.time.delayedCall(120,()=>sprite.setFrame(3));
+    this.tweens.add({targets:sprite,alpha:0,duration:320,onComplete:()=>sprite.destroy()});
+  }
   private spawnPhantomAfterimage(): void {
-    if (this.pilot.id === 'nolan') {
-      const ghost = this.add.image(this.vectorShip.x, this.vectorShip.y, 'hd-rivet', 0)
-        .setDisplaySize(54, 54).setTint(0xffa457).setAlpha(.3).setDepth(6);
-      this.tweens.add({ targets: ghost, alpha: 0, duration: 260, onComplete: () => ghost.destroy() });
-      return;
-    }
-    const ghost = this.add.graphics();
-    ghost.fillStyle(0x38bdf8, 0.45);
-    ghost.fillTriangle(
-      this.vectorShip.x, this.vectorShip.y - 18,
-      this.vectorShip.x - 14, this.vectorShip.y + 14,
-      this.vectorShip.x + 14, this.vectorShip.y + 14,
-    );
-    ghost.setDepth(6);
-    this.tweens.add({
-      targets: ghost,
-      alpha: 0,
-      duration: 260,
-      onComplete: () => ghost.destroy(),
-    });
+    const hull=this.ship.hullSprite;if(!hull)return;
+    const ghost=this.add.image(this.ship.x,this.ship.y,hull.texture.key,hull.frame.name).setDisplaySize(40,40).setTint(0x93eeff).setAlpha(.45).setDepth(6);
+    this.tweens.add({targets:ghost,alpha:0,duration:280,onComplete:()=>ghost.destroy()});
   }
 
   private emitRupturaNova(): void {
@@ -842,12 +855,6 @@ export class PrototypeScene extends Phaser.Scene {
       }
     }
 
-    // Causa dano em área
-    for (const enemy of this.director.enemies) {
-      if (Math.hypot(enemy.x - this.vectorShip.x, enemy.y - this.vectorShip.y) <= radius + 30) {
-        this.applyDamageToEnemy(enemy.id, 9.5);
-      }
-    }
   }
 
   private makeEnemyVisual(enemy: EnemyModel): void {
@@ -915,7 +922,7 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private checkPickupCollisions(): void {
-    const collected = this.pickups.checkCollection(this.ship.x, this.ship.y, this.vectorShip.hitRadius, true);
+    const collected = this.pickups.checkCollection(this.ship.x, this.ship.y, this.vectorShip.hitRadius, false, (x,y,r)=>{const hull=this.ship.hullSprite;return !!hull&&spriteContact(hull,x,y,x,y,r)!==null;});
     for (const item of collected) {
       if(item.type!=='power')globalAudio.playPickup(item.type);
       const color=Phaser.Display.Color.HexStringToColor(PICKUP_GUIDE[item.type].color).color;
@@ -1007,9 +1014,9 @@ export class PrototypeScene extends Phaser.Scene {
     const layer=boss.name+boss.layer;if(layer!==this.radioBossLayer){this.radioBossLayer=layer;this.radio.offer('boss');}
     if(this.bossVisual?.name!==boss.name){this.bossVisual?.container.destroy();this.bossVisual=undefined;}
     const transforming = boss.phase === 'metamorphosis';
-    const key = boss.name==='RAIA-DENTE' ? 'polish-raia' : boss.layer==='inner' ? 'hd-inner-top' : 'hd-talassarca-top';
+    const key = transforming?'hd-metamorphosis-top':boss.name==='RAIA-DENTE' ? 'polish-raia' : boss.layer==='inner' ? 'hd-inner-top' : 'hd-talassarca-top';
     const size = transforming
-      ? PLAYFIELD_WIDTH*(1.02+.28*(boss.metamorphosisMs??0)/METAMORPHOSIS_MS)
+      ? PLAYFIELD_WIDTH*(1.20+.18*(boss.metamorphosisMs??0)/METAMORPHOSIS_MS)
       : boss.displayWidth ?? 175;
     if(!this.bossVisual){
       const main=this.add.sprite(0,0,key,0);
@@ -1028,10 +1035,16 @@ export class PrototypeScene extends Phaser.Scene {
 
     }
     const frameMs=boss.name==='RAIA-DENTE'?125:boss.layer==='inner'?110:160;
-    const frame=transforming ? Math.floor(this.time.now/180)%4 : Math.floor(this.time.now/frameMs)%(boss.name==='RAIA-DENTE'?8:4);
+    const frame=transforming ? Math.min(3,Math.floor((boss.metamorphosisMs??0)/(METAMORPHOSIS_MS/4))) : Math.floor(this.time.now/frameMs)%(boss.name==='RAIA-DENTE'?8:4);
     this.bossVisual.main.setTexture(key,frame).setDisplaySize(size,size);
+    if(transforming){
+      this.bossVisual.morphNext??=this.add.sprite(0,0,key,0);
+      if(!this.bossVisual.container.exists(this.bossVisual.morphNext))this.bossVisual.container.add(this.bossVisual.morphNext);
+      const phase=(boss.metamorphosisMs??0)/(METAMORPHOSIS_MS/4),mix=Phaser.Math.SmoothStep(phase%1,0,1);
+      this.bossVisual.morphNext.setTexture(key,Math.min(3,frame+1)).setDisplaySize(size,size).setAlpha(frame<3?mix:0).setVisible(true);
+    }else this.bossVisual.morphNext?.setVisible(false);
     if(boss.isTelegraphing&&!transforming) this.bossVisual.main.setTint(0xffdfcc);else this.bossVisual.main.clearTint();
-    this.bossVisual.main.setAlpha(transforming?.6+.3*Math.sin((boss.metamorphosisMs??0)/90):1);
+    this.bossVisual.main.setAlpha(1);
     if(transforming) this.clearEnemyShots();
   }
 
@@ -1052,13 +1065,15 @@ export class PrototypeScene extends Phaser.Scene {
     const targetBefore = this.director.enemies.find(e => e.id === enemyId);
     if(!targetBefore || targetBefore.submerged || amount<=0)return;
     const {x,y} = targetBefore;
+    this.trackDamage(enemyId,(impactX??x)-x,(impactY??y)-y,Math.min(amount,targetBefore.hp));
     const hit = this.director.damage(enemyId, amount);
 
     if (hit.killed) {
       this.radio.kill();
       this.totalKills++;
-      if(!targetBefore.carrier&&(targetBefore.kind==='cutter'||targetBefore.maxHp>=6))this.explodeLayers(x,y,23,impactX??x,impactY??y);
-      else this.playEffect('explosion', x, y);
+      if(!targetBefore.carrier&&(targetBefore.kind==='cutter'||targetBefore.maxHp>=5)){const hot=this.damageRegions.get(enemyId)?.strongest();this.explodeLayers(x,y,23,x+(hot?.x??0),y+(hot?.y??0));this.fadeCorpse(this.enemyVisuals.get(enemyId)?.body);}
+      this.damageRegions.delete(enemyId);
+      if(targetBefore.carrier||targetBefore.maxHp<5)this.playEffect('explosion', x, y);
       globalAudio.playExplosion(false);
 
       const killResult = registerKill(this.scoreCombo, hit.score);
@@ -1067,7 +1082,7 @@ export class PrototypeScene extends Phaser.Scene {
       this.spawnScorePopup(hit.score, x, y);
 
 
-      // Only the final evolution cargo adapts to the current cascade gate.
+      // Explicit supply carriers are the only source of ordinary drops.
       const dropType = targetBefore?.carrier ? targetBefore.drop : null;
       if (dropType) {
         this.pickups.spawn(dropType === 'weapon_green' ? evolutionCargo(this.weapons) : dropType, x, y);
@@ -1129,7 +1144,7 @@ export class PrototypeScene extends Phaser.Scene {
       for(const contact of contacts){
         const x=fromX+(shot.node.x-fromX)*contact.t,y=fromY+(shot.node.y-fromY)*contact.t;
         shot.hitTargets?.add(contact.id);
-        if(contact.id==='boss')this.applyBossDamage(shot.damage*NORMAL_BOSS_SHOT_SCALE,x,y);
+        if(contact.id==='boss')this.applyBossDamage(shot.damage*NORMAL_BOSS_SHOT_SCALE*primaryBossFactor(this.pilot.id,boss!.name),x,y);
         else this.applyDamageToEnemy(contact.id,shot.damage*(shot.piercing?.5:.36),x,y);
         if(!shot.piercing){collided=true;break;}
       }
@@ -1150,19 +1165,23 @@ export class PrototypeScene extends Phaser.Scene {
   private bossContact(ax:number,ay:number,bx:number,by:number,radius:number):number|null {
     if(!this.bossVisual)return null;
     let first:number|null=null;
-    for(const sprite of [this.bossVisual.main,...(this.bossVisual.mounts??[])]){
+    const boss=this.director.boss;
+    const parts=boss?.name==='TALASSARCA'?(this.bossVisual.mounts??[]):[this.bossVisual.main];
+    for(const sprite of parts){
       const t=spriteContact(sprite,ax,ay,bx,by,radius);if(t!==null&&(first===null||t<first))first=t;
+    }
+    if(boss?.name==='TALASSARCA'){
+      const dx=bx-ax,dy=by-ay,ox=ax-boss.x,oy=ay-boss.y;
+      const r=32+radius,A=dx*dx+dy*dy,B=2*(ox*dx+oy*dy),C=ox*ox+oy*oy-r*r,D=B*B-4*A*C;
+      const t=C<=0?0:A>0&&D>=0?(-B-Math.sqrt(D))/(2*A):-1;
+      if(t>=0&&t<=1&&(first===null||t<first))first=t;
     }
     return first;
   }
 
   private hullTouchesSprite(body:Phaser.GameObjects.Sprite):boolean {
-    const scale=this.pilot.id==='nolan'?.87:1;
-    for(let i=0;i<RIVET_HULL.length;i++){
-      const a=RIVET_HULL[i],b=RIVET_HULL[(i+1)%RIVET_HULL.length];
-      if(spriteContact(body,this.ship.x+a.x*scale,this.ship.y+a.y*scale,this.ship.x+b.x*scale,this.ship.y+b.y*scale,0)!==null)return true;
-    }
-    return spriteContact(body,this.ship.x,this.ship.y,this.ship.x,this.ship.y)!==null;
+    const hull=this.ship.hullSprite;
+    return hull ? spritesOverlap(hull,body) : false;
   }
 
   private checkEnemyContacts(): void {
@@ -1171,7 +1190,8 @@ export class PrototypeScene extends Phaser.Scene {
       const body=this.enemyVisuals.get(enemy.id)?.body;
       if(!body||!this.hullTouchesSprite(body))continue;
       this.director.remove(enemy.id);
-      this.playEffect('explosion',enemy.x,enemy.y);globalAudio.playExplosion(false);
+      if(enemy.maxHp>=5){const hot=this.damageRegions.get(enemy.id)?.strongest();this.explodeLayers(enemy.x,enemy.y,23,enemy.x+(hot?.x??0),enemy.y+(hot?.y??0));this.fadeCorpse(body);}else this.playEffect('explosion',enemy.x,enemy.y);
+      this.damageRegions.delete(enemy.id);globalAudio.playExplosion(false);
       this.damageShip(30);
       this.syncEnemyVisuals();
       if(this.health.gameOver)return;
@@ -1220,7 +1240,7 @@ export class PrototypeScene extends Phaser.Scene {
 
   private damageShip(damage=20, impactX=this.ship.x, impactY=this.ship.y): HitEvent {
     if(damage<=0)return 'ignored';
-    if(this.weapons.specialActiveMs>0 || this.director.boss?.phase==='metamorphosis')return 'ignored';
+    if((this.weapons.specialActiveMs>0&&this.weapons.specialDurationMs-this.weapons.specialActiveMs<1800) || this.director.boss?.phase==='metamorphosis')return 'ignored';
     // Se o jogador estiver em invulnerabilidade ativa, descarta qualquer dano
     if (this.health.invulnerableMs > 0) {
       return 'ignored';
@@ -1278,6 +1298,16 @@ export class PrototypeScene extends Phaser.Scene {
       item.recovery=recovery;
     });
     this.syncPickupVisuals();
+  }
+
+  private trackDamage(id:string|number,x:number,y:number,damage:number):void {
+    let heat=this.damageRegions.get(id);if(!heat){heat=new DamageRegions();this.damageRegions.set(id,heat);}heat.add(x,y,damage);
+  }
+  private fadeCorpse(body?:Phaser.GameObjects.Sprite,boss=false):void {
+    if(!body)return;const matrix=body.getWorldTransformMatrix();
+    const corpse=this.add.image(matrix.tx,matrix.ty,body.texture.key,body.frame.name).setDisplaySize(body.displayWidth,body.displayHeight).setDepth(4).setTint(0x9a5f53).setAlpha(.55);
+    this.tweens.add({targets:corpse,alpha:0,y:corpse.y+(boss?28:14),scaleX:corpse.scaleX*.92,scaleY:corpse.scaleY*.92,duration:boss?1050:480,onComplete:()=>corpse.destroy()});
+    body.setVisible(false);
   }
 
   private explodeLayers(x:number,y:number,radius:number,impactX=x,impactY=y,boss=false):void {

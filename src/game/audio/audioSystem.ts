@@ -1,8 +1,9 @@
 import { MusicTransport } from './MusicTransport';
+import { cannonSamples } from './cannonSamples';
 import type { MusicTheme } from './musicScore';
 /**
- * BULLET WAKE — Sistema de Áudio Autoral e Procedural via Web Audio API.
- * Sem arquivos externos pesados, latência zero, 100% responsivo e arcade sci-fi.
+ * BULLET WAKE — Áudio autoral: trilhas amostradas, canhão pré-renderizado e efeitos por Web Audio.
+ * Fontes curtas e mix limitado para preservar impactos durante o combate.
  */
 
 export class AudioSystem {
@@ -11,6 +12,8 @@ export class AudioSystem {
   private sfxGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
   private noiseBuffer: AudioBuffer | null = null;
+  private cannonBuffers?:AudioBuffer[];
+  private cannonIndex=0;
   private readonly lastSound = new Map<string, number>();
 
   private isMuted = false;
@@ -84,15 +87,12 @@ export class AudioSystem {
     const now = this.ctx.currentTime;
 
     if (pilotId === 'nolan'||pilotId==='lyra'||pilotId==='bento') {
-      // Short mechanical cannon reports in a three-round cluster, rather than a pitched laser chirp.
-      for(let i=0;i<3;i++){
-        const when=now+i*.031,source=this.ctx.createBufferSource(),filter=this.ctx.createBiquadFilter(),gain=this.ctx.createGain();
-        if(!this.noiseBuffer){this.noiseBuffer=this.ctx.createBuffer(1,Math.ceil(this.ctx.sampleRate*.5),this.ctx.sampleRate);const data=this.noiseBuffer.getChannelData(0);for(let n=0;n<data.length;n++)data[n]=Math.random()*2-1;}
-        source.buffer=this.noiseBuffer;filter.type='bandpass';filter.frequency.value=1700;filter.Q.value=.7;
-        gain.gain.setValueAtTime(.0001,when);gain.gain.linearRampToValueAtTime(.19+level*.008,when+.001);gain.gain.exponentialRampToValueAtTime(.0001,when+.035);
-        source.connect(filter);filter.connect(gain);gain.connect(this.sfxGain);source.start(when);source.stop(when+.04);source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();};
-        this.tone('triangle',145,60,.035,.075,i*.031);
-      }
+      this.cannonBuffers??=cannonSamples(this.ctx);
+      const source=this.ctx.createBufferSource(),gain=this.ctx.createGain();
+      source.buffer=this.cannonBuffers[this.cannonIndex++%this.cannonBuffers.length];
+      source.playbackRate.value=pilotId==='bento'?1.1:pilotId==='lyra'?1.06:1;
+      gain.gain.value=.38+Math.min(level,4)*.025;
+      source.connect(gain);gain.connect(this.sfxGain);source.onended=()=>{source.disconnect();gain.disconnect();};source.start(now);
     } else if (pilotId === 'cora') {
       // Laser fino agudo com harmônicos
       const osc = this.ctx.createOscillator();
@@ -199,7 +199,7 @@ export class AudioSystem {
     mod.type='sine';mod.frequency.setValueAtTime(flutter,now);depth.gain.value=from*.22;
     mod.connect(depth);depth.connect(osc.frequency);
     filter.type='bandpass';filter.Q.value=1.3;filter.frequency.setValueAtTime(from*1.7,now);filter.frequency.exponentialRampToValueAtTime(to*1.3,now+.16);
-    gain.gain.setValueAtTime(.0001,now);gain.gain.linearRampToValueAtTime(.16,now+.008);gain.gain.exponentialRampToValueAtTime(.0001,now+.18);
+    gain.gain.setValueAtTime(.0001,now);gain.gain.linearRampToValueAtTime(.105,now+.008);gain.gain.exponentialRampToValueAtTime(.0001,now+.18);
     osc.connect(filter);filter.connect(gain);gain.connect(this.sfxGain);
     osc.onended=()=>{osc.disconnect();mod.disconnect();depth.disconnect();filter.disconnect();gain.disconnect();};
     osc.start(now);mod.start(now);osc.stop(now+.18);mod.stop(now+.18);
@@ -218,7 +218,9 @@ export class AudioSystem {
     this.unlock();
     if (!this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
     if(!this.allowSound(isLarge?'explosion-large':'explosion',isLarge?.08:.04))return;
-    this.noise(isLarge?.38:.19,isLarge?.45:.28,isLarge?4200:3300);
+    this.noise(isLarge?.46:.23,isLarge?.40:.26,isLarge?3600:2900);
+    this.tone('triangle',isLarge?610:800,isLarge?190:270,.075,isLarge?.12:.075);
+    if(isLarge)this.tone('sine',63,27,.6,.22,.035);
     this.tone('sine',isLarge?150:220,35,isLarge?.35:.16,isLarge?.38:.22);
   }
 
@@ -417,8 +419,10 @@ export class AudioSystem {
   startMenuMusic():void{this.startTrack('menu');}
   startStageMusic():void{this.startTrack('stage1');}
   startBossMusic():void{this.startTrack('boss');}
+  pauseMusic():void{this.transport?.pause();}
+  resumeMusic():void{if(this.environment!=='space')this.transport?.resume();}
   stopMusic():void{this.transport?.stop();this.currentTrack='none';}
-  getStatus(){return {environment:this.environment,track:this.currentTrack,voices:this.transport?.activeVoices??0,musicLoadFailed:this.transport?.loadFailed??false,master:this.masterGain?.gain.value??0,sfx:this.sfxVolume,music:this.musicVolume};}
+  getStatus(){return {environment:this.environment,track:this.currentTrack,position:this.transport?.position??0,paused:this.transport?.paused??false,voices:this.transport?.activeVoices??0,musicLoadFailed:this.transport?.loadFailed??false,master:this.masterGain?.gain.value??0,sfx:this.sfxVolume,music:this.musicVolume};}
 }
 
 export const globalAudio = new AudioSystem();
