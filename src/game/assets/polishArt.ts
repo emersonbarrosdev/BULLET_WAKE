@@ -4,7 +4,7 @@ export const POLISH_SHEETS = {
   scout: [256, 256, 8], dart: [256, 256, 8], lancer: [256, 256, 8], cutter: [256, 256, 8],
   surface: [256, 256, 8], ambush: [256, 256, 8], carrier: [256, 256, 8],
   ocean: [256, 512, 8], turbulent: [256, 512, 8], rift: [256, 512, 8], inner: [512, 512, 8], metamorphosis: [512, 512, 8], special: [384, 384, 8], talassarca: [512, 512, 8], raia: [384, 384, 8],
-  explosion: [192, 192, 16], blue: [128, 128, 8], green: [128, 128, 8], fire: [128, 128, 8],
+  explosion: [192, 192, 16], blue: [128, 128, 8], 'rivet-red': [128, 128, 8], green: [128, 128, 8], fire: [128, 128, 8],
 } as const;
 
 export function loadPolishArt(scene: Phaser.Scene, base: string): void {
@@ -15,7 +15,7 @@ export function loadPolishArt(scene: Phaser.Scene, base: string): void {
 }
 
 export function registerPolishArt(scene: Phaser.Scene): void {
-  const rates:Record<string,number>={scout:11,dart:13,lancer:8,cutter:7,carrier:6,raia:8,talassarca:6,inner:9,blue:20,green:18,fire:18};
+  const rates:Record<string,number>={scout:11,dart:13,lancer:8,cutter:7,carrier:6,raia:8,talassarca:6,inner:9,blue:20,'rivet-red':20,green:18,fire:18};
   for (const [name, [, , frames]] of Object.entries(POLISH_SHEETS)) {
     const key = 'polish-' + name;
     scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);

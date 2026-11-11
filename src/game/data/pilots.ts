@@ -30,7 +30,7 @@ export const PILOTS: readonly PilotDefinition[] = [
     nationality: 'Egípcio',
     callsign: 'CORRIDOR VANGUARD',
     shipName: 'Rivet',
-    role: 'DISPERSÃO AZUL',
+    role: 'DISPERSÃO VERMELHA',
     specialName: 'TEMPESTADE PRISMATICA',
     specialDescription: 'Três salvas de bombardeio prismático: varredura da arena, impactos e proteção temporária.',
     bio: 'Piloto egípcio. Desonrado por abandonar uma ordem e salvar civis, procura o irmão que o comando declarou perdido.',
@@ -40,7 +40,7 @@ export const PILOTS: readonly PilotDefinition[] = [
     damage: 1,
     hullColor: 0x263447,
     accentColor: 0x61d7da,
-    projectileColor: 0x61d7da,
+    projectileColor: 0xff4a45,
   },
   {
     id: 'cora',

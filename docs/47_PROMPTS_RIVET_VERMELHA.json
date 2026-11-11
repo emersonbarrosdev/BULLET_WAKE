@@ -1,0 +1,55 @@
+{
+  "tool": "image_gen native",
+  "created": "2026-11-11",
+  "assets": [
+    {
+      "file": "../public/assets/combat-hd/rivet-bank.webp",
+      "reference": "../public/assets/combat-hd/rivet.webp",
+      "prompt": "Edit the supplied RIVET game spritesheet into a NEW transparent game-ready spritesheet of lateral banking poses. Preserve exactly this white and red three-engine fighter, cockpit, silhouette identity, sharp hand-painted arcade linework. Output exactly EIGHT equally sized square cells, FOUR columns and TWO rows, no margins between cells, no text or cell borders. First row: aircraft banking LEFT around its nose-tail longitudinal axis by 25 degrees, four small engine flicker frames. Second row: banking RIGHT by 25 degrees, four engine flicker frames. These are viewed from directly overhead, nose always points exactly UP, centerline remains vertical, no yaw/diagonal rotation and no side-profile camera. Show actual roll with wing foreshortening, changed visible fuselage side and controlled shading; left and right distinct mirrored attitude, not merely a squashed identical flat ship. Keep nose at x50%, y6% and engine bases at y87% in every cell, no lateral shifting or pumping of the hull, fit wings inside x10..90%. Tiny orange flame flicker only below engine bases. Transparent alpha outside the ship, no halo, shadow, floor or backdrop. Same scale in every cell. Crisp readable at 34px in the game.",
+      "frames": 8,
+      "frameSize": [
+        256,
+        256
+      ],
+      "layout": [
+        4,
+        2
+      ],
+      "anchor": "Nose registered at x128/y10; left poses 0–3, right poses 4–7.",
+      "original": "exec-c2865961-2189-43a4-a7e2-248bbdda628a.png"
+    },
+    {
+      "file": "../public/assets/combat-hd/polish/rivet-red.webp",
+      "prompt": "Create a polished 2D arcade vertical shoot-em-up projectile animation spritesheet on TRUE TRANSPARENT background. Exactly EIGHT equally sized square cells, FOUR columns and TWO rows, no margins, no text, no borders. Each cell contains ONE identical-size powerful scarlet RED energy bullet pointing straight UP, centered exactly x50%, y50%, occupying 36% of cell width and 84% of cell height. Heavy solid elongated rounded lance with brilliant white-hot central core, saturated crimson red armor-like energy contour, dark red edged silhouette and a restrained soft scarlet glow with completely transparent edges. A thicker arcade machine-gun energy projectile with real body, NOT a laser beam, flame, thin needle, circular orb, paired projectile, explosion, or diamond. Eight successive frames of subtle fast energy pulse within the SAME locked silhouette, no moving between cells or scale changes. Render with attractive hand-painted high-definition arcade shading and high contrast. It must stay visibly RED when scaled to 10x24px, avoid predominantly white or orange coloration. No cyan, blue, opaque or translucent square backgrounds.",
+      "frames": 8,
+      "frameSize": [
+        128,
+        128
+      ],
+      "layout": [
+        4,
+        2
+      ],
+      "original": "exec-83be9189-4772-4b83-9427-6adc5c00ad27.png"
+    },
+    {
+      "file": "../public/assets/combat-hd/supply-parachute-v2.webp",
+      "prompt": "Create a clean game-ready transparent sprite atlas, EIGHT chronological frames arranged FOUR columns and TWO rows, equal square cells, no grid lines or labels. One military charcoal supply crate under an ivory white round parachute, delicate gray suspension ropes connecting the canopy skirt to the crate corners. Match polished hand-painted 2D arcade game graphics, clear strong silhouette. A seamless smooth eight-frame gentle wind animation: canopy tilts/billows left then right, fabric folds and scalloped skirt change gracefully, ropes flex while connected, crate remains upright, SAME SIZE and fixed at exactly cell x50%, y80% in every frame. Canopy top at y12%, crate bottom at y94%, canopy width 64% cell, crate width 36%. Each frame fully isolated with generous transparent padding on all four sides. ALL pixels outside the actual ivory cloth, gray ropes and dark metal box must be fully transparent. No red, no yellow, no colored outline, no aura, no particles, no smoke, no decorative background artifacts. Do not copy any attached image, this is a clean new asset. The first and last poses must be adjacent in a cyclic loop.",
+      "frames": 8,
+      "frameSize": [
+        256,
+        256
+      ],
+      "layout": [
+        4,
+        2
+      ],
+      "anchor": "Cargo box bottom-center registered at x128/y241.",
+      "original": "exec-b01e73f4-1226-42df-9b1b-080f338532f6.png"
+    }
+  ],
+  "assembly": "../scripts/assemble-rivet-red.py",
+  "lifeFrames": "../public/assets/combat-hd/hud/ — crops of the original four frames, registered in 64×64 cells; no repaint or recoloring.",
+  "originalDirectory": "C:/Users/emers/.codex/generated_images/01a1c229-53c7-79d2-a601-586148e85ea7",
+  "notes": "Original generated PNG alpha preserved in lossless WebP; only grid slicing, resizing and registration. Straight RIVET sprite unchanged."
+}

@@ -60,7 +60,7 @@
 #bw-combat-hud .bw-resource-icons{display:flex;align-items:center;gap:12px;margin:14px 0 2px}
 #bw-combat-hud .bw-resource-icons i{display:block;width:42px;height:42px;opacity:.17;filter:grayscale(1);background-position:left center;background-size:400% 100%;background-repeat:no-repeat}
 #bw-combat-hud .bw-resource-icons i.bw-active{opacity:1;filter:none}
-#bw-combat-hud .bw-life-icons i{background-image:var(--life-image,url('/assets/combat-hd/rivet.webp'))}
+#bw-combat-hud .bw-life-icons i{background-image:var(--life-image-0);background-size:100% 100%;background-position:center}
 #bw-combat-hud .bw-special-icons i{background-image:url('/assets/combat-hd/review/pickups-special.webp');animation:bw-stock-sprite 1s steps(4) infinite}
 @keyframes bw-stock-sprite{to{background-position:133.333% center}}
 #bw-combat-hud .bw-combat-line{margin-top:0}
@@ -73,9 +73,18 @@
 #bw-combat-hud [data-field="power-segments"] i.bw-active{background-color:transparent;opacity:1;filter:none}
 
 #bw-combat-hud .bw-resource-icons{gap:8px}#bw-combat-hud .bw-resource-icons i{width:clamp(24px,2.1vw,38px);height:clamp(24px,2.1vw,38px);flex:none}
-#bw-combat-hud .bw-combat-radio{margin-top:auto;padding:15px 3px;min-height:120px;border-top:1px solid #7775;color:#c5c5c5}
+#bw-combat-hud .bw-combat-radio{margin-top:0;padding:clamp(10px,1.1vw,18px);min-height:120px;border:1px solid #7775;background:#0b0b0bd9;border-radius:4px;color:#c5c5c5}
 #bw-combat-hud .bw-combat-radio small{font-size:.65em;letter-spacing:.06em}
 #bw-combat-hud .bw-combat-radio p{font-size:.9em;line-height:1.4;margin:14px 0 0;min-height:4.2em;color:#aaa}
-#bw-combat-hud .bw-radio-active p{color:#f0e7ce}.bw-combat-radio i{font-size:.85em}
+#bw-combat-hud .bw-radio-active{border-color:#a83b39;box-shadow:inset 3px 0 #d84a44;background:#1b0d0de8}
+#bw-combat-hud .bw-radio-active p,#bw-combat-hud .bw-radio-active small{color:#ff7770}.bw-combat-radio i{font-size:.85em}
 
-#bw-combat-hud .bw-life-icons i{animation:bw-stock-sprite 1.4s steps(4) infinite}
+/* Switch whole registered frames. Background position never translates between frames. */
+#bw-combat-hud .bw-life-icons i{animation:bw-life-frames 1.4s step-end infinite}
+@keyframes bw-life-frames{
+  0%{background-image:var(--life-image-0)}
+  25%{background-image:var(--life-image-1)}
+  50%{background-image:var(--life-image-2)}
+  75%{background-image:var(--life-image-3)}
+}
+#bw-combat-hud .bw-combat-bottom button{display:grid;place-items:center;width:40px;height:36px;padding:0;border-radius:3px}

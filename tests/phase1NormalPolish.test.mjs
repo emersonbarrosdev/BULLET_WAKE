@@ -44,10 +44,10 @@ test('Raia uses simulation time and announces its attacks; one special cannot sk
   assert.ok(warns>0);assert.equal(a.damage(120).killed,false);assert.equal(a.hp,60);
 });
 
-test('late Continue guarantees only blue NV2, keeps partial P and cannot farm special or speed',()=>{
+test('Continue returns to the owner kit at NV1 with zero P and cannot farm special or speed',()=>{
   const old={...createPlayerWeapons(),weaponFamily:'green',weaponLevel:1,powerMeter:2,specialCharges:0,speedLevel:2};
   const late=continueWeapons(old,3200);
-  assert.equal(late.weaponFamily,'ion');assert.equal(late.weaponLevel,2);assert.equal(late.powerMeter,2);assert.equal(late.specialCharges,0);assert.equal(late.speedLevel,0);
+  assert.equal(late.weaponFamily,'ion');assert.equal(late.weaponLevel,1);assert.equal(late.powerMeter,0);assert.equal(late.specialCharges,0);assert.equal(late.speedLevel,0);
   assert.deepEqual(continueWeapons(late,3200),late);
   assert.equal(continueWeapons(old,1000).weaponLevel,1);
 });

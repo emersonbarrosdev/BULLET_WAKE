@@ -1,10 +1,10 @@
 # BULLET WAKE — Bíblia vigente
 
-Revisão de 11/11/2026. Esta revisão substitui regras conflitantes anteriores. Correções atuais e evidências em [chefe, RIVET FULL, escala e nu metal](44_CHEFE_RIVET5_ESCALA_E_NU_METAL.md); [revisão anterior](41_REVISAO_FINAL_FASE_1.md) é histórica; [relatório anterior](39_ELENCO_COMBATE_AUDIO.md) é histórico. Somente Fenda Pelágica está produzida; nenhuma fase seguinte deve ser produzida antes de sua aprovação.
+Revisão de 11/11/2026. Esta revisão substitui regras conflitantes anteriores. Correções atuais e evidências em [RIVET vermelha, HUD e punição por morte](46_RIVET_VERMELHA_HUD_E_RECUPERACAO.md); [chefe, RIVET FULL, escala e nu metal](44_CHEFE_RIVET5_ESCALA_E_NU_METAL.md) registra a revisão anterior; [revisão anterior](41_REVISAO_FINAL_FASE_1.md) é histórica; [relatório anterior](39_ELENCO_COMBATE_AUDIO.md) é histórico. Somente Fenda Pelágica está produzida; nenhuma fase seguinte deve ser produzida antes de sua aprovação.
 
 ## Identidade e câmera
 
-Shooter vertical arcade 2D. Tudo no combate é visto diretamente de cima, em projeção ortográfica: água, criaturas, caças e armas instaladas. Movimento lateral não inclina a imagem. Naves usam arte de 34 unidades (redução de 15%); inimigos comuns e portadores, redução de 12%, preservando o chefe colossal e a arena. Menu pode usar naves em três quartos. RIVET mantém casco branco, detalhes vermelhos, três motores e arte própria; nenhum crop da abertura é utilizado.
+Shooter vertical arcade 2D. Tudo no combate é visto diretamente de cima, em projeção ortográfica: água, criaturas, caças e armas instaladas. A câmera não gira ao mover. A RIVET usa poses de rolagem lateral para esquerda/direita, com o bico sempre apontado ao norte e disparo no eixo da nave; não gira a imagem no plano nem muda a câmera para três quartos. Naves usam arte de 34 unidades (redução de 15%); inimigos comuns e portadores, redução de 12%, preservando o chefe colossal e a arena. Menu pode usar naves em três quartos. RIVET mantém casco branco, detalhes vermelhos, três motores e arte própria; nenhum crop da abertura é utilizado.
 
 Invasores são organismos alienígenas, inclusive criaturas biomecânicas. Distinguir voadores de organismos aquáticos: os primeiros compartilham o plano da nave, os segundos emergem, permanecem ancorados ao cenário e voltam a submergir. Não dar a todos aparência de naves humanas.
 
@@ -12,7 +12,7 @@ Invasores são organismos alienígenas, inclusive criaturas biomecânicas. Disti
 
 | Ordem / piloto | Identidade | Nave / tiro | Especial | Busca pessoal |
 |---|---|---|---|---|
-| 1. **Bayek** | Egípcio; protagonista | RIVET / dispersão azul | Tempestade Prismática | Irmão desaparecido e honra após salvar civis |
+| 1. **Bayek** | Egípcio; protagonista | RIVET / dispersão vermelha | Tempestade Prismática | Irmão desaparecido e honra após salvar civis |
 | 2. **Tita** | Ruiva; aparência preservada com cabelo cobre | MOTH / ondas verdes | Salto Fantasma | Mãe pesquisadora; distinguir a voz real do enxame |
 | 3. **Leona** | Mulher negra brasileira | KESTREL / azul concentrado | Coroa Orbital | Pai desaparecido; manter a clínica da família |
 | 4. **Osvald** | Russo; veterano de resgate | KNUCKLE / fluxo rubro | Ruptura Nova | Resgatar a filha e aprender a ouvi-la |
@@ -27,7 +27,7 @@ Cada piloto tem desejo, ferida, conflito, fala de missão e final próprio. A se
 Cada nave mantém **um armamento próprio**, que evolui do NV1 ao NV5/FULL na RIVET e ao NV4 nos demais conjuntos. Esta decisão substitui a cascata azul→verde→vermelho. Os efeitos verdes/vermelhos foram preservados e transferidos para MOTH/KNUCKLE. P aumenta potência, nunca troca a nave para a arma de outro piloto.
 
 - RIVET: melhorias com 2/2/2/3 P, nove P do NV1 ao NV5/FULL. Demais conjuntos: três P por melhoria, nove P do NV1 ao NV4. No máximo, P extra concede 5.000 pontos; não cria reserva invisível.
-- RIVET: salvas de 1/2/3/6/7 tiros, com três pares no NV4 e sete tiros encorpados no FULL. Dois mísseis automáticos juntos no NV3/NV4 (intervalo 1,5 s); três guiados no FULL (intervalo 1,1 s), com giro limitado e busca de alvos/peças vivos. Nenhuma ação manual extra. Os nove P existentes chegam ao FULL sem aumentar as onze caixas.
+- RIVET: Dispersão Vermelha, com spritesheet própria de oito quadros de projétil individual, núcleo claro e corpo vermelho. Largura e comprimento crescem a cada nível, com salto perceptível no NV3. Salvas de 1/2/3/6/7 tiros, com três pares no NV4 e sete tiros encorpados no FULL. Dois mísseis automáticos juntos no NV3/NV4 (intervalo 1,5 s); três guiados no FULL (intervalo 1,1 s), com giro limitado e busca de alvos/peças vivos. Nenhuma ação manual extra. Os nove P existentes chegam ao FULL sem aumentar as onze caixas.
 - MOTH: ondas verdes entrelaçadas, componentes 2/4/6/8. Dano reequilibrado para estar disponível desde o início.
 - KNUCKLE: fogo rubro contínuo, com varreduras móveis nos níveis superiores; alcança o teto da arena, sem bolas vermelhas.
 - KESTREL: menor dispersão, exige alinhamento e favorece alvos prioritários.
@@ -42,9 +42,9 @@ Especiais: apresentação própria e dano sincronizado aos impactos. Leona usa s
 
 Início: **3 vidas e 2 especiais**. Ambos acumulam até **5**. Vida extra no máximo concede 5.000 pontos; especial no máximo concede 500. Sem barra de integridade, escudo coletável, dash, bomba separada, tiro carregado ou míssil manual. A proteção breve após renascer/usar especial serve para não encadear mortes; não é uma nova barra nem item de escudo.
 
-Um impacto sem proteção abate a nave. Ao renascer: arma própria NV1, velocidade inicial, dois segundos de proteção, nenhum reabastecimento gratuito de especial. A potência conquistada volta como marcos físicos de recuperação, até três, que não duplicam progresso nem reduzem um nível já recuperado. Continue explícito por checkpoint mantém estoque restante e oferece recuperação limitada, sem farm.
+Um impacto sem proteção abate a nave. Ao renascer: arma própria NV1, velocidade inicial, dois segundos de proteção, nenhum reabastecimento gratuito de especial. O medidor P zera. Se havia potência conquistada, cai somente um P comum: conta uma unidade do medidor e nunca guarda o nível anterior. Recolhê-lo não restaura instantaneamente a arma. Morrer em NV1/0 P não cria item. Continue explícito também retorna ao NV1/0 P e mantém somente o estoque restante de especiais; não concede NV2 automático nem reserva oculta. Esta regra substitui os antigos marcos de recuperação.
 
-Caixas com paraquedas precisam ser destruídas; o item liberado precisa ser tocado. Quica nas quatro bordas por até 16 s. Inimigos comuns não distribuem itens. O guia normal mostra apenas os itens disponíveis no roteiro; velocidade/pontos continuam apenas compatibilidade, sem promessa de drops. Onze suprimentos no roteiro: nove P, uma vida e um especial. P nº3 aproximadamente aos 46 s de percurso; nº6 aos 93 s; nº9 aos 139 s, fora as pausas dos chefes. Destruir o portador e buscar o item são decisões reais. Cada nave tem spritesheet de 1UP com a própria miniatura. Sem legenda sob itens.
+Caixas com paraquedas precisam ser destruídas; a animação tem oito quadros a 8 fps, tecido e cordas se movem com a caixa registrada numa âncora fixa; o item liberado precisa ser tocado. Quica nas quatro bordas por até 16 s. Inimigos comuns não distribuem itens. O guia normal mostra apenas os itens disponíveis no roteiro; velocidade/pontos continuam apenas compatibilidade, sem promessa de drops. Onze suprimentos no roteiro: nove P, uma vida e um especial. P nº3 aproximadamente aos 46 s de percurso; nº6 aos 93 s; nº9 aos 139 s, fora as pausas dos chefes. Destruir o portador e buscar o item são decisões reais. Cada nave tem spritesheet de 1UP com a própria miniatura. Sem legenda sob itens.
 
 ## Fenda Pelágica: ritmo de 2–4 minutos
 
@@ -68,7 +68,7 @@ Todas as cinco naves têm sprites de combate próprias e colisão individual, in
 
 Abertura → cinco pilotos → missão com retrato/fala pessoal → loading de 2,5 s → gameplay. Perfil e confirmação continuam dentro/sobre o card escolhido, exigindo duas ações. Somente a Fenda é selecionável. Sem tutorial obrigatório antes da partida.
 
-Laterais preservadas em preto fosco/carbono; arena lógica de 432 px dentro do canvas 768×432, sem margens externas. Esquerda: piloto, score, até cinco ícones de vida e cinco de especial. Direita: missão, arma/nível/P, avanço e canal discreto de comunicação. 275 falas, 55 por piloto, cinco por contexto, incluindo morte, revanche, medo, muitos inimigos, miniboss e quarta parede. Rádio com intervalos longos e seis segundos de leitura; não encobrir a arena. Continue preserva mortes e sequências de falas. A fala de vitória acompanha o resultado para não desaparecer antes da leitura.
+Laterais preservadas em preto fosco/carbono; arena lógica de 432 px dentro do canvas 768×432, sem margens externas. Esquerda: piloto, trajeto da missão acima da pontuação, até cinco ícones de vida e cinco de especial. Vida anima por troca de quadros registrados, sem deslocamento lateral. Botão de pausa só com ícone acessível, sem o texto “Pausar / Opções”. Direita: missão, arma/nível/P e canal do piloto logo abaixo do armamento, em caixa de texto. Durante a fala, borda e texto ficam vermelhos; em escuta, discretos e neutros. 275 falas, 55 por piloto, cinco por contexto, incluindo morte, revanche, medo, muitos inimigos, miniboss e quarta parede. Rádio com intervalos longos e seis segundos de leitura; não encobrir a arena. Continue preserva mortes e sequências de falas. A fala de vitória acompanha o resultado para não desaparecer antes da leitura.
 
 Pausa congela a gameplay e abre card menor/translúcido com botões verticais: **Continuar / Controles / Voltar ao menu**. Controles no mesmo card. Sair exige **Cancelar / Confirmar saída**, informando perda do progresso da fase atual. Sem reiniciar fase ou trocar piloto nesse card.
 

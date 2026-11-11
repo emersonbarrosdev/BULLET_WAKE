@@ -11,11 +11,9 @@ export function primaryBossFactor(pilotId:string,bossName:string):number {
   return 1;
 }
 
-/** A late Continue must remain viable with no special stock and no perfect P route. */
-export function continueWeapons(state: PlayerWeaponsState, checkpoint: number): PlayerWeaponsState {
-  const reset=resetWeaponsOnRespawn(state);
-  if(checkpoint<2100)return reset;
-  return {...reset,weaponLevel:Math.max(2,reset.weaponLevel) as 2|3|4};
+/** Continue retains the owner's kit, but never bypasses the lost-life power penalty. */
+export function continueWeapons(state: PlayerWeaponsState, _checkpoint: number): PlayerWeaponsState {
+  return resetWeaponsOnRespawn(state);
 }
 
 /** Swept shot vs ellipse, including its radius: a fast charge cannot skip a thin target. */

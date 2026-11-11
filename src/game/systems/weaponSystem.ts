@@ -113,7 +113,7 @@ export const WEAPON_FAMILY_SPECS: Record<WeaponFamily, WeaponSpecs> = {
 };
 
 export const PILOT_WEAPON_SPECS: Record<string, WeaponSpecs> = {
-  nolan: WEAPON_FAMILY_SPECS.ion,
+  nolan: { ...WEAPON_FAMILY_SPECS.ion, displayName: 'DISPERSÃO VERMELHA' },
   cora: WEAPON_FAMILY_SPECS.green,
   harlan: WEAPON_FAMILY_SPECS.red,
   green: WEAPON_FAMILY_SPECS.green,
@@ -303,12 +303,11 @@ export function advanceWeapons(state: PlayerWeaponsState, deltaMs: number): Play
 }
 
 export function resetWeaponsOnRespawn(state: PlayerWeaponsState): PlayerWeaponsState {
-  const reserveReady = state.weaponLevel === maxWeaponLevel(state.pilotId) && state.powerMeter === POWER_ITEMS_PER_LEVEL;
   return {
     ...state,
     weaponFamily: pilotWeaponFamily(state.pilotId),
-    weaponLevel: reserveReady ? 2 : 1,
-    powerMeter: reserveReady ? 0 : state.powerMeter,
+    weaponLevel: 1,
+    powerMeter: 0,
     speedLevel: 0,
     hasShield: false,
     specialActiveMs: 0,

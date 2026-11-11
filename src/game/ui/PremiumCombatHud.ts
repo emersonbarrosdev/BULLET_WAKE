@@ -31,10 +31,11 @@ export class PremiumCombatHud {
           <img data-field="portrait" src="${import.meta.env.BASE_URL}assets/pilot-selection/portrait-nolan.webp" alt="Bayek" />
           <div><small>OPERADOR</small><strong data-field="name">BAYEK</strong><b data-field="ship">RIVET</b></div>
         </section>
+        <section class="bw-combat-panel bw-combat-results"><small>TRAJETO DA MISSÃO</small><div class="bw-combat-progress"><i data-field="progress"></i></div></section>
         <section class="bw-combat-panel bw-combat-score-panel"><small>PONTUAÇÃO <i data-field="combo"></i></small><strong class="bw-combat-score" data-field="score">000000</strong></section>
         <section class="bw-combat-panel"><div class="bw-combat-line"><small>VIDAS</small><b data-field="lives-count">3</b></div><div class="bw-resource-icons bw-life-icons" data-field="lives" aria-label="3 vidas"><i></i><i></i><i></i><i></i><i></i></div></section>
         <section class="bw-combat-panel"><div class="bw-combat-line"><small>ESPECIAL</small><b data-field="special">PRONTO</b></div><div class="bw-resource-icons bw-special-icons" data-field="special-stock" aria-label="2 especiais"><i></i><i></i><i></i><i></i><i></i></div></section>
-        <div class="bw-combat-bottom"><button type="button" data-action="restart">PAUSAR / OPÇÕES</button></div>
+        <div class="bw-combat-bottom"><button type="button" data-action="restart" aria-label="Pausar jogo" title="Pausar jogo"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg></button></div>
       </aside>
       <div class="bw-combat-center">
         <div class="bw-combat-boss" hidden><small data-field="boss-name"></small><div><i data-field="boss-fill"></i></div></div>
@@ -42,8 +43,7 @@ export class PremiumCombatHud {
       </div>
       <aside class="bw-combat-side bw-combat-right" aria-label="Telemetria de armamento">
         <div class="bw-combat-mission"><small>OPERAÇÃO PELÁGICA</small><strong>FENDA PELÁGICA</strong><span data-field="sector">ÁGUAS COSTEIRAS</span></div>
-        <section class="bw-combat-panel bw-combat-armament"><small>ARMA EQUIPADA</small><strong class="bw-combat-weapon" data-field="weapon">DISPERSÃO AZUL</strong><div class="bw-combat-line"><span>POTÊNCIA</span><b data-field="level">NV 1/4</b></div><div class="bw-combat-pips" data-field="pips"><i></i><i></i><i></i><i></i></div><div class="bw-combat-evolution"><div class="bw-combat-line"><small data-field="power-title">PRÓXIMO NÍVEL</small><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i>P</i><i>P</i><i>P</i></div></div></section>
-        <section class="bw-combat-panel bw-combat-results"><small>TRAJETO DA MISSÃO</small><div class="bw-combat-progress"><i data-field="progress"></i></div></section>
+        <section class="bw-combat-panel bw-combat-armament"><small>ARMA EQUIPADA</small><strong class="bw-combat-weapon" data-field="weapon">DISPERSÃO VERMELHA</strong><div class="bw-combat-line"><span>POTÊNCIA</span><b data-field="level">NV 1/4</b></div><div class="bw-combat-pips" data-field="pips"><i></i><i></i><i></i><i></i></div><div class="bw-combat-evolution"><div class="bw-combat-line"><small data-field="power-title">PRÓXIMO NÍVEL</small><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i>P</i><i>P</i><i>P</i></div></div></section>
         <section class="bw-combat-radio" aria-label="Comunicação do piloto"><small>CANAL DO PILOTO <i data-field="radio-status">EM ESCUTA</i></small><p data-field="radio">Canal aberto.</p></section>
       </aside>`;
     this.root.querySelectorAll<HTMLElement>('[data-field]').forEach(node => this.fields.set(node.dataset.field!, node));
@@ -72,7 +72,11 @@ export class PremiumCombatHud {
     const portrait = this.field('portrait') as HTMLImageElement;
     portrait.src = `${import.meta.env.BASE_URL}assets/pilot-selection/portrait-${id}.webp`; portrait.alt = name;
     this.text('name', name.toUpperCase()); this.text('ship', shipName.toUpperCase());
-    this.field('lives').style.setProperty('--life-image', `url('${new URL(`${import.meta.env.BASE_URL}assets/combat-hd/review/pickups-life-${id}.webp`, document.baseURI).href}')`);
+    for (let frame=0; frame<4; frame++) {
+      const url = new URL(`${import.meta.env.BASE_URL}assets/combat-hd/hud/life-${id}-${frame}.webp`, document.baseURI).href;
+      this.field('lives').style.setProperty(`--life-image-${frame}`, `url('${url}')`);
+      const image = new Image(); image.src = url; // Warm all four frames before their first HUD switch.
+    }
   }
   setScore(score: number, comboCount = 0, multiplier = 1): void {
     this.text('score', String(Math.max(0, Math.floor(score))).padStart(6, '0'));
@@ -84,8 +88,9 @@ export class PremiumCombatHud {
 
   }
   setWeapon(family: WeaponFamily, level: WeaponLevel, powerMeter = 0): void {
-    const color = family === 'ion' ? '#79deff' : family === 'green' ? '#86efac' : '#ff735e';
-    this.text('weapon', family === 'ion' ? 'DISPERSÃO AZUL' : family === 'green' ? 'ENERGIA ESPIRALADA' : 'LASER RUBRO');
+    const rivet = this.pilotId === 'nolan' && family === 'ion';
+    const color = rivet ? '#ff655c' : family === 'ion' ? '#79deff' : family === 'green' ? '#86efac' : '#ff735e';
+    this.text('weapon', rivet ? 'DISPERSÃO VERMELHA' : family === 'ion' ? 'DISPERSÃO AZUL' : family === 'green' ? 'ENERGIA ESPIRALADA' : 'LASER RUBRO');
     this.field('weapon').style.color = color; this.field('pips').style.setProperty('--weapon', color);
     this.text('level', level>=maxWeaponLevel(this.pilotId)?'FULL':`NV ${level}/${maxWeaponLevel(this.pilotId)}`); this.segments('pips', level); this.setPowerMeter(powerMeter, level);
     this.text('power-title',level<maxWeaponLevel(this.pilotId)?'PRÓXIMO NÍVEL':'POTÊNCIA MÁXIMA');

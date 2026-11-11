@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { stepRivetBank, rivetBankPose } from './rivetPresentation';
 
 export type VectorShipViewMode = 'top-down' | 'profile';
 
@@ -69,7 +70,6 @@ export class VectorShip extends Phaser.GameObjects.Container {
 
 
   private bankAngle = 0;
-  private targetBankAngle = 0;
   private flamePhase = 0;
   private isHit = false;
   private isFiring = false;
@@ -123,18 +123,9 @@ export class VectorShip extends Phaser.GameObjects.Container {
       return;
     }
 
-    // 1. Inclinação aerodinâmica lateral (Banking / Roll ao mover para a esquerda ou direita)
-    if (dx < 0) {
-      this.targetBankAngle = -0.22; // Rola para a esquerda
-    } else if (dx > 0) {
-      this.targetBankAngle = 0.22;  // Rola para a direita
-    } else {
-      this.targetBankAngle = 0;
-    }
-
-    const lerpRate = Math.min(1, (dt * 14) / 1000);
-    this.bankAngle += (this.targetBankAngle - this.bankAngle) * lerpRate;
-    this.rotation = 0; // Orthographic view; lateral travel never tilts the image plane.
+    // The painted left/right roll poses stay in the same overhead camera.
+    this.bankAngle = stepRivetBank(this.bankAngle, dx, dt);
+    this.rotation = 0; // Roll is painted in the sprite; no yaw of the nose or firing axis.
 
     // 2. Animação de propulsão e estados de combate
     this.flamePhase += dt * 0.04;
@@ -172,7 +163,11 @@ export class VectorShip extends Phaser.GameObjects.Container {
     // Renderiza a silhueta top-down autêntica de cada caça
     if (this.paintedRivet) {
       const frame = Math.floor(this.flamePhase / 5) % 4;
-      this.paintedRivet.setFrame(frame);
+      const pose = this.pilotId === 'nolan' ? rivetBankPose(this.bankAngle) : 0;
+      const key = pose && this.scene.textures.exists('hd-rivet-bank') ? 'hd-rivet-bank' : this.paintedRivet.texture.key === 'hd-rivet-bank' ? 'hd-rivet' : this.paintedRivet.texture.key;
+      if (key !== this.paintedRivet.texture.key) this.paintedRivet.setTexture(key);
+      this.paintedRivet.setFrame(key === 'hd-rivet-bank' ? frame + (pose > 0 ? 4 : 0) : frame);
+      this.paintedRivet.setDisplaySize(34, 34);
       if (this.isHit) this.paintedRivet.setTint(0xffbdb4);
       else this.paintedRivet.clearTint();
       // The animated muzzle sprite owns firing feedback; no flat oval over the nose.

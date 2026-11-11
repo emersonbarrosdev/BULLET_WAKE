@@ -1,0 +1,494 @@
+{
+  "completed": true,
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "hud": {
+        "progressCount": 1,
+        "progressLeft": true,
+        "progress": {
+          "x": 15.296875,
+          "y": 165.546875,
+          "right": 283.515625,
+          "bottom": 228.6875
+        },
+        "score": {
+          "x": 15.296875,
+          "y": 245.578125,
+          "right": 283.515625,
+          "bottom": 339.671875
+        },
+        "radio": {
+          "x": 1082.484375,
+          "y": 355.953125,
+          "right": 1350.703125,
+          "bottom": 476
+        },
+        "radioColor": "rgb(255, 119, 112)",
+        "radioBorder": "solid",
+        "pauseText": "",
+        "pauseLabel": "Pausar jogo",
+        "weapon": "DISPERSÃO VERMELHA",
+        "overflow": []
+      },
+      "lives": {
+        "positions": [
+          [
+            31.3125,
+            67.984375,
+            104.65625,
+            141.328125,
+            178
+          ],
+          [
+            31.3125,
+            67.984375,
+            104.65625,
+            141.328125,
+            178
+          ],
+          [
+            31.3125,
+            67.984375,
+            104.65625,
+            141.328125,
+            178
+          ],
+          [
+            31.3125,
+            67.984375,
+            104.65625,
+            141.328125,
+            178
+          ]
+        ],
+        "frames": [
+          "url(\"http://127.0.0.1:49694/assets/combat-hd/hud/life-nolan-0.webp\")",
+          "url(\"http://127.0.0.1:49694/assets/combat-hd/hud/life-nolan-1.webp\")",
+          "url(\"http://127.0.0.1:49694/assets/combat-hd/hud/life-nolan-2.webp\")",
+          "url(\"http://127.0.0.1:49694/assets/combat-hd/hud/life-nolan-3.webp\")"
+        ],
+        "backgroundPosition": "50% 50%"
+      },
+      "banks": [
+        {
+          "name": "left",
+          "texture": "hd-rivet-bank",
+          "frame": 2,
+          "rotation": 0,
+          "x": 384,
+          "y": 340,
+          "shots": [
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            },
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            },
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            }
+          ]
+        },
+        {
+          "name": "right",
+          "texture": "hd-rivet-bank",
+          "frame": 4,
+          "rotation": 0,
+          "x": 384,
+          "y": 340,
+          "shots": [
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            },
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            },
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            }
+          ]
+        },
+        {
+          "name": "neutral",
+          "texture": "hd-rivet",
+          "frame": 3,
+          "rotation": 0,
+          "x": 384,
+          "y": 340,
+          "shots": [
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            },
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            },
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            }
+          ]
+        }
+      ],
+      "levels": [
+        {
+          "level": 1,
+          "width": 22,
+          "height": 26,
+          "shots": 1
+        },
+        {
+          "level": 2,
+          "width": 26,
+          "height": 30,
+          "shots": 2
+        },
+        {
+          "level": 3,
+          "width": 36,
+          "height": 34,
+          "shots": 5
+        },
+        {
+          "level": 4,
+          "width": 42,
+          "height": 38,
+          "shots": 8
+        },
+        {
+          "level": 5,
+          "width": 48,
+          "height": 42,
+          "shots": 10
+        }
+      ],
+      "parachute": {
+        "texture": "hd-supply-parachute",
+        "frames": 8,
+        "fps": 8
+      }
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "hud": {
+        "progressCount": 1,
+        "progressLeft": true,
+        "progress": {
+          "x": 21.5,
+          "y": 219.484375,
+          "right": 398.5,
+          "bottom": 299.46875
+        },
+        "score": {
+          "x": 21.5,
+          "y": 323.21875,
+          "right": 398.5,
+          "bottom": 450.359375
+        },
+        "radio": {
+          "x": 1521.5,
+          "y": 438.703125,
+          "right": 1898.5,
+          "bottom": 587.140625
+        },
+        "radioColor": "rgb(255, 119, 112)",
+        "radioBorder": "solid",
+        "pauseText": "",
+        "pauseLabel": "Pausar jogo",
+        "weapon": "DISPERSÃO VERMELHA",
+        "overflow": []
+      },
+      "lives": {
+        "positions": [
+          [
+            43.5,
+            89.5,
+            135.5,
+            181.5,
+            227.5
+          ],
+          [
+            43.5,
+            89.5,
+            135.5,
+            181.5,
+            227.5
+          ],
+          [
+            43.5,
+            89.5,
+            135.5,
+            181.5,
+            227.5
+          ],
+          [
+            43.5,
+            89.5,
+            135.5,
+            181.5,
+            227.5
+          ]
+        ],
+        "frames": [
+          "url(\"http://127.0.0.1:49694/assets/combat-hd/hud/life-nolan-0.webp\")",
+          "url(\"http://127.0.0.1:49694/assets/combat-hd/hud/life-nolan-1.webp\")",
+          "url(\"http://127.0.0.1:49694/assets/combat-hd/hud/life-nolan-2.webp\")",
+          "url(\"http://127.0.0.1:49694/assets/combat-hd/hud/life-nolan-3.webp\")"
+        ],
+        "backgroundPosition": "50% 50%"
+      },
+      "banks": [
+        {
+          "name": "left",
+          "texture": "hd-rivet-bank",
+          "frame": 2,
+          "rotation": 0,
+          "x": 384,
+          "y": 340,
+          "shots": [
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            },
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            },
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            }
+          ]
+        },
+        {
+          "name": "right",
+          "texture": "hd-rivet-bank",
+          "frame": 5,
+          "rotation": 0,
+          "x": 384,
+          "y": 340,
+          "shots": [
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            },
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            },
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            }
+          ]
+        },
+        {
+          "name": "neutral",
+          "texture": "hd-rivet",
+          "frame": 3,
+          "rotation": 0,
+          "x": 384,
+          "y": 340,
+          "shots": [
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            },
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            },
+            {
+              "x": 384,
+              "y": 323.55,
+              "texture": "polish-rivet-red",
+              "originX": 0.5
+            }
+          ]
+        }
+      ],
+      "levels": [
+        {
+          "level": 1,
+          "width": 22,
+          "height": 26,
+          "shots": 1
+        },
+        {
+          "level": 2,
+          "width": 26,
+          "height": 30,
+          "shots": 2
+        },
+        {
+          "level": 3,
+          "width": 36,
+          "height": 34,
+          "shots": 5
+        },
+        {
+          "level": 4,
+          "width": 42,
+          "height": 38,
+          "shots": 8
+        },
+        {
+          "level": 5,
+          "width": 48,
+          "height": 42,
+          "shots": 10
+        }
+      ],
+      "parachute": {
+        "texture": "hd-supply-parachute",
+        "frames": 8,
+        "fps": 8
+      }
+    }
+  ],
+  "regression": {
+    "title": true,
+    "deathPenalty": [
+      {
+        "pilot": "Bayek",
+        "event": "respawn",
+        "dropped": [
+          {
+            "type": "power"
+          }
+        ],
+        "afterDeath": {
+          "level": 1,
+          "meter": 0,
+          "lives": 2
+        },
+        "afterCollect": {
+          "level": 1,
+          "meter": 1
+        },
+        "special": 2
+      },
+      {
+        "pilot": "Tita",
+        "event": "respawn",
+        "dropped": [
+          {
+            "type": "power"
+          }
+        ],
+        "afterDeath": {
+          "level": 1,
+          "meter": 0,
+          "lives": 2
+        },
+        "afterCollect": {
+          "level": 1,
+          "meter": 1
+        },
+        "special": 2
+      },
+      {
+        "pilot": "Leona",
+        "event": "respawn",
+        "dropped": [
+          {
+            "type": "power"
+          }
+        ],
+        "afterDeath": {
+          "level": 1,
+          "meter": 0,
+          "lives": 2
+        },
+        "afterCollect": {
+          "level": 1,
+          "meter": 1
+        },
+        "special": 2
+      },
+      {
+        "pilot": "Osvald",
+        "event": "respawn",
+        "dropped": [
+          {
+            "type": "power"
+          }
+        ],
+        "afterDeath": {
+          "level": 1,
+          "meter": 0,
+          "lives": 2
+        },
+        "afterCollect": {
+          "level": 1,
+          "meter": 1
+        },
+        "special": 2
+      },
+      {
+        "pilot": "Hien",
+        "event": "respawn",
+        "dropped": [
+          {
+            "type": "power"
+          }
+        ],
+        "afterDeath": {
+          "level": 1,
+          "meter": 0,
+          "lives": 2
+        },
+        "afterCollect": {
+          "level": 1,
+          "meter": 1
+        },
+        "special": 2
+      }
+    ]
+  },
+  "errors": []
+}

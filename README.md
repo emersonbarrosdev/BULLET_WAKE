@@ -2,7 +2,7 @@
 
 Shooter arcade 2D de rolagem vertical e visão superior, com invasão alienígena sobre a Terra. Somente a Fase 1, Fenda Pelágica, está liberada nesta versão.
 
-[Bíblia vigente](docs/27_BULLET_WAKE_V2_DEFINITIVO.md) · [Revisão atual e validação](docs/44_CHEFE_RIVET5_ESCALA_E_NU_METAL.md).
+[Bíblia vigente](docs/27_BULLET_WAKE_V2_DEFINITIVO.md) · [Revisão atual e validação](docs/46_RIVET_VERMELHA_HUD_E_RECUPERACAO.md).
 
 Cinco pilotos cartoon: Bayek/RIVET, Tita/MOTH, Leona/KESTREL, Osvald/KNUCKLE e Hien/PEREGRINE. Cada nave evolui sua própria arma com P, tem especial e história pessoal. Início com 3 vidas/2 especiais; limite 5/5, excesso vira pontos. Progresso por piloto, HUD lateral em carbono e rádio contextual. Sem escudo, dash, carga, bomba extra ou míssil manual; RIVET tem cinco níveis, dois mísseis automáticos no NV3/NV4 e três guiados no FULL. Três trilhas originais com humbuckers amostrados, distorção de alto ganho, baixo e bateria acústica.
 

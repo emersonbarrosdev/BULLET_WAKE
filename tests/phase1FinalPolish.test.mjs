@@ -8,7 +8,6 @@ import {PILOTS,getPilot} from '../src/game/data/pilots.ts';
 import {collectPowerItem,createPlayerWeapons} from '../src/game/systems/weaponSystem.ts';
 import {continueWeapons} from '../src/game/systems/normalBalance.ts';
 import {PickupSystem} from '../src/game/systems/pickupSystem.ts';
-import {recoverArmament} from '../src/game/systems/recoverySystem.ts';
 
 test('canonical cast order keeps the protagonist and Japanese secret pilot on their own kits',()=>{
  assert.deepEqual(PILOTS.map(p=>p.name),['Bayek','Tita','Leona','Osvald','Hien']);
@@ -47,20 +46,15 @@ test('destruction follows cumulative local damage, not the final weak hit or old
  const heat=new DamageRegions();heat.add(-12,20,30);heat.add(-11,22,40);heat.add(100,-80,1);
  const p=heat.strongest();assert.ok(p.x<0&&p.y>=20);heat.add(NaN,0,1000);assert.deepEqual(heat.strongest(),p);
 });
-test('missing one, two or three scheduled P keeps reachable NV3; late Continue remains viable for every owner',()=>{
+test('missing one, two or three scheduled P keeps reachable NV3; Continue applies the same power penalty for every owner',()=>{
  for(const id of PILOTS.map(p=>p.id))for(const missed of [0,1,2,3]){
   let w=createPlayerWeapons(id);for(let i=0;i<9-missed;i++)w=collectPowerItem(w).state;
   assert.equal(w.weaponLevel,id==='nolan'?(missed===0?5:4):(missed===0?4:3));const resume=continueWeapons(w,3200);
-  assert.equal(resume.pilotId,w.pilotId);assert.ok(resume.weaponLevel>=2);assert.equal(resume.specialCharges,w.specialCharges);
+  assert.equal(resume.pilotId,w.pilotId);assert.equal(resume.weaponLevel,1);assert.equal(resume.powerMeter,0);assert.equal(resume.specialCharges,w.specialCharges);
  }
 });
 test('collection uses the passed actual hull test instead of forcing the shared Rivet contour',()=>{
  const p=new PickupSystem();p.spawn('power',384,300);
  assert.equal(p.checkCollection(384,300,5,false,()=>false).length,0);
  assert.equal(p.checkCollection(500,400,5,false,(x,y)=>x===384&&y===300).length,1);
-});
-test('recovery cannot combine a lower milestone meter with the higher milestone level to invent P',()=>{
- const current={...createPlayerWeapons('lyra'),weaponLevel:2,powerMeter:2};
- const next=recoverArmament(current,{family:'ion',level:3,meter:0});assert.equal(next.weaponLevel,3);assert.equal(next.powerMeter,0);
- assert.equal(recoverArmament(next,{family:'ion',level:2,meter:2}),next);
 });

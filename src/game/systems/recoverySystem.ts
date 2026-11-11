@@ -1,22 +1,6 @@
-import { powerProgress } from './weaponSystem.ts';
-import type { PlayerWeaponsState, WeaponFamily, WeaponLevel } from './weaponSystem.ts';
-export interface RecoveryPayload { family: WeaponFamily; level: WeaponLevel; meter: number; }
+import { powerProgress, type PlayerWeaponsState } from './weaponSystem.ts';
 
-/** Absolute milestones restore earned power, never duplicate it or unlock a new family. */
-export function recoveryPayloads(state: PlayerWeaponsState): RecoveryPayload[] {
-  const items: RecoveryPayload[]=[];
-  for(let level=2;level<=state.weaponLevel;level++)items.push({family:state.weaponFamily,level:level as WeaponLevel,meter:0});
-  if(state.powerMeter>0){
-    if(items.length)items[items.length-1].meter=state.powerMeter;
-    else items.push({family:state.weaponFamily,level:1,meter:state.powerMeter});
-  }
-  if(items.length>3)items.splice(1,items.length-3);
-  return items;
-}
-export function recoverArmament(state: PlayerWeaponsState, item: RecoveryPayload): PlayerWeaponsState {
-  if(state.weaponFamily!==item.family)return state;
-  const current=powerProgress(state.pilotId,state.weaponLevel,state.powerMeter),recovered=powerProgress(state.pilotId,item.level,item.meter);
-  // Level and partial meter form one milestone. Mixing two different milestones can invent extra P.
-  if(recovered<=current)return state;
-  return {...state,weaponLevel:item.level,powerMeter:item.meter};
+/** A lost life drops at most ONE ordinary P, never a snapshot of the old weapon. */
+export function deathPowerDropCount(state: PlayerWeaponsState): 0 | 1 {
+  return powerProgress(state.pilotId, state.weaponLevel, state.powerMeter) > 0 ? 1 : 0;
 }

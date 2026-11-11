@@ -2,7 +2,8 @@ import { talassarcaRegions } from '../systems/bosses/talassarcaRig';
 import { destructionPlan } from '../systems/destructionSystem';
 import { DamageRegions } from '../systems/damageRegions';
 import { PilotRadio, type RadioSnapshot } from '../systems/pilotRadioSystem';
-import { recoveryPayloads, recoverArmament } from '../systems/recoverySystem';
+import { deathPowerDropCount } from '../systems/recoverySystem';
+import { rivetShotPresentation } from '../render/rivetPresentation';
 import { spriteContact, spritesOverlap } from '../render/SpriteSilhouette';
 import { continueWeapons, primaryBossFactor, NORMAL_BOSS_SHOT_SCALE, RIVET_MISSILE_INTERVAL_MS } from '../systems/normalBalance';
 import { PrismStrike } from '../render/PrismStrike';
@@ -359,7 +360,7 @@ export class PrototypeScene extends Phaser.Scene {
         ? `LASER RUBRO — NV ${level} (${LASER_RUBRO_SPECS[Math.min(4,level) as 1|2|3|4].title})`
         : family === 'green'
           ? `ENERGIA ESPIRALADA — NÍVEL ${level}`
-          : `DISPERSÃO AZUL — NÍVEL ${level}`;
+          : `${this.pilot.id === 'nolan' ? 'DISPERSÃO VERMELHA' : 'DISPERSÃO AZUL'} — NÍVEL ${level}`;
     const color = family === 'red' ? '#ff1e42' : family === 'green' ? '#4ade80' : '#00f0ff';
     this.hud.flash(label, color, 1100);
   }
@@ -560,13 +561,16 @@ export class PrototypeScene extends Phaser.Scene {
   private createPlayerProjectile(def: ProjectileSpawnDef, tint?: number): void {
     const family=this.weapons.weaponFamily;
     const effect=def.texture==='rivet-v3-missile'?'missile':def.piercing?'charge':family==='green'?'green':'blue';
-    const key=(effect==='blue'||effect==='green'?'polish-':'review-effects-')+effect;
-    const animation=effect==='blue'?'polish-blue-single':key+'-loop';
+    const rivetRed = this.pilot.id === 'nolan' && effect === 'blue';
+    const key=rivetRed?'polish-rivet-red':(effect==='blue'||effect==='green'?'polish-':'review-effects-')+effect;
+    const animation=effect==='blue'&&!rivetRed?'polish-blue-single':key+'-loop';
     const node=this.add.sprite(def.x,def.y,key,0).setDepth(9).play(animation);
     node.setRotation(Math.atan2(def.velocityY,def.velocityX)+Math.PI/2);
     const size=effect==='missile'?25:effect==='charge'?50:effect==='green'?32:this.weapons.weaponLevel>=4?29:this.weapons.weaponLevel>=3?25:19;
     node.setDisplaySize(effect==='blue'?size*(this.weapons.weaponLevel>=3?.72:.5):size,size);
-    if(effect==='blue')node.setOrigin(.84,.5);
+    const redArt = rivetShotPresentation(this.weapons.weaponLevel);
+    if(rivetRed)node.setDisplaySize(redArt.width,redArt.height);
+    else if(effect==='blue')node.setOrigin(.84,.5);
     if(tint&&this.pilot.id!=='nolan')node.setTint(tint);
     this.shots.push({
       node,
@@ -577,7 +581,7 @@ export class PrototypeScene extends Phaser.Scene {
       velocityX: def.velocityX,
       velocityY: def.velocityY,
       damage: def.damage,
-      hitRadius: Math.min(def.hitRadius,def.piercing?6:effect==='missile'?3:2.5),
+      hitRadius: rivetRed ? redArt.radius : Math.min(def.hitRadius,def.piercing?6:effect==='missile'?3:2.5),
       hitTargets:new Set(),
       homing:def.homing,
       piercing: def.piercing,
@@ -868,7 +872,7 @@ export class PrototypeScene extends Phaser.Scene {
     const body = this.add.sprite(0, 0, texture, 0)
       .setDisplaySize(size, size);
     // Painted sheets already face south; do not rotate their top-down anatomy.
-    if (!enemy.layer) body.play({key:texture+'-loop',startFrame:enemy.id%(enemy.carrier?4:8)});
+    if (!enemy.layer) body.play({key:texture+'-loop',startFrame:enemy.id%8});
     const warning = this.add.sprite(0, 22, 'hd-shot-enemy', 'orb')
       .setDisplaySize(10, 10).setVisible(false);
     const container = this.add.container(enemy.x, enemy.y, [body, warning]).setDepth(enemy.layer === 'surface' ? -3 : 5);
@@ -935,12 +939,6 @@ export class PrototypeScene extends Phaser.Scene {
       const feedback=this.add.image(item.x,item.y,'review-pickups-'+(item.type==='life'?'life-'+this.pilot.id:item.type==='full_power'?'power':item.type),0).setDisplaySize(25,25).setDepth(22);
       this.tweens.add({targets:feedback,alpha:0,scaleX:feedback.scaleX*.3,scaleY:feedback.scaleY*.3,x:this.ship.x,y:this.ship.y,duration:110,onComplete:()=>feedback.destroy()});
 
-      if (item.recovery) {
-        this.weapons = recoverArmament(this.weapons,item.recovery);
-        this.hud.setWeapon(this.weapons.weaponFamily,this.weapons.weaponLevel,this.weapons.powerMeter);
-        this.hud.flash('ARMAMENTO RECUPERADO', '#ffd23f',700);
-        continue;
-      }
       if (item.type === 'power') {
         const res = collectPowerItem(this.weapons);
         globalAudio.playPickup(res.levelIncreased?'upgrade':'power');
@@ -951,7 +949,7 @@ export class PrototypeScene extends Phaser.Scene {
           this.hud.flash(`UPGRADE DE ARMA! NÍVEL ${this.weapons.weaponLevel}`, '#facc15', 1400);
         } else if (!res.meterIncreased) {
           this.scoreCombo = addRawScore(this.scoreCombo, 5000);
-          this.hud.flash('POTÊNCIA E RESERVA COMPLETAS (+5000 PTS)', '#fbbf24', 1000);
+          this.hud.flash('POTÊNCIA MÁXIMA (+5000 PTS)', '#fbbf24', 1000);
         } else if (this.weapons.weaponLevel >= maxWeaponLevel(this.pilot.id)) {
           this.hud.flash('POTÊNCIA MÁXIMA · +5.000', '#fbbf24', 1000);
         } else {
@@ -1278,7 +1276,7 @@ export class PrototypeScene extends Phaser.Scene {
       this.playEffect('hit', impactX, impactY);
     } else if (outcome.event === 'respawn') {
       this.releaseRecoveryItems();
-      this.weapons = {...resetWeaponsOnRespawn(this.weapons), weaponLevel:1, powerMeter:0};
+      this.weapons = resetWeaponsOnRespawn(this.weapons);
       this.specialVisual?.destroy(); this.specialVisual=undefined;
       this.crimsonLaserRenderer.clear(); this.clearPlayerShots(); this.clearEnemyShots();
       globalAudio.playExplosion(true);
@@ -1286,7 +1284,7 @@ export class PrototypeScene extends Phaser.Scene {
       this.particles.burst(this.ship.x,this.ship.y,1.3,true,0xffa43b);
       this.vectorShip.setPosition(PLAYFIELD_X+PLAYFIELD_WIDTH/2,GAME_HEIGHT-65);
       this.hud.setWeapon(this.weapons.weaponFamily,1,0);
-      this.hud.flash('NAVE ABATIDA · RECUPERE SEU ARMAMENTO', '#ffca80',1200);
+      this.hud.flash('NAVE ABATIDA · POTÊNCIA REINICIADA', '#ffca80',1200);
     } else if (outcome.event === 'game-over') {
       this.specialVisual?.destroy();this.specialVisual=undefined;
       globalAudio.playExplosion(true);
@@ -1309,11 +1307,7 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   private releaseRecoveryItems(): void {
-    recoveryPayloads(this.weapons).forEach((recovery,i,items)=>{
-      const item=this.pickups.spawn('power',
-        this.ship.x+(i-(items.length-1)/2)*28,this.ship.y-30-i*10);
-      item.recovery=recovery;
-    });
+    if (deathPowerDropCount(this.weapons)) this.pickups.spawn('power', this.ship.x, this.ship.y - 30);
     this.syncPickupVisuals();
   }
 

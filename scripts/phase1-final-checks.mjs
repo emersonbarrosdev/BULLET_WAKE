@@ -51,7 +51,7 @@ export async function runPhase1Review(api){
    s.inputManager.sample=()=>{
     let goalX=384+Math.sin(elapsed/3700)*100,goalY=350;
     const items=s.pickups.pickups.filter(p=>!p.collected);
-    for(const p of items)if(p.type==='power'&&!p.recovery&&skipped.size<${skipP}&&!picked.has(p.id))skipped.add(p.id);
+    for(const p of items)if(p.type==='power'&&skipped.size<${skipP}&&!picked.has(p.id))skipped.add(p.id);
     const item=items.filter(p=>!skipped.has(p.id)&&p.y>145).sort((a,b)=>Math.hypot(a.x-s.ship.x,a.y-s.ship.y)-Math.hypot(b.x-s.ship.x,b.y-s.ship.y))[0];
     const cargo=s.director.enemies.find(e=>e.carrier);
     if(item){goalX=item.x;goalY=item.y+3;}else if(cargo){goalX=cargo.x;goalY=Math.max(280,cargo.y+130);}else if(s.director.boss){const b=s.director.boss,m=b.modules?.filter(m=>!m.destroyed).sort((a,b)=>b.offsetY-a.offsetY)[0];goalX=b.x+(m?.offsetX??0);goalY=m?Math.min(385,b.y+m.offsetY+90):330;}

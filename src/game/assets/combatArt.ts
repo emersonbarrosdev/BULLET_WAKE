@@ -3,7 +3,7 @@ import { loadReviewArt, registerReviewArt } from './reviewArt';
 import { loadPolishArt, registerPolishArt } from './polishArt';
 
 /** Hand-painted combat art is separate from legacy pixel sheets and menu assets. */
-export const COMBAT_SHEETS = ['special-orbital','special-comet','rivet', 'moth', 'knuckle', 'peregrine', 'biogun', 'kestrel', 'supply-parachute', 'scout', 'dart', 'lancer', 'cutter', 'bomb'] as const;
+export const COMBAT_SHEETS = ['special-orbital','special-comet','rivet', 'rivet-bank', 'moth', 'knuckle', 'peregrine', 'biogun', 'kestrel', 'supply-parachute', 'scout', 'dart', 'lancer', 'cutter', 'bomb'] as const;
 
 export function loadCombatArt(scene: Phaser.Scene, base: string): void {
   for(const name of ['talassarca-top','inner-top','metamorphosis-top'])if(!scene.textures.exists('hd-'+name))scene.load.spritesheet('hd-'+name,`${base}/assets/combat-hd/${name==='talassarca-top'?'talassarca-integrated':name==='inner-top'?'inner-integrated':name}.webp`,{frameWidth:512,frameHeight:512});
@@ -11,7 +11,7 @@ export function loadCombatArt(scene: Phaser.Scene, base: string): void {
   loadPolishArt(scene,base);
   for (const name of COMBAT_SHEETS) {
     if (!scene.textures.exists(`hd-${name}`)) {
-      scene.load.spritesheet(`hd-${name}`, `${base}/assets/combat-hd/${name}.webp`, { frameWidth: 256, frameHeight: 256 });
+      scene.load.spritesheet(`hd-${name}`, `${base}/assets/combat-hd/${name==='supply-parachute'?'supply-parachute-v2':name}.webp`, { frameWidth: 256, frameHeight: 256 });
     }
   }
   for (const name of ['ocean', 'capsule']) {
@@ -23,7 +23,7 @@ export function loadCombatArt(scene: Phaser.Scene, base: string): void {
 }
 
 export function registerCombatArt(scene: Phaser.Scene): void {
-  if(!scene.anims.exists('hd-supply-parachute-loop'))scene.anims.create({key:'hd-supply-parachute-loop',frames:scene.anims.generateFrameNumbers('hd-supply-parachute',{start:0,end:3}),frameRate:5,repeat:-1});
+  if(!scene.anims.exists('hd-supply-parachute-loop'))scene.anims.create({key:'hd-supply-parachute-loop',frames:scene.anims.generateFrameNumbers('hd-supply-parachute',{start:0,end:7}),frameRate:8,repeat:-1});
   registerReviewArt(scene);
   registerPolishArt(scene);
   for (const name of [...COMBAT_SHEETS, 'ocean', 'capsule', 'portrait-nolan']) {

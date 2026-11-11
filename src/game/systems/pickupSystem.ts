@@ -6,7 +6,6 @@
  * - Itens aparecem fisicamente na arena de combate e flutuam descendo suavemente.
  * - Coleta por contato, sem atração magnética ou troca involuntária de arma.
  */
-import type { RecoveryPayload } from './recoverySystem.ts';
 import { PLAYFIELD_X, PLAYFIELD_RIGHT, GAME_HEIGHT } from '../constants.ts';
 import { circleHitsHull } from './hullCollision.ts';
 
@@ -25,7 +24,6 @@ export type PickupType =
   | 'special';      // E: Uma carga de especial (máximo cinco)
 
 export interface PickupModel {
-  recovery?: RecoveryPayload;
   id: number;
   type: PickupType;
   x: number;
