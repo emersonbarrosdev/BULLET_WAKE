@@ -78,10 +78,10 @@ export class OceanSurface {
     this.surface.setTextureCoordinates(0,0,1,0,0,1,1,1);
   }
 
-  update(scrollPx:number,deltaMs:number):void {
+  update(scrollPx:number,deltaMs:number,routePx=scrollPx):void {
     this.elapsedMs+=Math.max(0,deltaMs);this.scrollPx=scrollPx;
     const ramp=(start:number,end:number):number=>{
-      const t=Phaser.Math.Clamp((scrollPx-start)/(end-start),0,1);return t*t*(3-2*t);
+      const t=Phaser.Math.Clamp((routePx-start)/(end-start),0,1);return t*t*(3-2*t);
     };
     this.invasion=ramp(1100,2400);this.rift=ramp(3150,4100);
   }

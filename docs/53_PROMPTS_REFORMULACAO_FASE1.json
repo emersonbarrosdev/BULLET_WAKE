@@ -1,0 +1,54 @@
+{
+  "mode": "built-in image_gen",
+  "outputDirectory": "public/assets/combat-hd/reform",
+  "assembly": "Only equal-grid row slicing, resizing and WebP encoding with original alpha; no Python painting, recoloring, background removal or thresholding.",
+  "records": [
+    {
+      "asset": "enemy/captain atlas",
+      "prompt": "Use case: stylized-concept. Production sprite atlas for original vertical shooter BULLET WAKE. EXACTLY 4 columns x 5 rows, evenly spaced equal square cells, transparent background, no labels, no border, no ground shadows. One unit centered per cell, full silhouette and 12% transparent padding. STRICT ORTHOGRAPHIC TOP DOWN camera, nose/front toward bottom (attacking player below). Painterly crisp high-detail arcade sprites visible at 30–100px, red-violet alien tissue fused organically into gunmetal military armor, amber cores and exposed sinew; never generic insects flapping wings.\nEach row is one consistent enemy with 4 actual animation frames: idle, armor vents open, weapons energized, recoil/recovery. Silhouette dimensions and center remain registered. Metal plates articulate/open, cannons recoil and cores change; no squashing/stretching of whole body.\nROW1 small assimilated interceptor: angular narrow fighter fuselage, broken swept wings with one organic membrane replacing a panel, twin small thrusters, scarlet exposed neural core. Agile, readable silhouette.\nROW2 medium biomechanical flanker: recognizably assimilated delta fighter, asymmetric living growth over wing roots, paired articulated wing-root cannons, purple engine conduits. \nROW3 heavy artillery aircraft: broad armored fuselage, short stub wings, two recessed gun barrels fused with tissue, visible damaged turbine, copper plates, one violet nucleus.\nROW4 assimilated bomber: broad four-nacelle military bomber with organic armored spine and orange core, visible muzzle ports integrated into wing roots, heavy layered armor, no clock shape.\nROW5 Raia-Dente captain/miniboss: distinct advanced assimilated attack aircraft, NOT a flying insect or manta animal, swept serrated wings, layered gray steel and copper armor, purple organic central spine; TWO clearly visible large integrated cannons around local x=90 and x=166,y=145 in a conceptual 256px cell, small central glowing core. 4 frames armor opening, guns charging, alternating recoil, overheating. No gigantic monster wings. Approximately 85% cell wingspan, 70% cell height.\nTrue transparent alpha to edges, no tinted rectangular tile backdrops. Original art, no copyrighted game sprites.",
+      "source": "exec-784e9d67-3905-4c62-b3bf-474ae1b39ce6.png",
+      "outputs": [
+        "scout",
+        "dart",
+        "lancer",
+        "cutter",
+        "captain"
+      ]
+    },
+    {
+      "asset": "Talassarca aerial/colossus/emergence",
+      "prompt": "Use case: stylized-concept. Create an original premium arcade shooter BOSS SPRITESHEET for BULLET WAKE. Reference is OLD boss only for general alien threat mood; substantially redesign into technologically intelligent BIOMECHANICAL WAR MACHINE, not a crab/insect. Strict ORTHOGRAPHIC straight overhead camera. EXACT GRID: 4 columns by 3 rows; each equal square cell, same scale/center within each row, generous transparent margins, no text/no labels/no shadows/background. True transparent alpha.\nROW1 four animated frames of the FIRST AERIAL FORM of TALASSARCA: flying assimilated armored dreadnought aircraft, gray steel/copper segmented wing armor joined by red-violet living tissues, paired rear turbines at top, broad fixed weapon-platform wings, glowing biological organs fused deeply into metal housings, six integrated targets. It faces toward bottom of tile. No pasted-on separate turret units. Animated panels slide, barrels open/recoil, engine flame varies. SAME structure in all four frames, no squash and no wing flapping.\nROW2 four animated frames SECOND COLOSSAL OCEAN FORM: much broader aquatic siege platform, recognizes the first form's central spine, now unfolds armored lateral gun-decks, giant submerged organic conduits, heavy integrated recessed cannons, purple-white central nucleus, steel plates connected by sinew. Design fits full square, about 85% width, top-down only. Multiple levels of armor and mechanical platforms; no wings. Frames animate retracting armor, charging conduits, barrel recoil and nucleus breathing. Crisp details.\nROW3 four actual EMERGENCE frames of ROW2: first underwater muted silhouette with foam wisps, then outer gun-decks break surface, then armor unfolds with water falling away, finally full platform visible with white sea foam along edges. These are progressive emergence states, NOT four identical scaled images. Same center and extent, opacity/background truly transparent.\nCRITICAL INTEGRATED TARGET REGISTRATION for BOTH forms: two round violet organs at cell-normalized (0.36,0.28) and (0.64,0.28), a larger abdominal nucleus at (0.50,0.66); gun muzzle housings at (0.36,0.48),(0.64,0.48),(0.50,0.365). Their positions must remain unchanged between frames. These organs/guns are unmistakable, surrounded by full cohesive anatomy, not floating on top. Six aiming points only, no crosshairs/markers. Deep gunmetal surfaces, copper bevels, living violet-red musculature, white-hot alien energy. Colors fit scarlet invasion over teal ocean. Atlas must contain exactly twelve complete sprites.",
+      "source": "exec-0ebcd769-8be3-4577-a68a-c9988d959e76.png",
+      "outputs": [
+        "aerial",
+        "colossus",
+        "emerge"
+      ]
+    },
+    {
+      "asset": "weapon/orbital/comet atlas",
+      "prompt": "Use case: stylized-concept. Production transparent SPRITE ATLAS for BULLET WAKE vertical shooter. EXACT 4 columns x 6 rows, equal square cells, no labels/text/borders. One isolated emissive effect per cell, genuine transparent background, no colored square haze filling cell. Consistent centers and sizes within each row, animation moves internal energy while keeping anchor fixed. Strong white core with saturated rims, hand-painted premium arcade energy sprites. All projectiles point UP, trailing below. Margin 15%.\nRow1 FOUR ANIMATION FRAMES of violet-lilac spiral projectile: an intertwined twisting plasma crescent/helix, magenta violet edges, bright lilac-white center. Organic moving waves, not balls.\nRow2 FOUR ANIMATION FRAMES of emerald piercing energy NEEDLE: long sharp tapered jade-white lance, tiny green detached sparks, narrow aerodynamic tail, distinct pointed tip.\nRow3 FOUR ANIMATION FRAMES of dense heavy amber cannon BOLT: compact thick chunky orange-white slug with copper angular shoulder and orange ember trail. Heavy ballistic energetic projectile, not a laser beam.\nRow4 FOUR ANIMATION FRAMES of quick celestial-blue SHARD: white-ice slender arrow with branching small diagonal cyan fragments, lively streaming tail, different from green needle shape.\nRow5 FOUR ANIMATION FRAMES of orbital JADE DRONE/BLADE: small energy blade with bright white-jade pointed front and curved mechanical ring, emerald plasma trails. A whole object usable rotating around player then flying toward enemy, not a big circular screen overlay.\nRow6 FOUR ANIMATION FRAMES of blue-white COMET: concentrated head and long luminous cyan tail streaming down, shedding blue fragments, exactly one comet per tile.\nTrue alpha to transparent boundaries, no opaque tiles or background. Exactly 24 independent sprites, no other elements. Original game art.",
+      "source": "exec-868ab34c-e14a-4910-acee-8a69ee6895d0.png",
+      "selected": false
+    },
+    {
+      "asset": "first native alpha cleanup",
+      "prompt": "Use case: background-extraction. EDIT this exact 4-column by 6-row projectile spritesheet. Remove ALL the colored rectangular background gradients/mattes from ALL cells. The original has purple, green, orange and blue gradients filling cells; those must become fully transparent. Preserve only the actual projectile shapes, their small attached trails and tight local glow. Outer 12% margins of every one of the 24 square cells must be alpha=0 except a few actual disconnected sparks; do not preserve full-tile haze. True transparent PNG, NOT black or checkerboard background. Keep EXACT same 1024x1536 grid, 4 columns x6rows, effect centers, colors, shapes and animation frames unchanged. Each sprite isolated on clean transparent alpha all around. No text.",
+      "source": "exec-30aa536e-78fd-4486-9135-aa308b040ef2.png",
+      "selected": false
+    },
+    {
+      "asset": "final native cutout",
+      "prompt": "Use case: precise-object-edit / background-extraction.\nMake a CLEAN HARD-EDGED CUTOUT ATLAS from this exact 4-column x 6-row image. The unwanted full-cell gradient matte IS STILL PRESENT, especially on the violet row: it draws a visible rotated rectangle in the game. REMOVE THE MATTE COMPLETELY. Keep only solid colored projectile bodies, solid tails, distinct sparks, and very small antialiased edges. REMOVE ALL soft ambient haze, all wide glow gradients and all tinted fog around every projectile. No background wash anywhere. Pixel alpha should be ZERO at ALL pixels farther than 2 pixels from a visible solid flame/shard/blade. In particular the empty left/right area of EACH 256x256 cell MUST be completely empty alpha=0. A flat, crisp cel-shaded cutout is preferable to any background glow. Keep the same 24 objects in the same 1024x1536 4x6 grid, same violet/green/amber/blue colors, orientations and object positions. Output genuine RGBA transparency, not a picture of a transparent background. Do not change other design details.",
+      "source": "exec-40e4859b-fd6a-4ecc-98ed-06fed537628e.png",
+      "outputs": [
+        "violet",
+        "emerald",
+        "amber",
+        "celestial",
+        "orbital",
+        "comet"
+      ]
+    }
+  ]
+}

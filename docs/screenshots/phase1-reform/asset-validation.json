@@ -1,0 +1,142 @@
+[
+  {
+    "file": "public/assets/combat-hd/reform/aerial.webp",
+    "size": [
+      2048,
+      512
+    ],
+    "frameSize": 512,
+    "edgeAlphaMax": 9,
+    "edgeAlphaMean": 0.66
+  },
+  {
+    "file": "public/assets/combat-hd/reform/amber.webp",
+    "size": [
+      1024,
+      256
+    ],
+    "frameSize": 256,
+    "edgeAlphaMax": 0,
+    "edgeAlphaMean": 0.0
+  },
+  {
+    "file": "public/assets/combat-hd/reform/captain.webp",
+    "size": [
+      1024,
+      256
+    ],
+    "frameSize": 256,
+    "edgeAlphaMax": 247,
+    "edgeAlphaMean": 10.43
+  },
+  {
+    "file": "public/assets/combat-hd/reform/celestial.webp",
+    "size": [
+      1024,
+      256
+    ],
+    "frameSize": 256,
+    "edgeAlphaMax": 0,
+    "edgeAlphaMean": 0.0
+  },
+  {
+    "file": "public/assets/combat-hd/reform/colossus.webp",
+    "size": [
+      2048,
+      512
+    ],
+    "frameSize": 512,
+    "edgeAlphaMax": 242,
+    "edgeAlphaMean": 2.54
+  },
+  {
+    "file": "public/assets/combat-hd/reform/comet.webp",
+    "size": [
+      1024,
+      256
+    ],
+    "frameSize": 256,
+    "edgeAlphaMax": 1,
+    "edgeAlphaMean": 0.03
+  },
+  {
+    "file": "public/assets/combat-hd/reform/cutter.webp",
+    "size": [
+      1024,
+      256
+    ],
+    "frameSize": 256,
+    "edgeAlphaMax": 252,
+    "edgeAlphaMean": 9.33
+  },
+  {
+    "file": "public/assets/combat-hd/reform/dart.webp",
+    "size": [
+      1024,
+      256
+    ],
+    "frameSize": 256,
+    "edgeAlphaMax": 10,
+    "edgeAlphaMean": 0.26
+  },
+  {
+    "file": "public/assets/combat-hd/reform/emerald.webp",
+    "size": [
+      1024,
+      256
+    ],
+    "frameSize": 256,
+    "edgeAlphaMax": 1,
+    "edgeAlphaMean": 0.03
+  },
+  {
+    "file": "public/assets/combat-hd/reform/emerge.webp",
+    "size": [
+      2048,
+      512
+    ],
+    "frameSize": 512,
+    "edgeAlphaMax": 197,
+    "edgeAlphaMean": 4.85
+  },
+  {
+    "file": "public/assets/combat-hd/reform/lancer.webp",
+    "size": [
+      1024,
+      256
+    ],
+    "frameSize": 256,
+    "edgeAlphaMax": 5,
+    "edgeAlphaMean": 0.53
+  },
+  {
+    "file": "public/assets/combat-hd/reform/orbital.webp",
+    "size": [
+      1024,
+      256
+    ],
+    "frameSize": 256,
+    "edgeAlphaMax": 0,
+    "edgeAlphaMean": 0.0
+  },
+  {
+    "file": "public/assets/combat-hd/reform/scout.webp",
+    "size": [
+      1024,
+      256
+    ],
+    "frameSize": 256,
+    "edgeAlphaMax": 1,
+    "edgeAlphaMean": 0.09
+  },
+  {
+    "file": "public/assets/combat-hd/reform/violet.webp",
+    "size": [
+      1024,
+      256
+    ],
+    "frameSize": 256,
+    "edgeAlphaMax": 0,
+    "edgeAlphaMean": 0.0
+  }
+]

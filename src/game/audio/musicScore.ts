@@ -1,7 +1,8 @@
-export type MusicTheme='menu'|'stage1'|'boss';
+export type MusicTheme='menu'|'stage1'|'boss'|'victory';
 export interface MusicScore {title:string;bpm:number;root:number;chords:readonly number[];lead:readonly (readonly number[])[];}
 /** Original composition motifs, also authored in compose-score.py for sampled-instrument rendering. No existing songs or game recordings. */
 export const MUSIC_SCORES:Record<MusicTheme,MusicScore>={
+ victory:{title:'Horizonte Reconquistado',bpm:126,root:47,chords:[0,5,7,0],lead:[[59,62,66,71],[64,67,71,76],[66,69,73,78],[71,66,62,59]]},
  menu:{title:'Vanguarda do Horizonte',bpm:118,root:50,chords:[0,7,9,5,0,7,5,7],lead:[
  [74,-1,78,81,-1,78,76,74],[76,-1,81,83,81,-1,78,76],[78,81,85,-1,83,81,78,-1],[79,-1,78,74,76,-1,73,-1],
  [74,78,81,86,-1,85,81,78],[76,78,81,-1,83,81,78,76],[79,78,76,74,-1,76,78,-1],[76,-1,73,76,81,-1,-1,-1]]},

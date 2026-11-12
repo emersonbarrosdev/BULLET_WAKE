@@ -2,9 +2,9 @@
 
 Shooter arcade 2D de rolagem vertical e visão superior, com invasão alienígena sobre a Terra. Somente a Fase 1, Fenda Pelágica, está liberada nesta versão.
 
-[Bíblia vigente](docs/27_BULLET_WAKE_V2_DEFINITIVO.md) · [Revisão de gameplay](docs/48_RIVET_CACA_TORMENTA_ESCARLATE.md) · [Abertura atualizada](docs/50_ABERTURA_RIVET_CACA.md).
+[Bíblia vigente](docs/27_BULLET_WAKE_V2_DEFINITIVO.md) · [Reformulação da Fase 1 e validação](docs/52_FASE1_REFORMULACAO_BIOMECANICA.md) · [Abertura atualizada](docs/50_ABERTURA_RIVET_CACA.md).
 
-Cinco pilotos cartoon: Bayek/RIVET, Tita/MOTH, Leona/KESTREL, Osvald/KNUCKLE e Hien/PEREGRINE. Cada nave evolui sua própria arma com P, tem especial e história pessoal. Início com 3 vidas/2 especiais; limite 5/5, excesso vira pontos. Progresso por piloto, HUD lateral em carbono e rádio contextual. Sem escudo, dash, carga, bomba extra ou míssil manual; RIVET tem cinco níveis, dois mísseis automáticos no NV3/NV4 e três guiados no FULL. Três trilhas originais com humbuckers amostrados, distorção de alto ganho, baixo e bateria acústica.
+Cinco pilotos cartoon: Bayek/RIVET, Tita/MOTH, Leona/KESTREL, Osvald/KNUCKLE e Hien/PEREGRINE. Cada nave evolui sua própria arma com P, tem especial e história pessoal. Início com 3 vidas/2 especiais; limite 5/5, excesso vira pontos. Progresso por piloto, HUD lateral em carbono e rádio contextual. Sem escudo, dash, carga, bomba extra ou míssil manual; RIVET tem cinco níveis, dois mísseis automáticos no NV3/NV4 e três guiados no FULL. Quatro trilhas originais: menu e chefe preservados, combate oceânico com guitarras, baixo sintetizado/kit eletrônico e tema de vitória sem loop. Talassarca combate no ar, foge, retorna pelo oceano e inicia a arena fixa com Eclipse Abissal. Canal do piloto em terminal verde; conclusão com saída automática da nave. Potência e recursos são preservados na passagem sequencial entre fases, sem transformar uma nave fraca em FULL.
 
 A campanha de quinze fases e as rotas secretas são planejamento documentado, não conteúdo produzido. O Normal é o único balanceamento ativo.
 

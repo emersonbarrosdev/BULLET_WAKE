@@ -1,0 +1,490 @@
+{
+  "completed": true,
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "pilots": [
+        {
+          "id": "nolan",
+          "levels": [
+            {
+              "level": 1,
+              "count": 1,
+              "texture": "polish-rivet-red",
+              "label": "RAJADA ESCARLATE"
+            },
+            {
+              "level": 2,
+              "count": 2,
+              "texture": "polish-rivet-red",
+              "label": "RAJADA ESCARLATE"
+            },
+            {
+              "level": 3,
+              "count": 3,
+              "texture": "polish-rivet-red",
+              "label": "RAJADA ESCARLATE"
+            },
+            {
+              "level": 4,
+              "count": 6,
+              "texture": "polish-rivet-red",
+              "label": "RAJADA ESCARLATE"
+            },
+            {
+              "level": 5,
+              "count": 7,
+              "texture": "polish-rivet-red",
+              "label": "RAJADA ESCARLATE"
+            }
+          ],
+          "special": {
+            "immediate": 600,
+            "after": 548.0000000000002,
+            "type": "scarlet",
+            "stock": 1,
+            "drones": 0
+          }
+        },
+        {
+          "id": "cora",
+          "levels": [
+            {
+              "level": 1,
+              "count": 2,
+              "texture": "reform-violet",
+              "label": "ONDAS VIOLETAS"
+            },
+            {
+              "level": 2,
+              "count": 4,
+              "texture": "reform-violet",
+              "label": "ONDAS VIOLETAS"
+            },
+            {
+              "level": 3,
+              "count": 6,
+              "texture": "reform-violet",
+              "label": "ONDAS VIOLETAS"
+            },
+            {
+              "level": 4,
+              "count": 8,
+              "texture": "reform-violet",
+              "label": "ONDAS VIOLETAS"
+            }
+          ],
+          "special": {
+            "immediate": 600,
+            "after": 479.99999999999994,
+            "type": "phantom",
+            "stock": 1,
+            "drones": 0
+          }
+        },
+        {
+          "id": "lyra",
+          "levels": [
+            {
+              "level": 1,
+              "count": 2,
+              "texture": "reform-emerald",
+              "label": "LANÇA ESMERALDA"
+            },
+            {
+              "level": 2,
+              "count": 3,
+              "texture": "reform-emerald",
+              "label": "LANÇA ESMERALDA"
+            },
+            {
+              "level": 3,
+              "count": 6,
+              "texture": "reform-emerald",
+              "label": "LANÇA ESMERALDA"
+            },
+            {
+              "level": 4,
+              "count": 7,
+              "texture": "reform-emerald",
+              "label": "LANÇA ESMERALDA"
+            }
+          ],
+          "special": {
+            "immediate": 600,
+            "after": 480,
+            "type": "orbital",
+            "stock": 1,
+            "drones": 0
+          }
+        },
+        {
+          "id": "harlan",
+          "levels": [
+            {
+              "level": 1,
+              "count": 1,
+              "texture": "reform-amber",
+              "label": "FLUXO ÂMBAR"
+            },
+            {
+              "level": 2,
+              "count": 2,
+              "texture": "reform-amber",
+              "label": "FLUXO ÂMBAR"
+            },
+            {
+              "level": 3,
+              "count": 3,
+              "texture": "reform-amber",
+              "label": "FLUXO ÂMBAR"
+            },
+            {
+              "level": 4,
+              "count": 4,
+              "texture": "reform-amber",
+              "label": "FLUXO ÂMBAR"
+            }
+          ],
+          "special": {
+            "immediate": 600,
+            "after": 480,
+            "type": "nova",
+            "stock": 1,
+            "drones": 0
+          }
+        },
+        {
+          "id": "bento",
+          "levels": [
+            {
+              "level": 1,
+              "count": 2,
+              "texture": "reform-celestial",
+              "label": "CHUVA CELESTE"
+            },
+            {
+              "level": 2,
+              "count": 3,
+              "texture": "reform-celestial",
+              "label": "CHUVA CELESTE"
+            },
+            {
+              "level": 3,
+              "count": 4,
+              "texture": "reform-celestial",
+              "label": "CHUVA CELESTE"
+            },
+            {
+              "level": 4,
+              "count": 7,
+              "texture": "reform-celestial",
+              "label": "CHUVA CELESTE"
+            }
+          ],
+          "special": {
+            "immediate": 600,
+            "after": 495,
+            "type": "comet",
+            "stock": 1,
+            "drones": 0
+          }
+        }
+      ],
+      "boss": {
+        "texture": "reform-aerial",
+        "damaged": true,
+        "radioColor": "rgb(177, 245, 173)",
+        "font": "\"Lucida Console\", \"Courier New\", monospace"
+      },
+      "absence": {
+        "hidden": true,
+        "phase": "submerged",
+        "emerge": "emerge",
+        "texture": "reform-emerge"
+      },
+      "water": {
+        "delta": 2000,
+        "scroll": 5000
+      }
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "pilots": [
+        {
+          "id": "nolan",
+          "levels": [
+            {
+              "level": 1,
+              "count": 1,
+              "texture": "polish-rivet-red",
+              "label": "RAJADA ESCARLATE"
+            },
+            {
+              "level": 2,
+              "count": 2,
+              "texture": "polish-rivet-red",
+              "label": "RAJADA ESCARLATE"
+            },
+            {
+              "level": 3,
+              "count": 3,
+              "texture": "polish-rivet-red",
+              "label": "RAJADA ESCARLATE"
+            },
+            {
+              "level": 4,
+              "count": 6,
+              "texture": "polish-rivet-red",
+              "label": "RAJADA ESCARLATE"
+            },
+            {
+              "level": 5,
+              "count": 7,
+              "texture": "polish-rivet-red",
+              "label": "RAJADA ESCARLATE"
+            }
+          ],
+          "special": {
+            "immediate": 600,
+            "after": 548.0000000000002,
+            "type": "scarlet",
+            "stock": 1,
+            "drones": 0
+          }
+        },
+        {
+          "id": "cora",
+          "levels": [
+            {
+              "level": 1,
+              "count": 2,
+              "texture": "reform-violet",
+              "label": "ONDAS VIOLETAS"
+            },
+            {
+              "level": 2,
+              "count": 4,
+              "texture": "reform-violet",
+              "label": "ONDAS VIOLETAS"
+            },
+            {
+              "level": 3,
+              "count": 6,
+              "texture": "reform-violet",
+              "label": "ONDAS VIOLETAS"
+            },
+            {
+              "level": 4,
+              "count": 8,
+              "texture": "reform-violet",
+              "label": "ONDAS VIOLETAS"
+            }
+          ],
+          "special": {
+            "immediate": 600,
+            "after": 479.99999999999994,
+            "type": "phantom",
+            "stock": 1,
+            "drones": 0
+          }
+        },
+        {
+          "id": "lyra",
+          "levels": [
+            {
+              "level": 1,
+              "count": 2,
+              "texture": "reform-emerald",
+              "label": "LANÇA ESMERALDA"
+            },
+            {
+              "level": 2,
+              "count": 3,
+              "texture": "reform-emerald",
+              "label": "LANÇA ESMERALDA"
+            },
+            {
+              "level": 3,
+              "count": 6,
+              "texture": "reform-emerald",
+              "label": "LANÇA ESMERALDA"
+            },
+            {
+              "level": 4,
+              "count": 7,
+              "texture": "reform-emerald",
+              "label": "LANÇA ESMERALDA"
+            }
+          ],
+          "special": {
+            "immediate": 600,
+            "after": 480,
+            "type": "orbital",
+            "stock": 1,
+            "drones": 0
+          }
+        },
+        {
+          "id": "harlan",
+          "levels": [
+            {
+              "level": 1,
+              "count": 1,
+              "texture": "reform-amber",
+              "label": "FLUXO ÂMBAR"
+            },
+            {
+              "level": 2,
+              "count": 2,
+              "texture": "reform-amber",
+              "label": "FLUXO ÂMBAR"
+            },
+            {
+              "level": 3,
+              "count": 3,
+              "texture": "reform-amber",
+              "label": "FLUXO ÂMBAR"
+            },
+            {
+              "level": 4,
+              "count": 4,
+              "texture": "reform-amber",
+              "label": "FLUXO ÂMBAR"
+            }
+          ],
+          "special": {
+            "immediate": 600,
+            "after": 480,
+            "type": "nova",
+            "stock": 1,
+            "drones": 0
+          }
+        },
+        {
+          "id": "bento",
+          "levels": [
+            {
+              "level": 1,
+              "count": 2,
+              "texture": "reform-celestial",
+              "label": "CHUVA CELESTE"
+            },
+            {
+              "level": 2,
+              "count": 3,
+              "texture": "reform-celestial",
+              "label": "CHUVA CELESTE"
+            },
+            {
+              "level": 3,
+              "count": 4,
+              "texture": "reform-celestial",
+              "label": "CHUVA CELESTE"
+            },
+            {
+              "level": 4,
+              "count": 7,
+              "texture": "reform-celestial",
+              "label": "CHUVA CELESTE"
+            }
+          ],
+          "special": {
+            "immediate": 600,
+            "after": 495,
+            "type": "comet",
+            "stock": 1,
+            "drones": 0
+          }
+        }
+      ],
+      "boss": {
+        "texture": "reform-aerial",
+        "damaged": true,
+        "radioColor": "rgb(177, 245, 173)",
+        "font": "\"Lucida Console\", \"Courier New\", monospace"
+      },
+      "absence": {
+        "hidden": true,
+        "phase": "submerged",
+        "emerge": "emerge",
+        "texture": "reform-emerge"
+      },
+      "water": {
+        "delta": 2000,
+        "scroll": 5000
+      }
+    }
+  ],
+  "regression": {
+    "title": true,
+    "neutralization": {
+      "low": 1,
+      "remaining": [
+        "heavy"
+      ],
+      "pool": 1
+    },
+    "victory": {
+      "immediate": {
+        "completed": true,
+        "result": false,
+        "track": "victory",
+        "phase": "defeated",
+        "hp": 0,
+        "gameOver": false,
+        "paused": true,
+        "miniboss": false,
+        "exitMs": 0
+      },
+      "clear": {
+        "visible": false,
+        "y": -775,
+        "result": true,
+        "saved": {
+          "pilotId": "nolan",
+          "clearedStage": 1,
+          "weapons": {
+            "pilotId": "nolan",
+            "weaponFamily": "ion",
+            "weaponLevel": 5,
+            "powerMeter": 0,
+            "speedLevel": 0,
+            "specialCharges": 2,
+            "hasShield": false,
+            "specialActiveMs": 0,
+            "specialDurationMs": 3000,
+            "specialType": "scarlet",
+            "missileCooldownMs": 0,
+            "fireCooldownMs": 0,
+            "heat": 0,
+            "isOverheated": false,
+            "overheatCooldownMs": 0,
+            "chargeMs": 0,
+            "isCharging": false
+          },
+          "lives": 3,
+          "score": 9000
+        }
+      }
+    },
+    "physicalGamepads": [],
+    "aftermath": {
+      "results": 0,
+      "hud": 0,
+      "panels": 1,
+      "opacity": "1"
+    },
+    "virtualGamepad": {
+      "moved": 38.000000000000114,
+      "shots": 2,
+      "stock": 1,
+      "paused": true,
+      "dialog": true,
+      "physicalController": false
+    }
+  },
+  "errors": []
+}

@@ -156,7 +156,7 @@ export class TitleScene extends Phaser.Scene {
 
   private renderActions(): string {
     if (this.mode === 'guide') {
-      return `<p class="bw-guide-intro">Colete por contato. RIVET: 2/2/2/3 P até NV5 FULL. Demais naves: 3 P por nível até NV4. RIVET: Rajada Escarlate · MOTH: ondas verdes · KNUCKLE: fluxo rubro · KESTREL: tiro de precisão · PEREGRINE: rajada alternada. 3 vidas iniciais, máximo 5; ao ser abatido, a potência volta ao NV1. Um único P comum pode ser recuperado.</p><div class="bw-item-guide" tabindex="0" aria-label="Legenda de itens, role para ver todos">${NORMAL_GUIDE_ITEMS.map(type => {
+      return `<p class="bw-guide-intro">Colete por contato. RIVET: 2/2/2/3 P até NV5 FULL. Demais naves: 3 P por nível até NV4. RIVET: Rajada Escarlate · MOTH: Ondas Violetas · KESTREL: Lança Esmeralda · KNUCKLE: Fluxo Âmbar · PEREGRINE: Chuva Celeste. 3 vidas iniciais, máximo 5; ao ser abatido, a potência volta ao NV1. Um único P comum pode ser recuperado.</p><div class="bw-item-guide" tabindex="0" aria-label="Legenda de itens, role para ver todos">${NORMAL_GUIDE_ITEMS.map(type => {
         const item = PICKUP_GUIDE[type];
         return `<article><div class="bw-guide-icon bw-guide-raster" style="background-image:url('${import.meta.env.BASE_URL}assets/combat-hd/review/pickups-${type}.webp')" role="img" aria-label="${item.label}"></div><div><h2 style="color:${item.color}">${item.letter} · ${item.label}</h2><p>${item.description}</p></div></article>`;
       }).join('')}</div>${this.actionButton('back', 'VOLTAR', '', 0)}`;

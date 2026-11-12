@@ -1,3 +1,4 @@
+import { PILOT_WEAPON_SPECS } from '../systems/weaponSystem';
 import { DEV_SHOW_SECRET_PILOT } from '../data/pilotStories';
 import { saveSystem } from '../systems/saveSystem';
 import { connectedPad, GamepadReader, padLabels } from '../systems/gamepadInput';
@@ -222,7 +223,7 @@ export class PilotSelectScene extends Phaser.Scene {
   private renderStats(pilot: PilotDefinition): string {
     const stats = [
       { label: 'VEL', value: pilot.speed, lo: 175, hi: 215, title: `${pilot.speed} unidades/s` },
-      { label: 'CAD', value: pilot.shotsPerSecond, lo: 5, hi: 8, title: `${pilot.shotsPerSecond} disparos/s` },
+      { label: 'CAD', value: 1000/((PILOT_WEAPON_SPECS[pilot.id]?.autoIntervalMs??160)*8/pilot.shotsPerSecond), lo: 2, hi: 7, title: `${(1000/((PILOT_WEAPON_SPECS[pilot.id]?.autoIntervalMs??160)*8/pilot.shotsPerSecond)).toFixed(1)} salvas/s` },
       { label: 'PWR', value: pilot.damage, lo: 1, hi: 1.6, title: `${pilot.damage.toFixed(2)}× dano` },
     ];
     return stats.map(stat => {

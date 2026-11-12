@@ -360,11 +360,11 @@ export class StageBackdrop {
    * Atualiza o deslocamento vertical das camadas do oceano com base no scrollPx cumulativo.
    * Atribuição direta (=) e NÃO incremento (-=), garantindo velocidade constante e sem aberração.
    */
-  update(scrollPx: number, deltaMs = 16.667): void {
+  update(scrollPx: number, deltaMs = 16.667, routePx=scrollPx): void {
     this.waterTimeMs += Math.max(0,deltaMs);
-    this.water?.update(scrollPx,deltaMs);
-    const invasion=Phaser.Math.Clamp((scrollPx-1100)/1300,0,1);
-    const rift=Phaser.Math.Clamp((scrollPx-3150)/950,0,1);
+    this.water?.update(scrollPx,deltaMs,routePx);
+    const invasion=Phaser.Math.Clamp((routePx-1100)/1300,0,1);
+    const rift=Phaser.Math.Clamp((routePx-3150)/950,0,1);
     // Near-surface flecks have independent trajectories, not a scrolling photograph.
     this.spray.clear();
     if(this.water){

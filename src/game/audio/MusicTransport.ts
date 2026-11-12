@@ -1,6 +1,6 @@
 import type { MusicTheme } from './musicScore';
 import { MusicCursor } from './MusicCursor';
-/** Sampled original 48-bar rock arrangements. Decoding is cached; stop invalidates pending fetches. */
+/** Sampled original arrangements; victory is a short non-looping cue. Decoding is cached; stop invalidates pending fetches. */
 export class MusicTransport {
     private source?: AudioBufferSourceNode;
     private generation = 0;
@@ -26,7 +26,7 @@ export class MusicTransport {
                 return;
             const source = this.ctx.createBufferSource(), gain = this.ctx.createGain();
             source.buffer = buffer;
-            source.loop = true;
+            source.loop = theme!=='victory';
             source.loopStart = 0;
             source.loopEnd = buffer.duration;
             gain.gain.setValueAtTime(0, this.ctx.currentTime);
@@ -34,7 +34,7 @@ export class MusicTransport {
             source.connect(gain);
             gain.connect(this.bus);
             this.source = source;
-            source.onended = () => { source.disconnect(); gain.disconnect(); };
+            source.onended = () => { if(this.source===source)this.source=undefined;source.disconnect(); gain.disconnect(); };
             source.start(0,this.cursor.start(this.ctx.currentTime,buffer.duration));
         }).catch(() => { if (generation === this.generation)
             this.error = true; this.buffers.delete(theme); });

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import '../../combat-hud.css';
 import { type PlayerHealth } from '../systems/combat';
 import type { SectorId } from '../systems/stageDirector';
-import { maxWeaponLevel, powerItemsForNextLevel, type WeaponLevel, type WeaponFamily } from '../systems/weaponSystem';
+import { maxWeaponLevel, powerItemsForNextLevel, PILOT_WEAPON_SPECS, type WeaponLevel, type WeaponFamily } from '../systems/weaponSystem';
 import { getPilot } from '../data/pilots';
 
 const sectors: Record<SectorId, string> = {
@@ -16,6 +16,8 @@ export class PremiumCombatHud {
   private readonly fields = new Map<string, HTMLElement>();
   private statusRemainingMs = 0;
   private pilotId="nolan";
+  private radioLine="";
+  private radioSequence=0;
   private readonly align = (): void => {
     const r = this.scene.game.canvas.getBoundingClientRect();
     Object.assign(this.root.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
@@ -44,7 +46,7 @@ export class PremiumCombatHud {
       <aside class="bw-combat-side bw-combat-right" aria-label="Telemetria de armamento">
         <div class="bw-combat-mission"><small>OPERAÇÃO PELÁGICA</small><strong>FENDA PELÁGICA</strong><span data-field="sector">ÁGUAS COSTEIRAS</span></div>
         <section class="bw-combat-panel bw-combat-armament"><small>ARMA EQUIPADA</small><strong class="bw-combat-weapon" data-field="weapon">RAJADA ESCARLATE</strong><div class="bw-combat-line"><span>POTÊNCIA</span><b data-field="level">NV 1/4</b></div><div class="bw-combat-pips" data-field="pips"><i></i><i></i><i></i><i></i></div><div class="bw-combat-evolution"><div class="bw-combat-line"><small data-field="power-title">PRÓXIMO NÍVEL</small><b data-field="power">0 / 3</b></div><div class="bw-combat-segments" data-field="power-segments"><i>P</i><i>P</i><i>P</i></div></div></section>
-        <section class="bw-combat-radio" aria-label="Comunicação do piloto"><small>CANAL DO PILOTO <i data-field="radio-status">EM ESCUTA</i></small><p data-field="radio">Canal aberto.</p></section>
+        <section class="bw-combat-radio" aria-label="Comunicação do piloto"><small>COMLINK / 01 <i data-field="radio-status">EM ESCUTA</i></small><div class="bw-radio-log" data-field="radio-previous">&gt; CONEXÃO ESTABELECIDA</div><p data-field="radio">Canal aberto.</p><span class="bw-radio-cursor" aria-hidden="true">▌</span></section>
       </aside>`;
     this.root.querySelectorAll<HTMLElement>('[data-field]').forEach(node => this.fields.set(node.dataset.field!, node));
     document.body.append(this.root);
@@ -89,8 +91,8 @@ export class PremiumCombatHud {
   }
   setWeapon(family: WeaponFamily, level: WeaponLevel, powerMeter = 0): void {
     const rivet = this.pilotId === 'nolan' && family === 'ion';
-    const color = rivet ? '#ff655c' : family === 'ion' ? '#79deff' : family === 'green' ? '#86efac' : '#ff735e';
-    this.text('weapon', rivet ? 'RAJADA ESCARLATE' : family === 'ion' ? 'DISPERSÃO AZUL' : family === 'green' ? 'ENERGIA ESPIRALADA' : 'LASER RUBRO');
+    const color = rivet ? '#ff655c' : this.pilotId==='cora'?'#d3a6ff':this.pilotId==='lyra'?'#86efac':this.pilotId==='harlan'?'#ffb65e':'#79deff';
+    this.text('weapon', PILOT_WEAPON_SPECS[this.pilotId]?.displayName??'RAJADA ESCARLATE');
     this.field('weapon').style.color = color; this.field('pips').style.setProperty('--weapon', color);
     this.text('level', level>=maxWeaponLevel(this.pilotId)?'FULL':`NV ${level}/${maxWeaponLevel(this.pilotId)}`); this.segments('pips', level); this.setPowerMeter(powerMeter, level);
     this.text('power-title',level<maxWeaponLevel(this.pilotId)?'PRÓXIMO NÍVEL':'POTÊNCIA MÁXIMA');
@@ -107,7 +109,15 @@ export class PremiumCombatHud {
     this.field('special-stock').setAttribute('aria-label',`${count} especiais`);
     this.text('special',active?'ATIVO':count>0?'PRONTO':'VAZIO');
   }
-  setRadio(message:string,active:boolean):void {this.text('radio',active?message:'Canal aberto.');this.text('radio-status',active?'TRANSMITINDO':'EM ESCUTA');this.field('radio').parentElement!.classList.toggle('bw-radio-active',active);}
+  setRadio(message:string,active:boolean):void {
+    if(active&&message!==this.radioLine){
+      this.text('radio-previous',this.radioLine?'> RX '+String(this.radioSequence).padStart(2,'0')+' / TRANSMISSÃO RECEBIDA':'> LINK SEGURO / '+getPilot(this.pilotId).name.toUpperCase());
+      this.radioLine=message;this.radioSequence++;
+    }
+    this.text('radio',active?'> '+getPilot(this.pilotId).name.toUpperCase()+': '+message:'> AGUARDANDO TRANSMISSÃO');
+    this.text('radio-status',active?'● RX':'○ ONLINE');
+    this.field('radio').parentElement!.classList.toggle('bw-radio-active',active);
+  }
   setProgress(ratio: number): void { this.field('progress').style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`; }
   setSector(sector: SectorId): void { this.text('sector', sectors[sector]); this.flash(`SETOR: ${sectors[sector]}`, '#dedede', 650); }
   showBossBar(name: string, hp: number, max: number): void {

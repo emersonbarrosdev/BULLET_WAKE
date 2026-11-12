@@ -1,0 +1,31 @@
+[
+  {
+    "file": "public/assets/audio/menu.ogg",
+    "unchanged": true,
+    "sha256": "55d17a9fc5cf3f470d985e704c34ab0db1df105cbed43af4f097dfaea0731ee2"
+  },
+  {
+    "file": "public/assets/audio/boss.ogg",
+    "unchanged": true,
+    "sha256": "793d7a2017b3736a43d779c088369b8627008303d59a8a5fa6c607c716ab4b35"
+  },
+  {
+    "file": "public/assets/combat-hd/polish/rivet-red.webp",
+    "unchanged": true,
+    "sha256": "c896b2ab4a18bfbd66733e254903966eb3893c39bfe62013163cd9205ca8b915"
+  },
+  {
+    "file": "public/assets/combat-hd/rivet-hornet.webp",
+    "unchanged": true,
+    "sha256": "2c8463430d4a804e773c0d70e24098374a782b11b1f0d5839c7a7e371e93892d"
+  },
+  {
+    "file": "src/game/audio/cannonSamples.ts",
+    "unchanged": true,
+    "sha256": "4be1b9722f4f85239e7293b20382437b9f2552518551d34e84570cc3d5009367"
+  },
+  {
+    "system": "RIVET primary projectile definition",
+    "unchanged": true
+  }
+]

@@ -1,3 +1,4 @@
+import {returnFromOcean} from './bossFlightHelper.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -345,10 +346,9 @@ test('phase one bosses: Raia-Dente remains distinct; Talassarca has two complete
   for(let i=0;i<4;i++)assert.equal(boss.damageArea(120).killed,false);
   assert.equal(boss.hp,120);
   const crack=boss.damageArea(120);
-  assert.equal(crack.killed,false);assert.equal(boss.phase,'metamorphosis');
+  assert.equal(crack.killed,false);assert.equal(boss.phase,'escape');
   assert.equal(boss.damageArea(9999).bossDamage,0);
-  boss.update(2399,384,350);assert.equal(boss.phase,'metamorphosis');
-  boss.update(1,384,350);assert.equal(boss.phase,'inner');assert.equal(boss.hp,360);
+  returnFromOcean(boss);assert.equal(boss.phase,'inner');assert.equal(boss.hp,360);
   assert.equal(boss.damageArea(120).killed,false);assert.equal(boss.damageArea(120).killed,false);
   assert.equal(boss.damageArea(120).killed,true);assert.equal(boss.phase,'defeated');
 });

@@ -1,0 +1,260 @@
+{
+  "completed": true,
+  "viewports": [],
+  "regression": {
+    "title": true,
+    "fullRoutes": [
+      {
+        "pilot": "Bayek",
+        "skipPolicy": 0,
+        "actuallySkipped": 0,
+        "seconds": 202.5,
+        "completed": true,
+        "gameOver": false,
+        "lives": 4,
+        "level": 5,
+        "powerMeter": 0,
+        "collected": 11,
+        "pickedTypes": {
+          "power": 9,
+          "life": 1,
+          "special": 1
+        },
+        "kills": 98,
+        "levels": [
+          {
+            "seconds": 35.3,
+            "level": 2
+          },
+          {
+            "seconds": 67.8,
+            "level": 3
+          },
+          {
+            "seconds": 107.62,
+            "level": 4
+          },
+          {
+            "seconds": 152.78,
+            "level": 5
+          }
+        ],
+        "deaths": [],
+        "deathCauses": [],
+        "peakEnemies": 9,
+        "peakBullets": 9,
+        "updateP95Ms": 0.5
+      },
+      {
+        "pilot": "Tita",
+        "skipPolicy": 0,
+        "actuallySkipped": 0,
+        "seconds": 253.2,
+        "completed": true,
+        "gameOver": false,
+        "lives": 2,
+        "level": 1,
+        "powerMeter": 1,
+        "collected": 13,
+        "pickedTypes": {
+          "power": 11,
+          "life": 1,
+          "special": 1
+        },
+        "kills": 102,
+        "levels": [
+          {
+            "seconds": 54.12,
+            "level": 2
+          },
+          {
+            "seconds": 106.22,
+            "level": 3
+          },
+          {
+            "seconds": 152.6,
+            "level": 4
+          },
+          {
+            "seconds": 183.8,
+            "level": 1
+          }
+        ],
+        "deaths": [
+          183.8,
+          218.02
+        ],
+        "deathCauses": [
+          {
+            "seconds": 183.8,
+            "damage": 35,
+            "position": {
+              "x": 328.9746855425237,
+              "y": 269.0000000000003
+            }
+          },
+          {
+            "seconds": 218.02,
+            "damage": 25,
+            "position": {
+              "x": 399.62481087300125,
+              "y": 383.5053124163086
+            }
+          }
+        ],
+        "peakEnemies": 6,
+        "peakBullets": 12,
+        "updateP95Ms": 0.3999999761581421
+      },
+      {
+        "pilot": "Leona",
+        "skipPolicy": 0,
+        "actuallySkipped": 0,
+        "seconds": 213.3,
+        "completed": true,
+        "gameOver": false,
+        "lives": 4,
+        "level": 4,
+        "powerMeter": 0,
+        "collected": 11,
+        "pickedTypes": {
+          "power": 9,
+          "life": 1,
+          "special": 1
+        },
+        "kills": 94,
+        "levels": [
+          {
+            "seconds": 52.06,
+            "level": 2
+          },
+          {
+            "seconds": 106.14,
+            "level": 3
+          },
+          {
+            "seconds": 152.44,
+            "level": 4
+          }
+        ],
+        "deaths": [],
+        "deathCauses": [],
+        "peakEnemies": 6,
+        "peakBullets": 12,
+        "updateP95Ms": 0.30000007152557373
+      },
+      {
+        "pilot": "Osvald",
+        "skipPolicy": 0,
+        "actuallySkipped": 0,
+        "seconds": 263.16,
+        "completed": true,
+        "gameOver": false,
+        "lives": 4,
+        "level": 4,
+        "powerMeter": 0,
+        "collected": 11,
+        "pickedTypes": {
+          "power": 9,
+          "life": 1,
+          "special": 1
+        },
+        "kills": 80,
+        "levels": [
+          {
+            "seconds": 53.98,
+            "level": 2
+          },
+          {
+            "seconds": 108.92,
+            "level": 3
+          },
+          {
+            "seconds": 155.04,
+            "level": 4
+          }
+        ],
+        "deaths": [],
+        "deathCauses": [],
+        "peakEnemies": 9,
+        "peakBullets": 9,
+        "updateP95Ms": 0.7999999523162842
+      },
+      {
+        "pilot": "Hien",
+        "skipPolicy": 0,
+        "actuallySkipped": 0,
+        "seconds": 235.94,
+        "completed": true,
+        "gameOver": false,
+        "lives": 4,
+        "level": 4,
+        "powerMeter": 0,
+        "collected": 11,
+        "pickedTypes": {
+          "power": 9,
+          "life": 1,
+          "special": 1
+        },
+        "kills": 104,
+        "levels": [
+          {
+            "seconds": 52.56,
+            "level": 2
+          },
+          {
+            "seconds": 110.34,
+            "level": 3
+          },
+          {
+            "seconds": 154.5,
+            "level": 4
+          }
+        ],
+        "deaths": [],
+        "deathCauses": [],
+        "peakEnemies": 6,
+        "peakBullets": 9,
+        "updateP95Ms": 0.2999999523162842
+      },
+      {
+        "pilot": "Bayek",
+        "skipPolicy": 3,
+        "actuallySkipped": 1,
+        "seconds": 212.42,
+        "completed": true,
+        "gameOver": false,
+        "lives": 4,
+        "level": 4,
+        "powerMeter": 2,
+        "collected": 10,
+        "pickedTypes": {
+          "power": 8,
+          "life": 1,
+          "special": 1
+        },
+        "kills": 101,
+        "levels": [
+          {
+            "seconds": 60.44,
+            "level": 2
+          },
+          {
+            "seconds": 91.54,
+            "level": 3
+          },
+          {
+            "seconds": 122.14,
+            "level": 4
+          }
+        ],
+        "deaths": [],
+        "deathCauses": [],
+        "peakEnemies": 6,
+        "peakBullets": 12,
+        "updateP95Ms": 0.20000004768371582
+      }
+    ]
+  },
+  "errors": []
+}

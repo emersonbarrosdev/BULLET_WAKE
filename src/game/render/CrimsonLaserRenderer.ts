@@ -32,7 +32,7 @@ export class CrimsonLaserRenderer {
     this.ribbons.clear();
     // The moving green head leaves a continuous luminous wave, never isolated dots.
     for(const shot of _shots)if(shot.waveAmplitude&&shot.trail&&shot.trail.length>1){
-      for(const [width,color,alpha] of [[9,0x14943d,.2],[4,0x35ef67,.65],[1.4,0xe0ffad,.9]]) {
+      for(const [width,color,alpha] of [[9,0x6823a8,.2],[4,0xbc65ff,.65],[1.4,0xf4dfff,.9]]) {
         this.ribbons.lineStyle(width,color,alpha).beginPath();
         shot.trail.forEach((p,i)=>i===0?this.ribbons.moveTo(p.x,p.y):this.ribbons.lineTo(p.x,p.y));
         this.ribbons.strokePath();

@@ -1,3 +1,4 @@
+import { getPilot } from '../data/pilots';
 import Phaser from 'phaser';
 import '../../mission-result.css';
 import { connectedPad, GamepadReader, padLabels } from '../systems/gamepadInput';
@@ -10,10 +11,11 @@ export class MissionResultOverlay extends Phaser.GameObjects.Container {
     super(scene, 0, 0);
     scene.add.existing(this);
     const root = document.createElement('div');
-    root.className = 'bw-mission-result' + (defeated ? ' bw-result-defeat' : '');
+    root.className = 'bw-mission-result' + (defeated ? ' bw-result-defeat' : ' bw-result-victory');
     root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true');
     root.setAttribute('aria-labelledby', 'bw-result-title');
-    root.innerHTML = `<section class="bw-result-panel"><p class="bw-result-eyebrow">BULLET WAKE // RELATÓRIO DE OPERAÇÃO</p><h1 id="bw-result-title">${title}</h1><p class="bw-result-caption">${caption}</p><p class="bw-result-score"><span>PONTUAÇÃO TOTAL</span><strong>${String(score).padStart(7, '0')}</strong></p><p class="bw-result-message">${message}</p><nav aria-label="Próxima ação">${actions.map((a, i) => `<button type="button" data-result-action="${i}">${a.label} <kbd>[${a.key.toUpperCase().replace('ESCAPE', 'ESC')}]</kbd></button>`).join('')}</nav></section>`;
+    const pilot=getPilot(scene.registry.get('activePilot'));
+    root.innerHTML = `<section class="bw-result-panel"><div class="bw-result-pilot"><img src="${import.meta.env.BASE_URL}assets/pilot-selection/portrait-${pilot.id}.webp" alt="${pilot.name}"/><span>${pilot.name.toUpperCase()}<small>${pilot.shipName.toUpperCase()} / OPERAÇÃO 01</small></span><b>${defeated?"LOST":"CLEAR"}</b></div><h1 id="bw-result-title">${title}</h1><p class="bw-result-caption">${caption}</p><p class="bw-result-score"><span>PONTUAÇÃO TOTAL</span><strong>${String(score).padStart(7, '0')}</strong></p><p class="bw-result-message">${message}</p><nav aria-label="Próxima ação">${actions.map((a, i) => `<button type="button" data-result-action="${i}">${a.label} <kbd>[${a.key.toUpperCase().replace('ESCAPE', 'ESC')}]</kbd></button>`).join('')}</nav></section>`;
     document.body.append(root);
     const hud = document.querySelector<HTMLElement>('#bw-combat-hud');
     if (hud) hud.inert = true;

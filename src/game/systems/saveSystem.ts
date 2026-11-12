@@ -1,3 +1,4 @@
+import type { CampaignFlight } from './campaignFlight.ts';
 import { CAMPAIGN_MAIN_STAGES, SECRET_PILOT_CODE, SECRET_STAGE_IDS } from '../data/pilotStories.ts';
 /**
  * BULLET WAKE — Sistema de Salvamento e Persistência de Campanha.
@@ -18,7 +19,7 @@ export interface StageScoreRecord {
   clearedAt: number;
 }
 
-export interface PilotProgress { clearedStages:number[]; bestScores:Record<number,number>; endingSeen:boolean; }
+export interface PilotProgress { clearedStages:number[]; bestScores:Record<number,number>; endingSeen:boolean; flight?:CampaignFlight; }
 export interface SaveData {
   pilotProgress:Record<string,PilotProgress>;
   secretPilotUnlocked:boolean;
@@ -129,9 +130,10 @@ export class SaveSystem {
     }
   }
 
-  recordStageClear(stageNumber: number, pilotId: string, score: number): void {
+  recordStageClear(stageNumber: number, pilotId: string, score: number, flight?:CampaignFlight): void {
     if(!Number.isInteger(stageNumber)||stageNumber<1||stageNumber>17||!Number.isFinite(score))return;
     const progress=this.data.pilotProgress[pilotId]??={clearedStages:[],bestScores:{},endingSeen:false};
+    if(flight&&flight.pilotId===pilotId&&flight.clearedStage===stageNumber)progress.flight=structuredClone(flight);
     if(!progress.clearedStages.includes(stageNumber))progress.clearedStages.push(stageNumber);
     progress.clearedStages.sort((a,b)=>a-b);
     progress.bestScores[stageNumber]=Math.max(progress.bestScores[stageNumber]??0,Math.max(0,score));

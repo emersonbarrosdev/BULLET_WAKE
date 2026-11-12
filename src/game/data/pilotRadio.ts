@@ -1,6 +1,6 @@
 import type { PilotId } from './pilots.ts';
-export type RadioEvent = 'death1'|'death2'|'deathlater'|'comeback'|'crowd'|'fear'|'miniboss'|'boss'|'upgrade'|'idle'|'victory';
-export const PILOT_RADIO:Record<PilotId,Record<RadioEvent,readonly string[]>> = {
+export type RadioEvent = 'death1'|'death2'|'deathlater'|'comeback'|'crowd'|'fear'|'miniboss'|'boss'|'upgrade'|'idle'|'victory'|'escape'|'return';
+export const PILOT_RADIO:Record<PilotId,Record<Exclude<RadioEvent,'escape'|'return'>,readonly string[]>> = {
   "nolan": {
     "death1": [
       "Primeira nave perdida. Concentra aí, meu.",
@@ -330,4 +330,9 @@ export const PILOT_RADIO:Record<PilotId,Record<RadioEvent,readonly string[]>> = 
  idle:['Olha para a tela, não para a mensagem, caramba.','Sim, sou eu falando com você do outro lado.','Essa caixa de texto não desvia bala.','Concentra aí, meu. Tenho família esperando.','Se estiver lendo, pelo menos continua atirando.'],
  victory:['Entrega concluída. Agora falta voltar para casa.','Pode respirar. E assinar o recibo.','Salvamos a costa. Minha esposa vai gostar da notícia.','Boa pilotagem. Vou omitir as batidas do relatório.','A mala continua cheia. A esperança também.']
  }
+};
+
+export const ENCOUNTER_RADIO:Record<'escape'|'return',readonly string[]>={
+ escape:['Ele está fugindo. Não perca a formação.','Blindagem rompida. Mas não acabou.','Alvo em retirada. Observem o oceano.','Contato sumindo. Mantenham os olhos abertos.','Não comemora ainda. Aquilo continua vivo.'],
+ return:['Contato sob a água! Afaste-se do núcleo.','Voltou maior. Mire nos armamentos!','O mar está se abrindo. Prepare-se.','Plataforma emergindo. Priorize os canhões.','Agora é a luta de verdade. Deixe espaço para desviar.']
 };

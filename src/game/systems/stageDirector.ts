@@ -1,3 +1,4 @@
+import { approachSpeed, cruiseTarget } from './stagePacing.ts';
 /**
  * Diretor da fase com progressão contínua e roteiro cinematográfico do BULLET WAKE.
  *
@@ -49,16 +50,20 @@ export interface EnemyShotEvent {
   velocityY: number;
   sourceLayer?: 'surface';
   kind?: EnemyKind | 'surface' | 'raia' | 'talassarca';
+  weight?: 'weak'|'medium'|'heavy'|'special';
 }
 
 export interface StageTick {
   spawned: EnemyModel[];
   shots: EnemyShotEvent[];
   scrollPx: number;
+  backgroundScrollPx: number;
+  travelSpeed: number;
   progress: number;
   sector: SectorId;
   sectorChanged: boolean;
   completed: boolean;
+  failed?:boolean;
   bossTick?: BossTick;
   bossActive?: boolean;
 }
@@ -168,6 +173,9 @@ export class StageDirector {
   readonly enemies: EnemyModel[] = [];
   boss: StageBoss | null = null;
   scrollPx = 0;
+  backgroundScrollPx = 0;
+  travelSpeed = SCROLL_SPEED;
+  private quietMs = 0;
   minibossSpawned = false;
   minibossActive = false;
   private eventIndex = 0;
@@ -188,6 +196,7 @@ export class StageDirector {
     this.scrollPx=Math.max(0,Math.min(3200,distance));
     this.eventIndex=STAGE_EVENTS.findIndex(e=>e.distance>this.scrollPx);
     if(this.eventIndex<0)this.eventIndex=STAGE_EVENTS.length;
+    this.backgroundScrollPx=this.scrollPx;
     this.minibossSpawned=this.scrollPx>=2100;
     this.currentSector=getSector(this.scrollPx);
   }
@@ -195,9 +204,13 @@ export class StageDirector {
   update(deltaMs: number, playerX: number, playerY: number): StageTick {
     const dt = clamp(deltaMs, 0, 50);
     this.attackCooldownMs=Math.max(0,this.attackCooldownMs-dt);
-    if (!this.boss) {
-      this.scrollPx += (SCROLL_SPEED * dt) / 1000;
-    } // Boss encounters freeze the route; water continues to animate independently.
+    this.quietMs=this.enemies.some(e=>!e.carrier)?0:this.quietMs+dt;
+    const final=this.boss?.name==='TALASSARCA';
+    const target=final?(this.boss!.layer==='inner'?0:this.boss!.phase==='submerged'?43:28)
+      :this.boss?20:cruiseTarget(this.enemies.filter(e=>!e.carrier).length,this.quietMs);
+    this.travelSpeed=approachSpeed(this.travelSpeed,target,dt);
+    this.backgroundScrollPx+=this.travelSpeed*dt/1000;
+    if(!this.boss)this.scrollPx+=this.travelSpeed*dt/1000;
 
     const sector = getSector(this.scrollPx);
     const sectorChanged = sector !== this.currentSector;
@@ -233,6 +246,7 @@ export class StageDirector {
           velocityX: shot.velocityX,
           velocityY: shot.velocityY,
           kind: this.boss.name==='RAIA-DENTE'?'raia':'talassarca',
+          weight: shot.weight ?? 'heavy',
         });
       }
       for (const sp of bossTick.spawns) {
@@ -280,7 +294,7 @@ export class StageDirector {
         layer: event.layer,
         carrier: event.carrier,
         surfaceVariant: event.surfaceVariant,
-        spawnScroll: this.scrollPx,
+        spawnScroll: event.layer?this.backgroundScrollPx:this.scrollPx,
         drop: event.drop,
       };
       this.enemies.push(enemy);
@@ -310,7 +324,7 @@ export class StageDirector {
         continue; // Fast, fragile formations never fire.
       }
       if (enemy.layer === 'surface') {
-        enemy.y = -35 + (this.scrollPx - (enemy.spawnScroll ?? 0)) * SURFACE_SCROLL_FACTOR;
+        enemy.y = -35 + (this.backgroundScrollPx - (enemy.spawnScroll ?? 0)) * SURFACE_SCROLL_FACTOR;
         const cycle = enemy.ageMs % 6800;
         enemy.submerged = cycle < 1400 || cycle >= 5400;
         enemy.animationFrame = cycle < 1400 ? 0 : cycle < 1900 ? 1 : cycle < 2400 ? 2 : cycle < 3100 ? 3 : cycle < 3450 ? 4 : cycle < 4600 ? 5 : cycle < 5100 ? 6 : 7;
@@ -571,10 +585,13 @@ export class StageDirector {
       spawned,
       shots:shots.filter(s=>s.x>=PLAYFIELD_X&&s.x<=PLAYFIELD_RIGHT&&s.y>=0&&s.y<=400&&Math.hypot(s.x-playerX,s.y-playerY)>=70),
       scrollPx: this.scrollPx,
+      backgroundScrollPx: this.backgroundScrollPx,
+      travelSpeed: this.travelSpeed,
       progress: clamp(this.scrollPx / DEMO_DISTANCE, 0, 1),
       sector,
       sectorChanged,
       completed: isCompleted,
+      failed:!!this.boss?.timedOut,
       bossTick,
       bossActive: Boolean(this.boss && this.boss.phase !== 'defeated'),
     };
@@ -619,6 +636,7 @@ export class StageDirector {
       velocityX: speed * Math.cos(finalAngle),
       velocityY: speed * Math.sin(finalAngle),
       kind: enemy.surfaceVariant==='ambush'?'cutter':enemy.layer?'surface':enemy.kind,
+      weight:enemy.layer?'heavy':enemy.kind==='scout'?'weak':enemy.kind==='dart'?'medium':'heavy',
     };
   }
 }

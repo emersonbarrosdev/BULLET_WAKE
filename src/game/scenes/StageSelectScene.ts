@@ -1,3 +1,4 @@
+import type { CampaignFlight } from '../systems/campaignFlight';
 import { getPilot } from '../data/pilots';
 import { PILOT_STORIES } from '../data/pilotStories';
 import { saveSystem } from '../systems/saveSystem';
@@ -11,12 +12,13 @@ export class StageSelectScene extends Phaser.Scene {
   private pad = new GamepadReader();
   private selection = 0;
   private pilotId='nolan';
-  init(data:{pilotId?:string}={}){this.pilotId=data.pilotId??'nolan';}
+  private carry?:CampaignFlight;
+  init(data:{pilotId?:string;carry?:CampaignFlight}={}){this.pilotId=data.pilotId??'nolan';this.carry=data.carry??saveSystem.getPilotProgress(this.pilotId).flight;}
   private device?: string;
 
   constructor() { super({ key: 'StageSelectScene' }); }
 
-  private launch = () => this.scene.start('PrototypeScene', { pilotId:this.pilotId,stageNumber:1 });
+  private launch = () => this.scene.start('PrototypeScene', { pilotId:this.pilotId,stageNumber:1,carry:this.carry });
   private back = () => this.scene.start('PilotSelectScene',{selectedPilotId:this.pilotId});
   private buttons() { return Array.from(this.root?.querySelectorAll<HTMLButtonElement>('button') ?? []); }
 

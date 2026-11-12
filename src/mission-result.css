@@ -25,3 +25,19 @@
 .bw-result-defeat h1{color:#ff896e}.bw-result-score{color:#e9ca85}
 .bw-mission-result button,.bw-mission-result button:first-child{background:#242424;border-color:#707070;color:#eee;box-shadow:none}
 .bw-mission-result button:hover,.bw-mission-result button:focus-visible{background:#383838;outline-color:#ddd;box-shadow:none}
+
+/* Results stay over the actual battlefield; no second opaque page/mask. */
+.bw-mission-result{background:#03060788;backdrop-filter:blur(2px);padding:clamp(18px,4vh,44px)}
+.bw-result-panel{width:min(88vw,850px);padding:clamp(22px,3vw,42px);border-color:#716b62;background:linear-gradient(120deg,#101315ee,#0b0d10ed);box-shadow:0 18px 90px #0008;animation:bw-result-in .3s ease-out}
+.bw-result-victory .bw-result-panel::before{height:3px;background:#bd3d36;left:0;right:0}
+.bw-result-victory h1{font-style:italic;font-size:clamp(28px,3.4vw,54px);color:#fff2d9;letter-spacing:.03em;margin:20px 0 12px}
+.bw-result-pilot{display:flex;align-items:center;gap:14px;text-align:left;border-bottom:1px solid #ffffff22;padding-bottom:16px;font:800 19px 'Oxanium',sans-serif}
+.bw-result-pilot img{width:62px;height:62px;object-fit:cover;object-position:center 20%;border:1px solid #7c7873}
+.bw-result-pilot small{display:block;font:600 12px 'Rajdhani',sans-serif;letter-spacing:.12em;color:#a5aeaa;margin-top:5px}
+.bw-result-pilot b{margin-left:auto;font:800 italic 29px 'Oxanium',sans-serif;color:#b9dfbe;letter-spacing:.08em}
+.bw-result-defeat .bw-result-pilot b{color:#e79584}
+.bw-result-score{margin:22px 0 24px}.bw-result-message{margin-bottom:24px}
+.bw-mission-result button{flex:1 1 160px;min-height:46px;padding:12px 13px}
+.bw-result-victory button:first-child{border-color:#b04d43;background:#502520}
+@keyframes bw-result-in{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.bw-result-panel{animation:none}}

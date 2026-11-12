@@ -1,0 +1,111 @@
+{
+  "completed": true,
+  "viewports": [],
+  "regression": {
+    "title": true,
+    "physicalGamepadInventory": [],
+    "audioTracks": [
+      {
+        "track": "menu",
+        "status": {
+          "environment": "atmosphere",
+          "track": "menu",
+          "position": 0,
+          "paused": false,
+          "sfxVoices": 0,
+          "voices": 1,
+          "musicLoadFailed": false,
+          "master": 0.800000011920929,
+          "sfx": 0.7224999999999999,
+          "music": 0.30250000000000005
+        },
+        "seconds": 97.62710416666667,
+        "loop": true
+      },
+      {
+        "track": "stage1",
+        "status": {
+          "environment": "atmosphere",
+          "track": "stage1",
+          "position": 0.029333333333332767,
+          "paused": false,
+          "sfxVoices": 0,
+          "voices": 1,
+          "musicLoadFailed": false,
+          "master": 0.800000011920929,
+          "sfx": 0.7224999999999999,
+          "music": 0.30250000000000005
+        },
+        "seconds": 83.47825,
+        "loop": true
+      },
+      {
+        "track": "boss",
+        "status": {
+          "environment": "atmosphere",
+          "track": "boss",
+          "position": 0.07200000000000006,
+          "paused": false,
+          "sfxVoices": 0,
+          "voices": 1,
+          "musicLoadFailed": false,
+          "master": 0.800000011920929,
+          "sfx": 0.7224999999999999,
+          "music": 0.30250000000000005
+        },
+        "seconds": 73.846125,
+        "loop": true
+      },
+      {
+        "track": "victory",
+        "status": {
+          "environment": "atmosphere",
+          "track": "victory",
+          "position": 0.05866666666666642,
+          "paused": false,
+          "sfxVoices": 0,
+          "voices": 1,
+          "musicLoadFailed": false,
+          "master": 0.800000011920929,
+          "sfx": 0.7224999999999999,
+          "music": 0.30250000000000005
+        },
+        "seconds": 7.619041666666667,
+        "loop": false
+      }
+    ],
+    "pause": {
+      "before": 0.14933333333333376,
+      "after": 0.14933333333333376
+    },
+    "performance": {
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fixture": "FULL RIVET, fixed inner boss, protection and boss damage disabled solely to sustain render load",
+      "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+      "renderer": "ANGLE (AMD, AMD Radeon(TM) Graphics (0x00001681) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "durationMs": 8001.099999928474,
+      "frames": 480,
+      "averageFps": 59.99175113475534,
+      "frameMedianMs": 16.700000000000728,
+      "frameP95Ms": 16.899999999999636,
+      "updateP95Ms": 1.399999976158142,
+      "maxShots": 31,
+      "maxParticles": 25,
+      "maxPool": 31,
+      "maxSfx": 4,
+      "preLimiterPeak": 0.22989241778850555,
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    "audioCleanup": {
+      "active": 1,
+      "after": 0
+    }
+  },
+  "errors": []
+}

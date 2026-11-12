@@ -1,3 +1,4 @@
+import type { CampaignFlight } from '../systems/campaignFlight';
 import Phaser from 'phaser';
 import { getPilot } from '../data/pilots';
 import { PILOT_STORIES } from '../data/pilotStories';
@@ -10,6 +11,7 @@ export class EndingScene extends Phaser.Scene {
     private root?: HTMLDivElement;
     private pilotId = 'nolan';
     private score = 0;
+    private carry?:CampaignFlight;
     private stage = 1;
     private selection = 0;
     private pad = new GamepadReader();
@@ -18,9 +20,10 @@ export class EndingScene extends Phaser.Scene {
         pilotId?: string;
         score?: number;
         stageNumber?: number;
-    } = {}) { this.pilotId = data.pilotId ?? 'nolan'; this.score = data.score ?? 0; this.stage = data.stageNumber ?? 1; }
+        carry?:CampaignFlight;
+    } = {}) { this.pilotId = data.pilotId ?? 'nolan'; this.score = data.score ?? 0; this.stage = data.stageNumber ?? 1;this.carry=data.carry; }
     private back = () => this.scene.start('TitleScene');
-    private missions = () => this.scene.start('StageSelectScene', { pilotId: this.pilotId });
+    private missions = () => this.scene.start('StageSelectScene', { pilotId: this.pilotId,carry:this.carry });
     private buttons() { return [...this.root!.querySelectorAll<HTMLButtonElement>('button')]; }
     private move(d: number) { this.selection = (this.selection + d + 2) % 2; this.buttons()[this.selection].focus(); }
     private key = (e: KeyboardEvent) => { if (e.repeat)

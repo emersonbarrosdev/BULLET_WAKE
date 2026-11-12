@@ -79,7 +79,9 @@ def amp(x,side,lead=False):
     x-=filt(x,'bandpass',[650,1050])*.20
     return (x/(np.sqrt(np.mean(x*x))+1e-9)*(.035 if lead else .14)).astype(np.float32)
 
+selected=set(sys.argv[1:]) if len(sys.argv)>1 else set(meta)
 for theme,data in meta.items():
+    if theme not in selected:continue
     n=round(data['seconds']*SR);print('Rendering '+theme+' humbucker recordings',flush=True)
     left=amp(sampled_guitar(OUT/f'{theme}-guitar-left.mid',n,0),0)
     right=amp(sampled_guitar(OUT/f'{theme}-guitar-right.mid',n,1),1)
@@ -91,9 +93,17 @@ for theme,data in meta.items():
     mix=np.column_stack((left+right*.06+lead+rhythm,right+left*.06+lead+rhythm))
     # Original scratch/stutter accents, not samples of any released song.
     scratch,_=sf.read(next((SAMPLES/'Pick_Scratch').glob('*.flac')),always_2d=True);scratch=scratch.mean(axis=1)
-    for bar in range(7,48,8):
+    for bar in range(7,data['bars'],8):
         at=round((bar*4+3.2)*60/data['bpm']*SR);count=min(round(.3*SR),n-at,len(scratch));fx=scratch[:count]*np.hanning(count)*.065
         mix[at:at+count,0]+=fx;mix[at:at+count,1]+=fx[::-1]
+    if theme=='stage1':
+        motif=[57,64,67,69,72,69,67,64]
+        for beat in range(0,data['bars']*4,2):
+            at=round(beat*60/data['bpm']*SR);count=min(round(.35*SR),n-at);t=np.arange(count)/SR
+            freq=440*2**((motif[(beat//2)%len(motif)]-69)/12)
+            phrase=np.sin(2*np.pi*freq*t+1.1*np.sin(2*np.pi*freq*.5*t))*np.minimum(1,t/.008)*np.exp(-t*8)*.027
+            mix[at:at+count,0]+=phrase;mix[at:at+count,1]+=phrase
+    if theme=='victory':mix*=np.minimum(1,np.maximum(0,(n-np.arange(n))/(SR*.75)))[:,None]
     mix=np.tanh(mix*1.2)/1.2;mix*=.88/max(.88,np.max(np.abs(mix)))
     dest=OUT/f'{theme}-heavy.wav';sf.write(dest,mix,SR,subtype='PCM_16')
     subprocess.run([str(FFMPEG),'-y','-v','error','-i',str(dest),'-c:a','libvorbis','-q:a','6',str(ROOT/f'public/assets/audio/{theme}.ogg')],check=True)

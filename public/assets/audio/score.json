@@ -26,15 +26,15 @@
   },
   "stage1": {
     "arrangement": "low B/F# nu-metal riffs with short low-mid guitar replies, sampled palm mutes and down/up picks, four-stage distortion, 4x12 convolution, bass, acoustic drums and DJ accents",
-    "bpm": 142,
+    "bpm": 138,
     "bars": 48,
-    "seconds": 81.12676056338029,
+    "seconds": 83.47826086956522,
     "instruments": [
       "Unreal Instruments METAL-GTX humbucker DI",
       "four-stage high-gain distortion and real 4x12 IR",
       "palm-muted rhythm guitars L/R",
-      "fingered bass",
-      "acoustic drums",
+      "synth bass",
+      "electronic drum kit",
       "original scratch/noise samples"
     ],
     "stems": [
@@ -46,8 +46,12 @@
     "guitarSource": "Unreal Instruments METAL-GTX, sampled humbucker DI, alternate down/up strokes, palm mute/sustain, round robins",
     "processing": "4x oversampling; four nonlinear gain stages; recorded 4x12 IR; independent stereo takes; low-mid replies with 3.8 kHz rolloff",
     "replyRegister": "one octave below the rejected lead; short notes, -5.4 dB relative reply stem gain; approved rhythm guitars unchanged",
-    "pcmPeakDb": -2.91,
-    "pcmRmsDb": -14.76
+    "pcmPeakDb": -2.89,
+    "pcmRmsDb": -14.54,
+    "replyMidiRange": [
+      33,
+      48
+    ]
   },
   "boss": {
     "arrangement": "low B/F# nu-metal riffs with short low-mid guitar replies, sampled palm mutes and down/up picks, four-stage distortion, 4x12 convolution, bass, acoustic drums and DJ accents",
@@ -73,5 +77,34 @@
     "replyRegister": "one octave below the rejected lead; short notes, -5.4 dB relative reply stem gain; approved rhythm guitars unchanged",
     "pcmPeakDb": -2.61,
     "pcmRmsDb": -14.45
+  },
+  "victory": {
+    "arrangement": "low B/F# nu-metal riffs with short low-mid guitar replies, sampled palm mutes and down/up picks, four-stage distortion, 4x12 convolution, bass, acoustic drums and DJ accents",
+    "bpm": 126,
+    "bars": 4,
+    "seconds": 7.619047619047619,
+    "instruments": [
+      "Unreal Instruments METAL-GTX humbucker DI",
+      "four-stage high-gain distortion and real 4x12 IR",
+      "palm-muted rhythm guitars L/R",
+      "fingered bass",
+      "acoustic drums",
+      "original scratch/noise samples"
+    ],
+    "stems": [
+      "guitar-left",
+      "guitar-right",
+      "lead",
+      "rhythm"
+    ],
+    "guitarSource": "Unreal Instruments METAL-GTX, sampled humbucker DI, alternate down/up strokes, palm mute/sustain, round robins",
+    "processing": "4x oversampling; four nonlinear gain stages; recorded 4x12 IR; independent stereo takes; low-mid replies with 3.8 kHz rolloff",
+    "replyRegister": "one octave below the rejected lead; short notes, -5.4 dB relative reply stem gain; approved rhythm guitars unchanged",
+    "replyMidiRange": [
+      47,
+      59
+    ],
+    "pcmPeakDb": -2.85,
+    "pcmRmsDb": -15.35
   }
 }

@@ -57,7 +57,7 @@ test('surface enemies stay anchored to the scrolling background and warn before 
     const tick = d.update(50, 384, 350);
     target ??= tick.spawned.find(e => e.layer === 'surface');
     if (!target) continue;
-    assert.ok(Math.abs(target.y - (-35 + (d.scrollPx - target.spawnScroll) * SURFACE_SCROLL_FACTOR)) < .001);
+    assert.ok(Math.abs(target.y - (-35 + (d.backgroundScrollPx - target.spawnScroll) * SURFACE_SCROLL_FACTOR)) < .001);
     observedWarning ||= target.phase === 'telegraph';
     surfaceShots += tick.shots.filter(s => s.sourceLayer === 'surface').length;
   }

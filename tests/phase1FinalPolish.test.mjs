@@ -1,6 +1,7 @@
+import {returnFromOcean} from './bossFlightHelper.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {BossTalassarca,METAMORPHOSIS_MS} from '../src/game/systems/bosses/bossTalassarca.ts';
+import {BossTalassarca} from '../src/game/systems/bosses/bossTalassarca.ts';
 import {PilotRadio} from '../src/game/systems/pilotRadioSystem.ts';
 import {DamageRegions} from '../src/game/systems/damageRegions.ts';
 import {MusicCursor} from '../src/game/audio/MusicCursor.ts';
@@ -27,8 +28,8 @@ test('explicit alpha contact identifies the actual part; empty body contact cann
 });
 test('area specials retain five/three budgets, destroy local batteries, and cannot skip metamorphosis',()=>{
  const b=new BossTalassarca();b.update(1800,384,350);
- for(let i=0;i<5;i++)b.damageArea(120);assert.equal(b.phase,'metamorphosis');
- assert.equal(b.damageArea(120).bossDamage,0);b.update(METAMORPHOSIS_MS,384,350);
+ for(let i=0;i<5;i++)b.damageArea(120);assert.equal(b.phase,'escape');
+ assert.equal(b.damageArea(120).bossDamage,0);returnFromOcean(b);
  for(let i=0;i<3;i++)b.damageArea(120);assert.equal(b.phase,'defeated');
 });
 test('music cursor retains position through long pauses, multiple resumes and loop boundaries',()=>{
@@ -40,7 +41,7 @@ test('Continue restores radio deaths and unused shuffle entries without sharing 
  const old=new PilotRadio('nolan',()=>.3);old.death();old.death();const saved=old.snapshot();
  const next=new PilotRadio('nolan',()=>.3);next.restore(saved);assert.equal(next.deaths,2);
  next.death();assert.equal(next.deaths,3);assert.equal(old.deaths,2);
- const heard=new Set();for(let i=0;i<5;i++){next.offer('miniboss',true);heard.add(next.message);}assert.equal(heard.size,5);
+ const heard=new Set();for(let i=0;i<5;i++){next.update(35000,{enemies:0,bullets:0,lives:3,specials:2});next.offer('miniboss',true);heard.add(next.message);}assert.equal(heard.size,5);
 });
 test('destruction follows cumulative local damage, not the final weak hit or old world position',()=>{
  const heat=new DamageRegions();heat.add(-12,20,30);heat.add(-11,22,40);heat.add(100,-80,1);

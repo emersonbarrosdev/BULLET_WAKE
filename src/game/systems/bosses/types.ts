@@ -23,6 +23,7 @@ export interface BossShot {
   velocityX: number;
   velocityY: number;
   damage: number;
+  weight?: 'weak'|'medium'|'heavy'|'special';
 }
 
 export interface BossSpawnEvent {
@@ -64,6 +65,10 @@ export interface StageBoss {
   readonly bodyRadiusY?: number;
   readonly displayWidth?: number;
   modules?: BossModule[];
+  transitionMs?:number;
+  eclipse?: { phase:'warning'|'fire'|'recover'; lanes:number[]; elapsed:number };
+  visible?:boolean;
+  timedOut?:boolean;
   update(dt: number, playerX: number, playerY: number): BossTick;
   damageArea?(amount:number):BossHitResult;
   damage(amount: number, hitX: number, hitY: number, moduleId?:string|null): BossHitResult;

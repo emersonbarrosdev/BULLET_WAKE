@@ -17,16 +17,16 @@ function advance(director, durationMs, x = 135, y = 216) {
 test('progression advances continuously by distance and does not label waves', () => {
   const director = new StageDirector(768);
   const tick = director.update(50, 135, 216);
-  assert.ok(Math.abs(director.scrollPx - SCROLL_SPEED * 0.05) < 1e-6);
+  assert.ok(Math.abs(director.scrollPx-director.travelSpeed*.05)<1e-6);
   assert.ok(tick.progress > 0);
   assert.equal('wave' in tick, false);
 });
 
 test('first passage spawns a formation and then a Lancer once', () => {
   const director = new StageDirector();
-  const first = advance(director, 320/SCROLL_SPEED*1000);
+  const first={spawned:[]};while(director.scrollPx<320)first.spawned.push(...director.update(10,135,216).spawned);
   assert.deepEqual(first.spawned.filter(e => !e.carrier).map(e => e.kind), ['scout', 'scout', 'scout']);
-  const later = advance(director, 175/SCROLL_SPEED*1000);
+  const later={spawned:[]};while(director.scrollPx<500)later.spawned.push(...director.update(10,135,216).spawned);
   assert.equal(later.spawned.filter(e => e.kind === 'lancer').length, 1);
 });
 
@@ -62,7 +62,7 @@ test('a replay does not happen inside one stage; stage events occur exactly once
     completed ||= tick.completed;
   }
   assert.equal(spawned, STAGE_EVENTS.length);
-  assert.ok(Math.abs(director.scrollPx - SCROLL_SPEED * 180) < 0.01);
+  assert.ok(director.scrollPx>=DEMO_DISTANCE);
   assert.ok(completed);
   assert.equal(director.update(25, 135, 216).spawned.length, 0);
 });

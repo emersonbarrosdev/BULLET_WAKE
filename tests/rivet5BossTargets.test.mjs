@@ -1,3 +1,4 @@
+import {returnFromOcean} from './bossFlightHelper.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createPlayerWeapons,collectPowerItem,getPrimaryProjectiles,getSecondaryProjectiles} from '../src/game/systems/weaponSystem.ts';
@@ -20,7 +21,7 @@ test('a boss shot can destroy only the piece actually hit; hull and broken piece
  assert.equal(b.hp,500);assert.equal(other.hp,100);
  assert.equal(b.damage(900,b.x+gun.offsetX,b.y+gun.offsetY,gun.id).bossDamage,0);
  b.damageArea(120);assert.equal(b.hp,380);assert.equal(b.hp,b.modules.reduce((n,m)=>n+m.hp,0));
- b.damageArea(9999);assert.equal(b.phase,'metamorphosis');b.update(2400,384,350);
+ b.damageArea(9999);assert.equal(b.phase,'escape');returnFromOcean(b);
  assert.equal(b.hp,360);assert.ok(b.modules.every(m=>m.hp===60&&!m.destroyed));
  for(const m of b.modules)b.damage(999,b.x+m.offsetX,b.y+m.offsetY,m.id);
  assert.equal(b.phase,'defeated');

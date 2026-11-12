@@ -7,11 +7,11 @@ import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 
 const root = resolve('dist');
-const review = ['--title-hornet','--scarlet','--red-rivet','--rivet','--final','--hangar','--arcade','--review','--normal','--stage1','--polish','--fine','--cascade','--loading','--balance'].some(flag=>process.argv.includes(flag));
+const review = ['--reform','--title-hornet','--scarlet','--red-rivet','--rivet','--final','--hangar','--arcade','--review','--normal','--stage1','--polish','--fine','--cascade','--loading','--balance'].some(flag=>process.argv.includes(flag));
 const confirmation = !review;
-const screenshots = resolve(review ? (process.argv.includes('--title-hornet')?'docs/screenshots/title-hornet':process.argv.includes('--scarlet')?'docs/screenshots/phase1-scarlet':process.argv.includes('--red-rivet')?'docs/screenshots/phase1-rivet-red':process.argv.includes('--rivet')?'docs/screenshots/phase1-rivet5':process.argv.includes('--final')?'docs/screenshots/phase1-final':process.argv.includes('--hangar') ? 'docs/screenshots/phase1-hangar' : process.argv.includes('--arcade') ? 'docs/screenshots/phase1-arcade' : process.argv.includes('--balance') ? 'docs/screenshots/phase1-normal' : process.argv.includes('--loading') ? 'docs/screenshots/phase1-loading' : process.argv.includes('--cascade') ? 'docs/screenshots/phase1-cascade' : process.argv.includes('--fine') ? 'docs/screenshots/phase1-fine' : process.argv.includes('--polish') ? 'docs/screenshots/phase1-polish' : 'docs/screenshots/phase1-review') : 'docs/screenshots/pilot-confirmation');
+const screenshots = resolve(review ? (process.argv.includes('--reform')?'docs/screenshots/phase1-reform':process.argv.includes('--title-hornet')?'docs/screenshots/title-hornet':process.argv.includes('--scarlet')?'docs/screenshots/phase1-scarlet':process.argv.includes('--red-rivet')?'docs/screenshots/phase1-rivet-red':process.argv.includes('--rivet')?'docs/screenshots/phase1-rivet5':process.argv.includes('--final')?'docs/screenshots/phase1-final':process.argv.includes('--hangar') ? 'docs/screenshots/phase1-hangar' : process.argv.includes('--arcade') ? 'docs/screenshots/phase1-arcade' : process.argv.includes('--balance') ? 'docs/screenshots/phase1-normal' : process.argv.includes('--loading') ? 'docs/screenshots/phase1-loading' : process.argv.includes('--cascade') ? 'docs/screenshots/phase1-cascade' : process.argv.includes('--fine') ? 'docs/screenshots/phase1-fine' : process.argv.includes('--polish') ? 'docs/screenshots/phase1-polish' : 'docs/screenshots/phase1-review') : 'docs/screenshots/pilot-confirmation');
 mkdirSync(screenshots, { recursive: true });
-const reportFileName=process.argv.includes('--audio-only')?'audio-validation.json':process.argv.includes('--visual-only')?'visual-validation.json':'validation.json';
+const reportFileName=process.argv.includes('--tita-only')?'tita-validation.json':process.argv.includes('--performance-only')?'performance-validation.json':process.argv.includes('--one-route')?'diagnostic-validation.json':process.argv.includes('--audio-only')?'audio-validation.json':process.argv.includes('--visual-only')?'visual-validation.json':'validation.json';
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png' };
 const server = createServer((req, res) => {
   const file = resolve(root, '.' + (req.url === '/' ? '/index.html' : new URL(req.url, 'http://localhost').pathname));
@@ -21,19 +21,20 @@ const server = createServer((req, res) => {
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
 const url = `http://127.0.0.1:${server.address().port}/`;
+const browserProfile=mkdtempSync(join(tmpdir(),'bw-pilot-qa-'));
 const chrome = spawn(process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe', [
-  '--headless=new', '--remote-debugging-port=9231', '--no-first-run',
-  '--user-data-dir=' + mkdtempSync(join(tmpdir(), 'bw-pilot-qa-')), 'about:blank',
+  '--headless=new', '--remote-debugging-port=0', '--no-first-run',
+  '--user-data-dir=' + browserProfile, 'about:blank',
 ], { windowsHide: true, stdio: 'ignore' });
 const pause = ms => new Promise(r => setTimeout(r, ms));
 let socket;
 const errors = [];
-const cached=process.argv.includes('--water-only')?JSON.parse(readFileSync(join(screenshots,reportFileName),'utf8')):undefined;
+const cached=(process.argv.includes('--water-only')||process.argv.includes('--flow-only'))?JSON.parse(readFileSync(join(screenshots,reportFileName),'utf8')):undefined;
 const report = { completed:false,viewports: cached?.viewports??[], regression: cached?.regression??{}, errors };
 try {
   let target;
   for (let i = 0; i < 50; i++) {
-    try { target = (await (await fetch('http://127.0.0.1:9231/json')).json()).find(t => t.type === 'page'); } catch {}
+    try { const port=readFileSync(join(browserProfile,'DevToolsActivePort'),'utf8').split('\n')[0].trim();target = (await (await fetch('http://127.0.0.1:'+port+'/json')).json()).find(t => t.type === 'page'); } catch {}
     if (target) break;
     await pause(200);
   }
@@ -106,19 +107,21 @@ try {
     assert(g.footer.bottom <= height, 'Footer outside viewport');
   };
   await send('Runtime.enable'); await send('Page.enable'); await send('Log.enable');
+  if(process.argv.includes('--reform'))await send('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const native=navigator.getGamepads?.bind(navigator);window.__QA_REAL_GAMEPADS__=()=>Array.from(native?.()??[]).filter(Boolean).map(p=>({id:p.id,connected:p.connected,mapping:p.mapping,buttons:p.buttons.map(b=>b.pressed),axes:[...p.axes]}));Object.defineProperty(navigator,'getGamepads',{configurable:true,value:()=>[]});})();`});
   await send('Page.navigate', { url });
   await waitFor(`Boolean(window.__GAME__?.isBooted&&document.querySelector('.bw-press-activation'))`);
   report.regression.title = await evaluate(`window.__GAME__.scene.isActive('TitleScene')`);
   await click('.bw-press-activation');
+  await waitFor(`Boolean(document.querySelector('[data-action="pilots"]'))`);
   await click('[data-action="pilots"]');
-  if(!process.argv.includes('--title-hornet')&&!process.argv.includes('--scarlet')&&!process.argv.includes('--red-rivet')&&!process.argv.includes('--rivet')&&!process.argv.includes('--hangar')&&!process.argv.includes('--final')){
+  if(!process.argv.includes('--reform')&&!process.argv.includes('--title-hornet')&&!process.argv.includes('--scarlet')&&!process.argv.includes('--red-rivet')&&!process.argv.includes('--rivet')&&!process.argv.includes('--hangar')&&!process.argv.includes('--final')){
     await waitFor(`Boolean(document.querySelector('[data-mission-action="launch"]'))`);
     report.regression.missionSelection=true;
     await click('[data-mission-action="launch"]');
   }
   await waitFor(`Boolean(document.querySelector('.bw-pilot-card'))`);
   if (review) {
-    const {runPhase1Review}=await import(process.argv.includes('--title-hornet')?'./title-hornet-checks.mjs':process.argv.includes('--scarlet')?'./phase1-scarlet-checks.mjs':process.argv.includes('--red-rivet')?'./phase1-rivet-red-checks.mjs':process.argv.includes('--rivet')?'./phase1-rivet5-checks.mjs':process.argv.includes('--final')?'./phase1-final-checks.mjs':process.argv.includes('--hangar')?'./phase1-hangar-checks.mjs':process.argv.includes('--arcade')?'./phase1-arcade-checks.mjs':process.argv.includes('--balance')?'./phase1-normal-checks.mjs':process.argv.includes('--loading')?'./phase1-loading-checks.mjs':process.argv.includes('--cascade')?'./phase1-cascade-checks.mjs':process.argv.includes('--fine')?'./phase1-fine-checks.mjs':process.argv.includes('--polish')?'./phase1-polish-checks.mjs':'./phase1-review-checks.mjs');
+    const {runPhase1Review}=await import(process.argv.includes('--reform')?'./phase1-reform-checks.mjs':process.argv.includes('--title-hornet')?'./title-hornet-checks.mjs':process.argv.includes('--scarlet')?'./phase1-scarlet-checks.mjs':process.argv.includes('--red-rivet')?'./phase1-rivet-red-checks.mjs':process.argv.includes('--rivet')?'./phase1-rivet5-checks.mjs':process.argv.includes('--final')?'./phase1-final-checks.mjs':process.argv.includes('--hangar')?'./phase1-hangar-checks.mjs':process.argv.includes('--arcade')?'./phase1-arcade-checks.mjs':process.argv.includes('--balance')?'./phase1-normal-checks.mjs':process.argv.includes('--loading')?'./phase1-loading-checks.mjs':process.argv.includes('--cascade')?'./phase1-cascade-checks.mjs':process.argv.includes('--fine')?'./phase1-fine-checks.mjs':process.argv.includes('--polish')?'./phase1-polish-checks.mjs':'./phase1-review-checks.mjs');
     await runPhase1Review({send,evaluate,waitFor,key,click,shot,report,errors});
     report.completed=true;
     writeFileSync(join(screenshots,reportFileName),JSON.stringify(report,null,2)+'\n');

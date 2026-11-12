@@ -1,3 +1,4 @@
+import {returnFromOcean} from './bossFlightHelper.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {StageDirector,SUPPLY_EVENTS,SCROLL_SPEED} from '../src/game/systems/stageDirector.ts';
@@ -24,14 +25,14 @@ test('boss encounters stop stage events and preserve the next carrier until the 
   d.update(50,384,350);const distance=d.scrollPx;
   assert.ok(d.minibossActive);
   for(let i=0;i<400;i++){assert.equal(d.update(50,384,350).spawned.filter(e=>e.carrier).length,0);assert.equal(d.scrollPx,distance);}
-  d.boss.damage(1000,384,80);d.update(50,384,350);d.update(50,384,350);
+  d.boss.damageArea(1000);d.update(50,384,350);d.update(50,384,350);
   assert.ok(d.scrollPx>distance);
 });
 
 test('inner Talassarca alternates a generous moving corridor with aimed salvos, never a closed curtain',()=>{
-  const b=new BossTalassarca();b.update(1800,384,350);b.damageArea(600);b.update(2400,384,350);
+  const b=new BossTalassarca();b.update(1800,384,350);b.damageArea(600);returnFromOcean(b);
   const bursts=[],gaps=new Set();let warned=false;
-  for(let i=0;i<350;i++){
+  for(let i=0;i<1100;i++){
     const tick=b.update(25,384,380);warned ||= tick.telegraph;
     if(tick.shots.length){assert.ok(warned);warned=false;bursts.push(tick.shots);if(b.attackPattern==='curtain'){gaps.add(b.safeLaneX);assert.ok(tick.shots.every(s=>Math.abs(s.x-b.safeLaneX)>=38));}}
   }
@@ -41,7 +42,7 @@ test('inner Talassarca alternates a generous moving corridor with aimed salvos, 
 test('Raia uses simulation time and announces its attacks; one special cannot skip the fight',()=>{
   const a=new MinibossRaiaDente(),b=new MinibossRaiaDente();let warns=0;
   for(let i=0;i<200;i++){const tick=a.update(25,384,350);b.update(25,384,350);assert.equal(a.x,b.x);if(tick.telegraph)warns++;}
-  assert.ok(warns>0);assert.equal(a.damage(120).killed,false);assert.equal(a.hp,60);
+  assert.ok(warns>0);assert.equal(a.damageArea(120).killed,false);assert.equal(a.hp,60);
 });
 
 test('Continue returns to the owner kit at NV1 with zero P and cannot farm special or speed',()=>{

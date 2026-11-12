@@ -1,0 +1,47 @@
+{
+  "completed": true,
+  "viewports": [],
+  "regression": {
+    "title": true,
+    "fullRoutes": [
+      {
+        "pilot": "Tita",
+        "skipPolicy": 0,
+        "actuallySkipped": 0,
+        "seconds": 201.26,
+        "completed": true,
+        "gameOver": false,
+        "lives": 4,
+        "level": 4,
+        "powerMeter": 0,
+        "collected": 11,
+        "pickedTypes": {
+          "power": 9,
+          "life": 1,
+          "special": 1
+        },
+        "kills": 100,
+        "levels": [
+          {
+            "seconds": 53.86,
+            "level": 2
+          },
+          {
+            "seconds": 104.82,
+            "level": 3
+          },
+          {
+            "seconds": 150.56,
+            "level": 4
+          }
+        ],
+        "deaths": [],
+        "deathCauses": [],
+        "peakEnemies": 6,
+        "peakBullets": 12,
+        "updateP95Ms": 0.6999999284744263
+      }
+    ]
+  },
+  "errors": []
+}

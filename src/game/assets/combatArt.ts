@@ -6,6 +6,9 @@ import { loadPolishArt, registerPolishArt } from './polishArt';
 export const COMBAT_SHEETS = ['special-orbital','special-comet','rivet', 'rivet-bank', 'moth', 'knuckle', 'peregrine', 'biogun', 'kestrel', 'supply-parachute', 'scout', 'dart', 'lancer', 'cutter', 'bomb'] as const;
 
 export function loadCombatArt(scene: Phaser.Scene, base: string): void {
+  for(const name of ['scout','dart','lancer','cutter','captain','violet','emerald','amber','celestial','orbital','comet','aerial','colossus','emerge']){
+    if(!scene.textures.exists('reform-'+name))scene.load.spritesheet('reform-'+name,`${base}/assets/combat-hd/reform/${name}.webp`,{frameWidth:['aerial','colossus','emerge'].includes(name)?512:256,frameHeight:['aerial','colossus','emerge'].includes(name)?512:256});
+  }
   for(const name of ['talassarca-top','inner-top','metamorphosis-top'])if(!scene.textures.exists('hd-'+name))scene.load.spritesheet('hd-'+name,`${base}/assets/combat-hd/${name==='talassarca-top'?'talassarca-integrated':name==='inner-top'?'inner-integrated':name}.webp`,{frameWidth:512,frameHeight:512});
   loadReviewArt(scene,base);
   loadPolishArt(scene,base);
@@ -24,6 +27,10 @@ export function loadCombatArt(scene: Phaser.Scene, base: string): void {
 }
 
 export function registerCombatArt(scene: Phaser.Scene): void {
+  for(const name of ['scout','dart','lancer','cutter','captain','violet','emerald','amber','celestial','orbital','comet']){
+    const key='reform-'+name;
+    if(!scene.anims.exists(key+'-loop'))scene.anims.create({key:key+'-loop',frames:scene.anims.generateFrameNumbers(key,{start:0,end:3}),frameRate:12,repeat:-1});
+  }
   if(!scene.anims.exists('hd-supply-parachute-loop'))scene.anims.create({key:'hd-supply-parachute-loop',frames:scene.anims.generateFrameNumbers('hd-supply-parachute',{start:0,end:7}),frameRate:8,repeat:-1});
   registerReviewArt(scene);
   registerPolishArt(scene);

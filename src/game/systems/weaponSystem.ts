@@ -1,11 +1,7 @@
 /**
- * BULLET WAKE V2 — Sistema Canônico de Armamentos (Inspirado em Fire Shark / Toaplan)
- *
- * Três famílias distintas com identidade visual e mecânica real (Níveis 1 a 4):
- * - VERDE (Raio Esmeralda): Feixes energéticos ondulantes concentrados com aumento de ondas e potência.
- * - AZUL (Dispersão Azul): Tiros em leque crescente com mais direções conforme o nível aumenta.
- * - VERMELHO (Laser Rubro): Feixes energéticos vermelhos contínuos com multiplicação (1, 2, 4, 6 feixes)
- *   e varredura lateral sincronizada nos níveis avançados (gerenciado em tempo real por CrimsonLaserSystem).
+ * Each pilot owns one evolving primary. RIVET is the approved five-stage kit;
+ * the other four pilots own violet waves, emerald needles, amber pulses and blue shards.
+ * Family tokens below also retain legacy/sandbox geometry; they are not a color cascade.
  */
 import { getPilot, type PilotId } from '../data/pilots.ts';
 
@@ -35,6 +31,7 @@ export interface ProjectileSpawnDef {
   waveVerticalAmplitude?: number;
   /** Indica descritor de feixe contínuo (Laser Rubro) */
   isContinuousBeam?: boolean;
+  presentation?:'violet'|'emerald'|'amber'|'celestial';
 }
 
 export interface PlayerWeaponsState {
@@ -114,8 +111,10 @@ export const WEAPON_FAMILY_SPECS: Record<WeaponFamily, WeaponSpecs> = {
 
 export const PILOT_WEAPON_SPECS: Record<string, WeaponSpecs> = {
   nolan: { ...WEAPON_FAMILY_SPECS.ion, displayName: 'RAJADA ESCARLATE' },
-  cora: WEAPON_FAMILY_SPECS.green,
-  harlan: WEAPON_FAMILY_SPECS.red,
+  cora: {...WEAPON_FAMILY_SPECS.green,displayName:'ONDAS VIOLETAS'},
+  lyra: {...WEAPON_FAMILY_SPECS.ion,autoIntervalMs:145,burstIntervalMs:145,displayName:'LANÇA ESMERALDA'},
+  harlan: {...WEAPON_FAMILY_SPECS.red,autoIntervalMs:300,burstIntervalMs:300,displayName:'FLUXO ÂMBAR'},
+  bento: {...WEAPON_FAMILY_SPECS.ion,autoIntervalMs:125,burstIntervalMs:125,displayName:'CHUVA CELESTE'},
   green: WEAPON_FAMILY_SPECS.green,
   ion: WEAPON_FAMILY_SPECS.ion,
   red: WEAPON_FAMILY_SPECS.red,
@@ -417,6 +416,27 @@ export function getPrimaryProjectiles(
     return lanes.map(([x,angle])=>({texture:'shot-moth',animation:'shot-moth-loop',x:originX+x,y:originY,
       velocityX:640*Math.sin(angle*Math.PI/180),velocityY:-640*Math.cos(angle*Math.PI/180),
       damage:level===1?2.35:level===2?1.65:level===3?1.8:level===4?1.35:1.5,hitRadius:2.5,scale:1}));
+  }
+
+  if(familyOrPilot==='cora')return Array.from({length:Math.min(4,level)*2},(_,i)=>({
+    texture:'shot-rivet',animation:'shot-rivet-loop',presentation:'violet',x:originX,y:originY,velocityX:0,velocityY:-460,
+    damage:1.6,hitRadius:3,scale:1,waveAmplitude:16+level*8,waveVerticalAmplitude:9+level*5,waveFrequency:.014,wavePhase:i*Math.PI/level,
+  }));
+  if(familyOrPilot==='lyra'){
+    const lanes=Array.from({length:level+1},(_,i)=>({x:(i-level/2)*5,angle:0}));
+    if(level>=3)lanes.push({x:-8,angle:-12},{x:8,angle:12});
+    return lanes.map(({x,angle})=>({texture:'shot-moth',animation:'shot-moth-loop',presentation:'emerald',x:originX+x,y:originY,
+      velocityX:850*Math.sin(angle*Math.PI/180),velocityY:-850*Math.cos(angle*Math.PI/180),damage:1.9,hitRadius:2,scale:1,piercing:level>=3}));
+  }
+  if(familyOrPilot==='harlan')return Array.from({length:Math.min(4,level)},(_,i)=>{
+    const angle=(i-(Math.min(4,level)-1)/2)*7*Math.PI/180;
+    return {texture:'shot-knuckle',animation:'shot-knuckle-loop',presentation:'amber',x:originX+(i-(level-1)/2)*5,y:originY,
+      velocityX:440*Math.sin(angle),velocityY:-440*Math.cos(angle),damage:level===1?4:level===2?3:2.8,hitRadius:4.5,scale:1};
+  });
+  if(familyOrPilot==='bento'){
+    const angles=level===1?[-5,5]:level===2?[-10,0,10]:level===3?[-18,-6,6,18]:[-26,-15,-5,0,5,15,26];
+    return angles.map(angle=>({texture:'shot-moth',animation:'shot-moth-loop',presentation:'celestial',x:originX,y:originY,
+      velocityX:720*Math.sin(angle*Math.PI/180),velocityY:-720*Math.cos(angle*Math.PI/180),damage:1.2,hitRadius:2.5,scale:1}));
   }
 
   // Paired, phase-shifted wave components form the forward Shark Beam.
