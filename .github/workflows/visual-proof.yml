@@ -20,7 +20,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run build
       - name: Descartar screenshots antigas antes do teste
-        run: rm -f docs/screenshots/cartoon/phase1-start.webp docs/screenshots/cartoon/phase1-coast.webp docs/screenshots/cartoon/phase1-boss.webp docs/screenshots/cartoon/phase1-return.webp
+        run: rm -f docs/screenshots/cartoon/phase1-start.webp docs/screenshots/cartoon/phase1-coast.webp docs/screenshots/cartoon/phase1-harbor.webp docs/screenshots/cartoon/phase1-boss.webp docs/screenshots/cartoon/phase1-return.webp
       - name: Capturar gameplay no Chrome (e validar eventos)
         env:
           BW_CAPTURE_LOG: "1"
@@ -34,6 +34,7 @@ jobs:
           path: |
             docs/screenshots/cartoon/phase1-start.webp
             docs/screenshots/cartoon/phase1-coast.webp
+            docs/screenshots/cartoon/phase1-harbor.webp
             docs/screenshots/cartoon/phase1-boss.webp
             docs/screenshots/cartoon/phase1-return.webp
             docs/screenshots/cartoon/browser-report.json

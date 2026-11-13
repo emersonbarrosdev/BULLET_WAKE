@@ -21,7 +21,7 @@ try{
  const send=(method,params={})=>new Promise((resolve,reject)=>{const id=++seq;pending.set(id,{resolve,reject});socket.send(JSON.stringify({id,method,params}));});
  const evaluate=async expression=>{const r=await send('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value;};
  const wait=async expr=>{for(let i=0;i<150;i++){if(await evaluate(expr))return;await sleep(100);}throw Error('Timeout '+expr+' '+JSON.stringify(errors));};
- const shot=async name=>{await sleep(150);const r=await send('Page.captureScreenshot',{format:'webp',quality:90});writeFileSync(join(out,name+'.webp'),Buffer.from(r.data,'base64'));if(process.env.BW_CAPTURE_LOG==='1'&&['phase1-start','phase1-coast'].includes(name)){for(let offset=0;offset<r.data.length;offset+=4000)console.log('BWIMG:'+name+':'+Math.floor(offset/4000)+':'+r.data.slice(offset,offset+4000));}};
+ const shot=async name=>{await sleep(150);const r=await send('Page.captureScreenshot',{format:'webp',quality:90});writeFileSync(join(out,name+'.webp'),Buffer.from(r.data,'base64'));if(process.env.BW_CAPTURE_LOG==='1'&&['phase1-start','phase1-coast','phase1-harbor'].includes(name)){for(let offset=0;offset<r.data.length;offset+=4000)console.log('BWIMG:'+name+':'+Math.floor(offset/4000)+':'+r.data.slice(offset,offset+4000));}};
  const key=async(code,key=code)=>{await send('Input.dispatchKeyEvent',{type:'keyDown',code,key,windowsVirtualKeyCode:code==='Enter'?13:code==='Escape'?27:32});await sleep(90);await send('Input.dispatchKeyEvent',{type:'keyUp',code,key});};
  await send('Runtime.enable');await send('Page.enable');await send('Log.enable');await send('Emulation.setDeviceMetricsOverride',{width:1366,height:768,deviceScaleFactor:1,mobile:false});
  await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
@@ -34,6 +34,7 @@ try{
  await evaluate(`s.begin(0);s.world.introTime=0;s.touch.fire=true;s.setTouchVisible(false);`);await sleep(1500);await shot('phase1-start');
  if(process.env.BW_CAPTURE_LOG==='1'){const proof=await evaluate("({coast:s.backdrop.coast.visible,texture:s.backdrop.coast.texture.key,position:s.backdrop.coast.tilePositionY})");assert(proof.coast&&proof.texture==='pelagic-continuous-shores',JSON.stringify(proof));}
  await evaluate(`seek(85);s.world.weapons.weaponLevel=3;s.world.spawnEncounter({family:'fighter',formation:'trio',motion:'straight',lane:.5});s.setTouchVisible(false)`);await sleep(1000);await shot('phase1-coast');
+ await evaluate(`s.world.scroll=485;s.world.player.invulnerable=100;s.setTouchVisible(false)`);await sleep(250);await shot('phase1-harbor');
  await evaluate(`s.show('pause')`);await shot('pause');report.pause=await evaluate(`(()=>{const a=s.world.elapsed;return new Promise(r=>setTimeout(()=>r({before:a,after:s.world.elapsed,audio:s.audio.status()}),200));})()`);assert.equal(report.pause.before,report.pause.after);
  await evaluate(`s.audio.unlock();s.show('controls')`);await shot('controls');assert.equal(await evaluate('s.audio.status().paused'),true);await evaluate(`s.pauseOrigin='pause';s.show('settings')`);await shot('settings');
  await evaluate(`s.show('play');seek(300)`);await sleep(3500);await shot('phase1-boss');

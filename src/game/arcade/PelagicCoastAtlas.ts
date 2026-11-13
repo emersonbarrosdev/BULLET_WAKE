@@ -117,12 +117,12 @@ function harborDetails(ctx:CanvasRenderingContext2D,atlas:HTMLImageElement):void
  const harborRight=makeStructureStamp(atlas,5);
  ctx.drawImage(lighthouse,COAST_WIDTH-126,580,163,189);
  ctx.drawImage(harborLeft,-43,758,203,194);
- ctx.drawImage(harborRight,COAST_WIDTH-150,938,190,182);
+ ctx.drawImage(harborRight,COAST_WIDTH-150,807,190,182);
  // Small natural reef outcrops are attached to shoreline, not random mid-sea tiles.
  const reef=makeStructureStamp(atlas,3);
- for(const p of [{side:-1 as Side,y:282},{side:1 as Side,y:438},{side:-1 as Side,y:917}]){
-  const x=coastBoundary(p.y,p.side)+p.side*7;
-  ctx.drawImage(reef,x-22,p.y-25,48,46);
+ for(const p of [{side:-1 as Side,y:241},{side:1 as Side,y:457},{side:-1 as Side,y:918}]){
+  const x=coastBoundary(p.y,p.side)+p.side*9;
+  ctx.drawImage(reef,x-38,p.y-36,76,70);
  }
 }
 

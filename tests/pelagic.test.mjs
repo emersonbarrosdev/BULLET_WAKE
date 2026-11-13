@@ -66,3 +66,10 @@ test('coast is a continuous, periodic shoreline, without pasted island sprites',
  }
  for(let y=0;y<COAST_PERIOD;y+=7)assert(coastBoundary(y,1)-coastBoundary(y,-1)>175,'keep a clear combat corridor');
 });
+
+test('harbor sprites fit entirely inside a period, without clipping into the tile seam',()=>{
+ const a=readFileSync(new URL('../src/game/arcade/PelagicCoastAtlas.ts',import.meta.url),'utf8');
+ assert(a.includes('harborDetails(ctx,atlas)'));
+ assert(a.includes('COAST_WIDTH-150,807,190,182'));
+ assert(807+182<COAST_PERIOD);
+});
