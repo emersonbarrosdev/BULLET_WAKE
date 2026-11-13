@@ -31,13 +31,13 @@ try{
  await key('Enter');assert.equal(await evaluate('s.screen'),'pilot');
  await evaluate(`window.seek=(time)=>{const w=s.world;w.route=time;w.waveIndex=w.mission.encounters.findIndex(e=>e.at>time);if(w.waveIndex<0)w.waveIndex=w.mission.encounters.length;w.supplyIndex=11;w.miniStarted=time>155;w.bossStarted=false;w.enemies=[];w.cargo=[];w.obstacles=[];w.nextObstacle=time+10;w.boss=undefined;w.bullets.forEach(b=>b.active=false);w.player.invulnerable=100;};`);
  await evaluate(`s.show('pilot')`);await shot('pilots');await evaluate(`s.show('missions')`);await shot('missions');
- await evaluate(`s.begin(0);s.world.introTime=0;`);await sleep(1500);await shot('phase1-start');
- await evaluate(`seek(85);s.world.weapons.weaponLevel=3`);await sleep(1000);await shot('phase1-coast');
+ await evaluate(`s.begin(0);s.world.introTime=0;s.touch.fire=true;s.setTouchVisible(false);`);await sleep(1500);await shot('phase1-start');
+ await evaluate(`seek(85);s.world.weapons.weaponLevel=3;s.world.spawnEncounter({family:'fighter',formation:'trio',motion:'straight',lane:.5});s.setTouchVisible(false)`);await sleep(1000);await shot('phase1-coast');
  await evaluate(`s.show('pause')`);await shot('pause');report.pause=await evaluate(`(()=>{const a=s.world.elapsed;return new Promise(r=>setTimeout(()=>r({before:a,after:s.world.elapsed,audio:s.audio.status()}),200));})()`);assert.equal(report.pause.before,report.pause.after);
  await evaluate(`s.audio.unlock();s.show('controls')`);await shot('controls');assert.equal(await evaluate('s.audio.status().paused'),true);await evaluate(`s.pauseOrigin='pause';s.show('settings')`);await shot('settings');
  await evaluate(`s.show('play');seek(300)`);await sleep(3500);await shot('phase1-boss');
  await evaluate(`s.world.specialTime=3;s.world.player.x=s.world.boss.parts[0].x;s.world.player.y=350`);await sleep(200);await shot('phase1-special');
- await evaluate(`s.world.boss.parts.forEach(p=>p.hp=0)`);await wait('s.world?.boss?.configuration===2');await shot('phase1-return');assert.equal(await evaluate('s.world.boss.configuration'),2);
+ await evaluate(`(()=>{const w=s.world;for(let i=0;i<190;i++)w.step(1/60);w.boss.parts.forEach(p=>p.hp=0);for(let i=0;i<1000&&w.boss?.configuration!==2;i++)w.step(1/60);})()`);await shot('phase1-return');assert.equal(await evaluate('s.world.boss.configuration'),2);
  report.assets=await evaluate(`({textures:s.textures.getTextureKeys().filter(k=>k.startsWith('arc-')),audio:s.audio.status(),objects:s.children.length,screen:s.screen})`);
  if(process.argv.includes('--both')){await evaluate(`s.begin(1);s.world.introTime=0;seek(99)`);await sleep(1600);await shot('phase2-city');await evaluate(`seek(300)`);await sleep(3500);await shot('phase2-boss');}
  // Standard browser gamepad injection exercises the real input adapter, not a physical device.

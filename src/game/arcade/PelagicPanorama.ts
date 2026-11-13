@@ -49,6 +49,13 @@ export function installPelagicPanorama(scene:Phaser.Scene):string {
   d[i+1]=Math.round(g*(1-.24*strength));
   d[i+2]=Math.round(blue*(1-.035*strength));
  }
+ // Keep the authored coastline and port, not the cloudy blue water baked into
+ // the original strips: the previously approved sharp ocean remains visible below.
+ for(let y=0;y<period;y++)for(let x=0;x<width;x++){
+  const edge=Math.min(x,width-1-x),t=Math.max(0,Math.min(1,(edge-65)/65));
+  const opacity=1-(t*t*(3-2*t));
+  d[(y*width+x)*4+3]=Math.round(d[(y*width+x)*4+3]*opacity);
+ }
  ctx.putImageData(pixels,0,0);
  texture.refresh();
  return PELAGIC_PANORAMA_KEY;

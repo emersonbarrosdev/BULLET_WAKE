@@ -15,3 +15,6 @@ O objetivo são as telas de referência do usuário: cenários detalhados e inte
 
 ## Limitações da validação
 Os testes automatizados e TypeScript não substituem captura real em navegador, nem atestam 60 FPS em Android. A simulação `PelagicEnvironment` ainda usa envelopes conservadores próprios para as rotas das lanchas; a próxima etapa visual é casar essas âncoras com o detalhamento da pintura, conforme inspeção de screenshots.
+
+## Correção após captura real no Chrome
+A primeira composição ainda deixava uma mancha ciano/embaçada no mar central. A textura panorâmica agora é mascarada horizontalmente de forma suave: vegetação, porto, farol, pedras e espuma ficam nas margens; o centro usa a água azul-cobalto nítida já aprovada. O roteiro do navegador captura abertura e combate sem os botões touch de teste sobre os painéis.\n

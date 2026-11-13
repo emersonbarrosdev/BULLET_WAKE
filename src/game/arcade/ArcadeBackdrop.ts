@@ -16,10 +16,9 @@ export class ArcadeBackdrop {
   this.ink=scene.add.graphics().setDepth(-20);
   installPelagicTextures(scene);
   const terrain=installPelagicPanorama(scene);
-  this.panorama=scene.add.tileSprite(384,216,PELAGIC_VIEW.width,432,terrain).setDepth(-19).setVisible(false);
-  // Subtle moving specular water inside the navigable corridor, not over the land.
-  this.water=scene.add.tileSprite(384,216,258,432,'pelagic-water').setDepth(-18)
-   .setAlpha(.09).setBlendMode(Phaser.BlendModes.SCREEN).setVisible(false);
+  this.panorama=scene.add.tileSprite(384,216,PELAGIC_VIEW.width,432,terrain).setDepth(-18).setVisible(false);
+  // Approved crisp cobalt waves fill the entire lane; painted shore follows on top.
+  this.water=scene.add.tileSprite(384,216,PELAGIC_VIEW.width,432,'pelagic-water').setDepth(-19).setVisible(false);
   this.water.setTileScale(WATER_SCALE,WATER_SCALE);
   this.seaFx=scene.add.graphics().setDepth(-17);
   for(let i=0;i<8;i++)this.scenery.push(scene.add.image(0,0,'arc-scenery',i%4).setDepth(-15));
@@ -49,7 +48,7 @@ export class ArcadeBackdrop {
   const time=w.elapsed;
   this.ink.fillStyle(0x074785).fillRect(PELAGIC_VIEW.left,0,PELAGIC_VIEW.width,432);
   this.panorama.tilePositionY=-w.scroll;
-  this.water.tilePositionY=waterScrollOffset(w.scroll*.78,time*2.2);
+  this.water.tilePositionY=waterScrollOffset(w.scroll,time*2.2);
   this.water.tilePositionX=Math.sin(time*.18)*1.6;
   const g=this.seaFx,count=quality===0?8:quality===1?13:19;
   for(let i=0;i<count;i++){
