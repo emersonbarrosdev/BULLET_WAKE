@@ -57,6 +57,7 @@ test('stage 1 shoreline attaches to outside banks, preserves orientation and mat
   for(const p of before){if(!after.includes(p))continue;assert.equal((p.y+scroll+5)-(p.y+scroll),5);}
  }
  const source=readFileSync(new URL('../src/game/arcade/ArcadeBackdrop.ts',import.meta.url),'utf8');
- assert.match(source,/setPosition\\(p\\.x,p\\.y\\+w\\.scroll\\)/);
- assert.doesNotMatch(source,/this\\.panorama|setBlendMode\\(/);
+ assert(source.includes('.setPosition(p.x,p.y+w.scroll)'));
+ assert(!source.includes('this.panorama'));
+ assert(!source.includes('setBlendMode('));
 });
