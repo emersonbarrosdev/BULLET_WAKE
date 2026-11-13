@@ -21,7 +21,7 @@ const BLUE=0x16385b,YELLOW=0xffdf5a;
 /** Cartoon presentation over one shared deterministic UP/SIDE simulation. Legacy content remains registered separately. */
 export class ArcadeScene extends Phaser.Scene {
  world?:ArcadeWorld;screen:Screen='intro';audio=new ArcadeAudio();quality=2;
- private backdrop!:ArcadeBackdrop;private ui!:Phaser.GameObjects.Container;private decor!:Phaser.GameObjects.Graphics;private combatInk!:Phaser.GameObjects.Graphics;private hud!:Phaser.GameObjects.Text;private radio!:Phaser.GameObjects.Text;
+ private backdrop!:ArcadeBackdrop;private hudLeft!:Phaser.GameObjects.Image;private hudRight!:Phaser.GameObjects.Image;private ui!:Phaser.GameObjects.Container;private decor!:Phaser.GameObjects.Graphics;private combatInk!:Phaser.GameObjects.Graphics;private hud!:Phaser.GameObjects.Text;private radio!:Phaser.GameObjects.Text;
  private player!:Phaser.GameObjects.Sprite;private bossSprite!:Phaser.GameObjects.Sprite;private hero!:Phaser.GameObjects.Image;private logo!:Phaser.GameObjects.Image;private wingmen:Phaser.GameObjects.Image[]=[];
  private logoParts:Phaser.GameObjects.Image[]=[];private lifeIcons:Phaser.GameObjects.Image[]=[];
  private enemySprites=new Map<number,Phaser.GameObjects.Sprite>();private cargoSprites=new Map<number,Phaser.GameObjects.Container>();private partSprites=new Map<number,Phaser.GameObjects.Sprite>();private bulletSprites:Phaser.GameObjects.Sprite[]=[];private effects:Effect[]=[];
@@ -35,6 +35,9 @@ export class ArcadeScene extends Phaser.Scene {
   const base=import.meta.env.BASE_URL;
   this.load.spritesheet('arc-ufo',`${base}assets/arcade/ufo.webp`,{frameWidth:256,frameHeight:256});
   this.load.image('arc-ocean',`${base}assets/arcade/ocean.webp`);
+   for(let i=0;i<2;i++)this.load.image('arc-stage1-world-'+i,`${base}assets/arcade/stage1-ocean-world-${i}.webp`);
+   this.load.image('arc-stage1-hud-left',`${base}assets/arcade/stage1-hud-left.webp`);
+   this.load.image('arc-stage1-hud-right',`${base}assets/arcade/stage1-hud-right.webp`);
   for(const name of ['rivet','enemies','pilots','scenery'])this.load.spritesheet('arc-'+name,`${base}assets/arcade/${name}.webp`,{frameWidth:256,frameHeight:256});
   this.load.spritesheet('arc-boss',`${base}assets/arcade/boss.webp`,{frameWidth:512,frameHeight:512});
   this.load.spritesheet('arc-red',`${base}assets/combat-hd/polish/rivet-red.webp`,{frameWidth:128,frameHeight:128});
@@ -51,6 +54,9 @@ export class ArcadeScene extends Phaser.Scene {
   const settings=globalSave.getSettings();this.mute=settings.isMuted;this.audio.setMix(settings.musicVolume,settings.sfxVolume,this.mute);
   try{const stored=localStorage.getItem('bullet_wake_visual');if(stored!==null)this.quality=clamp(Number(stored)||0,0,2);}catch{/* Optional preference. */}
   this.backdrop=new ArcadeBackdrop(this);this.decor=this.add.graphics().setDepth(40);this.combatInk=this.add.graphics().setDepth(12);
+   // Opaque, full-height illustrated cockpit art sits above every action sprite (depth <= 20).
+   this.hudLeft=this.add.image(104,216,'arc-stage1-hud-left').setDisplaySize(208,432).setDepth(39).setVisible(false);
+   this.hudRight=this.add.image(664,216,'arc-stage1-hud-right').setDisplaySize(208,432).setDepth(39).setVisible(false);
   this.player=this.add.sprite(384,350,'arc-rivet',1).setDisplaySize(31,38).setDepth(18).setVisible(false);
   this.bossSprite=this.add.sprite(384,100,'arc-boss').setDepth(3).setVisible(false);
   this.hero=this.add.image(384,280,'arc-rivet',4).setDisplaySize(245,245).setDepth(1);
@@ -85,6 +91,8 @@ export class ArcadeScene extends Phaser.Scene {
   const old=this.screen;this.screen=screen;if(old!==screen&&screen!=='play')globalAudio.playArcade('navigate');this.ui.removeAll(true);this.buttons=[];this.focus=0;
   if(screen==='result'||screen==='defeat'){this.messageUntil=0;this.radio.setVisible(false);}
   const game=['play','pause','controls','settings','confirm-exit','result','defeat'].includes(screen)&&!!this.world;
+   const stage1Hud=game&&!!this.world?.up;
+   this.hudLeft.setVisible(stage1Hud);this.hudRight.setVisible(stage1Hud);
   this.logo.setVisible(!game&&screen==='title');this.logoParts.forEach(s=>s.setVisible(screen==='intro'));this.hero.setVisible(!game&&['intro','title'].includes(screen));this.wingmen.forEach(s=>s.setVisible(!game));
   if(screen==='pause'){this.audio.pause();this.pauseOrigin='pause';}
   if(screen==='play'&&old!=='play')this.audio.resume();
@@ -103,20 +111,14 @@ export class ArcadeScene extends Phaser.Scene {
    this.button(92,406,'VOLTAR',()=>this.show('pilot'),130);
   }else if(screen==='play'){
    if(this.world?.up){
-    this.ui.add(this.add.image(104,124,'arc-pilots',0).setDisplaySize(133,133));
-    this.text(102,29,'BULLET WAKE',16,'#ffde59');
-    this.text(103,205,'BAYEK',22,'#fff19a');
-    this.text(103,229,'RIVET • VANGUARDA',10,'#d5fffb');
-    this.text(53,256,'VIDAS',10,'#efffff');
-    this.text(60,293,'ESPECIAL',10,'#efffff');
-    this.text(656,48,'PONTUAÇÃO',12,'#fff2a1');
-    this.text(658,163,'ROTA 01',18,'#fff2a1');
-    this.text(658,188,'FENDA PELÁGICA',11,'#defffa');
-    this.text(657,246,'RÁDIO • BAYEK',11,'#ffe58a');
-    this.radio.setStyle({fontFamily:FONT,fontSize:'11px',color:'#eafff8',backgroundColor:'#14496a',padding:{x:6,y:5},wordWrap:{width:145},align:'left'});
+    // The full-height approved art already carries the labels, portrait, logo and ship.
+    // Only live values, stocks and radio are painted by renderHud().
+    this.radio.setStyle({fontFamily:FONT,fontSize:'11px',color:'#f2fff9',
+      backgroundColor:'rgba(0,0,0,0)',padding:{x:0,y:0},wordWrap:{width:109},align:'left'});
     this.radio.setOrigin(0,0);
    }else{
-    this.radio.setStyle({fontFamily:FONT,fontSize:'12px',color:'#16385b',backgroundColor:'#fff7cb',padding:{x:8,y:5},wordWrap:{width:280},align:'center'});
+    this.radio.setStyle({fontFamily:FONT,fontSize:'12px',color:'#16385b',
+      backgroundColor:'#fff7cb',padding:{x:8,y:5},wordWrap:{width:280},align:'center'});
     this.radio.setOrigin(.5);
    }
    const pause=this.text(739,19,'Ⅱ',16,'#fff2a1');pause.setInteractive();pause.on('pointerdown',()=>this.show('pause'));
@@ -240,47 +242,50 @@ export class ArcadeScene extends Phaser.Scene {
   }
  }
  private renderHud():void{
-   const w=this.world!,g=this.decor;g.clear();
-   if(w.up){
-    // The same animated ocean extends behind compact side panels.
-    const panel=(x:number,y:number,width:number,height:number)=>{
-     g.fillStyle(0x063b63,.73).fillRoundedRect(x,y,width,height,12);
-     g.lineStyle(1,0x83eeea,.70).strokeRoundedRect(x,y,width,height,12);
-    };
-    panel(12,11,185,232);panel(16,246,177,70);
-    panel(572,11,182,125);panel(572,145,182,80);panel(572,235,182,78);
-    g.fillStyle(0xffdf5a,.88).fillRoundedRect(30,43,150,3,2);
-    g.fillStyle(0xffdf5a,.86).fillRoundedRect(590,61,145,3,2);
-    g.lineStyle(3,0x124969,.95).lineBetween(588,214,737,214);
-    g.lineStyle(3,0xffe069,.95).lineBetween(588,214,588+149*Math.min(1,w.route/300),214);
-    const line=`${String(w.score).padStart(8,'0')}\nNV ${w.weapons.weaponLevel}${w.weapons.powerMeter?`  +${w.weapons.powerMeter}P`:''}`;
-    if(line!==this.lastHud){this.hud.setText(line).setPosition(594,79);this.lastHud=line;}
-    this.lifeIcons.forEach((sprite,i)=>sprite.setPosition(78+i*26,261).setVisible(true).setAlpha(i<w.lives?1:.18));
-    for(let i=0;i<5;i++){
-     const x=102+i*16;
-     g.fillStyle(i<w.weapons.specialCharges?0xffdf5a:0x45718a,.95);
-     g.beginPath().moveTo(x,282).lineTo(x-6,296).lineTo(x-1,296).lineTo(x-4,307).lineTo(x+7,290).lineTo(x+2,290).closePath().fillPath();
-    }
-   }else{
-    // Side-scrolling mission retains its original compact horizontal score bar.
-    g.fillStyle(BLUE,.92).fillRoundedRect(9,5,750,29,10);
-    g.lineStyle(1,0x8ee5e4,.7).strokeRoundedRect(9,5,750,29,10);
-    const line=`BAYEK / RIVET     ${String(w.score).padStart(8,'0')}     NV ${w.weapons.weaponLevel} ${w.weapons.powerMeter?`+${w.weapons.powerMeter}P`:''}`;
-    if(line!==this.lastHud){this.hud.setText(line).setPosition(22,13);this.lastHud=line;}
-    this.lifeIcons.forEach((sprite,i)=>sprite.setPosition(447+i*17,19).setVisible(true).setAlpha(i<w.lives?1:.18));
-    for(let i=0;i<5;i++){
-     const x=589+i*20;
-     g.fillStyle(i<w.weapons.specialCharges?0xffd95a:0x45718a);
-     g.beginPath().moveTo(x+2,9).lineTo(x-5,20).lineTo(x,20).lineTo(x-2,29).lineTo(x+7,16).lineTo(x+2,16).closePath().fillPath();
-    }
+  const w=this.world!,g=this.decor;g.clear();
+  if(w.up){
+   // The two opaque illustrated cockpit panels hide everything outside x=208..560.
+   g.lineStyle(3,0x17d7ff,.95).lineBetween(208,0,208,432);
+   g.lineBetween(560,0,560,432);
+   g.lineStyle(1,0xd8ffff,.82).lineBetween(209,0,209,432);
+   g.lineBetween(559,0,559,432);
+   const line=`${String(w.score).padStart(8,'0')}\nNV ${w.weapons.weaponLevel}${w.weapons.powerMeter?` +${w.weapons.powerMeter}P`:''}`;
+   if(line!==this.lastHud){
+    this.hud.setFontSize(17).setColor('#ffe654').setStroke('#032f74',2);
+    this.hud.setText(line).setPosition(603,42).setLineSpacing(5);
+    this.lastHud=line;
    }
-   if(w.state==='intro'){
-    g.fillStyle(0xffe77d,.95).fillRoundedRect(220,170,328,75,12);
-    const label=this.world!.mission.name;
-    this.radio.setOrigin(.5).setText(`MISSÃO ${this.currentMission+1}\n${label}`).setPosition(384,207).setVisible(true);
-    this.messageUntil=this.clock+.5;
+   this.lifeIcons.forEach((sprite,i)=>sprite.setPosition(110+i*19,323).setVisible(true).setAlpha(i<w.lives?1:.20));
+   for(let i=0;i<5;i++){
+    const x=122+i*12.2;
+    g.fillStyle(i<w.weapons.specialCharges?0xffdc39:0x1d426b,1).fillRoundedRect(x,356,10,11,2);
+    g.lineStyle(1,i<w.weapons.specialCharges?0xfff8ae:0x83c9df,.9).strokeRoundedRect(x,356,10,11,2);
+   }
+   g.fillStyle(0x092e5a,.95).fillRoundedRect(577,253,170,3,1);
+   g.fillStyle(0xffdf51,.98).fillRoundedRect(577,253,170*Math.min(1,w.route/300),3,1);
+  }else{
+   // Side-scrolling mission and its horizontal score bar are unchanged.
+   g.fillStyle(BLUE,.92).fillRoundedRect(9,5,750,29,10);
+   g.lineStyle(1,0x8ee5e4,.7).strokeRoundedRect(9,5,750,29,10);
+   const line=`BAYEK / RIVET     ${String(w.score).padStart(8,'0')}     NV ${w.weapons.weaponLevel} ${w.weapons.powerMeter?`+${w.weapons.powerMeter}P`:''}`;
+   if(line!==this.lastHud){
+    this.hud.setFontSize(11).setColor('#ffffff').setStroke('#153550',3);
+    this.hud.setText(line).setPosition(22,13);
+    this.lastHud=line;
+   }
+   this.lifeIcons.forEach((sprite,i)=>sprite.setPosition(447+i*17,19).setVisible(true).setAlpha(i<w.lives?1:.18));
+   for(let i=0;i<5;i++){
+    const x=589+i*20;g.fillStyle(i<w.weapons.specialCharges?0xffd95a:0x45718a);
+    g.beginPath().moveTo(x+2,9).lineTo(x-5,20).lineTo(x,20).lineTo(x-2,29).lineTo(x+7,16).lineTo(x+2,16).closePath().fillPath();
    }
   }
+  if(w.state==='intro'){
+   g.fillStyle(0xffe77d,.95).fillRoundedRect(220,170,328,75,12);
+   const label=w.mission.name;
+   this.radio.setOrigin(.5).setText(`MISSÃO ${this.currentMission+1}\n${label}`).setPosition(384,207).setVisible(true);
+   this.messageUntil=this.clock+.5;
+  }
+ }
  private consumeEvents():void{
   const w=this.world!;for(const e of w.events){
    if(e.type==='shot')globalAudio.playShot('nolan',w.weapons.weaponLevel);
@@ -303,8 +308,9 @@ export class ArcadeScene extends Phaser.Scene {
  }
  private message(text:string):void{
    const up=!!this.world?.up;
-   this.radio.setOrigin(up?0:.5,up?0:.5).setText(text).setPosition(up?582:384,up?264:65).setVisible(true);
-   this.messageUntil=this.clock+3.3;
+   this.radio.setOrigin(up?0:.5,up?0:.5).setText(text)
+    .setPosition(up?646:384,up?295:65).setVisible(true);
+   this.messageUntil=this.clock+(up?6:3.3);
   }
  private arcadeProgress(){try{return readArcadeProgress(localStorage.getItem('bullet_wake_arcade_v1'));}catch{return readArcadeProgress(null);}}
  private saveClear():void{

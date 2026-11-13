@@ -1,29 +1,29 @@
 import Phaser from 'phaser';
 import type {ArcadeWorld} from './ArcadeWorld';
 
-/** Lightweight painted-ocean layers; decorative scenery never changes collisions. */
+/** Stage-1 portrait ocean is clipped by its fixed TileSprite; the side HUD is opaque. */
 export class ArcadeBackdrop {
  private ink:Phaser.GameObjects.Graphics;
- private coast:Phaser.GameObjects.Graphics;
  private scenery:Phaser.GameObjects.Image[]=[];
  private clouds:Phaser.GameObjects.Image[]=[];
- private water:Phaser.GameObjects.TileSprite;
- private shimmer:Phaser.GameObjects.TileSprite;
-
+ private oceanMaps:Phaser.GameObjects.Image[]=[];
+ private seaFx:Phaser.GameObjects.Graphics;
  constructor(private scene:Phaser.Scene){
   this.ink=scene.add.graphics().setDepth(-20);
-  // Extend the same moving ocean behind the HUD, rather than masking a narrow rectangle.
-  this.water=scene.add.tileSprite(384,216,768,432,'arc-ocean').setDepth(-19).setTileScale(.94);
-  this.shimmer=scene.add.tileSprite(384,216,768,432,'arc-ocean').setDepth(-18).setTileScale(1.2).setAlpha(.12);
-  this.coast=scene.add.graphics().setDepth(-16);
-  for(let i=0;i<12;i++)this.scenery.push(scene.add.image(0,0,'arc-scenery',i%4).setDepth(-15));
+  // x=208..560: actual UP simulation bounds; never fill the HUD strips with gameplay.
+  for(let i=0;i<2;i++){
+   this.oceanMaps.push(scene.add.image(384,216,'arc-stage1-world-'+i)
+    .setDisplaySize(352,1856*352/713).setDepth(-19).setVisible(false));
+  }
+  this.seaFx=scene.add.graphics().setDepth(-18);
+  for(let i=0;i<8;i++)this.scenery.push(scene.add.image(0,0,'arc-scenery',i%4).setDepth(-15));
   for(let i=0;i<5;i++)this.clouds.push(scene.add.image(0,0,'arc-scenery',4).setDepth(-12).setAlpha(.18));
  }
  draw(time:number,world?:ArcadeWorld,quality=2):void{
-  this.ink.clear();this.coast.clear();
-  for(const s of this.scenery)s.setVisible(false).clearMask();
-  for(const s of this.clouds)s.setVisible(false).clearMask();
-  this.water.setVisible(!!world?.up);this.shimmer.setVisible(!!world?.up);
+  this.ink.clear();this.seaFx.clear();
+  for(const sprite of this.scenery)sprite.setVisible(false);
+  for(const sprite of this.clouds)sprite.setVisible(false);
+  this.oceanMaps.forEach(map=>map.setVisible(!!world?.up));
   if(!world){this.sky(time,quality);return;}
   if(world.up)this.ocean(time,world,quality);else this.city(time,world,quality);
  }
@@ -37,58 +37,33 @@ export class ArcadeBackdrop {
   for(let i=0;i<quality+3;i++)this.clouds[i].setVisible(true).setPosition(((i*215-time*(7+i*2))%1040+1040)%1040-120,60+i*47).setDisplaySize(155+i*16,90).setAlpha(.7);
  }
  private ocean(time:number,w:ArcadeWorld,quality:number):void{
-  const g=this.ink,c=this.coast;
-  g.fillGradientStyle(0x044c87,0x075e98,0x12b2bb,0x078ca4,1).fillRect(0,0,768,432);
-  this.water.tilePositionY=-w.scroll*.67-time*1.7;
-  this.water.tilePositionX=Math.sin(time*.12)*7;
-  this.shimmer.tilePositionY=-w.scroll*.28+time*1.2;
-  this.shimmer.tilePositionX=67+Math.sin(time*.19)*12;
-
-  // Shallow reefs, underwater shadows and broad bands of current cross the entire screen.
-  // Static art is shared, but its perceived depth is shaped by light, foam and ground shadow.
-  for(let side=0;side<2;side++){
-   const x=side?756:12;
+  // Continuous detailed sea and coastal landmarks live on a long illustration map.
+  // Two small sequential atlases (<= 1856px tall) stay compatible with Android GPUs.
+  this.ink.fillStyle(0x03437d).fillRect(208,0,352,432);
+  const h=1856*352/713,period=h*2,scroll=(w.scroll*.92)%period;
+  for(let i=0;i<2;i++){
+   let top=i*h-scroll;
+   if(top< -h)top+=period;
+   this.oceanMaps[i].setPosition(384,top+h/2);
+  }
+  // Foam overlays stay sparse and behind enemies to maintain projectile legibility.
+  const g=this.seaFx;
+  const count=quality===0?4:quality===1?7:10;
+  for(let i=0;i<count;i++){
+   const y=((i*95+w.scroll*(.35+i%3*.05))%610+610)%610-95;
+   const x=235+((i*109+19)%303);
+   g.lineStyle(i%4===0?2:1,0xe0fff5,i%4===0?.34:.2);
+   g.beginPath();g.moveTo(x-20,y+Math.sin(time*.3+i)*2);
+   g.lineTo(x,y-2);g.lineTo(x+18,y+Math.sin(time*.3+i)*2);g.strokePath();
+  }
+  if(w.region===6){
+   // An environmental warning only; the boss stays in its own gameplay layer.
+   g.lineStyle(2,0x9ff9ed,.32);
    for(let i=0;i<3;i++){
-    const y=((i*189+w.scroll*(.19+i*.02))%680)-120;
-    c.fillStyle(0x76f2d8,.055).fillEllipse(x,y,side?250:230,260);
-    c.fillStyle(0x043f75,.095).fillEllipse(x+(side?-15:15),y+29,165,195);
+    const radius=50+i*24+Math.sin(time*.65+i)*6;
+    g.strokeEllipse(384,70,radius*2,radius*.8);
    }
   }
-  const landmarks=[
-   {x:119,y:45,frame:0,size:122},{x:652,y:285,frame:1,size:139},
-   {x:105,y:550,frame:2,size:135},{x:650,y:755,frame:0,size:127},
-   {x:133,y:995,frame:1,size:144},{x:643,y:1210,frame:2,size:146},
-   {x:92,y:1450,frame:0,size:128},{x:664,y:1640,frame:1,size:133},
-   {x:117,y:1860,frame:2,size:140},
-  ];
-  // Stable world positions: islands slide with the ocean, not with frame time or spawn order.
-  const cycle=2170;
-  for(let i=0;i<landmarks.length;i++){
-   const p=landmarks[i],y=((p.y+w.scroll*.82)%cycle+cycle)%cycle-180;
-   if(y< -145||y>570)continue;
-   const island=this.scenery[i],sz=p.size*(p.frame===2?1.04:1);
-   // The shadow and foam contour visually embed each island/dock in the water.
-   c.fillStyle(0x00496d,.37).fillEllipse(p.x+4,y+13,sz*1.24,sz*.75);
-   c.fillStyle(0x79eacb,.20).fillEllipse(p.x,y+3,sz*1.12,sz*.86);
-   c.lineStyle(2,0xd5fff1,.38).strokeEllipse(p.x,y+3,sz*1.13,sz*.87);
-   island.setVisible(true).setFrame(p.frame).setPosition(p.x,y).setDisplaySize(sz,sz);
-  }
-  // Thin moving highlights read as ocean currents rather than a drawn rectangle.
-  const strokes=quality===0?8:quality===1?13:19;
-  for(let i=0;i<strokes;i++){
-   const y=((i*57+w.scroll*(.36+i%3*.06))%590+590)%590-90;
-   const cx=130+((i*131+49)%520);
-   c.lineStyle(i%4===0?2:1,0xc9fff0,i%4===0?.24:.13);
-   c.beginPath();c.moveTo(cx-29,y+Math.sin(time*.4+i)*3);
-   c.lineTo(cx,y-3);c.lineTo(cx+25,y+Math.sin(time*.4+i)*3);c.strokePath();
-  }
-  // Subtle outer sea tint for the HUD: no hard playfield mask, no giant triangles.
-  c.fillStyle(0x022b51,.22).fillRect(0,0,184,432).fillRect(584,0,184,432);
-  if(w.region===6){
-   const r=this.scenery[9];r.setVisible(true).setFrame(3).setPosition(384,45+Math.sin(time*.22)*6).setDisplaySize(205,205).setAlpha(.65);
-   c.lineStyle(2,0xd2fff8,.2).strokeEllipse(384,60,170+Math.sin(time)*7,98);
-  }
-  for(let i=0;i<Math.min(quality+1,3);i++)this.clouds[i].setVisible(true).setPosition(126+i*230,((time*(7+i*2)+i*235)%640)-100).setDisplaySize(145,76).setAlpha(.08);
  }
  private city(time:number,w:ArcadeWorld,quality:number):void{
   const g=this.ink;g.fillGradientStyle(0x27aee1,0x72d3ee,0xffe4a6,0xc6f7ec,1).fillRect(0,0,768,432);
@@ -109,7 +84,8 @@ export class ArcadeBackdrop {
   void time;
  }
  destroy():void{
-  this.ink.destroy();this.coast.destroy();this.water.destroy();this.shimmer.destroy();
-  this.scenery.forEach(s=>s.destroy());this.clouds.forEach(s=>s.destroy());void this.scene;
+  this.ink.destroy();this.seaFx.destroy();this.oceanMaps.forEach(s=>s.destroy());
+  this.scenery.forEach(s=>s.destroy());this.clouds.forEach(s=>s.destroy());
+  void this.scene;
  }
 }
