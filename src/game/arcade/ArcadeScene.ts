@@ -60,7 +60,7 @@ export class ArcadeScene extends Phaser.Scene {
   for(let i=0;i<3;i++)this.wingmen.push(this.add.image(-100,100,'arc-enemies',8).setDisplaySize(45,45).setDepth(-2));
   this.ui=this.add.container(0,0).setDepth(60);
   this.hud=this.add.text(0,0,'',{fontFamily:FONT,fontSize:'11px',fontStyle:'bold',color:'#ffffff',stroke:'#153550',strokeThickness:3}).setResolution(2).setDepth(45);
-  this.radio=this.add.text(384,66,'',{fontFamily:FONT,fontSize:'12px',color:'#16385b',backgroundColor:'#fff7cb',padding:{x:12,y:7},wordWrap:{width:280},align:'center'}).setResolution(2).setOrigin(.5).setDepth(48).setVisible(false);
+  this.radio=this.add.text(384,66,'',{fontFamily:FONT,fontSize:'12px',color:'#16385b',backgroundColor:'#fff7cb',padding:{x:8,y:5},wordWrap:{width:280},align:'center'}).setResolution(2).setOrigin(.5).setDepth(48).setVisible(false);
   for(let i=0;i<640;i++)this.bulletSprites.push(this.add.sprite(0,0,'arc-red').setVisible(false).setDepth(15));
   this.makeOrbTextures();this.installTouch();this.show('intro');
   const blur=()=>{this.touch={x:0,y:0,fire:false,special:false};this.touchStart=undefined;if(this.screen==='play')this.show('pause');};
@@ -102,7 +102,23 @@ export class ArcadeScene extends Phaser.Scene {
    for(let i=0;i<2;i++){const x=i?560:208;const art=this.add.image(x,177,'arc-scenery',i?5:0).setDisplaySize(180,180);this.ui.add(art);this.text(x,279,MISSIONS[i].name,19);this.text(x,302,i?'SIDE • CIDADE E PASSAGENS':'UP • OCEANO E ARQUIPÉLAGO',10);this.button(x,351,i&&!unlocked?'CONCLUA A FASE 1':'INICIAR MISSÃO',()=>{if(i&&!unlocked)return;const carry=i?this.arcadeProgress().flights[1]:undefined;this.begin(i,carry);},270);}
    this.button(92,406,'VOLTAR',()=>this.show('pilot'),130);
   }else if(screen==='play'){
-   if(this.world?.up){this.ui.add(this.add.image(102,210,'arc-pilots',0).setDisplaySize(136,136));this.text(102,295,'BAYEK',22,'#fff2a1');this.text(102,318,'RIVET / VANGUARDA',10,'#b6fff3');this.text(661,102,'ROTA 01',19,'#fff2a1');this.text(661,128,'FENDA PELÁGICA',12,'#b6fff3');this.text(661,186,'O CÉU É NOSSO.',10,'#b6fff3');}
+   if(this.world?.up){
+    this.ui.add(this.add.image(104,124,'arc-pilots',0).setDisplaySize(133,133));
+    this.text(102,29,'BULLET WAKE',16,'#ffde59');
+    this.text(103,205,'BAYEK',22,'#fff19a');
+    this.text(103,229,'RIVET • VANGUARDA',10,'#d5fffb');
+    this.text(53,256,'VIDAS',10,'#efffff');
+    this.text(60,293,'ESPECIAL',10,'#efffff');
+    this.text(656,48,'PONTUAÇÃO',12,'#fff2a1');
+    this.text(658,163,'ROTA 01',18,'#fff2a1');
+    this.text(658,188,'FENDA PELÁGICA',11,'#defffa');
+    this.text(657,246,'RÁDIO • BAYEK',11,'#ffe58a');
+    this.radio.setStyle({fontFamily:FONT,fontSize:'11px',color:'#eafff8',backgroundColor:'#14496a',padding:{x:6,y:5},wordWrap:{width:145},align:'left'});
+    this.radio.setOrigin(0,0);
+   }else{
+    this.radio.setStyle({fontFamily:FONT,fontSize:'12px',color:'#16385b',backgroundColor:'#fff7cb',padding:{x:8,y:5},wordWrap:{width:280},align:'center'});
+    this.radio.setOrigin(.5);
+   }
    const pause=this.text(739,19,'Ⅱ',16,'#fff2a1');pause.setInteractive();pause.on('pointerdown',()=>this.show('pause'));
    if(!this.world?.up&&this.world?.state==='intro'){
     const portrait=this.add.image(144,207,'arc-pilots',0).setDisplaySize(110,110);this.ui.add(portrait);this.time.delayedCall(2300,()=>portrait.destroy());
@@ -224,14 +240,47 @@ export class ArcadeScene extends Phaser.Scene {
   }
  }
  private renderHud():void{
-  const w=this.world!,g=this.decor;g.clear();g.fillStyle(BLUE,.92).fillRoundedRect(9,5,750,29,10);g.lineStyle(1,0x8ee5e4,.7).strokeRoundedRect(9,5,750,29,10);
-  const line=`BAYEK / RIVET     ${String(w.score).padStart(8,'0')}     NV ${w.weapons.weaponLevel} ${w.weapons.powerMeter?`+${w.weapons.powerMeter}P`:''}`;
-  if(line!==this.lastHud){this.hud.setText(line).setPosition(22,13);this.lastHud=line;}
-  this.lifeIcons.forEach((s,i)=>s.setVisible(true).setAlpha(i<w.lives?1:.18));
-  for(let i=0;i<5;i++){const x=589+i*20;g.fillStyle(i<w.weapons.specialCharges?0xffd95a:0x45718a);g.beginPath().moveTo(x+2,9).lineTo(x-5,20).lineTo(x,20).lineTo(x-2,29).lineTo(x+7,16).lineTo(x+2,16).closePath().fillPath();}
-  if(w.up){g.fillStyle(0x0b4c76,.8).fillRoundedRect(22,171,162,98,16);g.lineStyle(2,0x75e1dc,.8).strokeRoundedRect(22,171,162,98,16);g.lineStyle(2,0xffd452).lineBetween(581,158,739,158);g.lineStyle(3,0xffd452).lineBetween(581,158,581+158*w.route/300,158);}
-  if(w.state==='intro'){g.fillStyle(0xffe77d,.95).fillRoundedRect(220,170,328,75,12);const label=this.world!.mission.name;this.radio.setText(`MISSÃO ${this.currentMission+1}\n${label}`).setPosition(384,207).setVisible(true);this.messageUntil=this.clock+.5;}
- }
+   const w=this.world!,g=this.decor;g.clear();
+   if(w.up){
+    // The same animated ocean extends behind compact side panels.
+    const panel=(x:number,y:number,width:number,height:number)=>{
+     g.fillStyle(0x063b63,.73).fillRoundedRect(x,y,width,height,12);
+     g.lineStyle(1,0x83eeea,.70).strokeRoundedRect(x,y,width,height,12);
+    };
+    panel(12,11,185,232);panel(16,246,177,70);
+    panel(572,11,182,125);panel(572,145,182,80);panel(572,235,182,78);
+    g.fillStyle(0xffdf5a,.88).fillRoundedRect(30,43,150,3,2);
+    g.fillStyle(0xffdf5a,.86).fillRoundedRect(590,61,145,3,2);
+    g.lineStyle(3,0x124969,.95).lineBetween(588,214,737,214);
+    g.lineStyle(3,0xffe069,.95).lineBetween(588,214,588+149*Math.min(1,w.route/300),214);
+    const line=`${String(w.score).padStart(8,'0')}\nNV ${w.weapons.weaponLevel}${w.weapons.powerMeter?`  +${w.weapons.powerMeter}P`:''}`;
+    if(line!==this.lastHud){this.hud.setText(line).setPosition(594,79);this.lastHud=line;}
+    this.lifeIcons.forEach((sprite,i)=>sprite.setPosition(78+i*26,261).setVisible(true).setAlpha(i<w.lives?1:.18));
+    for(let i=0;i<5;i++){
+     const x=102+i*16;
+     g.fillStyle(i<w.weapons.specialCharges?0xffdf5a:0x45718a,.95);
+     g.beginPath().moveTo(x,282).lineTo(x-6,296).lineTo(x-1,296).lineTo(x-4,307).lineTo(x+7,290).lineTo(x+2,290).closePath().fillPath();
+    }
+   }else{
+    // Side-scrolling mission retains its original compact horizontal score bar.
+    g.fillStyle(BLUE,.92).fillRoundedRect(9,5,750,29,10);
+    g.lineStyle(1,0x8ee5e4,.7).strokeRoundedRect(9,5,750,29,10);
+    const line=`BAYEK / RIVET     ${String(w.score).padStart(8,'0')}     NV ${w.weapons.weaponLevel} ${w.weapons.powerMeter?`+${w.weapons.powerMeter}P`:''}`;
+    if(line!==this.lastHud){this.hud.setText(line).setPosition(22,13);this.lastHud=line;}
+    this.lifeIcons.forEach((sprite,i)=>sprite.setPosition(447+i*17,19).setVisible(true).setAlpha(i<w.lives?1:.18));
+    for(let i=0;i<5;i++){
+     const x=589+i*20;
+     g.fillStyle(i<w.weapons.specialCharges?0xffd95a:0x45718a);
+     g.beginPath().moveTo(x+2,9).lineTo(x-5,20).lineTo(x,20).lineTo(x-2,29).lineTo(x+7,16).lineTo(x+2,16).closePath().fillPath();
+    }
+   }
+   if(w.state==='intro'){
+    g.fillStyle(0xffe77d,.95).fillRoundedRect(220,170,328,75,12);
+    const label=this.world!.mission.name;
+    this.radio.setOrigin(.5).setText(`MISSÃO ${this.currentMission+1}\n${label}`).setPosition(384,207).setVisible(true);
+    this.messageUntil=this.clock+.5;
+   }
+  }
  private consumeEvents():void{
   const w=this.world!;for(const e of w.events){
    if(e.type==='shot')globalAudio.playShot('nolan',w.weapons.weaponLevel);
@@ -252,7 +301,11 @@ export class ArcadeScene extends Phaser.Scene {
  private layeredExplosion(e:WorldEvent):void{const size=e.size??1;this.explosion(e.x,e.y,36*size,.46);if(size>1)for(let i=0;i<3+this.quality;i++)this.explosion(e.x+Math.cos(i*2.4)*size*13,e.y+Math.sin(i*2.4)*size*13,22*size,.3+i*.055,Math.cos(i)*16,Math.sin(i)*16);
   if(e.text&&['fighter','interceptor','acrobat','bomber'].includes(e.text)&&this.effects.length<75){const sprite=this.effectSprite(e.x,e.y,'arc-enemies',FAMILY_ORDER.indexOf(e.text as Family)+(this.world!.up?0:8)).setDisplaySize(size*30,size*30).setAngle(this.world!.up?180:0).setDepth(6);this.effects.push({sprite,age:0,duration:.6,size:size*30,vx:this.world!.up?12:-35,vy:35,spin:4,falling:true});}
  }
- private message(text:string):void{this.radio.setText(text).setPosition(384,65).setVisible(true);this.messageUntil=this.clock+3.3;}
+ private message(text:string):void{
+   const up=!!this.world?.up;
+   this.radio.setOrigin(up?0:.5,up?0:.5).setText(text).setPosition(up?582:384,up?264:65).setVisible(true);
+   this.messageUntil=this.clock+3.3;
+  }
  private arcadeProgress(){try{return readArcadeProgress(localStorage.getItem('bullet_wake_arcade_v1'));}catch{return readArcadeProgress(null);}}
  private saveClear():void{
   if(this.stageClearSaved||!this.world)return;this.stageClearSaved=true;const w=this.world;this.carried=stageFlightSnapshot(w.mission.id,w.weapons,w.lives,w.score);
