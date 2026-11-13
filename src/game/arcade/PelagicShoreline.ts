@@ -52,5 +52,8 @@ export function visibleShore(scroll:number,pad=170):ShoreSprite[]{
 }
 /** Runtime validation: land/reef sprites always attach to their respective coast. */
 export function shoreAnchoredToEdge(p:ShoreSprite):boolean{
+ // Reefs are deliberately just offshore, inside a narrow, bounded coastal shelf.
+ // Sand, palms and cliff segments must intersect the outer cockpit boundary.
+ if(p.reef)return p.side<0?p.x-p.width*.5<VIEW_LEFT+85:p.x+p.width*.5>VIEW_RIGHT-85;
  return p.side<0?p.x-p.width*.5<=VIEW_LEFT:p.x+p.width*.5>=VIEW_RIGHT;
 }
