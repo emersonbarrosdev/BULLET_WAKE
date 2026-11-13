@@ -93,6 +93,39 @@ function terrain(ctx:CanvasRenderingContext2D,stamps:HTMLCanvasElement[],side:Si
  shoreline(ctx,side);
 }
 
+function makeStructureStamp(atlas:HTMLImageElement,frame:number):HTMLCanvasElement{
+ const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;
+ const ctx=canvas.getContext('2d',{willReadFrequently:true});
+ if(!ctx)throw Error('Canvas para estruturas da costa indisponível');
+ ctx.drawImage(atlas,(frame%4)*512,Math.floor(frame/4)*512,512,512,0,0,512,512);
+ const pixels=ctx.getImageData(0,0,512,512),data=pixels.data;
+ for(let y=0;y<512;y++)for(let x=0;x<512;x++){
+  const i=(y*512+x)*4,r=data[i],g=data[i+1],b=data[i+2];
+  // Never paste the cyan/blue baked ocean from an island tile into the cobalt sea.
+  if(b>r*1.10&&g>r*.96&&b>g*.81){data[i+3]=0;continue;}
+  const edge=Math.min(x,511-x,y,511-y);
+  data[i+3]=Math.round(data[i+3]*Math.min(1,Math.max(0,(edge-6)/22)));
+ }
+ ctx.putImageData(pixels,0,0);
+ return canvas;
+}
+
+function harborDetails(ctx:CanvasRenderingContext2D,atlas:HTMLImageElement):void{
+ // Structural landmarks appear once per 1024px stage loop, never duplicated as islands.
+ const harborLeft=makeStructureStamp(atlas,4);
+ const lighthouse=makeStructureStamp(atlas,2);
+ const harborRight=makeStructureStamp(atlas,5);
+ ctx.drawImage(lighthouse,COAST_WIDTH-126,580,163,189);
+ ctx.drawImage(harborLeft,-43,758,203,194);
+ ctx.drawImage(harborRight,COAST_WIDTH-150,938,190,182);
+ // Small natural reef outcrops are attached to shoreline, not random mid-sea tiles.
+ const reef=makeStructureStamp(atlas,3);
+ for(const p of [{side:-1 as Side,y:282},{side:1 as Side,y:438},{side:-1 as Side,y:917}]){
+  const x=coastBoundary(p.y,p.side)+p.side*7;
+  ctx.drawImage(reef,x-22,p.y-25,48,46);
+ }
+}
+
 export function installCoastTexture(scene:Phaser.Scene):string{
  if(scene.textures.exists(COAST_TEXTURE))return COAST_TEXTURE;
  const atlas=scene.textures.get('pelagic-coast').getSourceImage() as HTMLImageElement;
@@ -102,6 +135,7 @@ export function installCoastTexture(scene:Phaser.Scene):string{
  const ctx=texture.context;
  const stamps=makeVegetationStamps(atlas);
  terrain(ctx,stamps,-1);terrain(ctx,stamps,1);
+ harborDetails(ctx,atlas);
  texture.refresh();
  return COAST_TEXTURE;
 }
