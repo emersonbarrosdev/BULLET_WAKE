@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PELAGIC_COAST,visibleCoast,waterCorridor,touchesCoast,prepareSurface,moveSurface,surfaceMount} from '../src/game/arcade/PelagicEnvironment.ts';
 import {waterScrollOffset,WATER_SCALE,WATER_TILE_SIZE} from '../src/game/arcade/PelagicWater.ts';
-import {PELAGIC_SHORE,visibleShore,shoreAnchoredToEdge} from '../src/game/arcade/PelagicShoreline.ts';
+import {coastBoundary,coastAtScroll,COAST_PERIOD,COAST_WIDTH} from '../src/game/arcade/PelagicCoastAtlas.ts';
 import {ArcadeWorld} from '../src/game/arcade/ArcadeWorld.ts';
 import {MISSIONS} from '../src/game/arcade/content.ts';
 
@@ -46,18 +46,22 @@ test('stage 1 draws a single crisp unfiltered ocean base until coastline approva
  assert.doesNotMatch(source,/installPelagicPanorama|this\.panorama|\.setAlpha\(\.09\)|setBlendMode\(/);
 });
 
-test('stage 1 shoreline attaches to outside banks, preserves orientation and matches world scrolling',()=>{
- assert(PELAGIC_SHORE.length>=190);
- assert(PELAGIC_SHORE.some(p=>p.reef));
- assert(PELAGIC_SHORE.every(shoreAnchoredToEdge));
- assert(PELAGIC_SHORE.every(p=>[0,1,3,6].includes(p.frame)),'no dock/lighthouse content before approval gate 3');
- for(let scroll=0;scroll<13000;scroll+=47){
-  const before=visibleShore(scroll),after=visibleShore(scroll+5);
-  assert(before.length<=24,'fixed visible sprite pool must cover the full coast');
-  for(const p of before){if(!after.includes(p))continue;assert.equal((p.y+scroll+5)-(p.y+scroll),5);}
+test('coast is a continuous, periodic shoreline, without pasted island sprites',()=>{
+ const backdrop=readFileSync(new URL('../src/game/arcade/ArcadeBackdrop.ts',import.meta.url),'utf8');
+ const terrain=readFileSync(new URL('../src/game/arcade/PelagicCoastAtlas.ts',import.meta.url),'utf8');
+ assert(!backdrop.includes('shoreSprites'), 'no overlapping independent coast modules');
+ assert(!backdrop.includes('visibleShore'), 'old random placement removed');
+ assert(backdrop.includes("installCoastTexture(scene)"));
+ assert(backdrop.includes('this.coast.tilePositionY='));
+ assert(terrain.includes('ctx.clip()'), 'coastal atlas artwork must stay inside land');
+ assert(!terrain.includes('globalCompositeOperation'), 'no fog/painted sea masks');
+ for(const side of [-1,1]){
+  assert(Math.abs(coastBoundary(0,side)-coastBoundary(COAST_PERIOD,side))<.00001);
+  for(let y=-12000;y<432;y+=71){
+   const edge=coastBoundary(y,side);
+   assert(edge>0&&edge<COAST_WIDTH);
+   assert(Math.abs(coastAtScroll(379,y,side)-coastAtScroll(0,y-379,side))<.0001);
+  }
  }
- const source=readFileSync(new URL('../src/game/arcade/ArcadeBackdrop.ts',import.meta.url),'utf8');
- assert(source.includes('.setPosition(p.x,p.y+w.scroll)'));
- assert(!source.includes('this.panorama'));
- assert(!source.includes('setBlendMode('));
+ for(let y=0;y<COAST_PERIOD;y+=7)assert(coastBoundary(y,1)-coastBoundary(y,-1)>175,'keep a clear combat corridor');
 });

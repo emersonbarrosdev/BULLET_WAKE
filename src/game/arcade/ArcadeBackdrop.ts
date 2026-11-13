@@ -2,20 +2,18 @@ import Phaser from 'phaser';
 import type {ArcadeWorld} from './ArcadeWorld';
 import {installPelagicTextures} from './PelagicPresentation';
 import {WATER_SCALE,waterScrollOffset} from './PelagicWater';
-import {visibleShore,shoreAnchoredToEdge,type ShoreSprite} from './PelagicShoreline';
+import {installCoastTexture,COAST_PERIOD} from './PelagicCoastAtlas';
 
 const STAGE1_LEFT=192,STAGE1_WIDTH=384;
 
-/** Stage 1 / approval gate 2: seamless water plus sharp transparent shoreline.
- * Harbor, lighthouse, dynamic boats and boss scenery belong to later approval gates.
- */
+/** Fenda Pelágica: coast and ocean are two seamless material layers, not island props. */
 export class ArcadeBackdrop {
  private ink:Phaser.GameObjects.Graphics;
  private scenery:Phaser.GameObjects.Image[]=[];
  private clouds:Phaser.GameObjects.Image[]=[];
  private water:Phaser.GameObjects.TileSprite;
  private seaFx:Phaser.GameObjects.Graphics;
- private shoreSprites:Phaser.GameObjects.Image[]=[];
+ private coast:Phaser.GameObjects.TileSprite;
  constructor(private scene:Phaser.Scene){
   this.ink=scene.add.graphics().setDepth(-20);
   installPelagicTextures(scene);
@@ -23,8 +21,9 @@ export class ArcadeBackdrop {
   this.water=scene.add.tileSprite(384,216,STAGE1_WIDTH,432,'pelagic-water').setDepth(-19).setVisible(false);
   this.water.setTileScale(WATER_SCALE,WATER_SCALE);
   this.seaFx=scene.add.graphics().setDepth(-17);
-  // Small fixed pool. 192 authored placements do not become 192 live draw calls.
-  for(let i=0;i<24;i++)this.shoreSprites.push(scene.add.image(0,0,'pelagic-coast',0).setDepth(-18).setVisible(false));
+  // ONE texture covers both sides continuously, preserving crisp cobalt water.
+  const coastKey=installCoastTexture(scene);
+  this.coast=scene.add.tileSprite(384,216,STAGE1_WIDTH,432,coastKey).setDepth(-18).setVisible(false);
   for(let i=0;i<8;i++)this.scenery.push(scene.add.image(0,0,'arc-scenery',i%4).setDepth(-15));
   for(let i=0;i<5;i++)this.clouds.push(scene.add.image(0,0,'arc-scenery',4).setDepth(-12).setAlpha(.18));
  }
@@ -33,7 +32,7 @@ export class ArcadeBackdrop {
   for(const sprite of this.scenery)sprite.setVisible(false);
   for(const sprite of this.clouds)sprite.setVisible(false);
   this.water.setVisible(!!world?.up);
-  if(!world?.up)this.shoreSprites.forEach(s=>s.setVisible(false));
+  this.coast.setVisible(!!world?.up);
   if(!world){this.sky(time,quality);return;}
   if(world.up)this.ocean(world,quality);else this.city(time,world,quality);
  }
@@ -54,17 +53,8 @@ export class ArcadeBackdrop {
   this.ink.fillStyle(0x074785).fillRect(STAGE1_LEFT,0,STAGE1_WIDTH,432);
   this.water.tilePositionY=waterScrollOffset(w.scroll,time*2.2);
   this.water.tilePositionX=Math.sin(time*.18)*1.6;
-  // All land positions use the SAME positive world.scroll as surface navigation.
-  // Objects keep their atlas-native orientation: never rotate or mirror a lighthouse.
-  const visible=visibleShore(w.scroll,125);
-  for(let i=0;i<this.shoreSprites.length;i++){
-   const image=this.shoreSprites[i],p:ShoreSprite|undefined=visible[i];
-   if(!p){image.setVisible(false);continue;}
-   image.setVisible(true).setTexture('pelagic-coast',p.frame)
-    .setPosition(p.x,p.y+w.scroll).setDisplaySize(p.width,p.height).setAlpha(1);
-   // All shore texture cells have TRUE transparent padding, not painted ocean.
-   if(!shoreAnchoredToEdge(p))throw new Error('Sprite costeiro separado da margem');
-  }
+  // Negative texture coordinates move the *visible* coast DOWN with world.scroll.
+  this.coast.tilePositionY=(-w.scroll%COAST_PERIOD+COAST_PERIOD)%COAST_PERIOD;
   const g=this.seaFx,count=quality===0?8:quality===1?13:19;
   for(let i=0;i<count;i++){
    const y=((i*53+w.scroll*.87)%510+510)%510-39;
@@ -99,7 +89,7 @@ export class ArcadeBackdrop {
  }
  destroy():void{
   this.ink.destroy();this.seaFx.destroy();this.water.destroy();
-  this.shoreSprites.forEach(s=>s.destroy());
+  this.coast.destroy();
   this.scenery.forEach(s=>s.destroy());this.clouds.forEach(s=>s.destroy());
   void this.scene;
  }
