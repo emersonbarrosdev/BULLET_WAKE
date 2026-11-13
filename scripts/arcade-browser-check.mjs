@@ -11,10 +11,11 @@ const server=createServer((req,res)=>{const file=resolve(root,'.'+(req.url==='/'
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const profile=mkdtempSync(join(tmpdir(),'bw-cartoon-'));
 const chromePath=process.env.CHROME_BIN??(process.platform==='win32'?'C:/Program Files/Google/Chrome/Application/chrome.exe':'/usr/bin/google-chrome');
-const chrome=spawn(chromePath,['--headless=new','--no-sandbox','--disable-dev-shm-usage','--enable-unsafe-swiftshader','--remote-debugging-port=0','--no-first-run','--autoplay-policy=no-user-gesture-required','--user-data-dir='+profile,'about:blank'],{windowsHide:true,stdio:'ignore'});
+const chrome=spawn(chromePath,['--headless=new','--no-sandbox','--disable-dev-shm-usage','--enable-unsafe-swiftshader','--remote-debugging-port=9222','--remote-allow-origins=*','--no-first-run','--autoplay-policy=no-user-gesture-required','--user-data-dir='+profile,'about:blank'],{windowsHide:true,stdio:['ignore','ignore','pipe']});
+let chromeErrors='';chrome.stderr?.on('data',(chunk)=>{chromeErrors+=(String(chunk)).slice(-1500);});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));let socket;const errors=[],report={errors};
 try{
- let target;for(let i=0;i<60;i++){try{const port=readFileSync(join(profile,'DevToolsActivePort'),'utf8').split('\n')[0].trim();target=(await(await fetch('http://127.0.0.1:'+port+'/json')).json()).find(t=>t.type==='page');}catch{}if(target)break;await sleep(150);}assert(target);
+ let target;for(let i=0;i<180;i++){try{target=(await(await fetch('http://127.0.0.1:9222/json')).json()).find(t=>t.type==='page');}catch{}if(target)break;await sleep(150);}if(!target)throw new Error('Chrome/CDP não iniciou: '+chromeErrors.slice(-4500)+' (exit='+chrome.exitCode+')');
  socket=new WebSocket(target.webSocketDebuggerUrl);await new Promise((r,j)=>{socket.onopen=r;socket.onerror=j;});let seq=0;const pending=new Map();
  socket.onmessage=e=>{const msg=JSON.parse(e.data);if(msg.id){const p=pending.get(msg.id);pending.delete(msg.id);msg.error?p.reject(msg.error):p.resolve(msg.result);}else if(msg.method==='Runtime.exceptionThrown')errors.push(msg.params.exceptionDetails);else if(msg.method==='Log.entryAdded'&&msg.params.entry.level==='error')errors.push(msg.params.entry);};
  const send=(method,params={})=>new Promise((resolve,reject)=>{const id=++seq;pending.set(id,{resolve,reject});socket.send(JSON.stringify({id,method,params}));});
