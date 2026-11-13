@@ -1,0 +1,40 @@
+{
+  "generator": "native imagegen",
+  "packing": "uniform resampling only; original alpha preserved",
+  "sources": [
+    {
+      "file": "exec-bbec6276-1d21-45bc-bc31-ea8eebfd0731.png",
+      "sha256": "6594154bb06e30ca7ead995a7c2969c658f7b87de9b14ad13e295eb791756afd"
+    },
+    {
+      "file": "exec-2997db04-5cf1-4697-891a-34f2349ed2b0.png",
+      "sha256": "299abc968bc3533565adc242bb86f2f92191a3cccea95d2eed935f59597ba879"
+    },
+    {
+      "file": "exec-53085c2a-5ade-4e9f-b74c-2982a92d91ed.png",
+      "sha256": "60373ad8adcb5efb5efe9b722b1845e4b8205392a4c39cec5c83dc8a2f4a248d"
+    },
+    {
+      "file": "pelagic-archipelago.webp",
+      "sha256": "eae22b209af90985cd1d56ac8db4ab284003fe692c1be3c4fbc2400960eed43a"
+    },
+    {
+      "file": "pelagic-coast.webp",
+      "sha256": "a7f3305634c53f1571d8908e9cf696cae9a3f816ec18aebdbb50457bd509c82f"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "formations.webp",
+      "sha256": "d7cfec91251a7244b4a6168b1b8b56fed09b69f9562f61cf0b7f5daf61d8d54f"
+    },
+    {
+      "file": "water.webp",
+      "sha256": "cf09aebf96356b0d481f5a5300c3640a69ccf62cdefb1f873882ad5394965425"
+    },
+    {
+      "file": "wakes.webp",
+      "sha256": "65cdd4554dfcfe8bf50d208c1ba0a4d94b932dcbf1529239fa6a57948717dd5c"
+    }
+  ]
+}

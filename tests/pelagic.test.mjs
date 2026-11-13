@@ -1,9 +1,8 @@
-import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PELAGIC_COAST,visibleCoast,waterCorridor,touchesCoast,prepareSurface,moveSurface,surfaceMount} from '../src/game/arcade/PelagicEnvironment.ts';
 import {waterScrollOffset,WATER_SCALE,WATER_TILE_SIZE} from '../src/game/arcade/PelagicWater.ts';
-import {coastBoundary,coastAtScroll,isOpenSeaAt,ARCHIPELAGO_SPECS,COAST_PERIOD,COAST_WIDTH} from '../src/game/arcade/PelagicCoastGeometry.ts';
+import {coastBoundary,coastAtScroll,isOpenSeaAt,ARCHIPELAGO_SPECS,COAST_PERIOD,COAST_WIDTH,visibleFormations,formationRow} from '../src/game/arcade/PelagicCoastGeometry.ts';
 import {ArcadeWorld} from '../src/game/arcade/ArcadeWorld.ts';
 import {MISSIONS} from '../src/game/arcade/content.ts';
 
@@ -38,53 +37,37 @@ test('the authored Fenda encounters actually use left, right and top approaches'
  assert.deepEqual([...entries].sort(),[-1,0,1]);
 });
 
-// Etapa 1 & Reconstrução do Arquipélago: validar oceano em 3 camadas e ausência de panorama invertido ou névoa ciano.
-test('stage 1 renders a 3-layer open ocean (depth, caustics, surface waves) without inverted panorama or cyan fog',()=>{
- const source=readFileSync(new URL('../src/game/arcade/ArcadeBackdrop.ts',import.meta.url),'utf8');
- assert.match(source,/installOceanDepthTexture\(scene\)/);
- assert.match(source,/installOceanCausticsTexture\(scene\)/);
- assert.match(source,/installVortexTexture\(scene\)/);
- assert.match(source,/tileSprite\(384,216,STAGE1_WIDTH,432,'pelagic-water'\)/);
- assert.match(source,/waterScrollOffset\(w\.scroll,time\*2\.2\)/);
- assert.doesNotMatch(source,/installPelagicPanorama|this\.panorama|\.setAlpha\(\.09\)|setBlendMode\(/);
-});
-
-test('archipelago eliminates the river effect with >50% open sea on each border and >=150px same-side spacing',()=>{
- const backdrop=readFileSync(new URL('../src/game/arcade/ArcadeBackdrop.ts',import.meta.url),'utf8');
- const terrain=readFileSync(new URL('../src/game/arcade/PelagicCoastAtlas.ts',import.meta.url),'utf8');
- assert(!backdrop.includes('shoreSprites'), 'no overlapping independent coast modules');
- assert(!backdrop.includes('visibleShore'), 'old random placement removed');
- assert(backdrop.includes("installCoastTexture(scene)"));
- assert(backdrop.includes('this.coast.tilePositionY='));
- assert(!terrain.includes('#137b9f')&&!terrain.includes('#72d8ec'), 'no artificial cyan outline strokes');
-
- for(const side of [-1,1]){
-  assert(Math.abs(coastBoundary(0,side)-coastBoundary(COAST_PERIOD,side))<.00001);
-  let openSeaSamples=0,totalSamples=0;
-  for(let y=0;y<COAST_PERIOD;y+=4){
-   totalSamples++;
-   if(isOpenSeaAt(y,side))openSeaSamples++;
-   const edge=coastBoundary(y,side);
-   assert(edge>=0&&edge<=COAST_WIDTH);
-   assert(Math.abs(coastAtScroll(379,y,side)-coastAtScroll(0,y-379,side))<.0001);
-  }
-  assert(openSeaSamples/totalSamples>0.48, `side ${side} must have extensive open sea instead of a continuous strip`);
-
-  // Verify >= 150px spacing between consecutive formations on the same side across the cyclic period
-  const specs=ARCHIPELAGO_SPECS.filter(s=>s.side===side).slice().sort((a,b)=>a.yStart-b.yStart);
-  for(let i=0;i<specs.length;i++){
-   const cur=specs[i];
-   const next=specs[(i+1)%specs.length];
-   const gap=i+1<specs.length?next.yStart-cur.yEnd:(next.yStart+COAST_PERIOD)-cur.yEnd;
-   assert(gap>=150, `gap between formation ${cur.id} and ${next.id} on side ${side} is ${gap}px (< 150px)`);
+test('authored formations leave extensive open ocean, preserve aspect and keep >=150px separation',()=>{
+ for(const side of[-1,1]){
+  let open=0;for(let y=0;y<COAST_PERIOD;y+=2){if(isOpenSeaAt(y,side))open++;assert.equal(coastAtScroll(379,y,side),coastBoundary(y-379,side));}
+  assert(open/(COAST_PERIOD/2)>.48);
+  const pieces=ARCHIPELAGO_SPECS.filter(s=>s.side===side).sort((a,b)=>a.yStart-b.yStart);
+  for(let i=0;i<pieces.length;i++){
+   const a=pieces[i],b=pieces[(i+1)%pieces.length];
+   assert.equal(a.width,a.yEnd-a.yStart,'never stretch the art');
+   assert(b.yStart+(i===pieces.length-1?COAST_PERIOD:0)-a.yEnd>=150);
   }
  }
- for(let y=0;y<COAST_PERIOD;y+=7)assert(coastBoundary(y,1)-coastBoundary(y,-1)>145,'keep a clear combat corridor');
+ // Opposite shores also retain >=150px of open water, using actual silhouette rows.
+ for(let y=0;y<COAST_PERIOD;y++)assert(coastBoundary(y,1)-coastBoundary(y,-1)>=150);
+ for(let scroll=0;scroll<14000;scroll+=13){
+  const visible=visibleFormations(scroll);assert(visible.length<=8);assert.equal(new Set(visible.map(x=>x.key)).size,visible.length);
+  for(const {spec,y}of visible){assert.equal(y,(spec.yStart+spec.yEnd)/2+scroll-Number(visible.find(x=>x.spec===spec&&x.y===y).key.split(':')[0])*COAST_PERIOD);}
+ }
 });
 
-test('harbor and lighthouse formations are composed with natural 4-stage coastal transitions',()=>{
- const a=readFileSync(new URL('../src/game/arcade/PelagicCoastAtlas.ts',import.meta.url),'utf8');
- assert(a.includes('composeArchipelagoLand'));
- assert(a.includes('renderNaturalCoastalTransition'));
- assert(a.includes('computeCoastalDistanceField'));
+test('rendered alpha shoreline fits the navigation envelope; open-sea stretch contains no terrain',()=>{
+ for(const spec of ARCHIPELAGO_SPECS)for(let y=spec.yStart;y<spec.yEnd;y+=2){
+  const row=formationRow(spec,y);if(!row)continue;
+  const p=PELAGIC_COAST.find(p=>Math.abs(p.y-(spec.yStart+spec.yEnd)/2)<.01&&p.side===spec.side);
+  assert(p);assert(row[0]+192>=p.x-p.width/2-.01);assert(row[1]+192<=p.x+p.width/2+.01);
+ }
+ for(let y=3300;y<3900;y++){assert(isOpenSeaAt(y,-1));assert(isOpenSeaAt(y,1));}
+});
+
+test('paired boats retain separate lanes instead of converging on one center point',()=>{
+ for(let scroll=0;scroll<13000;scroll+=277){
+  const pair=[-1,1].map((side,i)=>{const e={id:i+1,x:384,y:-55,size:41,age:0,speed:24,family:'boat'};prepareSurface(e,scroll,side);return e;});
+  for(let i=0;i<600;i++){for(const e of pair){e.age+=1/60;moveSurface(e,scroll+i*38/60,1/60);}assert(Math.hypot(pair[0].x-pair[1].x,pair[0].y-pair[1].y)>41);}
+ }
 });

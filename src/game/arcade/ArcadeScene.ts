@@ -41,6 +41,9 @@ export class ArcadeScene extends Phaser.Scene {
    this.load.spritesheet('pelagic-coast',`${base}assets/arcade/pelagic-coast.webp`,{frameWidth:512,frameHeight:512});
    this.load.spritesheet('pelagic-archipelago',`${base}assets/arcade/pelagic-archipelago.webp`,{frameWidth:512,frameHeight:512});
    this.load.image('pelagic-water',`${base}assets/arcade/pelagic-water.webp`);
+   this.load.spritesheet('pelagic-review-formations',`${base}assets/arcade/pelagic-review/formations.webp`,{frameWidth:768,frameHeight:768});
+   this.load.image('pelagic-water-review',`${base}assets/arcade/pelagic-review/water.webp`);
+   this.load.spritesheet('pelagic-wakes',`${base}assets/arcade/pelagic-review/wakes.webp`,{frameWidth:256,frameHeight:512});
    this.load.image('arc-stage1-hud-left',`${base}assets/arcade/stage1-hud-left.webp`);
    this.load.image('arc-stage1-hud-right',`${base}assets/arcade/stage1-hud-right.webp`);
   for(const name of ['rivet','enemies','pilots','scenery'])this.load.spritesheet('arc-'+name,`${base}assets/arcade/${name}.webp`,{frameWidth:256,frameHeight:256});

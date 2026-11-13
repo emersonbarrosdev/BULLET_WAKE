@@ -1,0 +1,234 @@
+{
+  "errors": [],
+  "fixtureNote": "Real Chrome/Phaser captures with controlled scroll and encounters for visual coverage; not claimed as uninterrupted human play.",
+  "route": [
+    {
+      "elapsed": 5.791666666666744,
+      "scroll": 275.29166666666447,
+      "state": "play",
+      "enemies": 2
+    },
+    {
+      "elapsed": 80.00000000000973,
+      "scroll": 3095.2083333330174,
+      "state": "play",
+      "enemies": 1
+    },
+    {
+      "elapsed": 150.0000000000279,
+      "scroll": 6429.658333337114,
+      "state": "play",
+      "enemies": 0
+    },
+    {
+      "elapsed": 229.99999999995515,
+      "scroll": 9523.275000002763,
+      "state": "play",
+      "enemies": 2
+    },
+    {
+      "elapsed": 304.99999999988694,
+      "scroll": 12208.278469165924,
+      "state": "play",
+      "enemies": 0
+    },
+    {
+      "elapsed": 340.37499999985477,
+      "scroll": 12410.541666676458,
+      "state": "victory",
+      "enemies": 0
+    }
+  ],
+  "fullRoute": {
+    "state": "victory",
+    "elapsed": 340.37499999985477,
+    "deaths": 1
+  },
+  "motion": [
+    {
+      "scroll": 3422.449999999969,
+      "water": -6962.884999999943,
+      "coast": [
+        {
+          "frame": 2,
+          "x": 228.102,
+          "y": 222.4499999999689,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "frame": 1,
+          "x": 545.354,
+          "y": 172.4499999999689,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "scroll": 3454.1166666666295,
+      "water": -7027.384999999931,
+      "coast": [
+        {
+          "frame": 2,
+          "x": 228.102,
+          "y": 254.1166666666295,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "frame": 1,
+          "x": 545.354,
+          "y": 204.1166666666295,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "scroll": 3485.78333333329,
+      "water": -7091.88499999992,
+      "coast": [
+        {
+          "frame": 2,
+          "x": 228.102,
+          "y": 285.7833333332901,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "frame": 1,
+          "x": 545.354,
+          "y": 235.7833333332901,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "scroll": 3517.7666666666173,
+      "water": -7157.029999999909,
+      "coast": [
+        {
+          "frame": 4,
+          "x": 242.71,
+          "y": -142.2333333333827,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "frame": 2,
+          "x": 228.102,
+          "y": 317.7666666666173,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "frame": 1,
+          "x": 545.354,
+          "y": 267.7666666666173,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "scroll": 3549.433333333278,
+      "water": -7221.529999999898,
+      "coast": [
+        {
+          "frame": 4,
+          "x": 242.71,
+          "y": -110.56666666672209,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "frame": 2,
+          "x": 228.102,
+          "y": 349.4333333332779,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "frame": 1,
+          "x": 545.354,
+          "y": 299.4333333332779,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "scroll": 3580.4666666666053,
+      "water": -7284.739999999887,
+      "coast": [
+        {
+          "frame": 4,
+          "x": 242.71,
+          "y": -79.5333333333947,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "frame": 2,
+          "x": 228.102,
+          "y": 380.4666666666053,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "frame": 1,
+          "x": 545.354,
+          "y": 330.4666666666053,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        }
+      ]
+    }
+  ],
+  "performance": [
+    {
+      "width": 1366,
+      "height": 768,
+      "seconds": 10.0007,
+      "frames": 599,
+      "fps": 59.895807293489455,
+      "medianMs": 16.700000000000728,
+      "p95Ms": 16.80000000000291,
+      "heap": 61708904,
+      "peakBullets": 74
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "seconds": 10.006600000023841,
+      "frames": 599,
+      "fps": 59.86049207508773,
+      "medianMs": 16.69999999999709,
+      "p95Ms": 16.80000000000291,
+      "heap": 55333811,
+      "peakBullets": 74
+    }
+  ],
+  "gpu": "ANGLE (AMD, AMD Radeon(TM) Graphics (0x00001681) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "radio": {
+    "x": 646,
+    "right": 766
+  }
+}

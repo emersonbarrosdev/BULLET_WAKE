@@ -3,9 +3,10 @@
  * Conservative rectangular envelopes align with the rendered archipelago formations in PelagicCoastGeometry.
  */
 import {ARCHIPELAGO_SPECS,COAST_PERIOD} from './PelagicCoastGeometry.ts';
+import {COAST_ALPHA_PROFILES} from './PelagicAlphaProfiles.ts';
 
-export interface CoastPiece {id:number;frame:number;x:number;y:number;width:number;height:number;side:-1|1;solid:boolean;}
-export interface SurfaceRoute {worldY:number;heading:number;entry:-1|0|1;phase:'enter'|'cruise'|'hold'|'turn'|'exit';anchor?:number;anchorY?:number;}
+export interface CoastPiece {id:number;frame:number;x:number;y:number;width:number;height:number;side:-1|1;solid:boolean;groundX:number;groundY:number;}
+export interface SurfaceRoute {worldY:number;heading:number;entry:-1|0|1;phase:'enter'|'cruise'|'hold'|'turn'|'exit';anchor?:number;anchorY?:number;lane?:number;}
 export interface SurfaceActor {id:number;x:number;y:number;size:number;age:number;speed:number;family:string;navigation?:SurfaceRoute;}
 const clamp=(v:number,a:number,b:number)=>Math.max(a,Math.min(b,v));
 
@@ -15,16 +16,19 @@ for(let cycle=-1;cycle<=7;cycle++){
  for(const spec of ARCHIPELAGO_SPECS){
   const centerY=(spec.yStart+spec.yEnd)/2-cycle*COAST_PERIOD;
   const height=spec.yEnd-spec.yStart;
-  const halfW=Math.max(38,spec.maxExtent-36);
-  const x=spec.side<0?192+spec.maxExtent-halfW:576-spec.maxExtent+halfW;
+  const rows=COAST_ALPHA_PROFILES[spec.artFrame].filter(([a,b])=>b>a);
+  const min=Math.min(...rows.map(r=>r[0])),max=Math.max(...rows.map(r=>r[1]));
+  const offset=((min+max)/2-.5)*spec.width;
+  const x=192+spec.centerX+offset;
   rawPieces.push({
    frame:spec.legacyFrame,
-   x:Math.round(x),
+   x,
    y:Math.round(centerY),
-   width:Math.round(halfW*2),
+   width:(max-min)*spec.width,
    height:Math.round(height),
    side:spec.side,
    solid:true,
+   groundX:spec.groundX-offset,groundY:spec.groundY,
   });
  }
 }
@@ -48,11 +52,11 @@ export function touchesCoast(x:number,worldY:number,radius:number):boolean{
 export function prepareSurface(e:SurfaceActor,scroll:number,entryHint?:-1|0|1):void{
  if(e.family==='tank'||e.family==='tower'){
   // Prefer a near-future island/port. The unit and its terrain share exactly the same scroll transform.
-  const candidates=PELAGIC_COAST.filter(p=>p.y+scroll>-220&&p.y+scroll<160);
+  const candidates=PELAGIC_COAST.filter(p=>p.side<0&&p.y+scroll>-220&&p.y+scroll<160);
   const anchor=candidates[e.id%Math.max(1,candidates.length)]??visibleCoast(scroll,260)[0]??PELAGIC_COAST[0];
-  const anchorY=e.id%2?26:-10;
+  const anchorY=anchor.groundY+(e.id%2?16:-16);
   e.navigation={worldY:anchor.y,heading:Math.PI,entry:0,phase:'hold',anchor:anchor.id,anchorY};
-  e.x=anchor.x-anchor.side*20;e.y=anchor.y+scroll+anchorY;return;
+  e.x=anchor.x+anchor.groundX;e.y=anchor.y+scroll+anchorY;return;
  }
  const radius=e.size*.51,entry=entryHint??((e.id%3-1) as -1|0|1);
  let y=-55;
@@ -64,17 +68,18 @@ export function prepareSurface(e:SurfaceActor,scroll:number,entryHint?:-1|0|1):v
   }
  }
  const actualEntry=y<0?0:entry,corridor=waterCorridor(y-scroll,radius,70);
- e.x=actualEntry<0?208-radius:actualEntry>0?560+radius:clamp(e.x,corridor.left,corridor.right);
- e.y=y;e.navigation={worldY:y-scroll,heading:actualEntry<0?Math.PI/2:actualEntry>0?-Math.PI/2:Math.PI,entry:actualEntry,phase:'enter'};
+ const lane=entry||((e.id%2)?-1:1);
+ e.x=actualEntry<0?208-radius:actualEntry>0?560+radius:clamp(384+lane*45,corridor.left,corridor.right);
+ e.y=y;e.navigation={worldY:y-scroll,heading:actualEntry<0?Math.PI/2:actualEntry>0?-Math.PI/2:Math.PI,entry:actualEntry,lane,phase:'enter'};
 }
 export function moveSurface(e:SurfaceActor,scroll:number,dt:number):void{
  if(!e.navigation)prepareSurface(e,scroll);
  const n=e.navigation!;
- if(n.anchor!==undefined){const p=PELAGIC_COAST[n.anchor];e.x=p.x-p.side*20;e.y=p.y+scroll+(n.anchorY??12);return;}
+ if(n.anchor!==undefined){const p=PELAGIC_COAST[n.anchor];e.x=p.x+p.groundX;e.y=p.y+scroll+(n.anchorY??p.groundY);return;}
  const radius=e.size*.51,oldX=e.x,oldY=n.worldY;
  n.phase=e.age<2?'enter':e.age<4?'cruise':e.age<6?'hold':e.age<9?'turn':'exit';
  const speed=n.phase==='hold'?0:n.phase==='enter'?8:n.phase==='exit'?Math.max(30,e.speed*1.5):e.speed;
- const ahead=waterCorridor(n.worldY,radius,75),target=clamp(384+Math.sin(e.id*2.1)*(n.phase==='turn'?45:23),ahead.left,ahead.right);
+ const ahead=waterCorridor(n.worldY,radius,75),target=clamp(384+(n.lane??1)*45+Math.sin(e.id*2.1)*(n.phase==='turn'?8:3),ahead.left,ahead.right);
  e.x+=clamp(target-e.x,-48*dt,48*dt);
  const nextY=n.worldY+speed*dt,corridor=waterCorridor(nextY,radius);
  // While entering, the hull may be offscreen, but never on a coastal object.
