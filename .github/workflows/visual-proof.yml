@@ -1,0 +1,38 @@
+name: Inspecionar visual da Fenda
+on:
+  push:
+    branches: [master]
+    paths:
+      - "src/game/arcade/**"
+      - "scripts/arcade-browser-check.mjs"
+      - ".github/workflows/visual-proof.yml"
+  workflow_dispatch:
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - name: Capturar gameplay no Chrome (e validar eventos)
+        env:
+          BW_CAPTURE_LOG: "1"
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node scripts/arcade-browser-check.mjs
+      - name: Guardar screenshots da gameplay
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bullet-wake-visual-proof
+          path: |
+            docs/screenshots/cartoon/phase1-start.webp
+            docs/screenshots/cartoon/phase1-coast.webp
+            docs/screenshots/cartoon/phase1-boss.webp
+            docs/screenshots/cartoon/phase1-return.webp
+            docs/screenshots/cartoon/browser-report.json
+          retention-days: 7

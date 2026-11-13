@@ -9,7 +9,9 @@ const root=resolve('dist'),out=resolve('docs/screenshots/cartoon');mkdirSync(out
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.webp':'image/webp','.svg':'image/svg+xml','.ogg':'audio/ogg'};
 const server=createServer((req,res)=>{const file=resolve(root,'.'+(req.url==='/'?'/index.html':new URL(req.url,'http://localhost').pathname));if(!file.startsWith(root+sep)||!existsSync(file)){res.writeHead(404).end();return;}res.writeHead(200,{'Content-Type':mime[extname(file)]??'application/octet-stream'});res.end(readFileSync(file));});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
-const profile=mkdtempSync(join(tmpdir(),'bw-cartoon-'));const chrome=spawn('C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new','--remote-debugging-port=0','--no-first-run','--autoplay-policy=no-user-gesture-required','--user-data-dir='+profile,'about:blank'],{windowsHide:true,stdio:'ignore'});
+const profile=mkdtempSync(join(tmpdir(),'bw-cartoon-'));
+const chromePath=process.env.CHROME_BIN??(process.platform==='win32'?'C:/Program Files/Google/Chrome/Application/chrome.exe':'/usr/bin/google-chrome');
+const chrome=spawn(chromePath,['--headless=new','--no-sandbox','--disable-dev-shm-usage','--enable-unsafe-swiftshader','--remote-debugging-port=0','--no-first-run','--autoplay-policy=no-user-gesture-required','--user-data-dir='+profile,'about:blank'],{windowsHide:true,stdio:'ignore'});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));let socket;const errors=[],report={errors};
 try{
  let target;for(let i=0;i<60;i++){try{const port=readFileSync(join(profile,'DevToolsActivePort'),'utf8').split('\n')[0].trim();target=(await(await fetch('http://127.0.0.1:'+port+'/json')).json()).find(t=>t.type==='page');}catch{}if(target)break;await sleep(150);}assert(target);
@@ -70,5 +72,11 @@ try{
   }
  }
  assert.deepEqual(errors,[]);writeFileSync(join(out,'browser-report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+ if(process.env.BW_CAPTURE_LOG==='1'){
+  for(const name of ['phase1-start','phase1-coast']){
+   const base64=readFileSync(join(out,name+'.webp')).toString('base64');
+   for(let offset=0;offset<base64.length;offset+=4000)console.log('BWIMG:'+name+':'+Math.floor(offset/4000)+':'+base64.slice(offset,offset+4000));
+  }
+ }
 }finally{socket?.close();chrome.kill();server.close();}
 
