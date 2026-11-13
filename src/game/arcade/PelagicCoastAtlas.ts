@@ -7,6 +7,7 @@ import Phaser from 'phaser';
  */
 export const COAST_TEXTURE='pelagic-continuous-shores';
 import {COAST_WIDTH,COAST_PERIOD,coastBoundary} from './PelagicCoastGeometry';
+export {COAST_PERIOD} from './PelagicCoastGeometry';
 const TAU=Math.PI*2;
 type Side=-1|1;
 const fract=(v:number)=>v-Math.floor(v);
