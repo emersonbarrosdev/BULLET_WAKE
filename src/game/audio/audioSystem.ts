@@ -23,7 +23,7 @@ export class AudioSystem {
   private isMuted = false;
   private masterVolume = 0.8;
   private sfxVolume = 0.85;
-  private musicVolume = 0.55;
+  private musicVolume = 0.099;
 
   private transport?:MusicTransport;
   private environment:'atmosphere'|'space'='atmosphere';
@@ -83,6 +83,19 @@ export class AudioSystem {
   }
 
   // --- EFEITOS SONOROS (SFX) ---
+
+  /** Short, bounded cartoon accents. The approved RIVET cannon remains unchanged. */
+  playArcade(kind:'navigate'|'confirm'|'impact'|'pop'|'boom'|'orb'|'cannon'|'transition'|'special'):void {
+    this.unlock();
+    if(!this.ctx||!this.sfxGain||this.isMuted||this.environment==='space'||!this.allowSound('arcade-'+kind,kind==='impact'?.07:kind==='orb'?.09:.12))return;
+    if(kind==='navigate'){this.tone('sine',660,880,.045,.08);return;}
+    if(kind==='confirm'){this.tone('triangle',523,523,.07,.13);this.tone('sine',1046,1046,.10,.1,.06);return;}
+    if(kind==='impact'){this.noise(.035,.12,3700);this.tone('triangle',930,380,.055,.07);return;}
+    if(kind==='orb'||kind==='cannon'){this.tone('triangle',kind==='orb'?460:260,kind==='orb'?170:70,.12,.12);this.noise(.04,.06,1900);return;}
+    if(kind==='transition'){[392,523,659].forEach((f,i)=>this.tone('triangle',f,f,.14,.08,i*.08));return;}
+    if(kind==='special'){this.noise(.24,.16,2200);this.tone('sawtooth',130,320,.22,.06);[523,784,1047].forEach((f,i)=>this.tone('sine',f,f*.75,.18,.07,i*.055));return;}
+    const large=kind==='boom';this.noise(large?.27:.14,large?.3:.2,large?2400:3100);this.tone('sine',large?160:340,large?45:100,large?.25:.13,large?.22:.13);this.tone('triangle',large?680:950,220,.07,.06);
+  }
 
   playShot(pilotId: 'nolan' | 'cora' | 'harlan' | 'lyra' | 'bento', level = 1): void {
     this.unlock();

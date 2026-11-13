@@ -1,0 +1,151 @@
+{
+  "errors": [],
+  "pause": {
+    "before": 3.141666666666658,
+    "after": 3.141666666666658,
+    "audio": {
+      "track": "stage1",
+      "position": 3.072222,
+      "volume": 0.0936,
+      "paused": true,
+      "failed": false
+    }
+  },
+  "assets": {
+    "textures": [
+      "arc-logo-main",
+      "arc-logo-bullet",
+      "arc-logo-wake",
+      "arc-ufo",
+      "arc-ocean",
+      "arc-rivet",
+      "arc-enemies",
+      "arc-pilots",
+      "arc-scenery",
+      "arc-boss",
+      "arc-red",
+      "arc-explosion",
+      "arc-missile",
+      "arc-orb-0",
+      "arc-orb-1",
+      "arc-orb-2"
+    ],
+    "audio": {
+      "track": "boss1",
+      "position": 15.63684,
+      "volume": 0.0936,
+      "paused": false,
+      "failed": false
+    },
+    "objects": 705,
+    "screen": "play"
+  },
+  "gamepad": {
+    "moved": true,
+    "fired": true
+  },
+  "touch": {
+    "firePressAndRelease": true,
+    "joystick": true,
+    "special": true,
+    "pause": true
+  },
+  "routes": [
+    {
+      "mission": 1,
+      "state": "victory",
+      "seconds": 340.75833333318775,
+      "initial": {
+        "level": 1,
+        "power": 0,
+        "lives": 3,
+        "specials": 2,
+        "score": 0
+      },
+      "lives": 3,
+      "deaths": 1,
+      "level": 1,
+      "power": 1,
+      "specials": 0,
+      "score": 62330,
+      "items": 12,
+      "peakBullets": 84
+    },
+    {
+      "mission": 2,
+      "state": "victory",
+      "seconds": 347.8916666665146,
+      "initial": {
+        "level": 1,
+        "power": 1,
+        "lives": 3,
+        "specials": 0,
+        "score": 62330
+      },
+      "lives": 3,
+      "deaths": 1,
+      "level": 3,
+      "power": 1,
+      "specials": 0,
+      "score": 115430,
+      "items": 12,
+      "peakBullets": 68
+    }
+  ],
+  "endFlow": {
+    "defeatRetry": true,
+    "exitCancelled": true,
+    "exitConfirmed": true,
+    "automaticFlyout": true
+  },
+  "renderer": {
+    "type": 2,
+    "gpu": "ANGLE (AMD, AMD Radeon(TM) Graphics (0x00001681) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+  },
+  "performance": [
+    {
+      "mission": 1,
+      "quality": 0,
+      "frames": 479,
+      "seconds": 8.000400000023845,
+      "medianMs": 16.69999999999709,
+      "p95Ms": 16.80000000000291,
+      "heap": 22188292,
+      "objects": 719,
+      "peakBullets": 81
+    },
+    {
+      "mission": 1,
+      "quality": 2,
+      "frames": 479,
+      "seconds": 8.006700000071527,
+      "medianMs": 16.69999999999709,
+      "p95Ms": 16.80000000000291,
+      "heap": 21033996,
+      "objects": 745,
+      "peakBullets": 81
+    },
+    {
+      "mission": 2,
+      "quality": 0,
+      "frames": 479,
+      "seconds": 8.007399999999993,
+      "medianMs": 16.69999999999709,
+      "p95Ms": 16.80000000000291,
+      "heap": 37227272,
+      "objects": 741,
+      "peakBullets": 155
+    },
+    {
+      "mission": 2,
+      "quality": 2,
+      "frames": 479,
+      "seconds": 8.008100000023841,
+      "medianMs": 16.69999999999709,
+      "p95Ms": 16.80000000000291,
+      "heap": 27370135,
+      "objects": 741,
+      "peakBullets": 155
+    }
+  ]
+}

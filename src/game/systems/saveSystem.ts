@@ -45,7 +45,7 @@ export function defaultSaveData(): SaveData {
     lastPilotId: 'nolan',
     settings: {
       sfxVolume: 0.85,
-      musicVolume: 0.55,
+      musicVolume: 0.18,
       isMuted: false,
       difficulty: 'normal',
       rapidFire: false,
@@ -78,6 +78,8 @@ export class SaveSystem {
                 ...(parsed.settings || {}),
               },
             };
+            // The previous untouched default is migrated; explicit custom mixes remain intact.
+            if(parsed.settings?.musicVolume===0.55)this.data.settings.musicVolume=0.18;
             if(parsed.schemaVersion===1){
               for(const [stage,record] of Object.entries(this.data.bestScores)){
                 if(!record||!Number.isFinite(record.score)||!record.pilotId)continue;

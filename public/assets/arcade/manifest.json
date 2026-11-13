@@ -1,0 +1,79 @@
+{
+  "rivet": {
+    "nativeSource": "exec-802d44dd-28f6-4eb4-8272-917090389af1.png",
+    "columns": 4,
+    "rows": 2,
+    "frame": 256,
+    "alpha": [
+      0,
+      255
+    ],
+    "bytes": 124542
+  },
+  "enemies": {
+    "nativeSource": "exec-1f073135-3eab-46d9-b60d-2a1be2b0967e.png",
+    "columns": 4,
+    "rows": 4,
+    "frame": 256,
+    "alpha": [
+      0,
+      255
+    ],
+    "bytes": 319502
+  },
+  "pilots": {
+    "nativeSource": "exec-b5370296-8477-4faf-b078-7686008d2220.png",
+    "columns": 4,
+    "rows": 2,
+    "frame": 256,
+    "alpha": [
+      0,
+      255
+    ],
+    "bytes": 257722
+  },
+  "boss": {
+    "nativeSource": "exec-241975d1-db91-4966-8eaf-cd5c8c9ccd05.png",
+    "columns": 4,
+    "rows": 2,
+    "frame": 512,
+    "alpha": [
+      0,
+      255
+    ],
+    "bytes": 492646
+  },
+  "scenery": {
+    "nativeSource": "exec-68a65d44-badb-4c9f-8b1b-0b49ec0667dc.png",
+    "columns": 4,
+    "rows": 2,
+    "frame": 256,
+    "alpha": [
+      0,
+      255
+    ],
+    "bytes": 302040
+  },
+  "explosion": {
+    "nativeSource": "exec-a3bc1f87-960f-4e3e-a68a-d42ae093a4a6.png",
+    "columns": 4,
+    "rows": 4,
+    "frame": 256,
+    "alpha": [
+      0,
+      255
+    ],
+    "bytes": 378802
+  },
+  "ufo": {
+    "nativeSource": "exec-1acc06f7-0259-4e2f-9c14-4afc84aaf3b3.png",
+    "columns": 2,
+    "rows": 2,
+    "frame": 256,
+    "alpha": [
+      0,
+      255
+    ],
+    "bytes": 73940
+  }
+}

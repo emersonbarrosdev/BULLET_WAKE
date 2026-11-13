@@ -6,6 +6,7 @@ import { StageSelectScene } from './game/scenes/StageSelectScene';
 import { PilotSelectScene } from './game/scenes/PilotSelectScene';
 import { PrototypeScene } from './game/scenes/PrototypeScene';
 import { EndingScene } from './game/scenes/EndingScene';
+import { ArcadeScene } from './game/arcade/ArcadeScene';
 
 // Disponibiliza o Phaser globalmente no escopo do navegador para debug e extensibilidade
 (window as unknown as { Phaser: typeof Phaser }).Phaser = Phaser;
@@ -47,7 +48,7 @@ async function bootGame(): Promise<void> {
     },
     fps: {
       min: 30,
-      target: 240, // Permite rodar acima de 60fps (120Hz, 144Hz, 240Hz)
+      target: 60,
       forceSetTimeOut: false,
       smoothStep: true,
     },
@@ -58,7 +59,7 @@ async function bootGame(): Promise<void> {
       width: GAME_WIDTH,
       height: GAME_HEIGHT,
     },
-    scene: [TitleScene, StageSelectScene, PilotSelectScene, PrototypeScene, EndingScene],
+    scene: [ArcadeScene, TitleScene, StageSelectScene, PilotSelectScene, PrototypeScene, EndingScene],
   };
 
   const game = new Phaser.Game(config);

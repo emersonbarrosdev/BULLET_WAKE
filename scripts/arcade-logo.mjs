@@ -1,0 +1,10 @@
+import {mkdirSync,writeFileSync} from 'node:fs';
+const dir='public/assets/arcade';mkdirSync(dir,{recursive:true});
+for(const variant of ['main','light','dark','small','bullet','wake']){
+ const ink=variant==='dark'?'#e3fffc':'#143354';
+ const defs='<defs><linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff592"/><stop offset="1" stop-color="#ffb629"/></linearGradient><linearGradient id="sea" x2="0" y2="1"><stop stop-color="#acffe5"/><stop offset="1" stop-color="#36cbdb"/></linearGradient></defs>';
+ const top='<text x="354" y="96" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-style="italic" font-size="104" letter-spacing="-7" fill="url(#gold)" stroke="'+ink+'" stroke-width="12" paint-order="stroke">BULLET</text>';
+ const bottom='<text x="357" y="191" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-style="italic" font-size="117" letter-spacing="-6" fill="url(#sea)" stroke="'+ink+'" stroke-width="12" paint-order="stroke">WAKE</text>';
+ const flourishes='<path d="M54 82h83l-16 20H37zm538 54h93l-17 21h-94zM90 166h65l-15 18H74" fill="#ff6a48" stroke="'+ink+'" stroke-width="5"/><path d="m611 21-8 35h23l-41 46 9-36h-23z" fill="#fff278" stroke="'+ink+'" stroke-width="5"/>';
+ writeFileSync(`${dir}/logo-${variant}.svg`,`<svg xmlns="http://www.w3.org/2000/svg" width="720" height="224" viewBox="0 0 720 224">${defs}${variant==='bullet'?top:variant==='wake'?bottom:flourishes+top+bottom}</svg>`);
+}

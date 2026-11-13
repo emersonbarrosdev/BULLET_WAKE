@@ -1,0 +1,66 @@
+{
+  "boss1": {
+    "seconds": 49.87013605442177,
+    "sampleRate": 44100,
+    "channels": 2,
+    "peak": 0.7969489097595215,
+    "rms": 0.1503026845767066,
+    "clippedSamples": 0
+  },
+  "boss2": {
+    "seconds": 47.4074149659864,
+    "sampleRate": 44100,
+    "channels": 2,
+    "peak": 0.7767860889434814,
+    "rms": 0.15641081212459568,
+    "clippedSamples": 0
+  },
+  "defeat": {
+    "seconds": 10.0,
+    "sampleRate": 44100,
+    "channels": 2,
+    "peak": 0.772835910320282,
+    "rms": 0.11826416496871217,
+    "clippedSamples": 0
+  },
+  "menu": {
+    "seconds": 58.18181405895692,
+    "sampleRate": 44100,
+    "channels": 2,
+    "peak": 0.7817832827568054,
+    "rms": 0.12033262615694765,
+    "clippedSamples": 0
+  },
+  "select": {
+    "seconds": 65.08473922902495,
+    "sampleRate": 44100,
+    "channels": 2,
+    "peak": 0.770264208316803,
+    "rms": 0.105745564495583,
+    "clippedSamples": 0
+  },
+  "stage1": {
+    "seconds": 54.08451247165533,
+    "sampleRate": 44100,
+    "channels": 2,
+    "peak": 0.7900245189666748,
+    "rms": 0.1202523108004827,
+    "clippedSamples": 0
+  },
+  "stage2": {
+    "seconds": 51.8918820861678,
+    "sampleRate": 44100,
+    "channels": 2,
+    "peak": 0.7887646555900574,
+    "rms": 0.1323033933723772,
+    "clippedSamples": 0
+  },
+  "victory": {
+    "seconds": 7.058820861678004,
+    "sampleRate": 44100,
+    "channels": 2,
+    "peak": 0.7746097445487976,
+    "rms": 0.13431435627990457,
+    "clippedSamples": 0
+  }
+}

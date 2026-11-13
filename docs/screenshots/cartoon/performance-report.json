@@ -1,0 +1,53 @@
+{
+  "conditions": "Final implementation; Chrome headless, 1366x768, real RAF, 8 seconds each, boss+horde+FULL+special",
+  "renderer": {
+    "type": 2,
+    "gpu": "ANGLE (AMD, AMD Radeon(TM) Graphics (0x00001681) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+  },
+  "performance": [
+    {
+      "mission": 1,
+      "quality": 0,
+      "frames": 479,
+      "seconds": 8.000400000023845,
+      "medianMs": 16.69999999999709,
+      "p95Ms": 16.80000000000291,
+      "heap": 22188292,
+      "objects": 719,
+      "peakBullets": 81
+    },
+    {
+      "mission": 1,
+      "quality": 2,
+      "frames": 479,
+      "seconds": 8.006700000071527,
+      "medianMs": 16.69999999999709,
+      "p95Ms": 16.80000000000291,
+      "heap": 21033996,
+      "objects": 745,
+      "peakBullets": 81
+    },
+    {
+      "mission": 2,
+      "quality": 0,
+      "frames": 479,
+      "seconds": 8.007399999999993,
+      "medianMs": 16.69999999999709,
+      "p95Ms": 16.80000000000291,
+      "heap": 37227272,
+      "objects": 741,
+      "peakBullets": 155
+    },
+    {
+      "mission": 2,
+      "quality": 2,
+      "frames": 479,
+      "seconds": 8.008100000023841,
+      "medianMs": 16.69999999999709,
+      "p95Ms": 16.80000000000291,
+      "heap": 27370135,
+      "objects": 741,
+      "peakBullets": 155
+    }
+  ]
+}

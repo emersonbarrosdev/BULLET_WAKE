@@ -1,49 +1,31 @@
-# BULLET WAKE
+﻿# BULLET WAKE
 
-Shooter arcade 2D de rolagem vertical e visão superior, com invasão alienígena sobre a Terra. Somente a Fase 1, Fenda Pelágica, está liberada nesta versão.
+Shooter arcade 2D cartoon/anime em Phaser 4, TypeScript e Vite. Duas missões com Bayek/RIVET: **Fenda Pelágica**, vertical/top-down, e **Cidade Solar**, horizontal/lateral. A segunda é liberada ao concluir a primeira.
 
-[Bíblia vigente](docs/27_BULLET_WAKE_V2_DEFINITIVO.md) · [Reformulação da Fase 1 e validação](docs/52_FASE1_REFORMULACAO_BIOMECANICA.md) · [Abertura atualizada](docs/50_ABERTURA_RIVET_CACA.md).
+[Bíblia vigente](docs/27_BULLET_WAKE_V2_DEFINITIVO.md) · [Direção aprovada](docs/54_DIRECAO_ARCADE_APROVADA.md) · [Implementação e validação](docs/55_ARCADE_IMPLEMENTACAO_E_VALIDACAO.md)
 
-Cinco pilotos cartoon: Bayek/RIVET, Tita/MOTH, Leona/KESTREL, Osvald/KNUCKLE e Hien/PEREGRINE. Cada nave evolui sua própria arma com P, tem especial e história pessoal. Início com 3 vidas/2 especiais; limite 5/5, excesso vira pontos. Progresso por piloto, HUD lateral em carbono e rádio contextual. Sem escudo, dash, carga, bomba extra ou míssil manual; RIVET tem cinco níveis, dois mísseis automáticos no NV3/NV4 e três guiados no FULL. Quatro trilhas originais: menu e chefe preservados, combate oceânico com guitarras, baixo sintetizado/kit eletrônico e tema de vitória sem loop. Talassarca combate no ar, foge, retorna pelo oceano e inicia a arena fixa com Eclipse Abissal. Canal do piloto em terminal verde; conclusão com saída automática da nave. Potência e recursos são preservados na passagem sequencial entre fases, sem transformar uma nave fraca em FULL.
+Rajadas de três pulsos, arma própria com cinco níveis, mísseis automáticos NV3+, especial frontal, caixas com paraquedas, partes reais de chefes e recursos preservados entre fases. Início com três vidas e dois especiais, limites cinco. Teclado, controle padrão e interface touch. Música baixa por padrão, opções de áudio, dificuldade e qualidade visual.
 
-A campanha de quinze fases e as rotas secretas são planejamento documentado, não conteúdo produzido. O Normal é o único balanceamento ativo.
+Somente Bayek está selecionável nesta reformulação. Tita, Leona, Osvald e Hien mantêm registros e retratos; armas e cenas legadas continuam no repositório. Campanha completa, sexto piloto, Remix e três secretas são planejamento, não fases produzidas.
 
 ## Desenvolvimento
 
-A Fase 1 está jogável e em revisão. As próximas fases dependem da aprovação da primeira.
+Node.js 22.12+ e npm:
 
-**Tecnologias principais:** Phaser 4, TypeScript e Vite.
-
-### Executar localmente
-
-Requer Node.js e npm.
-
-```bash
+```sh
 npm install
 npm run dev
-```
-
-Para verificar os tipos e gerar uma versão de produção:
-
-```bash
-npm run typecheck
 npm run build
+npm test
 ```
 
-## Documentação
+Assets finais versionados: não é necessário instalar geradores de arte/áudio para jogar ou gerar o build. Scripts de autoria opcionais usam Pillow, FluidSynth, GeneralUser GS e FFmpeg; consulte [procedência dos assets](docs/56_ARCADE_ASSETS.md).
 
-O planejamento completo do universo, das naves, sprites, fases, gameplay e arquitetura está na pasta **[docs/](docs/)**.
+## Validação adicional
 
-- [Visão do jogo](docs/00_VISAO.md)
-- [História e universo](docs/01_HISTORIA.md)
-- [Pilotos e naves](docs/02_PILOTOS_NAVES.md)
-- [Direção de arte](docs/03_ARTE.md)
-- [Sprites e animações](docs/04_SPRITES.md)
-- [Fases](docs/05_FASES.md)
-- [Gameplay e progressão](docs/07_GAMEPLAY.md)
-- [Arquitetura técnica](docs/08_ARQUITETURA.md)
-- [Roadmap](docs/11_ROADMAP.md)
+```sh
+node scripts/arcade-route.mjs
+node scripts/arcade-browser-check.mjs --both --performance --routes
+```
 
----
-
-*BULLET WAKE — um projeto original em desenvolvimento.*
+O primeiro simula partidas com bot, não mede habilidade humana. O segundo requer Chrome no caminho Windows documentado no script e build de produção. Controle físico, aprovação sonora/visual e desempenho em Android real precisam ser verificados no dispositivo.

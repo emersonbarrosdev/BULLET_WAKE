@@ -1,153 +1,79 @@
-# BULLET WAKE — Bíblia vigente
+﻿# BULLET WAKE — Bíblia vigente
 
-Revisão de 11/11/2026. Esta revisão substitui regras conflitantes anteriores. Reformulação atual em [Fase 1 biomecânica](52_FASE1_REFORMULACAO_BIOMECANICA.md). Revisão anterior de [RIVET caça e Tormenta Escarlate](48_RIVET_CACA_TORMENTA_ESCARLATE.md); [HUD e punição por morte](46_RIVET_VERMELHA_HUD_E_RECUPERACAO.md) registra a revisão anterior; [chefe, RIVET FULL, escala e nu metal](44_CHEFE_RIVET5_ESCALA_E_NU_METAL.md) registra a revisão anterior; [revisão anterior](41_REVISAO_FINAL_FASE_1.md) é histórica; [relatório anterior](39_ELENCO_COMBATE_AUDIO.md) é histórico. Somente Fenda Pelágica está produzida; nenhuma fase seguinte deve ser produzida antes de sua aprovação.
+Revisão de 13/11/2026. A [direção arcade aprovada](54_DIRECAO_ARCADE_APROVADA.md) substitui regras conflitantes das revisões anteriores. A [Bíblia de 11/11](archive/2026-11-11-biblia.md) permanece como histórico.
 
-## Identidade e câmera
+## Identidade e escopo
 
-Shooter vertical arcade 2D. Tudo no combate é visto diretamente de cima, em projeção ortográfica: água, criaturas, caças e armas instaladas. A câmera não gira ao mover. A RIVET usa poses de rolagem lateral para esquerda/direita, com o bico sempre apontado ao norte e disparo no eixo da nave; não gira a imagem no plano nem muda a câmera para três quartos. Naves usam arte de 34 unidades (redução de 15%); inimigos comuns e portadores, redução de 12%, preservando o chefe colossal e a arena. Menu pode usar naves em três quartos. RIVET tem proporções de caça inspiradas no F/A-18, com fuselagem fina, asas e estabilizadores de cauda distintos, dois motores, casco branco e detalhes escarlates; nenhum crop da abertura é utilizado.
+Arcade 2D cartoon/anime alegre, colorido, legível e original. Cel shading, contornos escuros, amarelo, turquesa, coral, violeta e verde-limão. Sem horror, biomecânica grotesca, realismo fotográfico ou UI cinematográfica escura. Sonic Wings/Aero Fighters e Fire Shark orientam ritmo/progressão; Curse orienta obstáculos laterais. Não copiar arte, personagens, áudio ou valores de ROM.
 
-Invasores são organismos alienígenas, inclusive criaturas biomecânicas. Distinguir voadores de organismos aquáticos: os primeiros compartilham o plano da nave, os segundos emergem, permanecem ancorados ao cenário e voltam a submergir. A Fenda inclui agora caças e bombardeiros humanos assimilados: metal, armamentos e propulsão fundidos a tecido alienígena. Parasitas e organismos aquáticos preservam a origem extraterrestre. Não reduzir a invasão a aeronaves humanas intactas.
+Duas missões completas com Bayek/RIVET: Fenda Pelágica (UP) e Cidade Solar (SIDE). Meta 5–7 minutos, mínimo cinco minutos de gameplay relevante. O relógio de roteiro não substitui a duração real do confronto. Logo principal/claro/escuro/reduzido e palavras separadas para abertura animada de sete segundos, pulável. Menus, resultados e derrota seguem a mesma identidade.
 
-## Cinco pilotos e progressão própria
+## Pilotos preservados
 
-| Ordem / piloto | Identidade | Nave / tiro | Especial | Busca pessoal |
-|---|---|---|---|---|
-| 1. **Bayek** | Egípcio; protagonista | RIVET / Rajada Escarlate | Tormenta Escarlate | Irmão desaparecido e honra após salvar civis |
-| 2. **Tita** | Ruiva; aparência preservada com cabelo cobre | MOTH / Ondas Violetas | Salto Fantasma | Mãe pesquisadora; distinguir a voz real do enxame |
-| 3. **Leona** | Mulher negra brasileira | KESTREL / Lança Esmeralda | Coroa Orbital | Pai desaparecido; manter a clínica da família |
-| 4. **Osvald** | Russo; veterano de resgate | KNUCKLE / Fluxo Âmbar | Ruptura Nova | Resgatar a filha e aprender a ouvi-la |
-| 5. **Hien** | Japonês; homenagem ao aviador ninja | PEREGRINE / Chuva Celeste | Chuva de Cometas | Esposa nos abrigos e culpa por uma retirada |
+| Piloto | Identidade | Nave | Motivação |
+|---|---|---|---|
+| Bayek | Egípcio, protagonista | RIVET | Irmão desaparecido e honra após salvar civis |
+| Tita | Ruiva | MOTH | Encontrar a mãe pesquisadora |
+| Leona | Mulher negra brasileira | KESTREL | Encontrar o pai e manter a clínica |
+| Osvald | Russo | KNUCKLE | Resgatar a filha e aprender a ouvi-la |
+| Hien | Japonês | PEREGRINE | Encontrar a esposa e enfrentar a culpa pela retirada |
 
-Primeiros nomes apenas. Retratos cartoon desenhados, sem renderização 3D. Bayek assume o conjunto principal antes apresentado como Terry; Hien recebe o conjunto antes apresentado como Bento. Leona substitui Luma. Os IDs técnicos **nolan/cora/lyra/harlan/bento** identificam os conjuntos de nave e preservam os saves. A homenagem visual de Hien foi pesquisada na [fonte oficial de Sonic Wings Reunion](https://swr.success-corp.co.jp/), com capacete/máscara escuros e cachecol vermelho; a nave e as regras são as da PEREGRINE.
+IDs nolan/cora/lyra/harlan/bento preservam compatibilidade de saves. Somente Bayek/RIVET é selecionável nesta reformulação. Os outros retratos e registros existem, mas seus novos armamentos UP/SIDE não são escopo desta etapa. Sistemas e conteúdo legados continuam no repositório, fora do fluxo inicial.
 
-Cada piloto tem desejo, ferida, conflito, fala de missão e final próprio. A seleção da missão mostra seu retrato e motivação, sem tutorial obrigatório. A Fase 1 mostra um epílogo intermediário; nenhum final da campanha é liberado por vencer somente Talassarca. Progresso e recordes são salvos separadamente por piloto. A passagem sequencial de fase preserva exatamente nível da arma, P parcial, velocidade conquistada, vidas, especiais restantes e pontuação: FULL continua FULL, fraco continua fraco. Só efeitos/cooldowns transitórios terminam. Rejogar uma missão ou iniciar nova campanha usa o kit inicial; não reaproveita automaticamente o snapshot de uma conclusão anterior. O snapshot persistente é vinculado ao piloto e à fase imediatamente seguinte. Só a Fase 1 está produzida; isso não libera uma Fase 2 fictícia.
+## Perspectivas e combate
 
-### Armas
+- UP: arte ortográfica superior, arena vertical central e laterais decorativas. Unidades de superfície recebem tiros, mas não colidem fisicamente com o jogador.
+- SIDE: arte lateral própria, arena horizontal, prédios e céu em parallax. Estruturas, portões e barreiras possuem colisão visível e passagem possível.
+- RIVET branca/vermelha, três propulsores, poses de inclinação e exaustão nas duas perspectivas. Não obter a vista lateral girando uma sprite superior.
+- Simulação fixa a 120 Hz, apresentação alvo 60 FPS. LOW/MED/HIGH mudam apenas decoração e efeitos, nunca dano ou colisão.
+- Dez famílias: caça, interceptador, acrobata, bombardeiro, lancha, navio, tanque, torre, dirigível e disco alienígena divertido. Dez movimentos e dez formações, combinados em roteiros próprios.
+- Todos os tiros hostis são esféricos. Tamanho, velocidade e padrão distinguem a ameaça; avisos precedem disparos de canhões. Flash vermelho curto ao receber dano, explosões cartoon de 16 quadros, explosões em camadas para alvos grandes e queda breve de aeronaves abatidas.
 
-Cada nave mantém **um armamento próprio**, que evolui do NV1 ao NV5/FULL na RIVET e ao NV4 nos demais conjuntos. Esta decisão substitui a cascata azul→verde→vermelho. Os efeitos verdes/vermelhos foram preservados e transferidos para MOTH/KNUCKLE. P aumenta potência, nunca troca a nave para a arma de outro piloto.
+## Armas, recursos e controles
 
-- RIVET: melhorias com 2/2/2/3 P, nove P do NV1 ao NV5/FULL. Demais conjuntos: três P por melhoria, nove P do NV1 ao NV4. No máximo, P extra concede 5.000 pontos; não cria reserva invisível.
-- RIVET: Rajada Escarlate, com spritesheet própria de oito quadros de projétil individual, núcleo claro e corpo vermelho. Largura e comprimento crescem a cada nível, com salto perceptível no NV3. Salvas de 1/2/3/6/7 tiros, com três pares no NV4 e sete tiros encorpados no FULL. Dois mísseis automáticos juntos no NV3/NV4 (intervalo 1,5 s); três guiados no FULL (intervalo 1,1 s), com giro limitado e busca de alvos/peças vivos. Nenhuma ação manual extra. Os nove P existentes chegam ao FULL sem aumentar as onze caixas.
-- MOTH: **Ondas Violetas**, componentes espiralados 2/4/6/8 com trajetórias e rastros contínuos em violeta/lilás/magenta.
-- KESTREL: **Lança Esmeralda**, agulhas verdes a 850 unidades/s, alinhadas e concentradas; níveis 3–4 adicionam diagonais estreitas e penetração. 2/3/6/7 componentes, dano base 1,9 por agulha antes dos fatores de combate.
-- KNUCKLE: **Fluxo Âmbar**, pulsos balísticos densos laranja/cobre, 1/2/3/4 componentes a 440 unidades/s. Cadência própria de canhão pesado; substitui o laser rubro dessa nave, sem criar uma troca de armas.
-- PEREGRINE: **Chuva Celeste**, rajadas rápidas azul/ciano com eixo alternado, 2/3/4/7 componentes a 720 unidades/s e cobertura progressiva.
-- Cadência, dano e quantidades são calibrações autorais, não números atribuídos às ROMs de referência. Equilíbrio deve considerar acertos reais, cobertura, risco e especiais, além de DPS teórico.
+Rajada Escarlate conserva sprite e som aprovados. Uma pressão produz três pulsos espaçados em 65 ms. Toques permitem reinício a cada 280 ms; segurar repete em 380 ms após a primeira rajada. A opção de disparo acessível permite 280 ms ao segurar.
 
-**Referências:** Sonic Wings informa o conceito de tiro/especial próprios da aeronave. Fire Shark possui troca livre de cor com potência compartilhada; não exige a cascata abandonada de Bullet Wake. Não descrever nossas regras como cópia exata dos dois jogos.
+RIVET evolui com 2/2/2/3 P: nove P até FULL. Níveis 1–5: 1/2/3/6/7 projéteis por pulso; dois mísseis automáticos no NV3/NV4 a cada 1,5 s; três guiados no FULL a cada 1,1 s. P não troca a arma para outro conjunto.
 
-Especiais: apresentação própria e dano sincronizado aos impactos. Leona usa seis drones/lâminas de jade que orbitam a nave, interceptam somente tiros fracos e buscam peças/inimigos válidos; cada contato real pode aplicar 20 ao chefe. Hien usa oito cometas azuis de energia (15 por impacto). Tita usa três pulsos de fase (40), pós-imagens da MOTH real e deslocamento de 350 ms na direção comandada (frontal se não houver comando); Osvald usa uma ruptura radial de 120. Bayek usa **Tormenta Escarlate**: sobrecarga ofensiva frontal, feixe central dominante e duas rajadas auxiliares, em escarlate intenso com núcleo branco-amarelado e bordas laranja, mais fragmentos incandescentes. A emissão nasce no bico e acompanha o deslocamento; não é bombardeio da arena inteira. Duração de 3 s, orçamento máximo de 120 contra o chefe durante contato contínuo; atingem-se somente as peças cruzadas pelo plasma. Dano perdido por errar não fica guardado para aplicar depois. Inimigos atrás da nave não recebem dano. O núcleo central mantém a força total; contatos somente nas rajadas laterais têm peso 0,55, sem exceder o orçamento de 120. O eixo e as poses continuam vistos de cima: à direita, asa direita abaixa/esquerda sobe; à esquerda, o inverso. Proteção especial comum de **1,8 s**; duração visual pode ser maior. Limpar balas ao quebrar uma peça comum não é recompensa automática; a limpeza total fica nos especiais e metamorfose.
+Tormenta Escarlate: corredor frontal de plasma durante três segundos. Dano somente ao alvo atingido, orçamento de 120 sob contato contínuo. Impacto acompanha o alvo real, flash e explosões locais. Proteção durante o especial e limpeza de balas próximas, sem coletável de escudo.
 
-### Vidas, especiais e suprimentos
+Início com 3 vidas e 2 especiais; limites 5/5. Recursos no máximo rendem pontos, sem estoque oculto. Cada roteiro possui onze caixas: nove P, uma vida e um especial. Destruir a caixa libera um item que quica nas bordas durante 24 segundos. Ao morrer: NV1, medidor zero, três segundos de proteção e um único P comum se havia potência. Nenhuma restauração instantânea de FULL ou reabastecimento de especial.
 
-Início: **3 vidas e 2 especiais**. Ambos acumulam até **5**. Vida extra no máximo concede 5.000 pontos; especial no máximo concede 500. Sem barra de integridade, escudo coletável, dash, bomba separada, tiro carregado ou míssil manual. A proteção breve após renascer/usar especial serve para não encadear mortes; não é uma nova barra nem item de escudo.
+A fase seguinte conserva potência, P parcial, vidas, especiais e pontos. O save guarda a saída de cada fase separadamente; salvar Cidade Solar não apaga a saída da Fenda. Selecionar Cidade Solar pode retomar o snapshot da Fenda. Reiniciar após derrota usa o kit inicial.
 
-Um impacto sem proteção abate a nave. Ao renascer: arma própria NV1, velocidade inicial, dois segundos de proteção, nenhum reabastecimento gratuito de especial. O medidor P zera. Se havia potência conquistada, cai somente um P comum: conta uma unidade do medidor e nunca guarda o nível anterior. Recolhê-lo não restaura instantaneamente a arma. Morrer em NV1/0 P não cria item. Continue explícito também retorna ao NV1/0 P e mantém somente o estoque restante de especiais; não concede NV2 automático nem reserva oculta. Esta regra substitui os antigos marcos de recuperação.
+Teclado: WASD/setas, Espaço, X, Esc. Controle padrão: analógico/direcional, botão inferior para tiro, botão esquerdo para especial e Start/Menu para pausa, com rótulos adaptados. Touch: joystick, tiro, especial, pausa. Sem dash, carga, míssil manual, bomba separada ou tutorial obrigatório. Controle físico e Android real exigem validação em dispositivo.
 
-Caixas com paraquedas precisam ser destruídas; a animação tem oito quadros a 8 fps, tecido e cordas se movem com a caixa registrada numa âncora fixa; o item liberado precisa ser tocado. Quica nas quatro bordas por até 16 s. Inimigos comuns não distribuem itens. O guia normal mostra apenas os itens disponíveis no roteiro; velocidade/pontos continuam apenas compatibilidade, sem promessa de drops. Onze suprimentos no roteiro: nove P, uma vida e um especial. P nº3 aproximadamente aos 46 s de percurso; nº6 aos 93 s; nº9 aos 139 s, fora as pausas dos chefes. Destruir o portador e buscar o item são decisões reais. Cada nave tem spritesheet de 1UP com a própria miniatura. Sem legenda sob itens.
+## Roteiros
 
-## Fenda Pelágica: ritmo de 3–5 minutos
+| Trecho | Fenda Pelágica — UP | Cidade Solar — SIDE |
+|---|---|---|
+| 0–45 s | Mar aberto e primeiras formações | Horizonte e formações laterais |
+| 45–90 s | Costa, lanchas e torres | Avenida, tanques e dirigíveis |
+| 90–135 s | Arquipélago e escoltas | Pontes, obstáculos e portões |
+| 135–155 s | Corrente acelerada, ameaça reduzida | Via expressa, ameaça reduzida |
+| A partir de 155 s | Miniboss naval de três canhões | Miniboss transportador lateral |
+| 200–255 s | Patrulhas e superfície | Distrito industrial e barreiras |
+| 255–300 s | Fenda e escalada final | Altos da cidade e escalada aérea |
+| Após 300 s | Encouraçado Pula-Onda | Mega Dirigível Giro |
 
-O alvo atual da **Fase 1** é **3–5 minutos em Normal**, incluindo confrontos, fuga, emergência e encerramento, sem mortes/repetições. Esta revisão substitui o alvo anterior de 2–4 minutos para a Fenda; não prolongar artificialmente um confronto rápido.
+Pula-Onda: três armas independentes; fuga após destruição, cinco segundos inteiros ausente e retorno ampliado com seis armas. Scrolling desacelera/paralisa; a água continua animada. Casco não absorve tiros destinados às armas nem distribui dano à peça mais próxima. Leques lentos, pares mirados, salvas rápidas e grandes esferas radiais alternam aviso, ataque e pausa. Destruição em camadas e saída automática da RIVET.
 
-Oceano relativamente calmo → contaminação/criaturas emergentes → capitão Raia-Dente → destroços e invasão → revelação da fenda → Talassarca aéreo → fuga → ausência de cinco segundos → retorno oceânico e arena final. Diretor continua baseado em eventos únicos de distância, sem ondas repetidas. Velocidade se aproxima suavemente de 24 unidades/s em pressão alta, 28 com oponente ativo e até 43 em intervalos vazios curtos; não sustenta acelerações vazias indefinidas. Distância do roteiro (4.600 unidades) e deslocamento visual do oceano são separados: o roteiro espera os chefes, o cenário continua no confronto aéreo e desacelera até parar na segunda forma. Água/refração/espuma seguem animadas. Tempos precisam ser medidos em partidas completas, nunca derivados somente de distância/velocidade.
+Giro: dirigível lateral, deslocamento vertical, hélices e três baterias independentes. Salvas frontais/miradas e ataque esférico anunciado. Sem fuga naval ou segunda configuração copiada da Fenda. Armas destruídas deixam de disparar; inclinação e explosões na queda. Resultados e encerramento das duas missões.
 
-Mudança perceptível a cada 30–45 s; acontecimento relevante a cada 60–90 s; ao menos uma situação exclusiva por fase. Alternar bandos rápidos frágeis que não atiram, atacantes individuais e organismos aquáticos. Normal exige reposicionamento e prioridade de alvos; aumentar só a velocidade de balas não é suficiente. Coordenar entradas, evitar sobreposição e preservar saída dos padrões.
+Normal exige leitura dos padrões. Difícil acrescenta escoltas a alvos isolados e intensifica cadência/velocidade sem inflar HP. A quantidade de caixas é deliberada; perder potência exige recuperação. Avaliação humana de diversão permanece necessária além dos testes técnicos.
 
-Água tem sheets animadas, interpolação contínua, refração, espuma e partículas. Movimento continua durante chefes; não voltar a uma imagem estática rolando. Destroços não devem saltar de posição com a animação da água. Fenda se revela antes do chefe, não desde a primeira tela.
+## Áudio e interface
 
-### Chefes e contato
+Oito composições originais atendem doze contextos: menu/intro, seleção/resultados, fase 1, chefe/miniboss 1, fase 2, chefe/miniboss 2, vitória e derrota. Arranjos melódicos com baixo, percussão, marimba/steel drum e sintetizadores; nu metal e trilha militar não são o padrão atual.
 
-Raia-Dente é um capitão aéreo biomecânico, uma aeronave de ataque assimilada de 136 unidades de arte, com dois canhões e núcleo individualmente destrutíveis (60 HP cada; total 180). Três padrões: bateria alternada, leque do núcleo e mira registrada; canhão destruído deixa de emitir. Top-down estrito, placas/ventilações/recuo desenhados em quatro frames, sem asas de inseto.
+Música começa em 18%, com ganho adicional de mixagem 0,52, abaixo dos efeitos. Ambos são ajustáveis. Pausa preserva cursor; navegar nas opções não religa a música. Vitória/derrota não repetem. UI, esferas, canhões, impactos, explosões e especial usam síntese curta original; o canhão aprovado da RIVET foi preservado.
 
-Talassarca tem uma **primeira forma aérea** de 600 HP e uma **segunda forma oceânica colossal** de 360 HP. Cada uma tem seis partes registradas na pintura: dois órgãos laterais, ventre/núcleo, duas baterias laterais e artilharia central. Tiros só atingem a peça efetivamente cruzada, sem transferência de dano ou overkill entre peças; o casco vazio permite passagem. A aeronave pode sobrevoar a forma aquática; o corpo aéreo oferece contato físico perigoso.
+HUD com pontos, potência, ícones de vidas/especiais, pausa e rota. Sem integridade nem barra do chefe sobre a arena. Rádio breve em acontecimentos, sem chat permanente. Pausa mantém o fundo e oferece continuar, controles, opções e saída com confirmação.
 
-Primeira forma: arte própria de dreadnought assimilado, aproximadamente 72% da largura lógica da arena; reconhecível como máquina com motores e blindagem viva. Cinco especiais ideais de 120 quebram a primeira forma, mas **não a matam**: danos localizados, aceleração de fuga de um segundo e saída da tela, sem explosão final de morte. Fica ausente cinco segundos. Turbulência, ondulações e som grave anunciam o retorno. A segunda forma emerge em quatro estados desenhados ao longo de 1,8 s; não é a primeira imagem aumentada. Invulnerável durante fuga/ausência/emergência; não transfere dano excedente. O cenário desacelera e a água permanece viva na arena fixa.
+## Futuro — somente metadados
 
-Segunda forma: canhões/revestimentos diferentes, proporção colossal de até toda a largura útil, múltiplas origens, cortinas com corredores, leques e ataques mirados. **Eclipse Abissal** interrompe rajadas comuns: aviso dos corredores por 1,4 s, feixes laterais disparados em sequência por 1,6 s a partir de baterias ainda vivas, corredor central livre e 0,9 s de recuperação. Canhões destruídos também deixam de participar desse ataque. Não é um golpe inevitável. Contato sem conclusão por 180 s na mesma forma interrompe a operação como alvo perdido, sem dar morte falsa, bônus ou avanço; o jogador pode retomar pelo setor. Três especiais ideais de 120 equivalem ao HP dessa forma; tiro convencional continua suficiente.
+Campanha principal, sexto piloto exclusivo SIDE após a campanha, campanha adicional e Remix com rotas alteradas. Três secretas: SIDE 120 s, UP 180 s e UP 180 s. Condições secretas indefinidas; terminar estas duas missões não significa concluir a campanha ainda não produzida.
 
-Tiros inimigos têm classes fraca/intermediária/pesada/especial, com tamanho/cor distintos. Somente em FULL os disparos do jogador neutralizam tiros **fracos** mediante contato varrido; tiros médios, pesados e Eclipse continuam exigindo esquiva. Especiais mantêm sua regra explícita de supressão.
+## Implementação e evidência
 
-Todas as cinco naves têm sprites de combate próprias e colisão individual, inclusive coleta. Chamas de propulsão não são casco. Colisão usa alfa do frame real e varredura entre frames: atingir bordas sólidas e respeitar vazios/concavidades. Não usar o quadrado da spritesheet nem só o centro. Contato aéreo explode o inimigo. Explosão pequena é breve; grandes inimigos e chefes têm várias detonações locais escalonadas, partículas e final maior na região que acumulou mais dano (em coordenadas locais do corpo), também na destruição por choque. Corpos grandes dissipam rapidamente. Sem tremor de câmera.
-
-## Fluxo, HUD e comandos
-
-Abertura → cinco pilotos → missão com retrato/fala pessoal → loading de 2,5 s → gameplay. Ao derrotar a forma final: explosões em camadas, tema musical próprio de vitória e nave alinhando/subindo sozinha até sair inteiramente do topo; só depois abre o resultado arcade sobre o campo de batalha, sem página opaca acumulada. Perfil e confirmação continuam dentro/sobre o card escolhido, exigindo duas ações. Somente a Fenda é selecionável. Sem tutorial obrigatório antes da partida.
-
-Laterais preservadas em preto fosco/carbono; arena lógica de 432 px dentro do canvas 768×432, sem margens externas. Esquerda: piloto, trajeto da missão acima da pontuação, até cinco ícones de vida e cinco de especial. Vida anima por troca de quadros registrados, sem deslocamento lateral. Botão de pausa só com ícone acessível, sem o texto “Pausar / Opções”. Direita: missão, arma/nível/P e canal do piloto logo abaixo do armamento, em caixa de texto. Canal em estilo terminal militar antigo: fundo quase preto, tipografia monoespaçada, texto verde fósforo, identificação RX, registro curto e cursor discreto. Durante a transmissão o verde ganha contraste; sem balões ou sobreposição na arena. 275 falas, 55 por piloto, cinco por contexto, incluindo morte, revanche, medo, muitos inimigos, miniboss e quarta parede. Rádio tem cooldown global de 26–34 s, seis segundos de leitura, falas ociosas a cada 60–80 s e avisos importantes de entrada/fuga/retorno/vitória; mortes/coletas comuns não ignoram o cooldown. O mesmo aviso urgente não pode se repetir em menos de 12 s; não encobrir a arena. Continue preserva mortes e sequências de falas. A fala de vitória acompanha o resultado para não desaparecer antes da leitura.
-
-Pausa congela a gameplay e abre card menor/translúcido com botões verticais: **Continuar / Controles / Voltar ao menu**. Controles no mesmo card. Sair exige **Cancelar / Confirmar saída**, informando perda do progresso da fase atual. Sem reiniciar fase ou trocar piloto nesse card.
-
-Movimento: WASD/setas ou analógico/direcional. Disparo: Espaço ou botão sul, segurar mantém cadência rápida. Especial: X/botão oeste. Pausa: Esc/Menu. Mostrar identificação conforme controle conectado. Validar menus/perfis/resultados sem scroll/corte em 1366×768 e 1920×1080. Tipografia Oxanium/Rajdhani e arte da abertura preservadas. Enquadrar a arte inteira, sem cortar logotipo, nave ou assinatura; aceitar respiro nas proporções diferentes. A abertura usa o caça atual branco/escarlate de dois motores, centralizado, com asas niveladas e envergadura ilustrada de aproximadamente 32% da tela; [arte e validação da abertura](50_ABERTURA_RIVET_CACA.md). Verificar também 2560×1080 e 1280×1024.
-
-## Áudio
-
-Trilha autoral orientada a nu metal: riffs graves em B/F♯, síncopes, cortes secos, palm mute e respostas melódicas curtas. Guitarras General MIDI e solos anteriores foram substituídos por humbuckers gravados da METAL-GTX, com palhetadas down/up, round robins e tomadas independentes à esquerda e à direita. Distorção em quatro estágios, sobreamostragem 4× e gabinete 4×12 por convolução. Baixo e bateria acústica amostrada continuam na instrumentação; scratches pontuais completam o arranjo. Quatro músicas: abertura/menu, oceano e chefe (48 compassos), mais encerramento de vitória de quatro compassos sem loop. Menu e chefe preservam os arquivos aprovados. Oceano recebeu nova progressão/riff/motivo e contraponto industrial, distinto da música do título; guitarra gravada com distorção, baixo sintetizado, kit de bateria eletrônica e contraponto industrial autoral. O menu mantém seu baixo e bateria acústica aprovados. Fuga reduz suavemente o nível musical e a emergência recupera a intensidade. Composições próprias, sem copiar melodias ou gravações de Slipknot, filmes ou jogos. A escuta do usuário decide a aprovação; processamento e métricas de áudio não a substituem.
-
-Renderização: amostrador local de guitarra METAL-GTX + cadeia de alto ganho/IR; FluidSynth + GeneralUser GS para baixo/bateria; arquivos finais OGG, transporte com cache e uma faixa por vez. Pausa preserva a posição musical, incluindo carregamento em andamento. Créditos/licença em [áudio e produção](39_ELENCO_COMBATE_AUDIO.md) e [licença original](licenses/GeneralUser-GS.txt), [METAL-GTX](licenses/METAL-GTX.txt) e [gabinetes](licenses/4x12-IR.txt). Só os arranjos finais são distribuídos; a biblioteca bruta de guitarra fica fora do pacote. Efeitos humanos de canhão com transientes mecânicos; alienígenas com cores/timbres diferenciados; impactos curtos e explosões com ataque definido e corpo grave. Limitar sobreposição. Nove conjuntos PCM próprios (quatro tiros e cinco especiais) são gerados determinísticamente, armazenados em cache e usados na gameplay; o canhão aprovado da RIVET permanece intacto. Efeitos agendados são rastreados e interrompidos ao pausar/sair da cena. Projéteis e partículas usam pools limitados (128/120); nenhuma promessa de 60 FPS sem medição de renderização real.
-
-**Espaço: silêncio absoluto**, incluindo música, tiros, explosões e UI. A API de ambiente já silencia todo o master e impede reativação por mute. Fases espaciais permanecem planejamento e deverão usar esse ambiente.
-
-## Campanha, 100% e segredos
-
-Quinze capítulos principais planejados, duas fases secretas. Completar os 15 capítulos com um piloto libera seu final e as duas fases secretas; não exigir todos os pilotos para o primeiro 100%. Recordes, capítulos e final visto ficam separados por piloto. Duração estimada da rota principal: 30–60 min sem telas/mortes, conforme o alvo de 2–4 min; não é conteúdo já produzido.
-
-Hien é o piloto secreto e fica visível no desenvolvimento; Bayek é o protagonista sempre disponível. Na versão de desbloqueio: completar uma campanha, iniciar o jogo novamente e digitar **WAKEHIEN** na abertura. O código não funciona com apenas a Fase 1 concluída. Chave de desenvolvimento pode ocultá-lo quando for hora de ativar a regra; sistema de progresso já está preparado. Fases secretas são IDs 16/17 e continuam indisponíveis na seleção enquanto não produzidas/aprovadas.
-
-## Campanha planejada: quinze fases e finais secretos
-
-Somente a primeira fase está produzida. As regiões, chefes e rotas seguintes permanecem planejamento.
-
-### Fases 1 a 3 — Regiões Iniciais Selecionáveis
-1. **Fase 01 — Fenda Pelágica (Oceano Terrestre):**
-   - *Ambiente:* Oceano profundo, recifes submarinos alienígenas e abismo bioluminescente.
-   - *Inimigos:* Agulha Pelágica, Raia de Fenda, Parasita Abissal, Casulo Marinho.
-   - *Miniboss:* Raia-Dente (grande criatura biomecânica alada com disparos em arco).
-   - *Boss Colossal:* **TALASSARCA — O DEVORADOR DAS MARÉS**: casulo/casca, metamorfose anatômica e forma interna mais agressiva. Referência de cinco especiais na casca e três na segunda camada, sem obrigar o uso exclusivo de especiais. Tamanho máximo de 80%/100% da largura do corredor e região inferior para esquiva.
-2. **Fase 02 — Bosque da Névoa Viva (Floresta Tropical):**
-   - *Ambiente:* Dossel vegetal denso infestado por esporos alienígenas luminosos.
-   - *Inimigos:* Vespas de Ruptura, Polinizadores Negros, Mímicos de Folhagem, Tecelões.
-   - *Miniboss:* Vespa-Quimera.
-   - *Boss Colossal:* **ARBORION — O CORAÇÃO VEGETAL**.
-3. **Fase 03 — Metrópole do Silêncio (Cidade Costeira Evacuada):**
-   - *Ambiente:* Arranha-céus invadidos por monólitos cristalinos e tecnologia viva.
-   - *Inimigos:* Prismas Caçadores, Olhos Sentinelas, Fragmentadores, Lâminas Orbitais.
-   - *Miniboss:* Quimera Prisma.
-   - *Boss Colossal:* **CATEDRAL DE VIDRO**.
-
-### Fases 4 a 14 — Progressão Sequencial Planetária
-4. **Fase 04 — Dunas de Silício:** Deserto cristalizado com tempestades de areia iônica. Chefe: *Sifão das Dunas*.
-5. **Fase 05 — Cânion das Sombras:** Fendas tectônicas escarpadas e emboscadas rasantes. Chefe: *Mandíbula do Horizonte*.
-6. **Fase 06 — Mar da Tempestade:** Oceano em fúria sob tempestade eletromagnética. Chefe: *Leviatã da Tormenta*.
-7. **Fase 07 — Ruínas Vivas:** Estruturas antigas assimiladas por biomassa invasora. Chefe: *Arca Mnemônica*.
-8. **Fase 08 — Cordilheira de Cristal:** Picos nevados repletos de agulhas glaciais alienígenas. Chefe: *Coroa de Geada*.
-9. **Fase 09 — Arquipélago Vulcânico:** Caldeiras ativas com fluxo magmático luminescente. Chefe: *Coração Magmático*.
-10. **Fase 10 — Mar de Nuvens:** Alta troposfera entre cumulonimbus colossais. Chefe: *Colmeia Cumulus*.
-11. **Fase 11 — Olho da Estratosfera:** Fronteira orbital com auroras boreais alienígenas. Chefe: *Anel de Aurora*.
-12. **Fase 12 — Curvatura da Terra:** Limite exterior da atmosfera terrestre. Chefe: *Véu Colossal*.
-13. **Fase 13 — Órbita Fraturada:** Cinturão de satélites destruídos e armadilhas orbitais. Chefe: *Fornalha Sem Luz*.
-14. **Fase 14 — Cemitério de Naves:** Destroços de frotas alienígenas e carcaças biomecânicas. Chefe: *Carcaça Primeva*.
-
-### Fase 15 — Trono da Convergência (Chefe Variável por Região Inicial)
-O chefe final da Fase 15 é determinado estritamente pela primeira região escolhida no início da campanha:
-- **Começou pelo Oceano (Fase 1):** **THALOR — SOBERANO DAS PROFUNDEZAS** (entidade abissal colossal com tentáculos de plasma e órgãos bioelétricos).
-- **Começou pela Floresta (Fase 2):** **MORHIZA — CONSCIÊNCIA DA COLMEIA** (entidade simbiótica orgânica ramificada com nuvens de esporos e núcleos alternados).
-- **Começou pela Metrópole (Fase 3):** **PRISMA ÓRFÃO — ARQUITETO DA RUPTURA** (estrutura geométrica colossal de cristal vivo com feixes hiper-focados).
-
-### Finais Secretos — Fases 16 e 17
-As ordens de rota A/B/C da proposta anterior não condicionam mais os segredos. Completar os quinze capítulos principais com um piloto desbloqueia as duas fases extras planejadas.
-
-* **Fase 16 — Abismo Subterrâneo:** Túneis nas profundezas da crosta terrestre onde a raiz da invasão se instalou. Chefe: *Coração Telúrico*.
-* **Fase 17 — Lua: Origem da Colmeia:** Complexo alienígena na superfície lunar. Chefe Final Verdadeiro: **MATRIZ PRIMORDIAL — A ORIGEM DO ENXAME** (entidade suprema com casca, metamorfose e segunda camada, seguindo a regra 5/3 especiais).
-
----
-
-
-## Referências e histórico
-
-- [Fire Shark — manual Mega Drive](https://www.retrogames.cz/manualy/Genesis/Fire_Shark_-_Genesis_-_Manual.pdf).
-- [Sonic Wings 2 — manual original](https://db.hfsplay.fr/files/2019/06/14/1aa6199e-35d2-456a-8a2f-e3513f37594e.pdf), páginas impressas 7–9: comandos, seleção e itens.
-- [Fire Shark — Toaplan](https://www.toaplangames.co.jp/en/license/license-09.html).
-- [FluidSynth oficial](https://www.fluidsynth.org/) e [GeneralUser GS do autor](https://github.com/mrbumpy409/GeneralUser-GS).
-
-Relatórios anteriores registram o histórico de cada revisão. Em conflitos, prevalecem esta Bíblia e a revisão 52; o relatório 50 conserva a aprovação específica da abertura.
+[Motor](../src/game/arcade/ArcadeWorld.ts), [roteiros](../src/game/arcade/content.ts), [apresentação](../src/game/arcade/ArcadeScene.ts), [áudio](../src/game/arcade/ArcadeAudio.ts), [save](../src/game/arcade/progress.ts). O [relatório de validação](55_ARCADE_IMPLEMENTACAO_E_VALIDACAO.md) separa simulação, navegador, desempenho e limitações de avaliação humana/dispositivos.
