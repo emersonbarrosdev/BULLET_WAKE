@@ -202,7 +202,9 @@ export class ArcadeScene extends Phaser.Scene {
  }
  private renderWorld(dt:number):void{
   const w=this.world!,time=w.elapsed,g=this.combatInk;g.clear();
-  this.player.setPosition(w.player.x,w.player.y).setFrame(w.up?(w.player.bank<-.3?0:w.player.bank>.3?2:Math.floor(time*9)%2?1:3):(w.player.bank<-.3?6:w.player.bank>.3?5:Math.floor(time*9)%2?4:7)).setDisplaySize(w.up?31:42,w.up?38:34).setAlpha(w.player.invulnerable>0&&Math.floor(time*14)%2?.45:1).setVisible(w.state!=='defeat');
+  this.player.setPosition(w.player.x,w.player.y).setFrame(w.up?(w.player.bank<-.3?0:w.player.bank>.3?2:Math.floor(time*9)%2?1:3):(w.player.bank<-.3?6:w.player.bank>.3?5:Math.floor(time*9)%2?4:7)).setDisplaySize(w.up?31:42,w.up?38:34).setAlpha(1).setVisible(w.state!=='defeat');
+  // Temporary invulnerability remains readable without making the ship translucent.
+  if(w.player.invulnerable>0){g.lineStyle(1,0xb9fbff,.11+.13*Math.sin(time*9)**2);g.strokeEllipse(w.player.x,w.player.y,37,45);}
   const alive=new Set<number>();
   for(const e of w.enemies){alive.add(e.id);let s=this.enemySprites.get(e.id);if(!s){s=this.add.sprite(e.x,e.y,'arc-enemies').setDepth(e.ground?2:8);this.enemySprites.set(e.id,s);}s.setPosition(e.x,e.y).setTexture(e.family==='alien'?'arc-ufo':'arc-enemies',e.family==='alien'?(w.up?0:2)+Math.floor(time*5)%2:e.family==='airship'?12:FAMILY_ORDER.indexOf(e.family)+(w.up?0:8)).setDisplaySize(e.size,e.size).setRotation(w.up&&!e.ground&&e.family!=='alien'?Math.PI:0);
    if(e.flash>0)s.setTint(0xff4b48).setTintMode(Phaser.TintModes.FILL);else s.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
