@@ -1,0 +1,46 @@
+{
+  "generation": "native image_gen",
+  "processing": "crop, resize, atlas packing; no painted pixels or alpha removal",
+  "assets": {
+    "pelagic-coast": {
+      "nativeSource": "exec-42da8451-8f58-475a-84b3-1df164ded0e8.png",
+      "sourceSha256": "7c5c07ff096e4cef29f9d11383de1a6ba26221ed4f0f2a8e2f6760af07ff9ca5",
+      "size": [
+        2048,
+        1024
+      ],
+      "bytes": 638392,
+      "sha256": "a7f3305634c53f1571d8908e9cf696cae9a3f816ec18aebdbb50457bd509c82f"
+    },
+    "pelagic-water": {
+      "nativeSource": "exec-32e6c8b2-8036-4590-98a3-0657c5d2d1a7.png",
+      "sourceSha256": "1d7babd1dd85dd3042e6db163767bf51e18791426a0303066edd5bb6433ee0cd",
+      "size": [
+        1024,
+        1024
+      ],
+      "bytes": 879980,
+      "sha256": "fd85cdb1a85dab51917935f9bb85981c43989da635b756fd6b5c5f6eda478d8c"
+    },
+    "stage1-hud-left": {
+      "nativeSource": "exec-05a05c7c-b7d9-4f3d-bc35-11a0c78e2f35.png",
+      "sourceSha256": "f79835d94166a8e55023cafd9028a42d043ba5429e79257f406878f741e0af28",
+      "size": [
+        416,
+        864
+      ],
+      "bytes": 120050,
+      "sha256": "2ff06b3427606b4b847d28616424f160312459cc760d0aa26c8be4a42b34b56a"
+    },
+    "stage1-hud-right": {
+      "nativeSource": "exec-f2a0d3f8-a00a-4092-a94f-5796c51ca014.png",
+      "sourceSha256": "4d5c331ea75346d9a55f5e43d80f96a00526f8d67ed5a698089072b4a62ce7a3",
+      "size": [
+        416,
+        864
+      ],
+      "bytes": 104472,
+      "sha256": "565bb227044e7cdcd93449b0c56261d91137d2bcc67145522c3e8b85d1e58334"
+    }
+  }
+}

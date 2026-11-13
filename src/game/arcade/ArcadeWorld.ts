@@ -3,9 +3,10 @@ import {FAMILY,formationOffsets,regionAt,SUPPLIES,type Mission,type Family,type 
 import {clamp,sweepEllipse,type Box} from './geometry.ts';
 import {collectPowerItem,createPlayerWeapons,getPrimaryProjectiles,getSecondaryProjectiles,type PlayerWeaponsState} from '../systems/weaponSystem.ts';
 import {enterStage,type CampaignFlight} from '../systems/campaignFlight.ts';
+import {prepareSurface,moveSurface,surfaceMount,type SurfaceRoute} from './PelagicEnvironment.ts';
 
 export interface Controls {x:number;y:number;fire:boolean;special:boolean;}
-export interface Actor {id:number;x:number;y:number;size:number;hp:number;maxHp:number;age:number;flash:number;family:Family;motion:Motion;lane:number;offset:number;speed:number;cooldown:number;warning:number;ground:boolean;}
+export interface Actor {id:number;x:number;y:number;size:number;hp:number;maxHp:number;age:number;flash:number;family:Family;motion:Motion;lane:number;offset:number;speed:number;cooldown:number;warning:number;ground:boolean;navigation?:SurfaceRoute;}
 export interface Bullet {active:boolean;x:number;y:number;px:number;py:number;vx:number;vy:number;damage:number;radius:number;enemy:boolean;missile:boolean;homing:boolean;age:number;scale:number;color:number;}
 export interface Cargo {id:number;x:number;y:number;vx:number;vy:number;kind:'power'|'life'|'special';crate:boolean;hp:number;age:number;}
 export interface Component {id:number;x:number;y:number;dx:number;dy:number;hp:number;maxHp:number;radius:number;flash:number;warning:number;angle:number;}
@@ -63,17 +64,19 @@ export class ArcadeWorld {
    const family=e.formation==='escort'&&i>0?'fighter':e.family;const def=FAMILY[family];const ground=(this.up?['boat','ship','tank','tower']:['tank','tower']).includes(family);
    const lane=clamp(e.lane+offset,.09,.91),cross=this.up?this.arena.left+lane*352:ground?390:this.arena.top+lane*350;
    this.enemies.push({id:++this.sequence,x:this.up?cross:800-delay*220,y:this.up?-30+delay*220:cross,size:def.size,hp:def.hp,maxHp:def.hp,age:0,flash:0,family,motion:e.motion,lane:cross,offset:i*.7,speed:e.speed??(family==='interceptor'?83:ground?24:52),cooldown:1.8+i*.22,warning:0,ground});
+   if(this.up&&ground)prepareSurface(this.enemies[this.enemies.length-1],this.scroll,family==='boat'?(i%2===0?-1:1):0);
   });
  }
  private updateEnemies(dt:number):void{
   for(const e of this.enemies){e.age+=dt;e.flash=Math.max(0,e.flash-dt);const t=e.age;
    let advance=e.speed,cross=0;
    switch(e.motion){case'sine':cross=Math.sin(t*2+e.offset)*22;break;case'curve':cross=Math.sin(t*.85+e.offset)*55;break;case'zigzag':cross=2/Math.PI*Math.asin(Math.sin(t*2))*28;break;case'diagonal':cross=(e.lane<(this.up?384:216)?1:-1)*t*22;break;case'turn':cross=Math.sin(Math.min(Math.PI,t*.7))*64;advance=t>4?-42:56;break;case'dive':advance=35+Math.min(150,t*t*9);cross=Math.sin(t)*32;break;case'accelerate':advance=25+Math.min(130,t*12);break;case'retreat':advance=t>5?-65:30;cross=Math.sin(t)*15;break;case'stationary':advance=t<2?48:12;break;}
-   if(this.up){e.y+=advance*dt;e.x=clamp(e.lane+cross,this.arena.left+12,this.arena.right-12);}else{e.x-=advance*dt;e.y=clamp(e.lane+cross,this.arena.top+12,this.arena.bottom-12);}
+   if(this.up&&e.ground)moveSurface(e,this.scroll,dt);
+   else if(this.up){e.y+=advance*dt;e.x=clamp(e.lane+cross,this.arena.left+12,this.arena.right-12);}else{e.x-=advance*dt;e.y=clamp(e.lane+cross,this.arena.top+12,this.arena.bottom-12);}
    e.cooldown-=dt;e.warning=e.cooldown<.6&&e.cooldown>0?1-e.cooldown/.6:0;
    if(e.cooldown<=0&&e.x>this.arena.left&&e.x<this.arena.right&&e.y>this.arena.top&&e.y<this.arena.bottom){
     const behind=this.up?e.y>this.player.y-28:e.x<this.player.x+28;
-    if(!behind){const sy=e.y+(e.ground?(this.up?e.size*.12:-e.size*.09):0),aim=Math.atan2(this.player.y-sy,this.player.x-e.x),angles=e.family==='bomber'?[-.28,0,.28]:e.family==='ship'?[-.16,.16]:[0];const muzzle=e.ground?e.size*.2:5;for(const a of angles)this.hostile(e.x+Math.cos(aim)*muzzle,sy+Math.sin(aim)*muzzle,aim+a,90+(this.hard?30:0)+(e.family==='interceptor'?35:0),e.ground?5:3.6);this.emit('enemy-shot',e.x,e.y);}
+    if(!behind){const mount=this.up&&e.ground?surfaceMount(e):{x:e.x,y:e.y+(e.ground?-e.size*.09:0)},aim=Math.atan2(this.player.y-mount.y,this.player.x-mount.x),angles=e.family==='bomber'?[-.28,0,.28]:e.family==='ship'?[-.16,.16]:[0];const muzzle=e.ground?e.size*.2:5;for(const a of angles)this.hostile(mount.x+Math.cos(aim)*muzzle,mount.y+Math.sin(aim)*muzzle,aim+a,90+(this.hard?30:0)+(e.family==='interceptor'?35:0),e.ground?5:3.6);this.emit('enemy-shot',e.x,e.y);}
     e.cooldown=FAMILY[e.family].fire*(this.hard?.78:1);
    }
    if(!e.ground&&Math.hypot(e.x-this.player.x,e.y-this.player.y)<e.size*.28+7)this.hurtPlayer();

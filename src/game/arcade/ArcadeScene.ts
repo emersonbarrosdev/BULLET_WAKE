@@ -12,6 +12,8 @@ import {rivetShotPresentation} from '../render/rivetPresentation';
 import {enableCombatResolution} from '../render/combatResolution';
 import {clamp} from './geometry';
 import {readArcadeProgress,recordArcadeClear} from './progress';
+import {surfaceMount} from './PelagicEnvironment';
+import {pelagicShotSize} from './PelagicPresentation';
 
 type Screen='intro'|'title'|'pilot'|'missions'|'play'|'pause'|'controls'|'settings'|'confirm-exit'|'result'|'defeat'|'ending';
 type Effect={sprite:Phaser.GameObjects.Sprite;age:number;duration:number;size:number;vx:number;vy:number;spin:number;falling?:boolean;};
@@ -30,12 +32,14 @@ export class ArcadeScene extends Phaser.Scene {
  private clock=0;private introClock=0;private accumulator=0;private lastHud='';private messageUntil=0;private pauseOrigin:Screen='pause';private carried?:CampaignFlight;private currentMission=0;private stageClearSaved=false;
  private touch={x:0,y:0,fire:false,special:false};private touchStart?:{id:number;x:number;y:number};private touchFireId=-1;private touchSpecialId=-1;private touchNodes:(Phaser.GameObjects.Graphics|Phaser.GameObjects.Text)[]=[];
  private mute=false;
+ private pelagicLevel!:Phaser.GameObjects.Text;
  constructor(){super('ArcadeScene');}
  preload():void{
   const base=import.meta.env.BASE_URL;
   this.load.spritesheet('arc-ufo',`${base}assets/arcade/ufo.webp`,{frameWidth:256,frameHeight:256});
   this.load.image('arc-ocean',`${base}assets/arcade/ocean.webp`);
-   for(let i=0;i<2;i++)this.load.image('arc-stage1-world-'+i,`${base}assets/arcade/stage1-ocean-world-${i}.webp`);
+   this.load.spritesheet('pelagic-coast',`${base}assets/arcade/pelagic-coast.webp`,{frameWidth:512,frameHeight:512});
+   this.load.image('pelagic-water',`${base}assets/arcade/pelagic-water.webp`);
    this.load.image('arc-stage1-hud-left',`${base}assets/arcade/stage1-hud-left.webp`);
    this.load.image('arc-stage1-hud-right',`${base}assets/arcade/stage1-hud-right.webp`);
   for(const name of ['rivet','enemies','pilots','scenery'])this.load.spritesheet('arc-'+name,`${base}assets/arcade/${name}.webp`,{frameWidth:256,frameHeight:256});
@@ -66,6 +70,7 @@ export class ArcadeScene extends Phaser.Scene {
   for(let i=0;i<3;i++)this.wingmen.push(this.add.image(-100,100,'arc-enemies',8).setDisplaySize(45,45).setDepth(-2));
   this.ui=this.add.container(0,0).setDepth(60);
   this.hud=this.add.text(0,0,'',{fontFamily:FONT,fontSize:'11px',fontStyle:'bold',color:'#ffffff',stroke:'#153550',strokeThickness:3}).setResolution(2).setDepth(45);
+  this.pelagicLevel=this.add.text(589,80,'',{fontFamily:FONT,fontSize:'12px',fontStyle:'bold',color:'#ffffff'}).setResolution(2).setDepth(45).setVisible(false);
   this.radio=this.add.text(384,66,'',{fontFamily:FONT,fontSize:'12px',color:'#16385b',backgroundColor:'#fff7cb',padding:{x:8,y:5},wordWrap:{width:280},align:'center'}).setResolution(2).setOrigin(.5).setDepth(48).setVisible(false);
   for(let i=0;i<640;i++)this.bulletSprites.push(this.add.sprite(0,0,'arc-red').setVisible(false).setDepth(15));
   this.makeOrbTextures();this.installTouch();this.show('intro');
@@ -93,6 +98,7 @@ export class ArcadeScene extends Phaser.Scene {
   const game=['play','pause','controls','settings','confirm-exit','result','defeat'].includes(screen)&&!!this.world;
    const stage1Hud=game&&!!this.world?.up;
    this.hudLeft.setVisible(stage1Hud);this.hudRight.setVisible(stage1Hud);
+   this.pelagicLevel.setVisible(stage1Hud);
   this.logo.setVisible(!game&&screen==='title');this.logoParts.forEach(s=>s.setVisible(screen==='intro'));this.hero.setVisible(!game&&['intro','title'].includes(screen));this.wingmen.forEach(s=>s.setVisible(!game));
   if(screen==='pause'){this.audio.pause();this.pauseOrigin='pause';}
   if(screen==='play'&&old!=='play')this.audio.resume();
@@ -113,8 +119,8 @@ export class ArcadeScene extends Phaser.Scene {
    if(this.world?.up){
     // The full-height approved art already carries the labels, portrait, logo and ship.
     // Only live values, stocks and radio are painted by renderHud().
-    this.radio.setStyle({fontFamily:FONT,fontSize:'11px',color:'#f2fff9',
-      backgroundColor:'rgba(0,0,0,0)',padding:{x:0,y:0},wordWrap:{width:109},align:'left'});
+    this.radio.setStyle({fontFamily:FONT,fontSize:'10px',color:'#f2fff9',
+      backgroundColor:'rgba(0,0,0,0)',padding:{x:0,y:0},wordWrap:{width:105},align:'left'});
     this.radio.setOrigin(0,0);
    }else{
     this.radio.setStyle({fontFamily:FONT,fontSize:'12px',color:'#16385b',
@@ -155,6 +161,7 @@ export class ArcadeScene extends Phaser.Scene {
   const g=this.add.graphics();g.fillStyle(0x0c5170,.18).fillRect(0,0,768,432);g.fillStyle(0xfff7df,.94).fillRoundedRect(x,y,width,height,18);g.lineStyle(4,BLUE).strokeRoundedRect(x,y,width,height,18);this.ui.add(g);
  }
  begin(index:number,carry?:CampaignFlight):void{
+  if(index===0)this.messageUntil=0;
   this.disposeWorld();this.currentMission=index;this.stageClearSaved=false;this.world=new ArcadeWorld(MISSIONS[index],carry);this.world.accessibility=globalSave.getSettings().rapidFire;this.world.hard=globalSave.getSettings().difficulty!=='normal';this.accumulator=0;
   this.world.contact=(e,ax,ay,bx,by,radius)=>{const sprite=this.enemySprites.get(e.id),turret=this.turrets.get(e.id);const hits=[sprite?spriteContact(sprite,ax,ay,bx,by,radius):null,turret?spriteContact(turret,ax,ay,bx,by,radius):null].filter((v):v is number=>v!==null);return hits.length?Math.min(...hits):null;};
   this.player.setVisible(true);this.audio.play(index?'stage2':'stage1');this.show('play');
@@ -197,14 +204,16 @@ export class ArcadeScene extends Phaser.Scene {
   const alive=new Set<number>();
   for(const e of w.enemies){alive.add(e.id);let s=this.enemySprites.get(e.id);if(!s){s=this.add.sprite(e.x,e.y,'arc-enemies').setDepth(e.ground?2:8);this.enemySprites.set(e.id,s);}s.setPosition(e.x,e.y).setTexture(e.family==='alien'?'arc-ufo':'arc-enemies',e.family==='alien'?(w.up?0:2)+Math.floor(time*5)%2:e.family==='airship'?12:FAMILY_ORDER.indexOf(e.family)+(w.up?0:8)).setDisplaySize(e.size,e.size).setRotation(w.up&&!e.ground&&e.family!=='alien'?Math.PI:0);
    if(e.flash>0)s.setTint(0xff4b48).setTintMode(Phaser.TintModes.FILL);else s.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
-   if(e.ground){let turret=this.turrets.get(e.id);if(!turret){turret=this.add.sprite(e.x,e.y,'arc-boss',w.up?3:6).setDepth(5).setOrigin(.5,w.up?.4:.5);this.turrets.set(e.id,turret);}const y=e.y+(w.up?e.size*.12:-e.size*.09);turret.setPosition(e.x,y).setDisplaySize(e.size*.58,e.size*.58).setRotation(Math.atan2(w.player.y-y,w.player.x-e.x)-(w.up?Math.PI/2:Math.PI));if(e.flash>0)turret.setTint(0xff4b48).setTintMode(Phaser.TintModes.FILL);else turret.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);}
+   if(e.ground){let turret=this.turrets.get(e.id);if(!turret){turret=this.add.sprite(e.x,e.y,'arc-boss',w.up?3:6).setDepth(5).setOrigin(.5,w.up?.4:.5);this.turrets.set(e.id,turret);}const mount=w.up?surfaceMount(e):{x:e.x,y:e.y-e.size*.09};turret.setPosition(mount.x,mount.y).setDisplaySize(e.size*.58,e.size*.58).setRotation(Math.atan2(w.player.y-mount.y,w.player.x-mount.x)-(w.up?Math.PI/2:Math.PI));if(e.flash>0)turret.setTint(0xff4b48).setTintMode(Phaser.TintModes.FILL);else turret.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
+    if(w.up&&e.navigation?.anchor===undefined){s.setRotation((e.navigation?.heading??Math.PI)-Math.PI);const angle=(e.navigation?.heading??Math.PI)-Math.PI/2;g.lineStyle(1,0xd4ffff,.4);for(const sign of[-1,1]){const x=e.x-Math.cos(angle)*e.size*.32+Math.cos(angle+Math.PI/2)*sign*5,y=e.y-Math.sin(angle)*e.size*.32+Math.sin(angle+Math.PI/2)*sign*5;g.lineBetween(x,y,x-Math.cos(angle)*13,y-Math.sin(angle)*13);}}
+   }
    if(e.warning>0){g.lineStyle(1.5,0xffe46b,.9).strokeCircle(e.x,e.y,e.size*.35+e.warning*4);}
    if(!e.ground){g.lineStyle(1,0xb6ffff,.3).lineBetween(e.x+(w.up?0:13),e.y+(w.up?-15:0),e.x+(w.up?0:22+Math.sin(time*25)*2),e.y+(w.up?-25:0));if(['fighter','acrobat','bomber'].includes(e.family)){const nose=w.up?e.y+e.size*.33:e.x-e.size*.35;g.lineStyle(1.5,0xffe36a,.7);if(w.up)g.lineBetween(e.x-Math.cos(time*45+e.id)*e.size*.22,nose,e.x+Math.cos(time*45+e.id)*e.size*.22,nose);else g.lineBetween(nose,e.y-Math.cos(time*45+e.id)*e.size*.22,nose,e.y+Math.cos(time*45+e.id)*e.size*.22);}}
   }for(const [id,s] of this.enemySprites)if(!alive.has(id)){s.destroy();this.enemySprites.delete(id);this.turrets.get(id)?.destroy();this.turrets.delete(id);}
   this.renderBoss(g);
   for(let i=0;i<w.bullets.length;i++){const b=w.bullets[i],s=this.bulletSprites[i];s.setVisible(b.active);if(!b.active)continue;
    if(b.enemy)s.setTexture('arc-orb-'+b.color).setDisplaySize(b.radius*2+3,b.radius*2+3).setRotation(0);
-   else{const art=rivetShotPresentation(w.weapons.weaponLevel);s.setTexture(b.missile?'arc-missile':'arc-red',Math.floor(b.age*20)%8).setDisplaySize(b.missile?17:art.width,b.missile?25:art.height).setRotation(Math.atan2(b.vy,b.vx)+Math.PI/2);}
+   else{const art=w.up?pelagicShotSize(w.weapons.weaponLevel):rivetShotPresentation(w.weapons.weaponLevel);s.setTexture(b.missile?'arc-missile':w.up?'pelagic-plasma':'arc-red',w.up&&!b.missile?undefined:Math.floor(b.age*20)%8).setDisplaySize(b.missile?17:art.width,b.missile?25:art.height).setRotation(Math.atan2(b.vy,b.vx)+Math.PI/2);}
    s.setPosition(b.x,b.y);
   }
   this.renderCargo(g);this.renderObstacles(g);
@@ -215,7 +224,7 @@ export class ArcadeScene extends Phaser.Scene {
   }
   for(const fx of this.effects){fx.age+=dt;fx.sprite.setPosition(fx.sprite.x+fx.vx*dt,fx.sprite.y+fx.vy*dt).setRotation(fx.sprite.rotation+fx.spin*dt).setAlpha(1-fx.age/fx.duration*.7);if(!fx.falling)fx.sprite.setFrame(Math.min(15,Math.floor(fx.age/fx.duration*16)));else fx.sprite.setDisplaySize(fx.size*(1-fx.age/fx.duration*.6),fx.size*(1-fx.age/fx.duration*.6));}
   this.effects=this.effects.filter(f=>{if(f.age>=f.duration){f.sprite.setVisible(false);this.effectPool.push(f.sprite);return false;}return true;});
-  this.renderHud();if(this.clock>this.messageUntil)this.radio.setVisible(false);
+  this.renderHud();if(this.clock>this.messageUntil){if(w.up&&!['result','defeat'].includes(this.screen))this.radio.setOrigin(0,0).setPosition(646,299).setText('CANAL ABERTO\nAguardando contato…').setVisible(true);else this.radio.setVisible(false);}
  }
  private renderBoss(g:Phaser.GameObjects.Graphics):void{
   const w=this.world!,b=w.boss,live=new Set<number>();this.bossSprite.setVisible(!!b&&b.phase!=='absent');
@@ -249,13 +258,15 @@ export class ArcadeScene extends Phaser.Scene {
    g.lineBetween(560,0,560,432);
    g.lineStyle(1,0xd8ffff,.82).lineBetween(209,0,209,432);
    g.lineBetween(559,0,559,432);
-   const line=`${String(w.score).padStart(8,'0')}\nNV ${w.weapons.weaponLevel}${w.weapons.powerMeter?` +${w.weapons.powerMeter}P`:''}`;
+   const line=String(w.score).padStart(8,'0');
    if(line!==this.lastHud){
     this.hud.setFontSize(17).setColor('#ffe654').setStroke('#032f74',2);
     this.hud.setText(line).setPosition(603,42).setLineSpacing(5);
     this.lastHud=line;
    }
-   this.lifeIcons.forEach((sprite,i)=>sprite.setPosition(110+i*19,323).setVisible(true).setAlpha(i<w.lives?1:.20));
+   this.pelagicLevel.setText(`NV ${w.weapons.weaponLevel}`);
+   for(let i=0;i<5;i++){g.fillStyle(i<w.weapons.weaponLevel?0x21e3f4:0x103d68).fillRoundedRect(647+i*19,81,16,10,2);g.lineStyle(.6,0x83edff,.7).strokeRoundedRect(647+i*19,81,16,10,2);}
+   this.lifeIcons.forEach((sprite,i)=>sprite.setPosition(106+i*18.5,329).setDisplaySize(24,29).setVisible(true).setAlpha(i<w.lives?1:.20));
    for(let i=0;i<5;i++){
     const x=122+i*12.2;
     g.fillStyle(i<w.weapons.specialCharges?0xffdc39:0x1d426b,1).fillRoundedRect(x,356,10,11,2);
@@ -273,13 +284,15 @@ export class ArcadeScene extends Phaser.Scene {
     this.hud.setText(line).setPosition(22,13);
     this.lastHud=line;
    }
-   this.lifeIcons.forEach((sprite,i)=>sprite.setPosition(447+i*17,19).setVisible(true).setAlpha(i<w.lives?1:.18));
+   this.lifeIcons.forEach((sprite,i)=>sprite.setPosition(447+i*17,19).setDisplaySize(15,19).setVisible(true).setAlpha(i<w.lives?1:.18));
    for(let i=0;i<5;i++){
     const x=589+i*20;g.fillStyle(i<w.weapons.specialCharges?0xffd95a:0x45718a);
     g.beginPath().moveTo(x+2,9).lineTo(x-5,20).lineTo(x,20).lineTo(x-2,29).lineTo(x+7,16).lineTo(x+2,16).closePath().fillPath();
    }
   }
-  if(w.state==='intro'){
+  if(w.state==='intro'&&w.up){
+   this.radio.setOrigin(0,0).setText('BAYEK\nRota 01.\nFenda Pelágica.\nVamos decolar!').setPosition(646,295).setVisible(true);this.messageUntil=this.clock+.5;
+  }else if(w.state==='intro'){
    g.fillStyle(0xffe77d,.95).fillRoundedRect(220,170,328,75,12);
    const label=w.mission.name;
    this.radio.setOrigin(.5).setText(`MISSÃO ${this.currentMission+1}\n${label}`).setPosition(384,207).setVisible(true);

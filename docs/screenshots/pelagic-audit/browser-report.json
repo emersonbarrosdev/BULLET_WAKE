@@ -1,0 +1,543 @@
+{
+  "errors": [],
+  "radioIntro": {
+    "x": 646,
+    "y": 295,
+    "right": 736,
+    "text": "BAYEK\nRota 01.\nFenda Pelágica.\nVamos decolar!"
+  },
+  "routeFrames": [
+    {
+      "time": 49.999999999997804,
+      "level": 2,
+      "boats": [
+        {
+          "family": "boat",
+          "x": 362.92000439794043,
+          "y": 160.99999999996726,
+          "phase": "cruise"
+        }
+      ],
+      "state": "play",
+      "scroll": 1955.2083333332357
+    },
+    {
+      "time": 81.00000000001053,
+      "level": 2,
+      "boats": [
+        {
+          "family": "ship",
+          "x": 401.37972519200645,
+          "y": 37.51666666663732,
+          "phase": "cruise"
+        }
+      ],
+      "state": "play",
+      "scroll": 3133.20833333301
+    },
+    {
+      "time": 158.00000000002063,
+      "level": 3,
+      "boats": [],
+      "state": "play",
+      "scroll": 6947.023949557357
+    },
+    {
+      "time": 221.99999999996243,
+      "level": 4,
+      "boats": [],
+      "state": "play",
+      "scroll": 9219.458333335284
+    },
+    {
+      "time": 303.99999999988785,
+      "level": 5,
+      "boats": [],
+      "state": "play",
+      "scroll": 12208.415291050127
+    }
+  ],
+  "fullRoute": {
+    "state": "victory",
+    "elapsed": 339.01666666652267,
+    "lives": 4,
+    "deaths": 0,
+    "score": 63230,
+    "level": 5,
+    "collected": 11
+  },
+  "levels": [
+    {
+      "level": 1,
+      "projectiles": 5,
+      "texture": "pelagic-plasma",
+      "radio": {
+        "x": 646,
+        "right": 763
+      }
+    },
+    {
+      "level": 2,
+      "projectiles": 10,
+      "texture": "pelagic-plasma",
+      "radio": {
+        "x": 646,
+        "right": 763
+      }
+    },
+    {
+      "level": 3,
+      "projectiles": 17,
+      "texture": "pelagic-plasma",
+      "radio": {
+        "x": 646,
+        "right": 763
+      }
+    },
+    {
+      "level": 4,
+      "projectiles": 32,
+      "texture": "pelagic-plasma",
+      "radio": {
+        "x": 646,
+        "right": 763
+      }
+    },
+    {
+      "level": 5,
+      "projectiles": 38,
+      "texture": "pelagic-plasma",
+      "radio": {
+        "x": 646,
+        "right": 763
+      }
+    }
+  ],
+  "motion": [
+    {
+      "scroll": 1784.1999999999935,
+      "coast": [
+        {
+          "x": 539,
+          "y": 512.1999999999935,
+          "frame": 6,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 229,
+          "y": 334.19999999999345,
+          "frame": 4,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 539,
+          "y": 156.19999999999345,
+          "frame": 5,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 229,
+          "y": -21.80000000000655,
+          "frame": 1,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        }
+      ],
+      "waterUV": -3569.659999999987,
+      "boats": [
+        {
+          "id": 1,
+          "x": 384.95999999999754,
+          "y": -13.600000000013097,
+          "heading": 1.7359450042093851
+        },
+        {
+          "id": 2,
+          "x": 383.04000000000246,
+          "y": -13.600000000013097,
+          "heading": 4.547240302970201
+        }
+      ]
+    },
+    {
+      "scroll": 1818.399999999987,
+      "coast": [
+        {
+          "x": 539,
+          "y": 546.3999999999869,
+          "frame": 6,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 229,
+          "y": 368.3999999999869,
+          "frame": 4,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 539,
+          "y": 190.3999999999869,
+          "frame": 5,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 229,
+          "y": 12.399999999986903,
+          "frame": 1,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        }
+      ],
+      "waterUV": -3639.319999999974,
+      "boats": [
+        {
+          "id": 2,
+          "x": 363.95375723448745,
+          "y": 27.799999999973807,
+          "heading": 3.3272403029702122
+        }
+      ]
+    },
+    {
+      "scroll": 1851.9666666666471,
+      "coast": [
+        {
+          "x": 229,
+          "y": 401.96666666664714,
+          "frame": 4,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 539,
+          "y": 223.96666666664714,
+          "frame": 5,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 229,
+          "y": 45.96666666664714,
+          "frame": 1,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        }
+      ],
+      "waterUV": -3707.689999999961,
+      "boats": [
+        {
+          "id": 2,
+          "x": 363.95375723448745,
+          "y": 79.36666666663632,
+          "heading": 3.141592653589793
+        }
+      ]
+    },
+    {
+      "scroll": 1885.5333333333074,
+      "coast": [
+        {
+          "x": 229,
+          "y": 435.5333333333074,
+          "frame": 4,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 539,
+          "y": 257.5333333333074,
+          "frame": 5,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 229,
+          "y": 79.53333333330738,
+          "frame": 1,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 517,
+          "y": -98.46666666669262,
+          "frame": 2,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        }
+      ],
+      "waterUV": -3776.059999999948,
+      "boats": [
+        {
+          "id": 2,
+          "x": 363.95375723448745,
+          "y": 134.13333333330138,
+          "heading": 3.141592653589793
+        }
+      ]
+    },
+    {
+      "scroll": 1919.0999999999676,
+      "coast": [
+        {
+          "x": 229,
+          "y": 469.0999999999676,
+          "frame": 4,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 539,
+          "y": 291.0999999999676,
+          "frame": 5,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 229,
+          "y": 113.09999999996762,
+          "frame": 1,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 517,
+          "y": -64.90000000003238,
+          "frame": 2,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        }
+      ],
+      "waterUV": -3844.4299999999353,
+      "boats": [
+        {
+          "id": 2,
+          "x": 363.95375723448745,
+          "y": 178.09999999996398,
+          "heading": 3.141592653589793
+        }
+      ]
+    },
+    {
+      "scroll": 1952.6666666666279,
+      "coast": [
+        {
+          "x": 229,
+          "y": 502.66666666662786,
+          "frame": 4,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 539,
+          "y": 324.66666666662786,
+          "frame": 5,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 229,
+          "y": 146.66666666662786,
+          "frame": 1,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 517,
+          "y": -31.33333333337214,
+          "frame": 2,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        }
+      ],
+      "waterUV": -3912.7999999999224,
+      "boats": [
+        {
+          "id": 2,
+          "x": 363.95375723448745,
+          "y": 211.66666666662422,
+          "heading": 3.141592653589793
+        }
+      ]
+    },
+    {
+      "scroll": 1986.5499999999547,
+      "coast": [
+        {
+          "x": 229,
+          "y": 536.5499999999547,
+          "frame": 4,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 539,
+          "y": 358.5499999999547,
+          "frame": 5,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 229,
+          "y": 180.5499999999547,
+          "frame": 1,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 517,
+          "y": 2.549999999954707,
+          "frame": 2,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        }
+      ],
+      "waterUV": -3981.8149999999096,
+      "boats": [
+        {
+          "id": 2,
+          "x": 352.7537572344881,
+          "y": 251.14999999995234,
+          "heading": 3.7015926535897936
+        }
+      ]
+    },
+    {
+      "scroll": 2020.116666666615,
+      "coast": [
+        {
+          "x": 539,
+          "y": 392.11666666661495,
+          "frame": 5,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 229,
+          "y": 214.11666666661495,
+          "frame": 1,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        },
+        {
+          "x": 517,
+          "y": 36.11666666661495,
+          "frame": 2,
+          "flipX": false,
+          "flipY": false,
+          "rotation": 0
+        }
+      ],
+      "waterUV": -4050.1849999998967,
+      "boats": [
+        {
+          "id": 2,
+          "x": 344.77909024138853,
+          "y": 305.9166666666174,
+          "heading": 3.141592653589793
+        }
+      ]
+    }
+  ],
+  "opacity": [
+    {
+      "key": "arc-stage1-hud-left",
+      "minAlpha": 255
+    },
+    {
+      "key": "arc-stage1-hud-right",
+      "minAlpha": 255
+    }
+  ],
+  "waterEdges": {
+    "vertical": 2.986328125,
+    "horizontal": 3.1539713541666674,
+    "internalMedian": 2.7490234374999956,
+    "internalP95": 4.753906250000004
+  },
+  "performance": [
+    {
+      "quality": 0,
+      "frames": 599,
+      "seconds": 10.006700000047683,
+      "medianMs": 16.700000000000728,
+      "p95Ms": 16.80000000000291,
+      "heaps": [
+        30153298,
+        27159522,
+        33067494,
+        23452401,
+        25808649,
+        29297277,
+        23008301,
+        31756997,
+        35187249,
+        32040509
+      ],
+      "objects": 742,
+      "peakBullets": 92
+    },
+    {
+      "quality": 2,
+      "frames": 599,
+      "seconds": 10.00730000002384,
+      "medianMs": 16.69999999999709,
+      "p95Ms": 16.80000000000291,
+      "heaps": [
+        33582281,
+        21917521,
+        34331825,
+        29083668,
+        35977324,
+        27383844,
+        27958404,
+        28219564,
+        22381040,
+        28336660
+      ],
+      "objects": 771,
+      "peakBullets": 92
+    }
+  ],
+  "renderer": {
+    "gpu": "ANGLE (AMD, AMD Radeon(TM) Graphics (0x00001681) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "viewport": [
+      1366,
+      768
+    ]
+  }
+}
