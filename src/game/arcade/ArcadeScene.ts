@@ -39,6 +39,7 @@ export class ArcadeScene extends Phaser.Scene {
   this.load.spritesheet('arc-ufo',`${base}assets/arcade/ufo.webp`,{frameWidth:256,frameHeight:256});
   this.load.image('arc-ocean',`${base}assets/arcade/ocean.webp`);
    this.load.spritesheet('pelagic-coast',`${base}assets/arcade/pelagic-coast.webp`,{frameWidth:512,frameHeight:512});
+   this.load.spritesheet('pelagic-archipelago',`${base}assets/arcade/pelagic-archipelago.webp`,{frameWidth:512,frameHeight:512});
    this.load.image('pelagic-water',`${base}assets/arcade/pelagic-water.webp`);
    this.load.image('arc-stage1-hud-left',`${base}assets/arcade/stage1-hud-left.webp`);
    this.load.image('arc-stage1-hud-right',`${base}assets/arcade/stage1-hud-right.webp`);

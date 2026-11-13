@@ -1,20 +1,37 @@
 /** Phase 1 geography, shared by scenery and surface navigation. All distances are world pixels.
  * World objects move DOWN: screenY = worldY + scroll. Art is never mirrored/rotated.
- * Conservative rectangular envelopes include foam, rocks and projecting dock fingers.
+ * Conservative rectangular envelopes align with the rendered archipelago formations in PelagicCoastGeometry.
  */
+import {ARCHIPELAGO_SPECS,COAST_PERIOD} from './PelagicCoastGeometry.ts';
+
 export interface CoastPiece {id:number;frame:number;x:number;y:number;width:number;height:number;side:-1|1;solid:boolean;}
 export interface SurfaceRoute {worldY:number;heading:number;entry:-1|0|1;phase:'enter'|'cruise'|'hold'|'turn'|'exit';anchor?:number;anchorY?:number;}
 export interface SurfaceActor {id:number;x:number;y:number;size:number;age:number;speed:number;family:string;navigation?:SurfaceRoute;}
 const clamp=(v:number,a:number,b:number)=>Math.max(a,Math.min(b,v));
-// Alternating authored modules: separate island and harbor sprites, never a complete map.
-const sequence=[0,2,1,6,4,1,5,0,2,6,4,5,1,2,0,6];
-export const PELAGIC_COAST:ReadonlyArray<CoastPiece>=Array.from({length:96},(_,i)=>{
- const side:-1|1=i%2===0?-1:1;
- const frame=sequence[i%sequence.length],port=frame===4||frame===5;
- // A harbor's art is authored for its shoreline; select the corresponding variant.
- return{id:i,frame:port?(side===-1?4:5):frame,x:frame===2?(side===-1?251:517):(side===-1?229:539),
-  y:330-i*178,width:frame===2?126:port?166:146+(i%3)*8,height:frame===2?158:port?166:174+(i%3)*14,side,solid:true};
-});
+
+// Generate world-space CoastPiece envelopes directly from ARCHIPELAGO_SPECS across all scroll cycles.
+const rawPieces:Omit<CoastPiece,'id'>[]=[];
+for(let cycle=-1;cycle<=7;cycle++){
+ for(const spec of ARCHIPELAGO_SPECS){
+  const centerY=(spec.yStart+spec.yEnd)/2-cycle*COAST_PERIOD;
+  const height=spec.yEnd-spec.yStart;
+  const halfW=Math.max(38,spec.maxExtent-36);
+  const x=spec.side<0?192+spec.maxExtent-halfW:576-spec.maxExtent+halfW;
+  rawPieces.push({
+   frame:spec.legacyFrame,
+   x:Math.round(x),
+   y:Math.round(centerY),
+   width:Math.round(halfW*2),
+   height:Math.round(height),
+   side:spec.side,
+   solid:true,
+  });
+ }
+}
+rawPieces.sort((a,b)=>b.y-a.y);
+
+export const PELAGIC_COAST:ReadonlyArray<CoastPiece>=rawPieces.map((p,id)=>({id,...p}));
+
 export function visibleCoast(scroll:number,pad=150):CoastPiece[]{return PELAGIC_COAST.filter(p=>p.y+scroll+p.height/2>=-pad&&p.y+scroll-p.height/2<=432+pad);}
 /** Safe corridor at a world-space ordinate. A radius covers the entire rotating boat, not just its center. */
 export function waterCorridor(worldY:number,radius:number,lookAhead=0):{left:number;right:number}{
@@ -31,9 +48,9 @@ export function touchesCoast(x:number,worldY:number,radius:number):boolean{
 export function prepareSurface(e:SurfaceActor,scroll:number,entryHint?:-1|0|1):void{
  if(e.family==='tank'||e.family==='tower'){
   // Prefer a near-future island/port. The unit and its terrain share exactly the same scroll transform.
-  const candidates=PELAGIC_COAST.filter(p=>p.y+scroll>-140&&p.y+scroll<120);
-  const anchor=candidates[e.id%candidates.length]??visibleCoast(scroll)[0];
-  const anchorY=e.id%2?32:-8;
+  const candidates=PELAGIC_COAST.filter(p=>p.y+scroll>-220&&p.y+scroll<160);
+  const anchor=candidates[e.id%Math.max(1,candidates.length)]??visibleCoast(scroll,260)[0]??PELAGIC_COAST[0];
+  const anchorY=e.id%2?26:-10;
   e.navigation={worldY:anchor.y,heading:Math.PI,entry:0,phase:'hold',anchor:anchor.id,anchorY};
   e.x=anchor.x-anchor.side*20;e.y=anchor.y+scroll+anchorY;return;
  }
@@ -41,8 +58,8 @@ export function prepareSurface(e:SurfaceActor,scroll:number,entryHint?:-1|0|1):v
  let y=-55;
  if(entry){
   // A side entry is legal only in an opening wide enough for the complete hull and its approach.
-  for(let candidate=65;candidate<=220;candidate+=10){
-   const corridor=waterCorridor(candidate-scroll,radius,48);
+  for(let candidate=55;candidate<=240;candidate+=10){
+   const corridor=waterCorridor(candidate-scroll,radius,64);
    if(entry<0?corridor.left===208+radius:corridor.right===560-radius){y=candidate;break;}
   }
  }
