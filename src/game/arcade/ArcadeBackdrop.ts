@@ -1,24 +1,24 @@
 import Phaser from 'phaser';
 import type {ArcadeWorld} from './ArcadeWorld';
 import {installPelagicTextures} from './PelagicPresentation';
-import {installPelagicPanorama,PELAGIC_VIEW} from './PelagicPanorama';
 import {WATER_SCALE,waterScrollOffset} from './PelagicWater';
 
-/** Stage-1 coast is one continuous painted world, not scattered floating islands. */
+const STAGE1_LEFT=192,STAGE1_WIDTH=384;
+
+/** Stage 1 / approval gate 1: one continuous crisp ocean with correct scroll direction.
+ * No coastline, fog or overlay until the base water is approved in actual gameplay.
+ */
 export class ArcadeBackdrop {
  private ink:Phaser.GameObjects.Graphics;
  private scenery:Phaser.GameObjects.Image[]=[];
  private clouds:Phaser.GameObjects.Image[]=[];
- private panorama:Phaser.GameObjects.TileSprite;
  private water:Phaser.GameObjects.TileSprite;
  private seaFx:Phaser.GameObjects.Graphics;
  constructor(private scene:Phaser.Scene){
   this.ink=scene.add.graphics().setDepth(-20);
   installPelagicTextures(scene);
-  const terrain=installPelagicPanorama(scene);
-  this.panorama=scene.add.tileSprite(384,216,PELAGIC_VIEW.width,432,terrain).setDepth(-18).setVisible(false);
-  // Approved crisp cobalt waves fill the entire lane; painted shore follows on top.
-  this.water=scene.add.tileSprite(384,216,PELAGIC_VIEW.width,432,'pelagic-water').setDepth(-19).setVisible(false);
+  // A single opaque, unfiltered source: no doubled ocean, faded coast, cyan fog or panorama.
+  this.water=scene.add.tileSprite(384,216,STAGE1_WIDTH,432,'pelagic-water').setDepth(-19).setVisible(false);
   this.water.setTileScale(WATER_SCALE,WATER_SCALE);
   this.seaFx=scene.add.graphics().setDepth(-17);
   for(let i=0;i<8;i++)this.scenery.push(scene.add.image(0,0,'arc-scenery',i%4).setDepth(-15));
@@ -28,7 +28,6 @@ export class ArcadeBackdrop {
   this.ink.clear();this.seaFx.clear();
   for(const sprite of this.scenery)sprite.setVisible(false);
   for(const sprite of this.clouds)sprite.setVisible(false);
-  this.panorama.setVisible(!!world?.up);
   this.water.setVisible(!!world?.up);
   if(!world){this.sky(time,quality);return;}
   if(world.up)this.ocean(world,quality);else this.city(time,world,quality);
@@ -43,11 +42,11 @@ export class ArcadeBackdrop {
   for(let i=0;i<quality+3;i++)this.clouds[i].setVisible(true).setPosition(((i*215-time*(7+i*2))%1040+1040)%1040-120,60+i*47).setDisplaySize(155+i*16,90).setAlpha(.7);
  }
  private ocean(w:ArcadeWorld,quality:number):void{
-  // Both scenery and the world simulation use the same unmodified scroll value.
-  // Pause freezes land. Water highlights still drift during the final boss arena.
+  // Tile coordinates move in the opposite direction of visible scenery.
+  // Negative tileY means the displayed world drifts DOWN as the ship advances.
+  // The ocean remains animated when the boss stops world.scroll.
   const time=w.elapsed;
-  this.ink.fillStyle(0x074785).fillRect(PELAGIC_VIEW.left,0,PELAGIC_VIEW.width,432);
-  this.panorama.tilePositionY=-w.scroll;
+  this.ink.fillStyle(0x074785).fillRect(STAGE1_LEFT,0,STAGE1_WIDTH,432);
   this.water.tilePositionY=waterScrollOffset(w.scroll,time*2.2);
   this.water.tilePositionX=Math.sin(time*.18)*1.6;
   const g=this.seaFx,count=quality===0?8:quality===1?13:19;
@@ -83,7 +82,7 @@ export class ArcadeBackdrop {
   void time;
  }
  destroy():void{
-  this.ink.destroy();this.seaFx.destroy();this.panorama.destroy();this.water.destroy();
+  this.ink.destroy();this.seaFx.destroy();this.water.destroy();
   this.scenery.forEach(s=>s.destroy());this.clouds.forEach(s=>s.destroy());
   void this.scene;
  }

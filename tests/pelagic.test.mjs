@@ -1,3 +1,4 @@
+import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PELAGIC_COAST,visibleCoast,waterCorridor,touchesCoast,prepareSurface,moveSurface,surfaceMount} from '../src/game/arcade/PelagicEnvironment.ts';
@@ -34,4 +35,12 @@ test('the authored Fenda encounters actually use left, right and top approaches'
  const w=new ArcadeWorld(MISSIONS[0]);w.state='play';w.player.invulnerable=1000;const entries=new Set();
  for(let i=0;i<120*230;i++){w.step(1/120);w.events=[];for(const e of w.enemies)if(e.navigation&&e.navigation.anchor===undefined)entries.add(e.navigation.entry);if(w.boss?.mini)w.boss.parts.forEach(p=>p.hp=0);}
  assert.deepEqual([...entries].sort(),[-1,0,1]);
+});
+
+// Etapa 1: protect against reintroducing the inverted coastal panorama or cyan fog.
+test('stage 1 draws a single crisp unfiltered ocean base until coastline approval',()=>{
+ const source=readFileSync(new URL('../src/game/arcade/ArcadeBackdrop.ts',import.meta.url),'utf8');
+ assert.match(source,/tileSprite\(384,216,STAGE1_WIDTH,432,'pelagic-water'\)/);
+ assert.match(source,/waterScrollOffset\(w\.scroll,time\*2\.2\)/);
+ assert.doesNotMatch(source,/installPelagicPanorama|this\.panorama|\.setAlpha\(\.09\)|setBlendMode\(/);
 });
