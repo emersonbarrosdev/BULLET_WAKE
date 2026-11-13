@@ -27,7 +27,7 @@ export class ArcadeWorld {
  readonly mission:Mission;
  constructor(mission:Mission,carry?:CampaignFlight){
   this.mission=mission;
-  this.arena=mission.perspective==='UP'?{left:208,right:560,top:38,bottom:420}:{left:16,right:752,top:40,bottom:414};
+  this.arena=mission.perspective==='UP'?{left:192,right:576,top:38,bottom:420}:{left:16,right:752,top:40,bottom:414};
   const restored=enterStage('nolan',mission.id,carry);this.weapons=restored.weapons;this.lives=restored.health.lives;this.score=restored.score;
   this.player.x=this.up?384:100;this.player.y=this.up?376:228;
  }
@@ -49,7 +49,7 @@ export class ArcadeWorld {
   this.specialEdge=input.special;
   if(this.specialTime>0){this.specialTime=Math.max(0,this.specialTime-dt);this.specialImpact=undefined;this.applySpecial(dt);}
   while(this.waveIndex<this.mission.encounters.length&&this.route>=this.mission.encounters[this.waveIndex].at){const e=this.mission.encounters[this.waveIndex++];if(e.at!==155){this.spawnEncounter(e);if(this.hard&&e.formation==='solo'&&e.family!=='tower')this.spawnEncounter({...e,family:'interceptor',formation:'pair',motion:'curve',lane:1-e.lane});}}
-  while(this.supplyIndex<SUPPLIES.length&&this.route>=SUPPLIES[this.supplyIndex].at){const c=SUPPLIES[this.supplyIndex++];const lane=.25+(this.supplyIndex%3)*.24;this.cargo.push({id:++this.sequence,x:this.up?this.arena.left+lane*352:this.arena.right+15,y:this.up?-25:85+lane*250,vx:this.up?20:-32,vy:this.up?25:0,kind:c.kind,crate:true,hp:3,age:0});}
+  while(this.supplyIndex<SUPPLIES.length&&this.route>=SUPPLIES[this.supplyIndex].at){const c=SUPPLIES[this.supplyIndex++];const lane=.25+(this.supplyIndex%3)*.24;this.cargo.push({id:++this.sequence,x:this.up?this.arena.left+lane*(this.arena.right-this.arena.left):this.arena.right+15,y:this.up?-25:85+lane*250,vx:this.up?20:-32,vy:this.up?25:0,kind:c.kind,crate:true,hp:3,age:0});}
   if(this.route>=155&&!this.miniStarted){this.miniStarted=true;this.startBoss(true);}
   if(this.route>=300&&!this.bossStarted&&!this.boss){this.bossStarted=true;this.enemies=[];this.clearHostileBullets();this.startBoss(false);}
   if(!this.up&&this.route>=this.nextObstacle&&this.route<270){this.spawnObstacle();this.nextObstacle+=this.route<135?12:33;}
@@ -62,7 +62,7 @@ export class ArcadeWorld {
  private spawnEncounter(e:Mission['encounters'][number]):void{
   formationOffsets(e.formation).forEach(([offset,delay],i)=>{
    const family=e.formation==='escort'&&i>0?'fighter':e.family;const def=FAMILY[family];const ground=(this.up?['boat','ship','tank','tower']:['tank','tower']).includes(family);
-   const lane=clamp(e.lane+offset,.09,.91),cross=this.up?this.arena.left+lane*352:ground?390:this.arena.top+lane*350;
+   const lane=clamp(e.lane+offset,.09,.91),cross=this.up?this.arena.left+lane*(this.arena.right-this.arena.left):ground?390:this.arena.top+lane*350;
    this.enemies.push({id:++this.sequence,x:this.up?cross:800-delay*220,y:this.up?-30+delay*220:cross,size:def.size,hp:def.hp,maxHp:def.hp,age:0,flash:0,family,motion:e.motion,lane:cross,offset:i*.7,speed:e.speed??(family==='interceptor'?83:ground?24:52),cooldown:1.8+i*.22,warning:0,ground});
    if(this.up&&ground)prepareSurface(this.enemies[this.enemies.length-1],this.scroll,family==='boat'?(i%2===0?-1:1):0);
   });

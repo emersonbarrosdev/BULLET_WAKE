@@ -40,6 +40,8 @@ export class ArcadeScene extends Phaser.Scene {
   this.load.image('arc-ocean',`${base}assets/arcade/ocean.webp`);
    this.load.spritesheet('pelagic-coast',`${base}assets/arcade/pelagic-coast.webp`,{frameWidth:512,frameHeight:512});
    this.load.image('pelagic-water',`${base}assets/arcade/pelagic-water.webp`);
+   this.load.image('pelagic-world-a',`${base}assets/arcade/stage1-ocean-world-0.webp`);
+   this.load.image('pelagic-world-b',`${base}assets/arcade/stage1-ocean-world-1.webp`);
    this.load.image('arc-stage1-hud-left',`${base}assets/arcade/stage1-hud-left.webp`);
    this.load.image('arc-stage1-hud-right',`${base}assets/arcade/stage1-hud-right.webp`);
   for(const name of ['rivet','enemies','pilots','scenery'])this.load.spritesheet('arc-'+name,`${base}assets/arcade/${name}.webp`,{frameWidth:256,frameHeight:256});
@@ -59,8 +61,8 @@ export class ArcadeScene extends Phaser.Scene {
   try{const stored=localStorage.getItem('bullet_wake_visual');if(stored!==null)this.quality=clamp(Number(stored)||0,0,2);}catch{/* Optional preference. */}
   this.backdrop=new ArcadeBackdrop(this);this.decor=this.add.graphics().setDepth(40);this.combatInk=this.add.graphics().setDepth(12);
    // Opaque, full-height illustrated cockpit art sits above every action sprite (depth <= 20).
-   this.hudLeft=this.add.image(104,216,'arc-stage1-hud-left').setDisplaySize(208,432).setDepth(39).setVisible(false);
-   this.hudRight=this.add.image(664,216,'arc-stage1-hud-right').setDisplaySize(208,432).setDepth(39).setVisible(false);
+   this.hudLeft=this.add.image(96,216,'arc-stage1-hud-left').setDisplaySize(192,432).setDepth(39).setVisible(false);
+   this.hudRight=this.add.image(672,216,'arc-stage1-hud-right').setDisplaySize(192,432).setDepth(39).setVisible(false);
   this.player=this.add.sprite(384,350,'arc-rivet',1).setDisplaySize(31,38).setDepth(18).setVisible(false);
   this.bossSprite=this.add.sprite(384,100,'arc-boss').setDepth(3).setVisible(false);
   this.hero=this.add.image(384,280,'arc-rivet',4).setDisplaySize(245,245).setDepth(1);
@@ -253,11 +255,11 @@ export class ArcadeScene extends Phaser.Scene {
  private renderHud():void{
   const w=this.world!,g=this.decor;g.clear();
   if(w.up){
-   // The two opaque illustrated cockpit panels hide everything outside x=208..560.
-   g.lineStyle(3,0x17d7ff,.95).lineBetween(208,0,208,432);
-   g.lineBetween(560,0,560,432);
-   g.lineStyle(1,0xd8ffff,.82).lineBetween(209,0,209,432);
-   g.lineBetween(559,0,559,432);
+   // The two approved illustrated cockpit panels frame the 384px gameplay lane.
+   g.lineStyle(3,0x17d7ff,.95).lineBetween(192,0,192,432);
+   g.lineBetween(576,0,576,432);
+   g.lineStyle(1,0xd8ffff,.82).lineBetween(193,0,193,432);
+   g.lineBetween(575,0,575,432);
    const line=String(w.score).padStart(8,'0');
    if(line!==this.lastHud){
     this.hud.setFontSize(17).setColor('#ffe654').setStroke('#032f74',2);

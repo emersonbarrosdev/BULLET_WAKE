@@ -1,26 +1,27 @@
 import Phaser from 'phaser';
 import type {ArcadeWorld} from './ArcadeWorld';
-import {visibleCoast} from './PelagicEnvironment';
 import {installPelagicTextures} from './PelagicPresentation';
+import {installPelagicPanorama,PELAGIC_VIEW} from './PelagicPanorama';
 import {WATER_SCALE,waterScrollOffset} from './PelagicWater';
 
-/** Stage-1 portrait ocean is clipped by its fixed TileSprite; the side HUD is opaque. */
+/** Stage-1 coast is one continuous painted world, not scattered floating islands. */
 export class ArcadeBackdrop {
  private ink:Phaser.GameObjects.Graphics;
  private scenery:Phaser.GameObjects.Image[]=[];
  private clouds:Phaser.GameObjects.Image[]=[];
+ private panorama:Phaser.GameObjects.TileSprite;
  private water:Phaser.GameObjects.TileSprite;
- private coast:Phaser.GameObjects.Image[]=[];
- private reefs:Phaser.GameObjects.Image[]=[];
  private seaFx:Phaser.GameObjects.Graphics;
  constructor(private scene:Phaser.Scene){
   this.ink=scene.add.graphics().setDepth(-20);
   installPelagicTextures(scene);
-  this.water=scene.add.tileSprite(384,216,352,432,'pelagic-water').setDepth(-19).setVisible(false);
+  const terrain=installPelagicPanorama(scene);
+  this.panorama=scene.add.tileSprite(384,216,PELAGIC_VIEW.width,432,terrain).setDepth(-19).setVisible(false);
+  // Subtle moving specular water inside the navigable corridor, not over the land.
+  this.water=scene.add.tileSprite(384,216,258,432,'pelagic-water').setDepth(-18)
+   .setAlpha(.09).setBlendMode(Phaser.BlendModes.SCREEN).setVisible(false);
   this.water.setTileScale(WATER_SCALE,WATER_SCALE);
-  for(let i=0;i<12;i++)this.coast.push(scene.add.image(0,0,'pelagic-coast').setDepth(-15).setVisible(false));
-  for(let i=0;i<6;i++)this.reefs.push(scene.add.image(0,0,'pelagic-coast',3).setDepth(-18).setVisible(false));
-  this.seaFx=scene.add.graphics().setDepth(-18);
+  this.seaFx=scene.add.graphics().setDepth(-17);
   for(let i=0;i<8;i++)this.scenery.push(scene.add.image(0,0,'arc-scenery',i%4).setDepth(-15));
   for(let i=0;i<5;i++)this.clouds.push(scene.add.image(0,0,'arc-scenery',4).setDepth(-12).setAlpha(.18));
  }
@@ -28,9 +29,10 @@ export class ArcadeBackdrop {
   this.ink.clear();this.seaFx.clear();
   for(const sprite of this.scenery)sprite.setVisible(false);
   for(const sprite of this.clouds)sprite.setVisible(false);
-  this.water.setVisible(!!world?.up);this.coast.forEach(s=>s.setVisible(false));this.reefs.forEach(s=>s.setVisible(false));
+  this.panorama.setVisible(!!world?.up);
+  this.water.setVisible(!!world?.up);
   if(!world){this.sky(time,quality);return;}
-  if(world.up)this.ocean(time,world,quality);else this.city(time,world,quality);
+  if(world.up)this.ocean(world,quality);else this.city(time,world,quality);
  }
  private sky(time:number,quality:number):void{
   const g=this.ink;
@@ -41,29 +43,26 @@ export class ArcadeBackdrop {
   for(let i=0;i<3;i++)this.scenery[i].setVisible(true).setFrame(i%2).setPosition(110+i*300,370+Math.sin(i)*20).setDisplaySize(180,110);
   for(let i=0;i<quality+3;i++)this.clouds[i].setVisible(true).setPosition(((i*215-time*(7+i*2))%1040+1040)%1040-120,60+i*47).setDisplaySize(155+i*16,90).setAlpha(.7);
  }
- private ocean(time:number,w:ArcadeWorld,quality:number):void{
-  // Simulation time freezes on pause; switching from menu clock must not jump the water UVs.
-  time=w.elapsed;
-  // Texture samples scroll opposite the image: negative UV offset moves the world DOWN.
-  // One repeatable water material, no stitched maps or transitions between images.
-  this.ink.fillStyle(0x03437d).fillRect(208,0,352,432);
-  this.water.tilePositionY=waterScrollOffset(w.scroll,time);
-  this.water.tilePositionX=Math.sin(time*.16)*1.8;
-  const pieces=visibleCoast(w.scroll,40);
-  pieces.forEach((p,i)=>this.coast[i]?.setVisible(true).setFrame(p.frame).setPosition(p.x,p.y+w.scroll).setDisplaySize(p.width,p.height));
-  // Reefs are below the surface; harbor structures and islands are independent world objects.
-  for(let i=0;i<6;i++){
-   const worldY=360-i*201-Math.floor((w.scroll+360)/1206)*1206;
-   const y=((worldY+w.scroll+100)%1206+1206)%1206-100;
-   this.reefs[i].setVisible(y<510).setPosition(i%2?505:263,y).setDisplaySize(87,62).setAlpha(.42);
-  }
-  // Short curved wavelets follow the same world transform. No chevrons, haze or seam covers.
-  const g=this.seaFx;
-  const count=quality===0?12:quality===1?18:26;
+ private ocean(w:ArcadeWorld,quality:number):void{
+  // Both scenery and the world simulation use the same unmodified scroll value.
+  // Pause freezes land. Water highlights still drift during the final boss arena.
+  const time=w.elapsed;
+  this.ink.fillStyle(0x074785).fillRect(PELAGIC_VIEW.left,0,PELAGIC_VIEW.width,432);
+  this.panorama.tilePositionY=-w.scroll;
+  this.water.tilePositionY=waterScrollOffset(w.scroll*.78,time*2.2);
+  this.water.tilePositionX=Math.sin(time*.18)*1.6;
+  const g=this.seaFx,count=quality===0?8:quality===1?13:19;
   for(let i=0;i<count;i++){
-   const y=((i*43+w.scroll)%530+530)%530-50,x=225+(i*71%318);
-   g.lineStyle(.7,0xb6f9ff,.12+.12*Math.sin(time*.8+i)**2);
-   g.beginPath();for(let j=0;j<=8;j++){const xx=x+j*1.8,yy=y+Math.sin(j*.35+i+time*.25)*1.6;if(j===0)g.moveTo(xx,yy);else g.lineTo(xx,yy);}g.strokePath();
+   const y=((i*53+w.scroll*.87)%510+510)%510-39;
+   const x=245+(i*79%270);
+   g.lineStyle(.7,0xb4efff,.13+.08*Math.sin(time*.95+i)**2);
+   g.beginPath();
+   for(let j=0;j<=8;j++){
+    const xx=x+j*2.5;
+    const yy=y+Math.sin(j*.58+i*.9+time*.3)*1.15;
+    if(j===0)g.moveTo(xx,yy);else g.lineTo(xx,yy);
+   }
+   g.strokePath();
   }
  }
  private city(time:number,w:ArcadeWorld,quality:number):void{
@@ -85,7 +84,7 @@ export class ArcadeBackdrop {
   void time;
  }
  destroy():void{
-  this.ink.destroy();this.seaFx.destroy();this.water.destroy();this.coast.forEach(s=>s.destroy());this.reefs.forEach(s=>s.destroy());
+  this.ink.destroy();this.seaFx.destroy();this.panorama.destroy();this.water.destroy();
   this.scenery.forEach(s=>s.destroy());this.clouds.forEach(s=>s.destroy());
   void this.scene;
  }
