@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PELAGIC_COAST,visibleCoast,waterCorridor,touchesCoast,prepareSurface,moveSurface,surfaceMount} from '../src/game/arcade/PelagicEnvironment.ts';
 import {waterScrollOffset,WATER_SCALE,WATER_TILE_SIZE} from '../src/game/arcade/PelagicWater.ts';
+import {PELAGIC_SHORE,visibleShore,shoreAnchoredToEdge} from '../src/game/arcade/PelagicShoreline.ts';
 import {ArcadeWorld} from '../src/game/arcade/ArcadeWorld.ts';
 import {MISSIONS} from '../src/game/arcade/content.ts';
 
@@ -43,4 +44,19 @@ test('stage 1 draws a single crisp unfiltered ocean base until coastline approva
  assert.match(source,/tileSprite\(384,216,STAGE1_WIDTH,432,'pelagic-water'\)/);
  assert.match(source,/waterScrollOffset\(w\.scroll,time\*2\.2\)/);
  assert.doesNotMatch(source,/installPelagicPanorama|this\.panorama|\.setAlpha\(\.09\)|setBlendMode\(/);
+});
+
+test('stage 1 shoreline attaches to outside banks, preserves orientation and matches world scrolling',()=>{
+ assert(PELAGIC_SHORE.length>=190);
+ assert(PELAGIC_SHORE.some(p=>p.reef));
+ assert(PELAGIC_SHORE.every(shoreAnchoredToEdge));
+ assert(PELAGIC_SHORE.every(p=>[0,1,3,6].includes(p.frame)),'no dock/lighthouse content before approval gate 3');
+ for(let scroll=0;scroll<13000;scroll+=47){
+  const before=visibleShore(scroll),after=visibleShore(scroll+5);
+  assert(before.length<=24,'fixed visible sprite pool must cover the full coast');
+  for(const p of before){if(!after.includes(p))continue;assert.equal((p.y+scroll+5)-(p.y+scroll),5);}
+ }
+ const source=readFileSync(new URL('../src/game/arcade/ArcadeBackdrop.ts',import.meta.url),'utf8');
+ assert.match(source,/setPosition\\(p\\.x,p\\.y\\+w\\.scroll\\)/);
+ assert.doesNotMatch(source,/this\\.panorama|setBlendMode\\(/);
 });

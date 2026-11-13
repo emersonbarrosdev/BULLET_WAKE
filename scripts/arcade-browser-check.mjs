@@ -32,6 +32,7 @@ try{
  await evaluate(`window.seek=(time)=>{const w=s.world;w.route=time;w.waveIndex=w.mission.encounters.findIndex(e=>e.at>time);if(w.waveIndex<0)w.waveIndex=w.mission.encounters.length;w.supplyIndex=11;w.miniStarted=time>155;w.bossStarted=false;w.enemies=[];w.cargo=[];w.obstacles=[];w.nextObstacle=time+10;w.boss=undefined;w.bullets.forEach(b=>b.active=false);w.player.invulnerable=100;};`);
  await evaluate(`s.show('pilot')`);await shot('pilots');await evaluate(`s.show('missions')`);await shot('missions');
  await evaluate(`s.begin(0);s.world.introTime=0;s.touch.fire=true;s.setTouchVisible(false);`);await sleep(1500);await shot('phase1-start');
+ if(process.env.BW_CAPTURE_LOG==='1'){const visible=await evaluate('s.backdrop.shoreSprites.filter(n=>n.visible).length');assert(visible>=4&&visible<=24,'coastal scenery not rendered: '+visible);}
  await evaluate(`seek(85);s.world.weapons.weaponLevel=3;s.world.spawnEncounter({family:'fighter',formation:'trio',motion:'straight',lane:.5});s.setTouchVisible(false)`);await sleep(1000);await shot('phase1-coast');
  await evaluate(`s.show('pause')`);await shot('pause');report.pause=await evaluate(`(()=>{const a=s.world.elapsed;return new Promise(r=>setTimeout(()=>r({before:a,after:s.world.elapsed,audio:s.audio.status()}),200));})()`);assert.equal(report.pause.before,report.pause.after);
  await evaluate(`s.audio.unlock();s.show('controls')`);await shot('controls');assert.equal(await evaluate('s.audio.status().paused'),true);await evaluate(`s.pauseOrigin='pause';s.show('settings')`);await shot('settings');
