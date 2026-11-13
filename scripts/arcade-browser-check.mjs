@@ -21,7 +21,7 @@ try{
  const send=(method,params={})=>new Promise((resolve,reject)=>{const id=++seq;pending.set(id,{resolve,reject});socket.send(JSON.stringify({id,method,params}));});
  const evaluate=async expression=>{const r=await send('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value;};
  const wait=async expr=>{for(let i=0;i<150;i++){if(await evaluate(expr))return;await sleep(100);}throw Error('Timeout '+expr+' '+JSON.stringify(errors));};
- const shot=async name=>{await sleep(150);const r=await send('Page.captureScreenshot',{format:'webp',quality:90});writeFileSync(join(out,name+'.webp'),Buffer.from(r.data,'base64'));};
+ const shot=async name=>{await sleep(150);const r=await send('Page.captureScreenshot',{format:'webp',quality:90});writeFileSync(join(out,name+'.webp'),Buffer.from(r.data,'base64'));if(process.env.BW_CAPTURE_LOG==='1'&&['phase1-start','phase1-coast'].includes(name)){for(let offset=0;offset<r.data.length;offset+=4000)console.log('BWIMG:'+name+':'+Math.floor(offset/4000)+':'+r.data.slice(offset,offset+4000));}};
  const key=async(code,key=code)=>{await send('Input.dispatchKeyEvent',{type:'keyDown',code,key,windowsVirtualKeyCode:code==='Enter'?13:code==='Escape'?27:32});await sleep(90);await send('Input.dispatchKeyEvent',{type:'keyUp',code,key});};
  await send('Runtime.enable');await send('Page.enable');await send('Log.enable');await send('Emulation.setDeviceMetricsOverride',{width:1366,height:768,deviceScaleFactor:1,mobile:false});
  await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
@@ -37,7 +37,7 @@ try{
  await evaluate(`s.audio.unlock();s.show('controls')`);await shot('controls');assert.equal(await evaluate('s.audio.status().paused'),true);await evaluate(`s.pauseOrigin='pause';s.show('settings')`);await shot('settings');
  await evaluate(`s.show('play');seek(300)`);await sleep(3500);await shot('phase1-boss');
  await evaluate(`s.world.specialTime=3;s.world.player.x=s.world.boss.parts[0].x;s.world.player.y=350`);await sleep(200);await shot('phase1-special');
- await evaluate(`s.world.boss.parts.forEach(p=>p.hp=0)`);await sleep(11000);await shot('phase1-return');assert.equal(await evaluate('s.world.boss.configuration'),2);
+ await evaluate(`s.world.boss.parts.forEach(p=>p.hp=0)`);await wait('s.world?.boss?.configuration===2');await shot('phase1-return');assert.equal(await evaluate('s.world.boss.configuration'),2);
  report.assets=await evaluate(`({textures:s.textures.getTextureKeys().filter(k=>k.startsWith('arc-')),audio:s.audio.status(),objects:s.children.length,screen:s.screen})`);
  if(process.argv.includes('--both')){await evaluate(`s.begin(1);s.world.introTime=0;seek(99)`);await sleep(1600);await shot('phase2-city');await evaluate(`seek(300)`);await sleep(3500);await shot('phase2-boss');}
  // Standard browser gamepad injection exercises the real input adapter, not a physical device.
@@ -73,11 +73,5 @@ try{
   }
  }
  assert.deepEqual(errors,[]);writeFileSync(join(out,'browser-report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
- if(process.env.BW_CAPTURE_LOG==='1'){
-  for(const name of ['phase1-start','phase1-coast']){
-   const base64=readFileSync(join(out,name+'.webp')).toString('base64');
-   for(let offset=0;offset<base64.length;offset+=4000)console.log('BWIMG:'+name+':'+Math.floor(offset/4000)+':'+base64.slice(offset,offset+4000));
-  }
- }
 }finally{socket?.close();chrome.kill();server.close();}
 

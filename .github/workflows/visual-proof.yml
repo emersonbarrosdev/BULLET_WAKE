@@ -19,13 +19,15 @@ jobs:
           node-version: "22"
       - run: npm ci --no-audit --no-fund
       - run: npm run build
+      - name: Descartar screenshots antigas antes do teste
+        run: rm -f docs/screenshots/cartoon/phase1-start.webp docs/screenshots/cartoon/phase1-coast.webp docs/screenshots/cartoon/phase1-boss.webp docs/screenshots/cartoon/phase1-return.webp
       - name: Capturar gameplay no Chrome (e validar eventos)
         env:
           BW_CAPTURE_LOG: "1"
           CHROME_BIN: /usr/bin/google-chrome
         run: node scripts/arcade-browser-check.mjs
       - name: Guardar screenshots da gameplay
-        if: success()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bullet-wake-visual-proof
