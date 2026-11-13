@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PELAGIC_COAST,visibleCoast,waterCorridor,touchesCoast,prepareSurface,moveSurface,surfaceMount} from '../src/game/arcade/PelagicEnvironment.ts';
 import {waterScrollOffset,WATER_SCALE,WATER_TILE_SIZE} from '../src/game/arcade/PelagicWater.ts';
-import {coastBoundary,coastAtScroll,COAST_PERIOD,COAST_WIDTH} from '../src/game/arcade/PelagicCoastAtlas.ts';
+import {coastBoundary,coastAtScroll,COAST_PERIOD,COAST_WIDTH} from '../src/game/arcade/PelagicCoastGeometry.ts';
 import {ArcadeWorld} from '../src/game/arcade/ArcadeWorld.ts';
 import {MISSIONS} from '../src/game/arcade/content.ts';
 
@@ -54,6 +54,7 @@ test('coast is a continuous, periodic shoreline, without pasted island sprites',
  assert(backdrop.includes("installCoastTexture(scene)"));
  assert(backdrop.includes('this.coast.tilePositionY='));
  assert(terrain.includes('ctx.clip()'), 'coastal atlas artwork must stay inside land');
+ assert(terrain.includes('makeVegetationStamps'), 'remove premade oval islands and water from stamps');
  assert(!terrain.includes('globalCompositeOperation'), 'no fog/painted sea masks');
  for(const side of [-1,1]){
   assert(Math.abs(coastBoundary(0,side)-coastBoundary(COAST_PERIOD,side))<.00001);
