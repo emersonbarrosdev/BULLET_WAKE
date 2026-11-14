@@ -33,7 +33,7 @@ try{
  await fixture(4200-1000+90,80,true);await dual('03-harbor-lighthouse');
  if(!process.argv.includes('--preview')){
   await fixture(650,125,true);await dual('04-open-sea');
-  await fixture(4200-3160+80,299,true);await evaluate('s.world.miniStarted=true;advance(4);');await dual('05-boss-approach');
+  await fixture(8400-1000+40,299,true);await evaluate('s.world.miniStarted=true;advance(4);');await dual('05-boss-approach');
   report.fixtureNote='Real Chrome/Phaser captures with controlled scroll and encounters for visual coverage; not claimed as uninterrupted human play.';
   await evaluate('s.begin(0);s.scene.pause();');report.route=[];
   for(const target of[8,80,150,230,305,400]){await evaluate(`advance(${target}-s.world.elapsed)`);report.route.push(await evaluate('({elapsed:s.world.elapsed,scroll:s.world.scroll,state:s.world.state,enemies:s.world.enemies.length})'));if(target===80)await dual('06-uninterrupted-route-80s');}

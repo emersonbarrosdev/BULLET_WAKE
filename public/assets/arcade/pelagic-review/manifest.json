@@ -1,18 +1,14 @@
 {
   "generator": "native imagegen",
-  "packing": "uniform resampling only; original alpha preserved",
+  "packing": "12-frame connected archipelago chains; exact alpha profiles",
   "sources": [
     {
-      "file": "exec-bbec6276-1d21-45bc-bc31-ea8eebfd0731.png",
-      "sha256": "6594154bb06e30ca7ead995a7c2969c658f7b87de9b14ad13e295eb791756afd"
+      "file": "base-formations-8.webp",
+      "sha256": "d7cfec91251a7244b4a6168b1b8b56fed09b69f9562f61cf0b7f5daf61d8d54f"
     },
     {
-      "file": "exec-2997db04-5cf1-4697-891a-34f2349ed2b0.png",
-      "sha256": "299abc968bc3533565adc242bb86f2f92191a3cccea95d2eed935f59597ba879"
-    },
-    {
-      "file": "exec-53085c2a-5ade-4e9f-b74c-2982a92d91ed.png",
-      "sha256": "60373ad8adcb5efb5efe9b722b1845e4b8205392a4c39cec5c83dc8a2f4a248d"
+      "file": "base-continuous-4.webp",
+      "sha256": "b03803b2ac7917d4a2dbc2d64ce0daa42652b5fa4e353b3d4629d6792451a871"
     },
     {
       "file": "pelagic-archipelago.webp",
@@ -26,7 +22,7 @@
   "outputs": [
     {
       "file": "formations.webp",
-      "sha256": "d7cfec91251a7244b4a6168b1b8b56fed09b69f9562f61cf0b7f5daf61d8d54f"
+      "sha256": "a3a414afd3eb19748814f82027921295f783d9c0f2c2cdbbe48a9c100f770bef"
     },
     {
       "file": "water.webp",
@@ -34,7 +30,11 @@
     },
     {
       "file": "wakes.webp",
-      "sha256": "65cdd4554dfcfe8bf50d208c1ba0a4d94b932dcbf1529239fa6a57948717dd5c"
+      "sha256": "2f092f4206224983562de4b16f187b3f13bbef8a05ff6faba3277b7043fcad1a"
+    },
+    {
+      "file": "seagulls.webp",
+      "sha256": "751bb1fe2dea1fadaa2de82f91b33296f15afcb685e847c76212178eb940bae2"
     }
   ]
 }

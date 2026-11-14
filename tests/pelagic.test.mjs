@@ -62,7 +62,10 @@ test('rendered alpha shoreline fits the navigation envelope; open-sea stretch co
   const p=PELAGIC_COAST.find(p=>Math.abs(p.y-(spec.yStart+spec.yEnd)/2)<.01&&p.side===spec.side);
   assert(p);assert(row[0]+192>=p.x-p.width/2-.01);assert(row[1]+192<=p.x+p.width/2+.01);
  }
- for(let y=3300;y<3900;y++){assert(isOpenSeaAt(y,-1));assert(isOpenSeaAt(y,1));}
+ for(let y=3220;y<3890;y++)assert(isOpenSeaAt(y,-1)||isOpenSeaAt(y,1));
+ assert(!isOpenSeaAt(3330,-1)&&isOpenSeaAt(3330,1));
+ assert(isOpenSeaAt(3550,-1)&&!isOpenSeaAt(3550,1));
+ assert(!isOpenSeaAt(3780,-1)&&isOpenSeaAt(3780,1));
 });
 
 test('paired boats retain separate lanes instead of converging on one center point',()=>{

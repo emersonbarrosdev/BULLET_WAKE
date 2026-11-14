@@ -12,7 +12,7 @@ export const FENDA:Mission={id:1,name:'FENDA PELÁGICA',perspective:'UP',kind:'m
  wave(46,'boat','pair','stationary',.25),wave(52,'fighter','stagger','straight',.7),wave(63,'tower','solo','stationary',.85),wave(69,'acrobat','trio','turn',.4),wave(79,'ship','solo','stationary',.3),
  wave(91,'fighter','v','sine',.5),wave(101,'interceptor','pincer','diagonal',.5),wave(111,'bomber','escort','straight',.65),wave(123,'acrobat','quartet','curve',.3),
  wave(155,'ship','solo','stationary',.5),
- wave(202,'tank','pair','stationary',.2),wave(207,'fighter','horde','sine',.6),wave(217,'interceptor','pair','dive',.3),wave(226,'boat','pair','stationary',.75),wave(233,'acrobat','successive','turn',.5),wave(244,'bomber','escort','retreat',.35),
+ wave(202,'tower','pair','stationary',.2),wave(207,'fighter','horde','sine',.6),wave(217,'interceptor','pair','dive',.3),wave(226,'boat','pair','stationary',.75),wave(233,'acrobat','successive','turn',.5),wave(244,'bomber','escort','retreat',.35),
  wave(256,'fighter','v','accelerate',.5),wave(264,'interceptor','pincer','diagonal',.5),wave(271,'acrobat','quartet','zigzag',.45),wave(279,'bomber','pair','straight',.65),
 ]};
 export const SOLAR:Mission={id:2,name:'CIDADE SOLAR',perspective:'SIDE',kind:'main',allowedPilots:['nolan'],boss:'MEGA DIRIGÍVEL GIRO',regions:['HORIZONTE SOLAR','AVENIDA AÉREA','PONTES DO AMANHÃ','VIA EXPRESSA','ESCOLTA GIRO','DISTRITO DAS CORES','ALTOS DA CIDADE'],encounters:[

@@ -51,9 +51,10 @@ export function touchesCoast(x:number,worldY:number,radius:number):boolean{
 }
 export function prepareSurface(e:SurfaceActor,scroll:number,entryHint?:-1|0|1):void{
  if(e.family==='tank'||e.family==='tower'){
-  // Prefer a near-future island/port. The unit and its terrain share exactly the same scroll transform.
-  const candidates=PELAGIC_COAST.filter(p=>p.side<0&&p.y+scroll>-220&&p.y+scroll<160);
-  const anchor=candidates[e.id%Math.max(1,candidates.length)]??visibleCoast(scroll,260)[0]??PELAGIC_COAST[0];
+  // Prefer a near-future large coastal formation/port (never a tiny sea-stack rock).
+  const candidates=PELAGIC_COAST.filter(p=>p.side<0&&p.height>=180&&p.y+scroll>-220&&p.y+scroll<160);
+  const fallback=visibleCoast(scroll,260).find(p=>p.height>=180)??PELAGIC_COAST.find(p=>p.height>=180)??PELAGIC_COAST[0];
+  const anchor=candidates[e.id%Math.max(1,candidates.length)]??fallback;
   const anchorY=anchor.groundY+(e.id%2?16:-16);
   e.navigation={worldY:anchor.y,heading:Math.PI,entry:0,phase:'hold',anchor:anchor.id,anchorY};
   e.x=anchor.x+anchor.groundX;e.y=anchor.y+scroll+anchorY;return;
@@ -87,7 +88,11 @@ export function moveSurface(e:SurfaceActor,scroll:number,dt:number):void{
  if(!entrance||touchesCoast(e.x,nextY,radius))e.x=clamp(e.x,corridor.left,corridor.right);
  n.worldY=nextY;e.y=n.worldY+scroll;
  const vx=(e.x-oldX)/dt,vy=(n.worldY-oldY)/dt;
- if(Math.hypot(vx,vy)>1){const desired=Math.atan2(vy,vx)+Math.PI/2;const delta=Math.atan2(Math.sin(desired-n.heading),Math.cos(desired-n.heading));n.heading+=clamp(delta,-dt*2.4,dt*2.4);}
+ if(Math.hypot(vx,vy)>.2||n.phase==='hold'){
+  const desired=Math.atan2(Math.max(12,vy),vx*.85)+Math.PI/2;
+  const delta=Math.atan2(Math.sin(desired-n.heading),Math.cos(desired-n.heading));
+  n.heading+=clamp(delta*2.6*dt,-dt*1.5,dt*1.5);
+ }
 }
 /** Hull art faces down; rotate its turret socket with the actual hull heading. */
 export function surfaceMount(e:SurfaceActor):{x:number;y:number}{

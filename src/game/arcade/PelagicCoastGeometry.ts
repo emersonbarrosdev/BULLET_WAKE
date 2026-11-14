@@ -1,6 +1,6 @@
 import {COAST_ALPHA_PROFILES} from './PelagicAlphaProfiles.ts';
 
-/** Authored maritime itinerary. One complete illustration per landmass, no tiled banks. */
+/** Authored maritime itinerary. Connected coastal peninsulas, beaches, harbors, and headlands. */
 export const COAST_WIDTH=384;
 export const COAST_PERIOD=4200;
 export const COAST_PADDING=150;
@@ -13,36 +13,40 @@ export interface ArchipelagoFormationSpec {
  readonly groundX:number;readonly groundY:number;
 }
 function formation(id:number,side:CoastSide,y:number,frame:number,kind:string):ArchipelagoFormationSpec{
- const width=frame===5?120:frame===6?170:220;
+ const width=frame===5?120:220;
  const height=width;
 
  const rows=COAST_ALPHA_PROFILES[frame].filter(([a,b])=>b>a);
  const min=Math.min(...rows.map(r=>r[0])),max=Math.max(...rows.map(r=>r[1]));
  const centerX=side<0?110-(max-.5)*width:COAST_WIDTH-110-(min-.5)*width;
+ const mid=((min+max)/2-.5)*width;
  const maxExtent=110;
  return {id,side,yStart:y-height/2,yEnd:y+height/2,maxExtent,
-  kind,legacyFrame:frame===2?4:frame===1?2:0,artFrame:frame,width,centerX,
-  groundX:frame===2?width*.22:side<0?width*.13:-width*.12,
-  groundY:frame===2?height*.24:height*.19};
+  kind,legacyFrame:frame===2?4:frame===1||frame===9?2:0,artFrame:frame,width,centerX,
+  groundX:mid+(side<0?width*.06:-width*.06),
+  groundY:frame===2?height*.18:height*.14};
 }
 export const ARCHIPELAGO_SPECS:ReadonlyArray<ArchipelagoFormationSpec>=Object.freeze([
- formation(0,-1,120,0,'crescent-beach'),
- formation(1,1,-120,7,'northern-cliff'),
- formation(2,-1,540,4,'fishing-village'),
- formation(3,1,290,3,'cliff-bay'),
- formation(4,-1,1000,2,'harbor-left'),
- formation(5,1,950,1,'lighthouse-cliff'),
- formation(6,-1,1440,5,'sea-stacks'),
- formation(7,1,1390,6,'palm-islet'),
- formation(8,-1,1840,6,'southern-islet'),
- formation(9,1,1810,3,'outer-cliffs'),
- formation(10,-1,2250,0,'southern-cove'),
- formation(11,1,2230,5,'southern-stacks'),
- formation(12,-1,2700,4,'southern-village'),
- formation(13,1,2650,1,'southern-lighthouse'),
- formation(14,-1,3160,2,'cargo-quay'),
- formation(15,1,3070,7,'last-headland'),
- // 3270..3970 is deliberately unbroken open ocean on BOTH sides.
+ formation(0,-1,70,8,'northern-continuous-beach-left'),
+ formation(1,1,-180,3,'northern-palm-beach-right'),
+ formation(2,-1,440,4,'fishing-village-beach-left'),
+ formation(3,1,190,11,'coral-reef-beach-right'),
+ formation(4,-1,810,2,'main-harbor-left'),
+ formation(5,1,515,5,'northern-coastal-rocks-right'),
+ formation(6,-1,1210,8,'mid-golden-beach-left'),
+ formation(7,1,835,1,'lighthouse-promontory-right'),
+ formation(8,-1,1580,10,'tropical-lagoon-boathouse-left'),
+ formation(9,1,1205,11,'mid-coral-palm-cove-right'),
+ formation(10,-1,1950,0,'crescent-palm-beach-left'),
+ formation(11,1,1575,7,'terraced-cliff-beach-right'),
+ formation(12,-1,2320,4,'southern-village-beach-left'),
+ formation(13,1,2175,9,'auxiliary-harbor-right'),
+ formation(14,-1,2840,6,'southern-palm-islet-left'),
+ formation(15,1,2545,3,'southern-palm-beach-right'),
+ formation(16,-1,3330,8,'lagoon-palm-beach-left'),
+ formation(17,1,2915,7,'boss-approach-cliff-beach-right'),
+ formation(18,-1,3780,10,'western-boathouse-beach-left'),
+ formation(19,1,3550,11,'eastern-palm-cove-right'),
 ]);
 export const normalizeCoastY=(y:number):number=>((y%COAST_PERIOD)+COAST_PERIOD)%COAST_PERIOD;
 /** Conservative silhouette row, including the native shallow-water fringe. */
