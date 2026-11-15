@@ -145,25 +145,28 @@ export class ArcadeBackdrop {
       const holding = e.navigation?.phase === 'hold';
       const angle = heading - Math.PI / 2;
       const fx = Math.cos(angle), fy = Math.sin(angle), sx = -fy, sy = fx;
-      // Grounded underwater keel shadow + soft stern turbulence + clean tapered Kelvin wave arms
-      g.fillStyle(0x031838, .28).fillEllipse(e.x + 3, e.y + 4, e.size * .52, e.size * .84);
-      g.fillStyle(0x28d6f0, holding ? .16 : .26).fillEllipse(e.x - fx * e.size * .42, e.y - fy * e.size * .42, e.size * .34, e.size * .24);
-      const cx = e.x + fx * e.size * .16, cy = e.y + fy * e.size * .16;
+      // Soft underwater keel shadow + concentric sea-surface rings (submarine style) + undulating aqua ribbon wakes
+      g.fillStyle(0x031838, .26).fillEllipse(e.x + 2, e.y + 3, e.size * .48, e.size * .76);
+      const pulseA = (time * .95 + e.id * .31) % 1;
+      const pulseB = (pulseA + .5) % 1;
+      for (const [k, p] of [pulseA, pulseB].entries()) {
+        const ringAlpha = (1 - p) * (holding ? .40 : .54);
+        const rx = e.size * (.44 + p * .34), ry = e.size * (.72 + p * .32);
+        g.lineStyle(k === 0 ? 1.4 : 1.0, k === 0 ? 0x8ef5ff : 0xf0ffff, ringAlpha);
+        g.strokeEllipse(e.x - fx * e.size * .04, e.y - fy * e.size * .04, rx, ry);
+      }
+      g.fillStyle(0x28d6f0, holding ? .2 : .3).fillEllipse(e.x - fx * e.size * .40, e.y - fy * e.size * .40, e.size * .34, e.size * .22);
+      g.fillStyle(0xd8ffff, holding ? .16 : .28).fillEllipse(e.x - fx * e.size * .44, e.y - fy * e.size * .44, e.size * .20, e.size * .12);
+      const segs = quality ? 7 : 4;
       for (const side of [-1, 1]) {
-        g.lineStyle(1.4, 0x82f0ff, holding ? .26 : .46);
-        g.beginPath();
-        for (let j = 0; j <= 8; j++) {
-          const t = j / 8, along = (.22 - t * 1.02) * e.size, across = (Math.sin(t * Math.PI * .75) * e.size * .16 + t * e.size * .16) * side;
-          const x = cx + fx * along + sx * across, y = cy + fy * along + sy * across;
-          if (j === 0) g.moveTo(x, y); else g.lineTo(x, y);
-        }
-        g.strokePath();
-        for (let j = 0; j < (quality ? 10 : 5); j++) {
-          const t = (j / 10 + time * .65) % 1;
-          const aft = e.size * .36 + t * e.size * .82, across = (2.5 + t * e.size * .22) * side + Math.sin(time * 4.5 + j) * 1.0;
-          const x = e.x - fx * aft + sx * across, y = e.y - fy * aft + sy * across;
-          g.fillStyle(j % 2 === 0 ? 0xf2ffff : 0x66e2f5, (1 - t) * (holding ? .24 : .48));
-          g.fillEllipse(x, y, 1.4 + t * 1.7, 1.0 + t * 1.1);
+        for (let j = 0; j < segs; j++) {
+          const t0 = j / segs, t1 = (j + 1) / segs;
+          const fade = (1 - t0) * (holding ? .24 : .46);
+          const a0 = e.size * (.34 + t0 * .78), a1 = e.size * (.34 + t1 * .78);
+          const w0 = (e.size * .10 + t0 * e.size * .22) * side + Math.sin(time * 5.2 - t0 * 8 + e.id) * 1.8;
+          const w1 = (e.size * .10 + t1 * e.size * .22) * side + Math.sin(time * 5.2 - t1 * 8 + e.id) * 1.8;
+          g.lineStyle(2.4 - t0 * 1.4, j < 2 ? 0xdffeff : 0x5be4fa, fade);
+          g.lineBetween(e.x - fx * a0 + sx * w0, e.y - fy * a0 + sy * w0, e.x - fx * a1 + sx * w1, e.y - fy * a1 + sy * w1);
         }
       }
     }

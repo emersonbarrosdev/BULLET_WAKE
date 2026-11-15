@@ -1,11 +1,11 @@
 {
   "errors": [],
   "pause": {
-    "before": 3.9416666666666553,
-    "after": 3.9416666666666553,
+    "before": 3.9249999999999887,
+    "after": 3.9249999999999887,
     "audio": {
       "track": "stage1",
-      "position": 3.868714,
+      "position": 3.817034,
       "volume": 0.0936,
       "paused": true,
       "failed": false
@@ -40,12 +40,12 @@
     ],
     "audio": {
       "track": "boss1",
-      "position": 5.121397,
+      "position": 5.026469,
       "volume": 0.0936,
       "paused": false,
       "failed": false
     },
-    "objects": 809,
+    "objects": 814,
     "screen": "play"
   },
   "gamepad": {

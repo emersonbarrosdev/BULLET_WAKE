@@ -563,15 +563,16 @@ export class ArcadeScene extends Phaser.Scene {
    if(w.up&&e.navigation?.anchor!==undefined)s.setTexture(e.family==='tower'?TOWER_TEXTURE:EMPLACEMENT_TEXTURE,0).setOrigin(.5,e.family==='tower'?.78:.5).setDisplaySize(e.size*(e.family==='tower'?1.8:1.3),e.size*(e.family==='tower'?1.8:1.3));
    s.clearTint().setTintMode(Phaser.TintModes.MULTIPLY).setAlpha(1);
    if(w.up&&(e.family==='boat'||e.family==='ship')){
-    const hullFrame=Math.floor(time*8+e.id*1.7)%6;
+    const hullFrame=Math.floor(time*10+e.id*1.7)%6;
     s.setTexture('arc-wet-hull-'+(e.family==='boat'?4:5),hullFrame);
    }
    if(e.submarine)s.setTexture(SUB_ART,e.submarine.phase==='hold'?1:0).setOrigin(.5,.57).setDisplaySize(e.size*1.06,e.size*1.06).setRotation(0).setFlipX(e.submarine.side>0).setAlpha(e.submarine.exposure).setDepth(2);
    if(e.ground&&!(w.up&&e.family==='tower')&&!e.submarine){let turret=this.turrets.get(e.id);if(!turret){turret=this.add.sprite(e.x,e.y,'arc-boss',w.up?3:6).setDepth(5).setOrigin(.5,w.up?.4:.5);this.turrets.set(e.id,turret);}const mount=w.up?surfaceMount(e):{x:e.x,y:e.y-e.size*.09};const tSize=w.up&&e.navigation?.anchor===undefined?e.size*.28:e.size*.56;turret.setPosition(mount.x,mount.y).setDisplaySize(tSize,tSize).setRotation(Math.atan2(w.player.y-mount.y,w.player.x-mount.x)-(w.up?Math.PI/2:Math.PI));turret.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);this.hitOverlays.draw(turret,e.flash);
     if(w.up&&e.navigation?.anchor===undefined){
-     const bob=Math.sin(time*2.8+e.id*1.9)*1.5,roll=Math.sin(time*2.3+e.id*1.3)*.055,swell=e.size*(1+Math.sin(time*2.8+e.id)*.024);
+     const phase=time*3.0+e.id*1.9;
+     const bob=Math.sin(phase)*1.8,roll=Math.sin(time*2.5+e.id*1.3)*.065,crest=Math.sin(phase);
      const heading=e.navigation?.heading??Math.PI,angle=heading-Math.PI/2,fx=Math.cos(angle),fy=Math.sin(angle);
-     s.setPosition(e.x,e.y+bob).setDisplaySize(swell,swell).setRotation(heading+roll);
+     s.setPosition(e.x,e.y+bob).setDisplaySize(e.size*(1+crest*.03),e.size*(1-crest*.02)).setRotation(heading+roll);
      turret.setPosition(e.x-fx*e.size*.08,e.y+bob-fy*e.size*.08);
     }
    }
