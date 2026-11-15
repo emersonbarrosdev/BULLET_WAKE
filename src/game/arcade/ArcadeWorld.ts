@@ -230,12 +230,12 @@ export class ArcadeWorld {
   }else if(b.phase==='absent'){
    if(b.timer>=5){b.configuration=2;b.size=this.up?236:324;b.phase='return';b.timer=0;this.installParts(b,6);this.emit('return');}
   }else if(b.phase==='sink'){
-   if(Math.floor(b.timer*9)!==Math.floor((b.timer-dt)*9))this.emit('explosion',b.x+Math.sin(b.timer*31)*b.size*.3,b.y+Math.cos(b.timer*23)*b.size*.25,.6+b.timer*.12);
-   if(b.timer>2.6){const mini=b.mini;this.boss=undefined;this.clearHostileBullets();if(!mini){this.state='exit';this.exitTime=0;this.specialTime=0;this.bomb=undefined;this.cargo=[];this.enemies=[];this.obstacles=[];for(const shot of this.bullets)shot.active=false;this.score+=10000+this.lives*1000;this.emit('victory');}else{this.score+=3000;this.emit('radio',0,0,1,this.up?'A pista está livre. Próxima parada: a fenda!':'Patrulha vencida! Vamos ao distrito das cores!');}}return;
+   if(b.timer<.42&&Math.floor(b.timer*10)!==Math.floor((b.timer-dt)*10))this.emit('explosion',b.x+Math.sin(b.timer*31)*b.size*.3,b.y+Math.cos(b.timer*23)*b.size*.25,b.mini?1.2:1.6);
+   if(b.timer>.75){const mini=b.mini;this.boss=undefined;this.clearHostileBullets();if(!mini){this.state='exit';this.exitTime=0;this.specialTime=0;this.bomb=undefined;this.cargo=[];this.enemies=[];this.obstacles=[];for(const shot of this.bullets)shot.active=false;this.score+=10000+this.lives*1000;this.emit('victory');}else{this.score+=3000;this.emit('radio',0,0,1,this.up?'A pista está livre. Próxima parada: a fenda!':'Patrulha vencida! Vamos ao distrito das cores!');}}return;
   }else{
    if(this.up)b.x=384+Math.sin(b.age*.65)*14;else b.y=210+Math.sin(b.age*.65)*65;
    const alive=b.parts.filter(p=>p.hp>0);
-   if(!alive.length){if(!b.mini&&this.up&&b.configuration===1){b.phase='retreat';b.timer=0;this.clearHostileBullets();this.emit('explosion',b.x,b.y,2);}else{b.phase='sink';b.timer=0;this.clearHostileBullets();}return;}
+   if(!alive.length){if(!b.mini&&this.up&&b.configuration===1){b.phase='retreat';b.timer=0;this.clearHostileBullets();this.emit('explosion',b.x,b.y,2);}else{b.phase='sink';b.timer=0;this.clearHostileBullets();this.emit('explosion',b.x,b.y,b.mini?2.5:3.3);for(const a of [.55,2.15,3.7,5.25]){const r=b.size*.34;this.emit('explosion',b.x+Math.cos(a)*r,b.y+Math.sin(a)*r*.75,b.mini?1.5:2);}}return;}
    b.attackTime+=dt;const warning=b.attack%4===3?1.35:.8,shootEnd=warning+(b.attack%4===2?1.2:.65),cycle=shootEnd+(b.mini?1.2:1.05);
    if(b.attackTime<warning){for(const [i,p] of alive.entries()){const active=b.attack%4===3?i===b.attack%alive.length:alive.length<=2||i%2===b.attack%2;p.warning=active?b.attackTime/warning:0;}b.aimX=this.player.x;b.aimY=this.player.y;}
    else if(b.attackTime<shootEnd){const volley=Math.floor((b.attackTime-warning)/.3);if(volley>=b.volley){b.volley=volley+1;this.bossVolley(b,alive,volley);}for(const p of alive)p.warning=0;}

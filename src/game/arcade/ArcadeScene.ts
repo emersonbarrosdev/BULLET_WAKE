@@ -23,7 +23,7 @@ import {
 } from './ArcadeMenuArt';
 
 type Screen='loading'|'intro'|'title'|'pilot'|'missions'|'play'|'pause'|'controls'|'settings'|'confirm-exit'|'result'|'defeat'|'ending';
-type Effect={sprite:Phaser.GameObjects.Sprite;age:number;duration:number;size:number;vx:number;vy:number;spin:number;falling?:boolean;};
+type Effect={sprite:Phaser.GameObjects.Sprite;age:number;duration:number;size:number;vx:number;vy:number;spin:number;};
 type MenuButton={node:Phaser.GameObjects.Text;bg:SpriteButton;extras:Phaser.GameObjects.Text[];action:()=>void;onLeft?:()=>void;onRight?:()=>void;};
 const FONT=UI_FONT;
 const FAMILY_ORDER:Family[]=['fighter','interceptor','acrobat','bomber','boat','ship','tank','tower'];
@@ -125,7 +125,7 @@ export class ArcadeScene extends Phaser.Scene {
   this.installIntroActors();
   this.ui=this.add.container(0,0).setDepth(60);
   this.hud=this.add.text(0,0,'',{fontFamily:FONT,fontSize:'11px',fontStyle:'bold',color:'#ffffff',stroke:'#153550',strokeThickness:3}).setResolution(2).setDepth(45);
-  this.pelagicLevel=this.add.text(589,80,'',{fontFamily:FONT,fontSize:'12px',fontStyle:'bold',color:'#ffffff'}).setResolution(2).setDepth(45).setVisible(false);
+  this.pelagicLevel=this.add.text(614,86,'',{fontFamily:FONT,fontSize:'11px',fontStyle:'bold',color:'#ffffff'}).setResolution(2).setOrigin(0,.5).setDepth(45).setVisible(false);
   this.radio=this.add.text(384,66,'',{fontFamily:FONT,fontSize:'12px',color:'#16385b',backgroundColor:'#fff7cb',padding:{x:8,y:5},wordWrap:{width:280},align:'center'}).setResolution(2).setOrigin(.5).setDepth(48).setVisible(false);
   for(let i=0;i<640;i++)this.bulletSprites.push(this.add.sprite(0,0,'arc-red').setVisible(false).setDepth(15));
   this.makeOrbTextures();this.installTouch();this.show('loading');
@@ -262,7 +262,7 @@ export class ArcadeScene extends Phaser.Scene {
     if(!avail)makeIcon(this,cx-84,186,UI_ICON.padlock,44,this.ui);
     this.text(cx+62,146,m.name,15,avail?UI.goldHex:UI.silver,{wrap:162});
     this.text(cx+62,174,i?'SIDE • CIDADE SOLAR':'UP • FENDA PELÁGICA',9.5,UI.cyanHex,{wrap:160});
-    this.text(cx+62,202,avail?`RECORDE\n${String(best).padStart(8,'0')}`:'CONCLUA A\nROTA 01 ANTES',10,avail?UI.white:UI.crimsonHex,{wrap:156});
+    this.text(cx+62,202,avail?`RECORDE\n${best}`:'CONCLUA A\nROTA 01 ANTES',10,avail?UI.white:UI.crimsonHex,{wrap:156});
     this.button(cx,304,avail?'INICIAR MISSÃO':'BLOQUEADA',()=>{if(!avail)return;const carry=i?prog.flights[1]:undefined;this.begin(i,carry);},264,38,{fontSize:13});
    }
    this.button(110,400,'VOLTAR',()=>this.show('pilot'),156,34,{fontSize:13});
@@ -286,7 +286,7 @@ export class ArcadeScene extends Phaser.Scene {
    const w=this.world;
    if(w){
     makeGaugeMeter(this,384,110,322,26,0,0,UI_PIP.cyan,this.ui);
-    this.text(384,110,`ROTA 0${this.currentMission+1}  •  ${String(w.score).padStart(8,'0')} PTS  •  NV ${w.weapons.weaponLevel}`,10.5,UI.cyanHex);
+    this.text(384,110,`ROTA 0${this.currentMission+1}  •  ${w.score} PTS  •  NV ${w.weapons.weaponLevel}`,10.5,UI.cyanHex);
    }
    this.button(384,162,'CONTINUAR',()=>this.show('play'),266,38);
    this.button(384,209,'CONTROLES',()=>this.show('controls'),266,38);
@@ -392,9 +392,9 @@ export class ArcadeScene extends Phaser.Scene {
    this.text(468,100,MISSIONS[this.currentMission].name,17,UI.cyanHex);
    makePanel(this,468,148,348,50,'cobalt',this.ui);
    this.text(362,148,'PONTUAÇÃO',10.5,UI.silver);
-   const scoreTxt=this.text(506,148,String(w.score).padStart(8,'0'),20,UI.goldHex);
+   const scoreTxt=this.text(506,148,String(w.score),20,UI.goldHex);
    makeIcon(this,616,148,UI_ICON.coin0,28,this.ui).play('ui-coin-spin');
-   this.tweens.addCounter({from:Math.round(w.score*.65),to:w.score,duration:300,onUpdate:tw=>{scoreTxt.setText(String(Math.round(tw.getValue()??w.score)).padStart(8,'0'));}});
+   this.tweens.addCounter({from:Math.round(w.score*.65),to:w.score,duration:300,onUpdate:tw=>{scoreTxt.setText(String(Math.round(tw.getValue()??w.score)));}});
    const secs=Math.floor(w.elapsed);
    this.text(468,198,`TEMPO ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}  •  ${w.kills} ALVOS  •  ${w.collected} ITENS`,12,UI.white);
    makeIcon(this,316,238,UI_ICON.lightning,20,this.ui);
@@ -410,7 +410,7 @@ export class ArcadeScene extends Phaser.Scene {
    makePanel(this,384,146,134,134,'cobalt',this.ui);
    this.ui.add(this.add.image(384,145,'arc-pilots',2).setDisplaySize(112,112));
    this.text(384,236,'Bayek: "O importante é ter estilo na próxima!"',12,UI.goldHex);
-   if(w)this.text(384,259,`PONTOS ${String(w.score).padStart(8,'0')}  •  PROGRESSO ${Math.min(100,Math.round(w.route/3))}%`,10.5,UI.silver);
+   if(w)this.text(384,259,`PONTOS ${w.score}  •  PROGRESSO ${Math.min(100,Math.round(w.route/3))}%`,10.5,UI.silver);
    this.button(384,306,'TENTAR NOVAMENTE',()=>this.begin(this.currentMission),280,40);
    this.button(384,354,'MENU',()=>{this.disposeWorld();this.show('title');},184,36);
   }else if(screen==='ending'){
@@ -425,7 +425,7 @@ export class ArcadeScene extends Phaser.Scene {
    const best=this.bestScoreFor();
    makePanel(this,468,252,292,42,'gold',this.ui);
    makeIcon(this,348,252,UI_ICON.crown,24,this.ui);
-   this.text(468,252,`RECORDE  ${String(best).padStart(8,'0')}`,14,UI.goldHex);
+   this.text(468,252,`RECORDE  ${best}`,14,UI.goldHex);
    makeIcon(this,588,252,UI_ICON.coin0,24,this.ui).play('ui-coin-spin');
    this.button(384,366,'VOAR DE NOVO',()=>this.show('pilot'),278,42);
   }
@@ -562,10 +562,18 @@ export class ArcadeScene extends Phaser.Scene {
   for(const e of w.enemies){if(e.hp<=0)continue;alive.add(e.id);let s=this.enemySprites.get(e.id);if(!s){s=this.add.sprite(e.x,e.y,'arc-enemies').setDepth(e.ground?2:8);this.enemySprites.set(e.id,s);}const enemyFrame=e.family==='alien'?(w.up?0:2)+Math.floor(time*5)%2:e.family==='airship'?12:(w.up&&e.family==='tank'?7:FAMILY_ORDER.indexOf(e.family))+(w.up?0:8);s.setPosition(e.x,e.y).setTexture(e.family==='alien'?'arc-ufo':'arc-enemies',enemyFrame).setDisplaySize(e.size,e.size).setRotation(w.up&&!e.ground&&e.family!=='alien'?Math.PI:0);
    if(w.up&&e.navigation?.anchor!==undefined)s.setTexture(e.family==='tower'?TOWER_TEXTURE:EMPLACEMENT_TEXTURE,0).setOrigin(.5,e.family==='tower'?.78:.5).setDisplaySize(e.size*(e.family==='tower'?1.8:1.3),e.size*(e.family==='tower'?1.8:1.3));
    s.clearTint().setTintMode(Phaser.TintModes.MULTIPLY).setAlpha(1);
-   if(w.up&&(e.family==='boat'||e.family==='ship'))s.setTexture('arc-wet-hull-'+(e.family==='boat'?4:5));
+   if(w.up&&(e.family==='boat'||e.family==='ship')){
+    const hullFrame=Math.floor(time*8+e.id*1.7)%6;
+    s.setTexture('arc-wet-hull-'+(e.family==='boat'?4:5),hullFrame);
+   }
    if(e.submarine)s.setTexture(SUB_ART,e.submarine.phase==='hold'?1:0).setOrigin(.5,.57).setDisplaySize(e.size*1.06,e.size*1.06).setRotation(0).setFlipX(e.submarine.side>0).setAlpha(e.submarine.exposure).setDepth(2);
    if(e.ground&&!(w.up&&e.family==='tower')&&!e.submarine){let turret=this.turrets.get(e.id);if(!turret){turret=this.add.sprite(e.x,e.y,'arc-boss',w.up?3:6).setDepth(5).setOrigin(.5,w.up?.4:.5);this.turrets.set(e.id,turret);}const mount=w.up?surfaceMount(e):{x:e.x,y:e.y-e.size*.09};const tSize=w.up&&e.navigation?.anchor===undefined?e.size*.28:e.size*.56;turret.setPosition(mount.x,mount.y).setDisplaySize(tSize,tSize).setRotation(Math.atan2(w.player.y-mount.y,w.player.x-mount.x)-(w.up?Math.PI/2:Math.PI));turret.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);this.hitOverlays.draw(turret,e.flash);
-    if(w.up&&e.navigation?.anchor===undefined){const bob=Math.sin(time*2.6+e.id*1.9)*.7,heading=e.navigation?.heading??Math.PI,angle=heading-Math.PI/2,fx=Math.cos(angle),fy=Math.sin(angle),sx=-fy,sy=fx;s.setPosition(e.x,e.y+bob).setRotation(heading);turret.setPosition(e.x-fx*e.size*.08,e.y+bob-fy*e.size*.08);g.lineStyle(1.2,0xe8ffff,.48);for(const sign of[-1,1]){const x=e.x-fx*e.size*.38+sx*sign*5,y=e.y+bob-fy*e.size*.38+sy*sign*5;g.lineBetween(x,y,x-fx*12+sx*sign*2.5,y-fy*12+sy*sign*2.5);}}
+    if(w.up&&e.navigation?.anchor===undefined){
+     const bob=Math.sin(time*2.8+e.id*1.9)*1.5,roll=Math.sin(time*2.3+e.id*1.3)*.055,swell=e.size*(1+Math.sin(time*2.8+e.id)*.024);
+     const heading=e.navigation?.heading??Math.PI,angle=heading-Math.PI/2,fx=Math.cos(angle),fy=Math.sin(angle);
+     s.setPosition(e.x,e.y+bob).setDisplaySize(swell,swell).setRotation(heading+roll);
+     turret.setPosition(e.x-fx*e.size*.08,e.y+bob-fy*e.size*.08);
+    }
    }
 
    if(!e.ground){g.lineStyle(1,0xb6ffff,.3).lineBetween(e.x+(w.up?0:13),e.y+(w.up?-15:0),e.x+(w.up?0:22+Math.sin(time*25)*2),e.y+(w.up?-25:0));if(['fighter','acrobat','bomber'].includes(e.family)){const nose=w.up?e.y+e.size*.33:e.x-e.size*.35;g.lineStyle(1.5,0xffe36a,.7);if(w.up)g.lineBetween(e.x-Math.cos(time*45+e.id)*e.size*.22,nose,e.x+Math.cos(time*45+e.id)*e.size*.22,nose);else g.lineBetween(nose,e.y-Math.cos(time*45+e.id)*e.size*.22,nose,e.y+Math.cos(time*45+e.id)*e.size*.22);}}
@@ -579,27 +587,27 @@ export class ArcadeScene extends Phaser.Scene {
   }
   this.renderCargo();this.renderObstacles(g);
   this.bombArt.draw(w);
-  for(const fx of this.effects){fx.age+=dt;fx.sprite.setPosition(fx.sprite.x+fx.vx*dt,fx.sprite.y+fx.vy*dt).setRotation(fx.sprite.rotation+fx.spin*dt).setAlpha(1-fx.age/fx.duration*.7);if(!fx.falling)fx.sprite.setFrame(Math.min(15,Math.floor(fx.age/fx.duration*16)));else fx.sprite.setDisplaySize(fx.size*(1-fx.age/fx.duration*.6),fx.size*(1-fx.age/fx.duration*.6));}
+  for(const fx of this.effects){fx.age+=dt;fx.sprite.setPosition(fx.sprite.x+fx.vx*dt,fx.sprite.y+fx.vy*dt).setRotation(fx.sprite.rotation+fx.spin*dt).setAlpha(1-fx.age/fx.duration*.7);fx.sprite.setFrame(Math.min(15,Math.floor(fx.age/fx.duration*16)));}
   this.effects=this.effects.filter(f=>{if(f.age>=f.duration){f.sprite.setVisible(false);this.effectPool.push(f.sprite);return false;}return true;});
   this.renderHud();if(this.clock>this.messageUntil){if(w.up&&!['result','defeat'].includes(this.screen))this.radio.setOrigin(0,0).setPosition(646,299).setText('CANAL ABERTO\nAguardando contato…').setVisible(true);else this.radio.setVisible(false);}
  }
  private renderBoss(g:Phaser.GameObjects.Graphics):void{
-  const w=this.world!,b=w.boss,live=new Set<number>();this.bossSprite.setVisible(!!b&&b.phase!=='absent');
-  if(b){
+  const w=this.world!,b=w.boss,live=new Set<number>();
+  const bossAlive=!!b&&b.phase!=='absent'&&b.phase!=='sink';
+  this.bossSprite.setVisible(bossAlive);
+  if(bossAlive){
    const frame=w.up?(b.mini?2:b.configuration===1?0:1):(b.mini?5:4);
    const bob=w.up&&b.phase==='fight'?Math.sin(w.elapsed*2.4)*1.4:0;
-   const sinkFade=b.phase==='sink'?Math.max(0,1-b.timer/3):1;
-   this.bossSprite.setTexture(w.up?'arc-wet-boss-'+frame:'arc-boss',w.up?0:frame).setPosition(b.x,b.y+bob).setDisplaySize(b.size,b.size).setAlpha(sinkFade).setAngle(!w.up&&b.phase==='sink'?b.timer*12:0);
+   this.bossSprite.setTexture(w.up?'arc-wet-boss-'+frame:'arc-boss',w.up?0:frame).setPosition(b.x,b.y+bob).setDisplaySize(b.size,b.size).setAlpha(1).setAngle(0);
    this.hitOverlays.draw(this.bossSprite,b.flash??0);
-   if(w.up&&b.phase!=='absent'){
-    // Soft waterline foam droplets lapping at the warship's bow and pontoon tips
+   if(w.up){
     for(const sign of[-1,1]){
      const px=b.x+sign*b.size*.27,py=b.y+bob+b.size*.29;
-     g.fillStyle(0xf2ffff,.52*sinkFade).fillEllipse(px,py+Math.sin(w.elapsed*5+sign)*1.2,7,3);
-     g.fillStyle(0x9cf5ff,.38*sinkFade).fillEllipse(b.x+sign*b.size*.08,b.y+bob+b.size*.36,8,3.2);
+     g.fillStyle(0xf2ffff,.52).fillEllipse(px,py+Math.sin(w.elapsed*5+sign)*1.2,7,3);
+     g.fillStyle(0x9cf5ff,.38).fillEllipse(b.x+sign*b.size*.08,b.y+bob+b.size*.36,8,3.2);
     }
    }
-   for(const p of b.parts){if(b.phase==='absent')continue;live.add(p.id);let s=this.partSprites.get(p.id);if(!s){s=this.add.sprite(p.x,p.y,'arc-boss',w.up?3:6).setDepth(7);this.partSprites.set(p.id,s);}s.setTexture(p.hp>0?'arc-boss':EMPLACEMENT_TEXTURE,p.hp>0?(w.up?3:6):1).setPosition(p.x,p.y+bob).setDisplaySize(p.radius*2.65,p.radius*2.65).setVisible(true).setRotation(p.hp>0?p.angle-(w.up?Math.PI/2:Math.PI):0);
+   for(const p of b.parts){live.add(p.id);let s=this.partSprites.get(p.id);if(!s){s=this.add.sprite(p.x,p.y,'arc-boss',w.up?3:6).setDepth(7);this.partSprites.set(p.id,s);}s.setTexture(p.hp>0?'arc-boss':EMPLACEMENT_TEXTURE,p.hp>0?(w.up?3:6):1).setPosition(p.x,p.y+bob).setDisplaySize(p.radius*2.65,p.radius*2.65).setVisible(true).setRotation(p.hp>0?p.angle-(w.up?Math.PI/2:Math.PI):0);
     s.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);this.hitOverlays.draw(s,p.flash);
     if(p.hp>0&&p.warning>0){g.fillStyle(0xffd77a,p.warning*.65);const a=p.angle;g.fillEllipse(p.x+Math.cos(a)*p.radius,p.y+bob+Math.sin(a)*p.radius,3+p.warning*3,3+p.warning*3);}
    }
@@ -632,15 +640,15 @@ export class ArcadeScene extends Phaser.Scene {
    g.lineBetween(576,0,576,432);
    g.lineStyle(1,0xd8ffff,.82).lineBetween(193,0,193,432);
    g.lineBetween(575,0,575,432);
-   const line=String(w.score).padStart(8,'0');
+   const line=String(w.score);
    if(line!==this.lastHud){
-    this.hud.setFontSize(17).setColor('#ffe654').setStroke('#032f74',2);
-    this.hud.setText(line).setPosition(603,42).setLineSpacing(5);
+    this.hud.setFontSize(17).setColor('#ffe654').setStroke('#032f74',2).setOrigin(.5,.5);
+    this.hud.setText(line).setPosition(680,50).setLineSpacing(5);
     this.lastHud=line;
    }
    this.pelagicLevel.setText(`NV ${w.weapons.weaponLevel}`);
-   for(let i=0;i<5;i++){g.fillStyle(i<w.weapons.weaponLevel?0x21e3f4:0x103d68).fillRoundedRect(647+i*19,81,16,10,2);g.lineStyle(.6,0x83edff,.7).strokeRoundedRect(647+i*19,81,16,10,2);}
-   this.lifeIcons.forEach((sprite,i)=>sprite.setPosition(106+i*18.5,329).setDisplaySize(24,29).setVisible(true).setAlpha(i<w.lives?1:.20));
+   for(let i=0;i<5;i++){g.fillStyle(i<w.weapons.weaponLevel?0x21e3f4:0x103d68).fillRoundedRect(650+i*18.5,81,15,10,2);g.lineStyle(.6,0x83edff,.7).strokeRoundedRect(650+i*18.5,81,15,10,2);}
+   this.lifeIcons.forEach((sprite,i)=>sprite.setPosition(80+i*19.5,329).setDisplaySize(19,23).setVisible(true).setAlpha(i<w.lives?1:.20));
    for(let i=0;i<5;i++){
     const x=122+i*12.2;
     g.fillStyle(i<w.weapons.specialCharges?0xffdc39:0x1d426b,1).fillRoundedRect(x,356,10,11,2);
@@ -652,9 +660,9 @@ export class ArcadeScene extends Phaser.Scene {
    // Side-scrolling mission and its horizontal score bar are unchanged.
    g.fillStyle(BLUE,.92).fillRoundedRect(9,5,750,29,10);
    g.lineStyle(1,0x8ee5e4,.7).strokeRoundedRect(9,5,750,29,10);
-   const line=`BAYEK / RIVET     ${String(w.score).padStart(8,'0')}     NV ${w.weapons.weaponLevel} ${w.weapons.powerMeter?`+${w.weapons.powerMeter}P`:''}`;
+   const line=`BAYEK / RIVET     ${w.score}     NV ${w.weapons.weaponLevel} ${w.weapons.powerMeter?`+${w.weapons.powerMeter}P`:''}`;
    if(line!==this.lastHud){
-    this.hud.setFontSize(11).setColor('#ffffff').setStroke('#153550',3);
+    this.hud.setFontSize(11).setColor('#ffffff').setStroke('#153550',3).setOrigin(0,0);
     this.hud.setText(line).setPosition(22,13);
     this.lastHud=line;
    }
@@ -690,9 +698,7 @@ export class ArcadeScene extends Phaser.Scene {
  }
  private effectSprite(x:number,y:number,texture:string,frame=0):Phaser.GameObjects.Sprite{return(this.effectPool.pop()??this.add.sprite(x,y,texture)).setTexture(texture,frame).setPosition(x,y).setDepth(20).setRotation(0).setAlpha(1).setVisible(true).clearTint();}
  private explosion(x:number,y:number,size:number,duration=.42,vx=0,vy=0,spin=0):void{if(this.effects.length>80)return;const sprite=this.effectSprite(x,y,'arc-explosion').setDisplaySize(size,size);this.effects.push({sprite,age:0,duration,size,vx,vy,spin});}
- private layeredExplosion(e:WorldEvent):void{const size=e.size??1;this.explosion(e.x,e.y,36*size,.46);if(size>1)for(let i=0;i<3+this.quality;i++)this.explosion(e.x+Math.cos(i*2.4)*size*13,e.y+Math.sin(i*2.4)*size*13,22*size,.3+i*.055,Math.cos(i)*16,Math.sin(i)*16);
-  if(e.text&&['fighter','interceptor','acrobat','bomber'].includes(e.text)&&this.effects.length<75){const sprite=this.effectSprite(e.x,e.y,'arc-enemies',FAMILY_ORDER.indexOf(e.text as Family)+(this.world!.up?0:8)).setDisplaySize(size*30,size*30).setAngle(this.world!.up?180:0).setDepth(6);this.effects.push({sprite,age:0,duration:.6,size:size*30,vx:this.world!.up?12:-35,vy:35,spin:4,falling:true});}
- }
+ private layeredExplosion(e:WorldEvent):void{const size=e.size??1;this.explosion(e.x,e.y,36*size,.46);if(size>1)for(let i=0;i<3+this.quality;i++)this.explosion(e.x+Math.cos(i*2.4)*size*13,e.y+Math.sin(i*2.4)*size*13,22*size,.3+i*.055,Math.cos(i)*16,Math.sin(i)*16);}
  private message(text:string):void{
    const up=!!this.world?.up;
    this.radio.setOrigin(up?0:.5,up?0:.5).setText(text)

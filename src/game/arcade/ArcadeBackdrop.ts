@@ -145,42 +145,38 @@ export class ArcadeBackdrop {
    const holding=e.navigation?.phase==='hold';
    const angle=heading-Math.PI/2;
    const fx=Math.cos(angle),fy=Math.sin(angle),sx=-fy,sy=fx;
-   if(wake<this.wakes.length){
-    const wIdx=wake++;
-    const wakeFrame=Math.floor(time*3.2+e.id)%4;
-    this.wakes[wIdx].setVisible(true).setFrame(wakeFrame).setPosition(e.x-fx*e.size*.14,e.y-fy*e.size*.14).setDisplaySize(e.size*.88,e.size*1.85).setRotation(heading-Math.PI).setAlpha(holding?.38:.72);
-   }
-   const cx=e.x+fx*e.size*.12,cy=e.y+fy*e.size*.12;
+   // Grounded underwater keel shadow + soft stern turbulence + clean tapered Kelvin wave arms
+   g.fillStyle(0x031838,.28).fillEllipse(e.x+3,e.y+4,e.size*.52,e.size*.84);
+   g.fillStyle(0x28d6f0,holding?.16:.26).fillEllipse(e.x-fx*e.size*.42,e.y-fy*e.size*.42,e.size*.34,e.size*.24);
+   const cx=e.x+fx*e.size*.16,cy=e.y+fy*e.size*.16;
    for(const side of[-1,1]){
-    g.lineStyle(1.4,0xe8ffff,holding?.32:.58);
+    g.lineStyle(1.4,0x82f0ff,holding?.26:.46);
     g.beginPath();
     for(let j=0;j<=8;j++){
-     const t=j/8,along=(.24-t*.92)*e.size,across=(Math.sin(t*Math.PI*.75)*e.size*.18+t*e.size*.14)*side;
+     const t=j/8,along=(.22-t*1.02)*e.size,across=(Math.sin(t*Math.PI*.75)*e.size*.16+t*e.size*.16)*side;
      const x=cx+fx*along+sx*across,y=cy+fy*along+sy*across;
      if(j===0)g.moveTo(x,y);else g.lineTo(x,y);
     }
     g.strokePath();
     for(let j=0;j<(quality?10:5);j++){
-     const t=(j/10+time*.55)%1;
-     const aft=e.size*.34+t*e.size*.78,across=(3+t*e.size*.2)*side+Math.sin(time*4.5+j)*.8;
+     const t=(j/10+time*.65)%1;
+     const aft=e.size*.36+t*e.size*.82,across=(2.5+t*e.size*.22)*side+Math.sin(time*4.5+j)*1.0;
      const x=e.x-fx*aft+sx*across,y=e.y-fy*aft+sy*across;
-     g.fillStyle(j%2===0?0xf2ffff:0x78e2f0,(1-t)*(holding?.28:.52));
-     g.fillEllipse(x,y,1.5+t*1.8,1.1+t*1.1);
+     g.fillStyle(j%2===0?0xf2ffff:0x66e2f5,(1-t)*(holding?.24:.48));
+     g.fillEllipse(x,y,1.4+t*1.7,1.0+t*1.1);
     }
    }
   }
 
   // Naval Boss Water Displacement, Stern Turbine Wash & Twin-Pontoon Wakes:
-  // Grounds PATRULHA PESADA and ENCOURAÇADO PULA-ONDA unmistakably as heavy warships in the ocean.
+  // Grounds PATRULHA PESADA and ENCOURAÇADO PULA-ONDA while fighting/moving; vanishes immediately on defeat.
   const b=w.boss;
-  if(b&&b.phase!=='absent'){
-   const sinkFade=b.phase==='sink'?Math.max(0,1-b.timer/3):1;
+  if(b&&b.phase!=='absent'&&b.phase!=='sink'){
    const bob=b.phase==='fight'?Math.sin(time*2.4)*1.4:0;
    const bx=b.x,by=b.y+bob,bs=b.size;
-   // 1. Soft turquoise turbine wash behind the central hull and twin pontoons
    const vortexY=by-bs*.40;
-   g.fillStyle(0x22d6eb,.24*sinkFade).fillEllipse(bx,vortexY,bs*.52,bs*.30);
-   g.fillStyle(0xb8fcff,.22*sinkFade).fillEllipse(bx,vortexY+4,bs*.34,bs*.18);
+   g.fillStyle(0x22d6eb,.24).fillEllipse(bx,vortexY,bs*.52,bs*.30);
+   g.fillStyle(0xb8fcff,.22).fillEllipse(bx,vortexY+4,bs*.34,bs*.18);
    for(const [k,lane] of [-.27,0,.27].entries()){
     if(wake>=this.wakes.length)break;
     const wIdx=wake++;
@@ -188,23 +184,22 @@ export class ArcadeBackdrop {
     const sideScale=lane===0?1:.76;
     this.wakes[wIdx].setVisible(true).setFrame(wakeFrame)
      .setPosition(bx+lane*bs,by-bs*(lane===0?.18:.12))
-     .setDisplaySize(bs*.44*sideScale,bs*.92*sideScale)
-     .setRotation(0).setAlpha((lane===0?.68:.54)*sinkFade);
+     .setDisplaySize(bs*.40*sideScale,bs*.82*sideScale)
+     .setRotation(0).setAlpha(lane===0?.44:.34);
    }
-   // 2. Organic sea-foam droplets trailing along the twin pontoons and bow waterline
    for(const side of[-1,1]){
     for(let j=0;j<12;j++){
      const t=(j/12+time*.45)%1;
      const px=bx+side*(bs*(.28+t*.11)+Math.sin(time*4.5+j)*1.6);
      const py=by+bs*(.28-t*.74);
-     g.fillStyle(j%2===0?0xffffff:0x7cebf7,(1-t)*.56*sinkFade);
+     g.fillStyle(j%2===0?0xffffff:0x7cebf7,(1-t)*.56);
      g.fillEllipse(px,py,2.6+t*2.4,1.7+t*1.5);
     }
     for(let j=0;j<6;j++){
      const t=j/5;
      const px=bx+side*bs*(.04+t*.22);
      const py=by+bs*(.38-t*.10)+Math.sin(time*5+j)*1.2;
-     g.fillStyle(0xf2ffff,(.52-t*.22)*sinkFade);
+     g.fillStyle(0xf2ffff,.52-t*.22);
      g.fillEllipse(px,py,3.2-t*.8,1.8);
     }
    }

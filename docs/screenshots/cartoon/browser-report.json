@@ -1,11 +1,11 @@
 {
   "errors": [],
   "pause": {
-    "before": 4.041666666666657,
-    "after": 4.041666666666657,
+    "before": 3.9416666666666553,
+    "after": 3.9416666666666553,
     "audio": {
       "track": "stage1",
-      "position": 3.953662,
+      "position": 3.868714,
       "volume": 0.0936,
       "paused": true,
       "failed": false
@@ -14,9 +14,9 @@
   "assets": {
     "textures": [
       "arc-ufo",
-      "arc-submarine-v2",
       "arc-bomb-v2",
       "arc-ocean",
+      "arc-submarine-v2",
       "arc-supply-v2",
       "arc-colossal-v2",
       "arc-stage1-hud-left",
@@ -40,12 +40,12 @@
     ],
     "audio": {
       "track": "boss1",
-      "position": 5.033369,
+      "position": 5.121397,
       "volume": 0.0936,
       "paused": false,
       "failed": false
     },
-    "objects": 810,
+    "objects": 809,
     "screen": "play"
   },
   "gamepad": {
