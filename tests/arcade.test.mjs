@@ -22,11 +22,16 @@ test('death drops one ordinary P and cannot immediately restore full power',()=>
  const w=live();w.weapons.weaponLevel=5;w.weapons.specialCharges=1;w.hurtPlayer();assert.equal(w.lives,2);assert.equal(w.weapons.weaponLevel,1);assert.equal(w.weapons.specialCharges,1);assert.equal(w.cargo.length,1);
  const p=w.cargo[0];p.x=w.player.x;p.y=w.player.y;p.vx=p.vy=0;w.step(1/120);assert.equal(w.weapons.weaponLevel,1);assert.equal(w.weapons.powerMeter,1);assert.equal(w.deaths,1);
 });
-test('boss hull does not eat bullets; only the actually crossed component receives damage',()=>{
- const w=live();w.startBoss(false);w.boss.phase='fight';w.boss.parts=[{id:1,x:400,y:160,dx:0,dy:0,hp:100,maxHp:100,radius:13,flash:0,warning:0,angle:0}];
- w.bullet(340,210,0,-500,3,2);w.updateBullets(.1);assert.equal(w.boss.parts[0].hp,100);assert.equal(w.bullets[0].active,true);
- w.bullet(400,210,0,-500,3,2);w.updateBullets(.1);assert.equal(w.boss.parts[0].hp,97);assert.equal(w.bullets[1].active,false);
+test('whole boss hull takes local sector damage and broken sectors retain reduced damage',()=>{
+ const w=live();w.startBoss(false);const boss=w.boss;boss.phase='fight';boss.x=384;boss.y=180;w.updateBoss(0);
+ const left=boss.parts.find(p=>p.dx<0),right=boss.parts.find(p=>p.dx>0),center=boss.parts.find(p=>p.dx===0);
+ const hit=()=>{w.bullet(boss.x-boss.size*.3,320,0,-1000,10,2);w.updateBullets(.2);};
+ hit();assert.equal(left.hp,left.maxHp-10);assert.equal(right.hp,right.maxHp);assert.equal(center.hp,center.maxHp);
+ assert(w.bullets.every(b=>!b.active),'hull outside the tiny cannon socket must absorb the projectile');
+ left.hp=0;const before=right.hp+center.hp;hit();assert.equal(before-right.hp-center.hp,2.5);
+ assert.equal(left.hp,0);assert(boss.flash>0);
 });
+
 test('native silhouette rejection is respected instead of falling back to the sprite rectangle',()=>{
  const w=live();w.spawnEncounter({family:'bomber',formation:'solo',motion:'straight',lane:.5});const e=w.enemies[0];e.x=380;e.y=200;w.contact=()=>null;w.bullet(380,220,0,-500,3,2);w.updateBullets(.05);assert.equal(e.hp,FAMILY.bomber.hp);
  w.contact=()=>.5;w.bullet(380,220,0,-500,3,2);w.updateBullets(.05);assert(e.hp<FAMILY.bomber.hp);
@@ -43,11 +48,27 @@ test('boss warnings precede spherical volleys and a broken mount never fires',()
  const w=live();w.startBoss(false);const b=w.boss;b.phase='fight';b.parts[0].hp=0;w.updateBoss(.4);assert(b.parts.some(p=>p.warning>0));assert.equal(w.bullets.filter(p=>p.active).length,0);w.updateBoss(.45);assert(w.bullets.some(p=>p.active&&p.enemy));assert(w.bullets.filter(p=>p.active).every(p=>p.radius>0));
  b.parts.forEach(p=>p.hp=0);w.clearHostileBullets();w.updateBoss(.5);assert.equal(w.bullets.filter(p=>p.active).length,0);
 });
-test('special damage is local, forward, budgeted, and absent when the corridor misses',()=>{
- const w=live();w.startBoss(false);w.boss.phase='fight';w.boss.parts.forEach((p,i)=>{p.x=i?500:w.player.x;p.y=150;p.hp=p.maxHp=500;});
- for(let i=0;i<360;i++)w.applySpecial(1/120);assert(Math.abs(w.boss.parts[0].hp-380)<1e-7);assert.equal(w.boss.parts[1].hp,500);
- w.player.x=220;w.applySpecial(1);assert.equal(w.boss.parts[1].hp,500);
+test('special launches a bomb then expands an area blast with a finite damage budget',()=>{
+ const results=[];
+ for(const fps of[60,120]){
+  const w=live();w.waveIndex=999;w.supplyIndex=999;
+  w.spawnEncounter({family:'bomber',formation:'solo',motion:'straight',lane:.5});
+  const target=w.enemies[0];target.x=w.player.x+70;target.y=w.player.y-182;target.hp=target.maxHp=1000;
+  w.bomb={x:w.player.x,y:w.player.y,age:0,phase:'flight',radius:0};w.specialTime=2.75;
+  for(let i=0;i<Math.round(.5*fps);i++)w.applySpecial(1/fps);
+  assert.equal(w.bomb.phase,'flight');assert.equal(target.hp,1000);
+  w.bullet(target.x,target.y,0,0,1,3,true);
+  for(let i=0;i<Math.round(2.5*fps);i++)w.applySpecial(1/fps);
+  assert.equal(w.bomb,undefined);assert(w.bullets.every(b=>!b.active));
+  assert(target.hp<850&&target.hp>800,'blast must damage lateral targets, with a finite budget');
+  results.push(target.hp);
+ }
+ assert(Math.abs(results[0]-results[1])<2,'blast timing must remain stable across update rates');
+ const w=live();const input={x:0,y:0,fire:false,special:true};w.step(.01,input);w.step(.01,input);
+ assert.equal(w.weapons.specialCharges,1,'holding special cannot spend two charges');
+ assert.equal(w.bomb.phase,'flight');
 });
+
 test('FULL fires three guided missiles; moving ship emits from its current nose in either view',()=>{
  for(const index of [0,1]){const w=live(index);w.weapons.weaponLevel=5;w.fireMissiles();assert.equal(w.bullets.filter(b=>b.active&&b.missile&&b.homing).length,3);
   w.bullets.forEach(b=>b.active=false);w.weapons.weaponLevel=1;const before=w.player.x;w.step(1/120,{x:1,y:0,fire:true,special:false});const b=w.bullets.find(b=>b.active);assert(w.player.x>before);assert(index?b.x>w.player.x:b.y<w.player.y);assert(index?Math.abs(b.y-w.player.y)<1:Math.abs(b.x-w.player.x)<1);

@@ -1,0 +1,107 @@
+{
+  "note": "Controlled real Chrome/Phaser fixtures, not uninterrupted play or reference-image approval.",
+  "errors": [],
+  "fixtures": [
+    {
+      "name": "01-submarines-emerge"
+    },
+    {
+      "name": "02-submarines-hold"
+    },
+    {
+      "name": "03-balloon-and-pickups"
+    },
+    {
+      "name": "04-wet-hulls-and-round-shot"
+    },
+    {
+      "name": "05-hit-overlay"
+    },
+    {
+      "name": "06-bomb-flight"
+    },
+    {
+      "name": "07-colossal-blast"
+    },
+    {
+      "name": "08-colossal-blast-1920"
+    },
+    {
+      "name": "09-boss-intact"
+    },
+    {
+      "name": "10-boss-left-destroyed"
+    },
+    {
+      "name": "11-automatic-flyout"
+    },
+    {
+      "name": "route-0-result"
+    },
+    {
+      "name": "route-1-result"
+    }
+  ],
+  "submarines": [
+    {
+      "x": 323.90293333333335,
+      "y": 80,
+      "phase": "hold",
+      "key": "arc-submarine-v2",
+      "alpha": 1,
+      "rotation": 0
+    },
+    {
+      "x": 389.7712,
+      "y": 180,
+      "phase": "hold",
+      "key": "arc-submarine-v2",
+      "alpha": 1,
+      "rotation": 0
+    }
+  ],
+  "flash": [
+    {
+      "alpha": 0.4,
+      "key": "arc-boss"
+    },
+    {
+      "alpha": 0.4,
+      "key": "arc-wet-hull-4"
+    }
+  ],
+  "bomb": {
+    "phase": "blast",
+    "age": 1.0000000000000002,
+    "radius": 155,
+    "key": "arc-colossal-v2"
+  },
+  "sectors": {
+    "leftHp": 0,
+    "reducedDamage": 5
+  },
+  "flyout": {
+    "state": "exit",
+    "y": 148.5
+  },
+  "routes": [
+    {
+      "mission": 0,
+      "state": "victory",
+      "seconds": 319.88333333320674,
+      "deaths": 0,
+      "lives": 4,
+      "x": 367.69129999999933,
+      "y": -87.16148333333214
+    },
+    {
+      "mission": 1,
+      "state": "victory",
+      "seconds": 309.17499999988314,
+      "deaths": 0,
+      "lives": 4,
+      "x": 970.9059833333455,
+      "y": 226.0371499999996
+    }
+  ]
+}

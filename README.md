@@ -4,7 +4,9 @@ Shooter arcade 2D cartoon/anime em Phaser 4, TypeScript e Vite. Duas missões co
 
 [Bíblia vigente](docs/27_BULLET_WAKE_V2_DEFINITIVO.md) · [Direção aprovada](docs/54_DIRECAO_ARCADE_APROVADA.md) · [Implementação e validação](docs/55_ARCADE_IMPLEMENTACAO_E_VALIDACAO.md)
 
-Rajadas de três pulsos, arma própria com cinco níveis, mísseis automáticos NV3+, especial frontal, caixas com paraquedas, partes reais de chefes e recursos preservados entre fases. Início com três vidas e dois especiais, limites cinco. Teclado, controle padrão e interface touch. Música baixa por padrão, opções de áudio, dificuldade e qualidade visual.
+Rajadas de três pulsos, arma própria com cinco níveis, mísseis automáticos NV3+, bomba especial com explosão em área, suprimentos em balões e dano por setores no casco dos chefes. A Fenda Pelágica tem margens contínuas, submarinos e canhões/torres que deixam destroços com fumaça. Início com três vidas e dois especiais, limites cinco. Teclado, controle padrão e interface touch. Música baixa por padrão, opções de áudio, dificuldade e qualidade visual.
+
+[Revisão do cenário](docs/65_COAST_V2_VALIDATION.md) · [Revisão de combate](docs/67_TASK2_COMBAT_VALIDATION.md)
 
 Somente Bayek está selecionável nesta reformulação. Tita, Leona, Osvald e Hien mantêm registros e retratos; armas e cenas legadas continuam no repositório. Campanha completa, sexto piloto, Remix e três secretas são planejamento, não fases produzidas.
 

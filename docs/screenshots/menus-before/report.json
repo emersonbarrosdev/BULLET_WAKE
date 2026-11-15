@@ -1,0 +1,27 @@
+{
+  "errors": [],
+  "shots": [
+    "01-intro-a",
+    "02-intro-b",
+    "03-intro-c",
+    "04-title",
+    "05-pilot",
+    "06-missions",
+    "07-settings-title",
+    "08-pause",
+    "09-controls",
+    "10-settings-pause",
+    "11-confirm-exit",
+    "12-result",
+    "13-defeat",
+    "14-ending",
+    "15-title-1920",
+    "16-pause-1920"
+  ],
+  "fps": {
+    "intro": 59,
+    "title": 60,
+    "gameplay": 60
+  },
+  "screen": "play"
+}

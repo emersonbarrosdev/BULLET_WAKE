@@ -2,8 +2,7 @@
  * World objects move DOWN: screenY = worldY + scroll. Art is never mirrored/rotated.
  * Conservative rectangular envelopes align with the rendered archipelago formations in PelagicCoastGeometry.
  */
-import {ARCHIPELAGO_SPECS,COAST_PERIOD} from './PelagicCoastGeometry.ts';
-import {COAST_ALPHA_PROFILES} from './PelagicAlphaProfiles.ts';
+import {ARCHIPELAGO_SPECS,COAST_PERIOD,coastBoundary} from './PelagicCoastGeometry.ts';
 
 export interface CoastPiece {id:number;frame:number;x:number;y:number;width:number;height:number;side:-1|1;solid:boolean;groundX:number;groundY:number;}
 export interface SurfaceRoute {worldY:number;heading:number;entry:-1|0|1;phase:'enter'|'cruise'|'hold'|'turn'|'exit';anchor?:number;anchorY?:number;lane?:number;}
@@ -16,15 +15,12 @@ for(let cycle=-1;cycle<=7;cycle++){
  for(const spec of ARCHIPELAGO_SPECS){
   const centerY=(spec.yStart+spec.yEnd)/2-cycle*COAST_PERIOD;
   const height=spec.yEnd-spec.yStart;
-  const rows=COAST_ALPHA_PROFILES[spec.artFrame].filter(([a,b])=>b>a);
-  const min=Math.min(...rows.map(r=>r[0])),max=Math.max(...rows.map(r=>r[1]));
-  const offset=((min+max)/2-.5)*spec.width;
-  const x=192+spec.centerX+offset;
+  const offset=0,x=192+spec.centerX;
   rawPieces.push({
    frame:spec.legacyFrame,
    x,
    y:Math.round(centerY),
-   width:(max-min)*spec.width,
+   width:spec.width,
    height:Math.round(height),
    side:spec.side,
    solid:true,
@@ -40,22 +36,27 @@ export function visibleCoast(scroll:number,pad=150):CoastPiece[]{return PELAGIC_
 /** Safe corridor at a world-space ordinate. A radius covers the entire rotating boat, not just its center. */
 export function waterCorridor(worldY:number,radius:number,lookAhead=0):{left:number;right:number}{
  let left=208+radius,right=560-radius;
- for(const p of PELAGIC_COAST){
-  if(p.y+p.height/2<worldY-radius||p.y-p.height/2>worldY+radius+lookAhead)continue;
-  if(p.side<0)left=Math.max(left,p.x+p.width/2+radius+3);else right=Math.min(right,p.x-p.width/2-radius-3);
+ // Sweep every silhouette row covered by the whole hull and its look-ahead.
+ for(let y=Math.floor(worldY-radius);y<=Math.ceil(worldY+radius+lookAhead);y+=2){
+  const l=coastBoundary(y,-1),r=coastBoundary(y,1);
+  left=Math.max(left,192+l+radius+4);right=Math.min(right,192+r-radius-4);
  }
  return{left,right};
 }
 export function touchesCoast(x:number,worldY:number,radius:number):boolean{
- return PELAGIC_COAST.some(p=>Math.abs(x-p.x)<p.width/2+radius&&Math.abs(worldY-p.y)<p.height/2+radius);
+ for(let y=Math.floor(worldY-radius);y<=Math.ceil(worldY+radius);y+=2){
+  const l=coastBoundary(y,-1),r=coastBoundary(y,1);
+  if((l>0&&x-radius<192+l)||(r<384&&x+radius>192+r))return true;
+ }
+ return false;
 }
-export function prepareSurface(e:SurfaceActor,scroll:number,entryHint?:-1|0|1):void{
+export function prepareSurface(e:SurfaceActor,scroll:number,entryHint?:-1|0|1,occupied:ReadonlySet<number>=new Set()):void{
  if(e.family==='tank'||e.family==='tower'){
   // Prefer a near-future large coastal formation/port (never a tiny sea-stack rock).
-  const candidates=PELAGIC_COAST.filter(p=>p.side<0&&p.height>=180&&p.y+scroll>-220&&p.y+scroll<160);
-  const fallback=visibleCoast(scroll,260).find(p=>p.height>=180)??PELAGIC_COAST.find(p=>p.height>=180)??PELAGIC_COAST[0];
-  const anchor=candidates[e.id%Math.max(1,candidates.length)]??fallback;
-  const anchorY=anchor.groundY+(e.id%2?16:-16);
+  const candidates=PELAGIC_COAST.filter(p=>!occupied.has(p.id)&&p.y+scroll<-50&&p.side===(e.family==='tower'?1:-1)).sort((a,b)=>b.y-a.y);
+  const fallback=PELAGIC_COAST.filter(p=>p.y+scroll<0).sort((a,b)=>b.y-a.y)[0]??PELAGIC_COAST[0];
+  const anchor=candidates[0]??fallback;
+  const anchorY=anchor.groundY;
   e.navigation={worldY:anchor.y,heading:Math.PI,entry:0,phase:'hold',anchor:anchor.id,anchorY};
   e.x=anchor.x+anchor.groundX;e.y=anchor.y+scroll+anchorY;return;
  }
@@ -65,12 +66,13 @@ export function prepareSurface(e:SurfaceActor,scroll:number,entryHint?:-1|0|1):v
   // A side entry is legal only in an opening wide enough for the complete hull and its approach.
   for(let candidate=55;candidate<=240;candidate+=10){
    const corridor=waterCorridor(candidate-scroll,radius,64);
-   if(entry<0?corridor.left===208+radius:corridor.right===560-radius){y=candidate;break;}
+   let clear=true;for(let row=Math.floor(candidate-scroll-radius-4);row<=Math.ceil(candidate-scroll+radius+4);row++){if(entry<0?coastBoundary(row,-1)>0:coastBoundary(row,1)<384){clear=false;break;}}
+   if(clear&&(entry<0?corridor.left===208+radius:corridor.right===560-radius)){y=candidate;break;}
   }
  }
- const actualEntry=y<0?0:entry,corridor=waterCorridor(y-scroll,radius,70);
+ const actualEntry=y<0?0:entry,corridor=waterCorridor(y-scroll,radius,24);
  const lane=entry||((e.id%2)?-1:1);
- e.x=actualEntry<0?208-radius:actualEntry>0?560+radius:clamp(384+lane*45,corridor.left,corridor.right);
+ e.x=actualEntry<0?208-radius:actualEntry>0?560+radius:(corridor.left+corridor.right)/2+lane*Math.min(45,(corridor.right-corridor.left)/2-1);
  e.y=y;e.navigation={worldY:y-scroll,heading:actualEntry<0?Math.PI/2:actualEntry>0?-Math.PI/2:Math.PI,entry:actualEntry,lane,phase:'enter'};
 }
 export function moveSurface(e:SurfaceActor,scroll:number,dt:number):void{
@@ -78,9 +80,11 @@ export function moveSurface(e:SurfaceActor,scroll:number,dt:number):void{
  const n=e.navigation!;
  if(n.anchor!==undefined){const p=PELAGIC_COAST[n.anchor];e.x=p.x+p.groundX;e.y=p.y+scroll+(n.anchorY??p.groundY);return;}
  const radius=e.size*.51,oldX=e.x,oldY=n.worldY;
- n.phase=e.age<2?'enter':e.age<4?'cruise':e.age<6?'hold':e.age<9?'turn':'exit';
- const speed=n.phase==='hold'?0:n.phase==='enter'?8:n.phase==='exit'?Math.max(30,e.speed*1.5):e.speed;
- const ahead=waterCorridor(n.worldY,radius,75),target=clamp(384+(n.lane??1)*45+Math.sin(e.id*2.1)*(n.phase==='turn'?8:3),ahead.left,ahead.right);
+ const current=waterCorridor(n.worldY,radius);
+ const crossing=n.entry!==0&&(e.x<current.left||e.x>current.right);
+ n.phase=crossing||e.age<2?'enter':e.age<4?'cruise':e.age<6?'hold':e.age<9?'turn':'exit';
+ const speed=n.phase==='hold'||crossing?0:n.phase==='enter'?8:n.phase==='exit'?Math.max(30,e.speed*1.5):e.speed;
+ const ahead=waterCorridor(n.worldY,radius,24),target=(ahead.left+ahead.right)/2+(n.lane??1)*Math.min(45,(ahead.right-ahead.left)/2-1);
  e.x+=clamp(target-e.x,-48*dt,48*dt);
  const nextY=n.worldY+speed*dt,corridor=waterCorridor(nextY,radius);
  // While entering, the hull may be offscreen, but never on a coastal object.
@@ -96,6 +100,7 @@ export function moveSurface(e:SurfaceActor,scroll:number,dt:number):void{
 }
 /** Hull art faces down; rotate its turret socket with the actual hull heading. */
 export function surfaceMount(e:SurfaceActor):{x:number;y:number}{
+ if(e.navigation?.anchor!==undefined)return{x:e.x,y:e.y-e.size*.08};
  const rotation=(e.navigation?.heading??Math.PI)-Math.PI,d=e.size*.12;
  return{x:e.x-Math.sin(rotation)*d,y:e.y+Math.cos(rotation)*d};
 }

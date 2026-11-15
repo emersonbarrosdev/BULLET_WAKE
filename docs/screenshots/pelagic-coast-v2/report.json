@@ -1,0 +1,99 @@
+{
+  "note": "Controlled real Chrome/Phaser fixtures, not uninterrupted play or reference-image approval.",
+  "errors": [],
+  "fixtures": [
+    {
+      "name": "01-coast-0",
+      "scroll": 0,
+      "width": 1366,
+      "height": 768,
+      "actors": false
+    },
+    {
+      "name": "02-coast-717",
+      "scroll": 717,
+      "width": 1366,
+      "height": 768,
+      "actors": false
+    },
+    {
+      "name": "03-coast-826",
+      "scroll": 826,
+      "width": 1366,
+      "height": 768,
+      "actors": false
+    },
+    {
+      "name": "04-coast-1850",
+      "scroll": 1850,
+      "width": 1366,
+      "height": 768,
+      "actors": false
+    },
+    {
+      "name": "cannons-and-boats-1366",
+      "scroll": 717,
+      "width": 1366,
+      "height": 768,
+      "actors": true
+    },
+    {
+      "name": "cannons-and-boats-1920",
+      "scroll": 717,
+      "width": 1920,
+      "height": 1080,
+      "actors": true
+    }
+  ],
+  "period": 2048,
+  "coastTexture": {
+    "key": "pelagic-connected-coast-v2",
+    "height": 4096,
+    "width": 768
+  },
+  "emplacement": {
+    "id": 1,
+    "x": 231,
+    "y": 180,
+    "scroll": 1118
+  },
+  "wreck": [
+    {
+      "id": 1,
+      "x": 231,
+      "y": 180,
+      "worldY": -938,
+      "age": 1.5
+    }
+  ],
+  "singlePixel": [
+    {
+      "scroll": 609,
+      "elapsed": 24
+    },
+    {
+      "scroll": 610,
+      "elapsed": 24
+    },
+    {
+      "scroll": 611,
+      "elapsed": 24
+    }
+  ],
+  "pixelContinuity": [
+    {
+      "mean": 0,
+      "peak": 0,
+      "changedFraction": 0,
+      "width": 384,
+      "height": 432
+    },
+    {
+      "mean": 0,
+      "peak": 0,
+      "changedFraction": 0,
+      "width": 384,
+      "height": 432
+    }
+  ]
+}

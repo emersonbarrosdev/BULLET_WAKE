@@ -1,28 +1,33 @@
 import {BurstController} from './BurstController.ts';
-import {FAMILY,formationOffsets,regionAt,SUPPLIES,type Mission,type Family,type Motion} from './content.ts';
+import {FAMILY,ENEMY_SHOTS,formationOffsets,regionAt,SUPPLIES,type Mission,type Family,type Motion} from './content.ts';
 import {clamp,sweepEllipse,type Box} from './geometry.ts';
 import {collectPowerItem,createPlayerWeapons,getPrimaryProjectiles,getSecondaryProjectiles,type PlayerWeaponsState} from '../systems/weaponSystem.ts';
 import {enterStage,type CampaignFlight} from '../systems/campaignFlight.ts';
-import {prepareSurface,moveSurface,surfaceMount,type SurfaceRoute} from './PelagicEnvironment.ts';
+import {prepareSurface,moveSurface,surfaceMount,waterCorridor,type SurfaceRoute} from './PelagicEnvironment.ts';
 
 export interface Controls {x:number;y:number;fire:boolean;special:boolean;}
-export interface Actor {id:number;x:number;y:number;size:number;hp:number;maxHp:number;age:number;flash:number;family:Family;motion:Motion;lane:number;offset:number;speed:number;cooldown:number;warning:number;ground:boolean;navigation?:SurfaceRoute;}
+export interface SubmarineState {phase:'emerge'|'hold'|'submerge';exposure:number;side:-1|1;}
+export interface Actor {id:number;x:number;y:number;size:number;hp:number;maxHp:number;age:number;flash:number;family:Family;motion:Motion;lane:number;offset:number;speed:number;cooldown:number;warning:number;ground:boolean;navigation?:SurfaceRoute;submarine?:SubmarineState;}
+export interface ArcadeBomb {x:number;y:number;age:number;phase:'flight'|'blast';radius:number;}
 export interface Bullet {active:boolean;x:number;y:number;px:number;py:number;vx:number;vy:number;damage:number;radius:number;enemy:boolean;missile:boolean;homing:boolean;age:number;scale:number;color:number;}
 export interface Cargo {id:number;x:number;y:number;vx:number;vy:number;kind:'power'|'life'|'special';crate:boolean;hp:number;age:number;}
 export interface Component {id:number;x:number;y:number;dx:number;dy:number;hp:number;maxHp:number;radius:number;flash:number;warning:number;angle:number;}
-export interface Boss {mini:boolean;x:number;y:number;size:number;age:number;phase:'enter'|'fight'|'retreat'|'absent'|'return'|'sink';configuration:number;timer:number;attack:number;attackTime:number;volley:number;aimX:number;aimY:number;parts:Component[];}
+export interface Boss {mini:boolean;x:number;y:number;size:number;age:number;phase:'enter'|'fight'|'retreat'|'absent'|'return'|'sink';configuration:number;timer:number;attack:number;attackTime:number;volley:number;aimX:number;aimY:number;parts:Component[];flash?:number;}
 export interface Obstacle {id:number;x:number;y:number;width:number;height:number;kind:'roof'|'gate'|'barrier';warning:number;hp:number;age:number;}
+/** A destroyed coastal emplacement remains attached to its original terrain. */
+export interface CoastalWreck {anchor?:number;family?:'tank'|'tower';id:number;x:number;y:number;worldY:number;size:number;age:number;}
 export interface WorldEvent {type:'shot'|'missile'|'enemy-shot'|'impact'|'explosion'|'pickup'|'death'|'special'|'boss'|'return'|'mini'|'victory'|'defeat'|'radio';x:number;y:number;size?:number;text?:string;}
+export type BossContactQuery=(boss:Boss,ax:number,ay:number,bx:number,by:number,radius:number)=>number|null;
 export type ContactQuery=(actor:Actor,ax:number,ay:number,bx:number,by:number,radius:number)=>number|null;
 const TAU=Math.PI*2;
 const BASE_CONTROL:Controls={x:0,y:0,fire:false,special:false};
 /** Fixed-step deterministic simulation. Rendering quality never enters these rules. */
 export class ArcadeWorld {
  readonly arena:Box;readonly bullets:Bullet[]=Array.from({length:640},()=>({active:false,x:0,y:0,px:0,py:0,vx:0,vy:0,damage:0,radius:0,enemy:false,missile:false,homing:false,age:0,scale:1,color:0}));
- enemies:Actor[]=[];cargo:Cargo[]=[];obstacles:Obstacle[]=[];boss?:Boss;events:WorldEvent[]=[];
+ enemies:Actor[]=[];cargo:Cargo[]=[];obstacles:Obstacle[]=[];wrecks:CoastalWreck[]=[];boss?:Boss;bomb?:ArcadeBomb;events:WorldEvent[]=[];
  weapons:PlayerWeaponsState=createPlayerWeapons('nolan');lives=3;score=0;kills=0;deaths=0;collected=0;elapsed=0;route=0;scroll=0;scrollSpeed=38;region=0;player={x:384,y:368,invulnerable:2.5,bank:0};
  state:'intro'|'play'|'exit'|'victory'|'defeat'='intro';introTime=2.2;exitTime=0;specialTime=0;missileTime=0;specialEdge=false;specialImpact?:{x:number;y:number};
- contact?:ContactQuery;accessibility=false;hard=false;
+ contact?:ContactQuery;bossContact?:BossContactQuery;accessibility=false;hard=false;
  private burst=new BurstController();private sequence=0;private waveIndex=0;private supplyIndex=0;private miniStarted=false;private bossStarted=false;private nextObstacle=98;
  readonly mission:Mission;
  constructor(mission:Mission,carry?:CampaignFlight){
@@ -36,7 +41,7 @@ export class ArcadeWorld {
  step(seconds:number,input:Controls=BASE_CONTROL):void{
   const dt=clamp(seconds,0,.05);if(this.state==='victory'||this.state==='defeat')return;
   if(this.state==='intro'){this.introTime-=dt;this.scroll+=25*dt;if(this.introTime<=0){this.state='play';this.emit('radio',0,0,1,this.up?'Mar aberto. Vamos abrir caminho!':'Cidade Solar, a RIVET chegou!');}return;}
-  if(this.state==='exit'){this.exitTime+=dt;this.scroll+=30*dt;if(this.up)this.player.y-=130*dt;else this.player.x+=250*dt;if(this.exitTime>=3.4)this.state='victory';return;}
+  if(this.state==='exit'){this.exitTime+=dt;this.scroll+=30*dt;this.updateWrecks(dt);if(this.up)this.player.y-=130*dt;else this.player.x+=250*dt;if(this.exitTime>=3.4)this.state='victory';return;}
   this.elapsed+=dt;this.route=Math.min(300,this.route+dt);this.region=regionAt(this.route);
   this.player.invulnerable=Math.max(0,this.player.invulnerable-dt);
   const n=Math.max(1,Math.hypot(input.x,input.y)),speed=174;
@@ -45,7 +50,7 @@ export class ArcadeWorld {
   this.player.bank+=((this.up?input.x:-input.y)-this.player.bank)*Math.min(1,dt*12);
   for(let i=this.burst.update(dt*1000,input.fire,this.accessibility);i>0;i--)this.firePrimary();
   this.missileTime-=dt;if(input.fire&&this.weapons.weaponLevel>=3&&this.missileTime<=0){this.fireMissiles();this.missileTime=this.weapons.weaponLevel===5?1.1:1.5;}
-  if(input.special&&!this.specialEdge&&this.weapons.specialCharges>0&&this.specialTime<=0){this.weapons.specialCharges--;this.specialTime=3;this.emit('special');}
+  if(input.special&&!this.specialEdge&&this.weapons.specialCharges>0&&this.specialTime<=0){this.weapons.specialCharges--;this.specialTime=2.75;this.bomb={x:this.player.x,y:this.player.y,age:0,phase:'flight',radius:0};this.emit('special');}
   this.specialEdge=input.special;
   if(this.specialTime>0){this.specialTime=Math.max(0,this.specialTime-dt);this.specialImpact=undefined;this.applySpecial(dt);}
   while(this.waveIndex<this.mission.encounters.length&&this.route>=this.mission.encounters[this.waveIndex].at){const e=this.mission.encounters[this.waveIndex++];if(e.at!==155){this.spawnEncounter(e);if(this.hard&&e.formation==='solo'&&e.family!=='tower')this.spawnEncounter({...e,family:'interceptor',formation:'pair',motion:'curve',lane:1-e.lane});}}
@@ -53,82 +58,146 @@ export class ArcadeWorld {
   if(this.route>=155&&!this.miniStarted){this.miniStarted=true;this.startBoss(true);}
   if(this.route>=300&&!this.bossStarted&&!this.boss){this.bossStarted=true;this.enemies=[];this.clearHostileBullets();this.startBoss(false);}
   if(!this.up&&this.route>=this.nextObstacle&&this.route<270){this.spawnObstacle();this.nextObstacle+=this.route<135?12:33;}
-  let targetScroll=this.region===3?85:38;
+  let targetScroll=!this.up&&this.region===3?85:38;
   if(this.boss&&!this.boss.mini)targetScroll=this.boss.phase==='absent'?20:0;
   else if(this.boss)targetScroll=16;
   this.scrollSpeed+=(targetScroll-this.scrollSpeed)*Math.min(1,dt*1.5);this.scroll+=this.scrollSpeed*dt;
-  this.updateEnemies(dt);this.updateBoss(dt);this.updateCargo(dt);this.updateObstacles(dt);this.updateBullets(dt);
+  this.updateWrecks(dt);this.updateEnemies(dt);this.updateBoss(dt);this.updateCargo(dt);this.updateObstacles(dt);this.updateBullets(dt);
  }
  private spawnEncounter(e:Mission['encounters'][number]):void{
   formationOffsets(e.formation).forEach(([offset,delay],i)=>{
-   const family=e.formation==='escort'&&i>0?'fighter':e.family;const def=FAMILY[family];const ground=(this.up?['boat','ship','tank','tower']:['tank','tower']).includes(family);
+   const family=e.formation==='escort'&&i>0?'fighter':e.family;const def=FAMILY[family];const ground=(this.up?['boat','ship','tank','tower','submarine']:['tank','tower']).includes(family);
    const lane=clamp(e.lane+offset,.09,.91),cross=this.up?this.arena.left+lane*(this.arena.right-this.arena.left):ground?390:this.arena.top+lane*350;
-   this.enemies.push({id:++this.sequence,x:this.up?cross:800-delay*220,y:this.up?-30+delay*220:cross,size:def.size,hp:def.hp,maxHp:def.hp,age:0,flash:0,family,motion:e.motion,lane:cross,offset:i*.7,speed:e.speed??(family==='interceptor'?83:ground?24:52),cooldown:1.8+i*.22,warning:0,ground});
-   if(this.up&&ground)prepareSurface(this.enemies[this.enemies.length-1],this.scroll,family==='boat'?(i%2===0?-1:1):0);
+   const baseSpeed=family==='interceptor'?128:family==='acrobat'?100:family==='fighter'?92:family==='alien'?95:family==='bomber'?72:family==='airship'?62:ground?24:80;
+   this.enemies.push({id:++this.sequence,x:this.up?cross:800-delay*220,y:this.up?-30+delay*220:cross,size:def.size,hp:def.hp,maxHp:def.hp,age:0,flash:0,family,motion:e.motion,lane:cross,offset:i*.7,speed:e.speed??baseSpeed,cooldown:1.6+i*.2,warning:0,ground});
+   if(this.up&&family==='submarine'){
+    const actor=this.enemies[this.enemies.length-1],solo=e.formation==='solo';
+    let y=solo?120:80+i*100,corridor=waterCorridor(y-this.scroll,actor.size*.52),span=corridor.right-corridor.left;
+    if(solo){
+     for(const candidateY of [90,115,140,165]){
+      const c=waterCorridor(candidateY-this.scroll,actor.size*.52);
+      if(c.right-c.left>span){y=candidateY;corridor=c;span=c.right-c.left;}
+     }
+    }
+    const side:(-1|1)=solo?(e.lane<.5?-1:1):(i%2===0?-1:1);
+    actor.x=solo?(corridor.left+corridor.right)/2+side*Math.min(26,span*.16):(side<0?corridor.left+span*.16:corridor.right-span*.16);
+    actor.y=y;
+    actor.navigation={worldY:y-this.scroll,heading:side<0?Math.PI/2:-Math.PI/2,entry:0,phase:'hold'};
+    actor.submarine={phase:'emerge',exposure:0,side};actor.cooldown=1.6+i*.3;
+   }else if(this.up&&ground){const occupied=new Set([...this.enemies.map(actor=>actor.navigation?.anchor),...this.wrecks.map(w=>w.anchor)].filter((id):id is number=>id!==undefined));prepareSurface(this.enemies[this.enemies.length-1],this.scroll,family==='boat'?(e.formation==='solo'?0:(i%2===0?-1:1)):0,occupied);}
   });
  }
  private updateEnemies(dt:number):void{
-  for(const e of this.enemies){e.age+=dt;e.flash=Math.max(0,e.flash-dt);const t=e.age;
+  for(const e of this.enemies){if(e.hp<=0)continue;e.age+=dt;e.flash=Math.max(0,e.flash-dt);const t=e.age;
    let advance=e.speed,cross=0;
-   switch(e.motion){case'sine':cross=Math.sin(t*2+e.offset)*22;break;case'curve':cross=Math.sin(t*.85+e.offset)*55;break;case'zigzag':cross=2/Math.PI*Math.asin(Math.sin(t*2))*28;break;case'diagonal':cross=(e.lane<(this.up?384:216)?1:-1)*t*22;break;case'turn':cross=Math.sin(Math.min(Math.PI,t*.7))*64;advance=t>4?-42:56;break;case'dive':advance=35+Math.min(150,t*t*9);cross=Math.sin(t)*32;break;case'accelerate':advance=25+Math.min(130,t*12);break;case'retreat':advance=t>5?-65:30;cross=Math.sin(t)*15;break;case'stationary':advance=t<2?48:12;break;}
-   if(this.up&&e.ground)moveSurface(e,this.scroll,dt);
-   else if(this.up){e.y+=advance*dt;e.x=clamp(e.lane+cross,this.arena.left+12,this.arena.right-12);}else{e.x-=advance*dt;e.y=clamp(e.lane+cross,this.arena.top+12,this.arena.bottom-12);}
+   switch(e.motion){case'sine':cross=Math.sin(t*2.6+e.offset)*26;break;case'curve':cross=Math.sin(t*1.25+e.offset)*58;break;case'zigzag':cross=2/Math.PI*Math.asin(Math.sin(t*2.8))*32;break;case'diagonal':cross=(e.lane<(this.up?384:216)?1:-1)*t*36;break;case'turn':cross=Math.sin(Math.min(Math.PI,t*1.05))*66;advance=t>3.2?-42:e.speed*1.08;break;case'dive':advance=e.speed*1.1+Math.min(175,t*t*32);cross=Math.sin(t*2.2)*32;break;case'accelerate':advance=e.speed*.85+Math.min(155,t*42);break;case'retreat':advance=t>3.8?-65:e.speed*.9;cross=Math.sin(t*1.6)*16;break;case'stationary':advance=t<1.8?62:16;break;}
+   if(e.submarine){
+    const sub=e.submarine;sub.phase=t<1.2?'emerge':t<8.2?'hold':'submerge';
+    sub.exposure=clamp(t<1.2?t/1.2:t<8.2?1:1-(t-8.2)/1.2,0,1);
+    e.y=e.navigation!.worldY+this.scroll;
+   }else if(this.up&&e.ground)moveSurface(e,this.scroll,dt);
+   else if(this.up){advance=Math.max(this.scrollSpeed+16,advance);e.y+=advance*dt;e.x=clamp(e.lane+cross,this.arena.left+12,this.arena.right-12);}else{e.x-=Math.max(32,advance)*dt;e.y=clamp(e.lane+cross,this.arena.top+12,this.arena.bottom-12);}
    e.cooldown-=dt;e.warning=e.cooldown<.6&&e.cooldown>0?1-e.cooldown/.6:0;
-   if(e.cooldown<=0&&e.x>this.arena.left&&e.x<this.arena.right&&e.y>this.arena.top&&e.y<this.arena.bottom){
+   if(e.cooldown<=0&&(!e.submarine||e.submarine.phase==='hold')&&e.x>this.arena.left&&e.x<this.arena.right&&e.y>this.arena.top&&e.y<this.arena.bottom){
     const behind=this.up?e.y>this.player.y-28:e.x<this.player.x+28;
-    if(!behind){const mount=this.up&&e.ground?surfaceMount(e):{x:e.x,y:e.y+(e.ground?-e.size*.09:0)},aim=Math.atan2(this.player.y-mount.y,this.player.x-mount.x),angles=e.family==='bomber'?[-.28,0,.28]:e.family==='ship'?[-.16,.16]:[0];const muzzle=e.ground?e.size*.2:5;for(const a of angles)this.hostile(mount.x+Math.cos(aim)*muzzle,mount.y+Math.sin(aim)*muzzle,aim+a,90+(this.hard?30:0)+(e.family==='interceptor'?35:0),e.ground?5:3.6);this.emit('enemy-shot',e.x,e.y);}
+    if(!behind){const mount=e.submarine?{x:e.x,y:e.y}:this.up&&e.ground?surfaceMount(e):{x:e.x,y:e.y+(e.ground?-e.size*.09:0)},aim=Math.atan2(this.player.y-mount.y,this.player.x-mount.x),angles=e.family==='bomber'?[-.28,0,.28]:e.family==='ship'||e.submarine?[-.16,.16]:[0];const muzzle=e.ground?e.size*.2:5,shot=ENEMY_SHOTS[e.family];for(const a of angles)this.hostile(mount.x+Math.cos(aim)*muzzle,mount.y+Math.sin(aim)*muzzle,aim+a,shot.speed+(this.hard?25:0),shot.radius,shot.color);this.emit('enemy-shot',e.x,e.y);}
     e.cooldown=FAMILY[e.family].fire*(this.hard?.78:1);
    }
    if(!e.ground&&Math.hypot(e.x-this.player.x,e.y-this.player.y)<e.size*.28+7)this.hurtPlayer();
   }
-  this.enemies=this.enemies.filter(e=>e.hp>0&&e.age<23&&e.y<470&&e.y>-160&&e.x>-80&&e.x<930);
+  this.enemies=this.enemies.filter(e=>e.hp>0&&(!e.submarine||e.age<9.4)&&(e.navigation?.anchor!==undefined||e.age<23)&&e.y<470&&(e.navigation?.anchor!==undefined||e.y>-160)&&e.x>-80&&e.x<930);
  }
- private bullet(x:number,y:number,vx:number,vy:number,damage:number,radius:number,enemy=false,missile=false,scale=1,homing=false):void{
+ private bullet(x:number,y:number,vx:number,vy:number,damage:number,radius:number,enemy=false,missile=false,scale=1,homing=false,color?:number):void{
   const b=this.bullets.find(b=>!b.active);if(!b)return;
-  Object.assign(b,{active:true,x,y,px:x,py:y,vx,vy,damage,radius,enemy,missile,scale,homing,age:0,color:radius>7?2:radius>4?1:0});
+  Object.assign(b,{active:true,x,y,px:x,py:y,vx,vy,damage,radius,enemy,missile,scale,homing,age:0,color:color??(radius>7?2:radius>4?1:0)});
  }
  private firePrimary():void{
   for(const p of getPrimaryProjectiles('nolan',this.weapons.weaponLevel,0,0)){
    const x=this.player.x+(this.up?p.x:17-p.y),y=this.player.y+(this.up?p.y-15:p.x);
-   this.bullet(x,y,this.up?p.velocityX:-p.velocityY,this.up?p.velocityY:p.velocityX,p.damage,p.hitRadius,false,false,p.scale);
+   this.bullet(x,y,this.up?p.velocityX:-p.velocityY,this.up?p.velocityY:p.velocityX,p.damage,3.6,false,false,p.scale);
   }this.emit('shot');
  }
  private fireMissiles():void{for(const p of getSecondaryProjectiles('nolan',0,0,this.weapons.weaponLevel))this.bullet(this.player.x+(this.up?p.x:-p.y),this.player.y+(this.up?p.y:p.x),this.up?p.velocityX:-p.velocityY,this.up?p.velocityY:p.velocityX,p.damage,p.hitRadius,false,true,p.scale,p.homing);this.emit('missile');}
- private hostile(x:number,y:number,angle:number,speed:number,radius:number):void{this.bullet(x,y,Math.cos(angle)*speed,Math.sin(angle)*speed,1,radius,true);}
+ private hostile(x:number,y:number,angle:number,speed:number,radius:number,color?:number):void{this.bullet(x,y,Math.cos(angle)*speed,Math.sin(angle)*speed,1,radius,true,false,1,false,color);}
  private updateBullets(dt:number):void{
   for(const b of this.bullets){if(!b.active)continue;b.px=b.x;b.py=b.y;b.age+=dt;
-   if(b.homing){const targets=[...this.enemies.filter(e=>e.hp>0),...(this.boss?.parts.filter(p=>p.hp>0)??[])];let best:typeof targets[number]|undefined,d=Infinity;for(const e of targets){const distance=Math.hypot(e.x-b.x,e.y-b.y);if(distance<d){d=distance;best=e;}}if(best){const a=Math.atan2(best.y-b.y,best.x-b.x);b.vx+=(Math.cos(a)*330-b.vx)*dt*4;b.vy+=(Math.sin(a)*330-b.vy)*dt*4;}}
+   if(b.homing){const targets=[...this.enemies.filter(e=>e.hp>0&&e.x>=this.arena.left&&e.x<=this.arena.right&&e.y>=this.arena.top&&e.y<=this.arena.bottom&&(!e.submarine||e.submarine.exposure>=.6)),...(this.boss?.parts.filter(p=>p.hp>0)??[])];let best:typeof targets[number]|undefined,d=Infinity;for(const e of targets){const distance=Math.hypot(e.x-b.x,e.y-b.y);if(distance<d){d=distance;best=e;}}if(best){const a=Math.atan2(best.y-b.y,best.x-b.x);b.vx+=(Math.cos(a)*330-b.vx)*dt*4;b.vy+=(Math.sin(a)*330-b.vy)*dt*4;}}
    b.x+=b.vx*dt;b.y+=b.vy*dt;
-   if(b.enemy){if(this.specialTime>0&&Math.hypot(b.x-this.player.x,b.y-this.player.y)<65){b.active=false;continue;}if(sweepEllipse(b.px,b.py,b.x,b.y,this.player.x,this.player.y,5+b.radius,7+b.radius)!==null){b.active=false;this.hurtPlayer();}}
+   if(b.enemy){if(this.bomb?.phase==='blast'&&Math.hypot(b.x-this.bomb.x,b.y-this.bomb.y)<this.bomb.radius){b.active=false;continue;}if(sweepEllipse(b.px,b.py,b.x,b.y,this.player.x,this.player.y,5+b.radius,7+b.radius)!==null){b.active=false;this.hurtPlayer();}}
    else this.collideFriendly(b);
    if(b.age>9||b.x<this.arena.left-35||b.x>this.arena.right+35||b.y<this.arena.top-60||b.y>this.arena.bottom+40)b.active=false;
   }
  }
  private collideFriendly(b:Bullet):void{
-  let nearest=Infinity;let target:Actor|Component|Cargo|Obstacle|undefined;
-  for(const e of this.enemies){if(e.hp<=0||Math.abs(e.x-b.x)>e.size||Math.abs(e.y-b.y)>e.size+40)continue;const t=this.contact?this.contact(e,b.px,b.py,b.x,b.y,b.radius):sweepEllipse(b.px,b.py,b.x,b.y,e.x,e.y,e.size*.32+b.radius,e.size*.37+b.radius);if(t!==null&&t<nearest){nearest=t;target=e;}}
-  if(this.boss?.phase==='fight')for(const p of this.boss.parts){if(p.hp<=0)continue;const t=sweepEllipse(b.px,b.py,b.x,b.y,p.x,p.y,p.radius+b.radius,p.radius+b.radius);if(t!==null&&t<nearest){nearest=t;target=p;}}
+  let nearest=Infinity;let target:Actor|Component|Cargo|Obstacle|Boss|undefined;
+  for(const e of this.enemies){if(e.hp<=0||(e.submarine&&e.submarine.exposure<.6)||Math.abs(e.x-b.x)>e.size||Math.abs(e.y-b.y)>e.size+40)continue;const t=this.contact?this.contact(e,b.px,b.py,b.x,b.y,b.radius):sweepEllipse(b.px,b.py,b.x,b.y,e.x,e.y,e.size*.32+b.radius,e.size*.37+b.radius);if(t!==null&&t<nearest){nearest=t;target=e;}}
+  if(this.boss?.phase==='fight'){
+   const boss=this.boss,t=this.bossContact?this.bossContact(boss,b.px,b.py,b.x,b.y,b.radius):sweepEllipse(b.px,b.py,b.x,b.y,boss.x,boss.y,boss.size*.43+b.radius,boss.size*(this.up?.37:.29)+b.radius);
+   if(t!==null&&t<nearest){nearest=t;target=boss;}
+  }
   for(const c of this.cargo){if(!c.crate)continue;const t=sweepEllipse(b.px,b.py,b.x,b.y,c.x,c.y,12+b.radius,12+b.radius);if(t!==null&&t<nearest){nearest=t;target=c;}}
   for(const o of this.obstacles){if(o.kind!=='barrier'||o.hp<=0)continue;const t=sweepEllipse(b.px,b.py,b.x,b.y,o.x,o.y,o.width/2+b.radius,o.height/2+b.radius);if(t!==null&&t<nearest){nearest=t;target=o;}}
   if(!target)return;b.x=b.px+(b.x-b.px)*nearest;b.y=b.py+(b.y-b.py)*nearest;b.active=false;
-  if('crate'in target){target.hp-=b.damage;if(target.hp<=0){target.crate=false;target.age=0;target.vx=this.up?58:-58;target.vy=this.up?37:35;this.emit('explosion',target.x,target.y,.35);}}
+  if('parts'in target){this.damageBossAt(b.x,b.y,b.damage);}
+  else if('crate'in target){target.hp-=b.damage;if(target.hp<=0){target.crate=false;target.age=0;target.vx=this.up?58:-58;target.vy=this.up?37:35;this.emit('explosion',target.x,target.y,.35);}}
   else if('kind'in target){target.hp-=b.damage;if(target.hp<=0)this.emit('explosion',target.x,target.y,1);}
   else this.damage(target,b.damage,b.x,b.y);
  }
  private damage(target:Actor|Component,amount:number,x:number,y:number):void{
   if(target.hp<=0)return;target.hp=Math.max(0,target.hp-amount);target.flash=.095;this.emit('impact',x,y,.3);
-  if(target.hp===0){const size='family'in target?target.size/30:1.3;this.emit('explosion',x,y,size,'family'in target?target.family:undefined);this.score+='family'in target?FAMILY[target.family].score:1500;this.kills++;}
+  if(target.hp===0){
+   if('family'in target&&this.up&&target.navigation?.anchor!==undefined){
+    this.wrecks.push({anchor:target.navigation.anchor,family:target.family==='tower'?'tower':'tank',id:target.id,x:target.x,y:target.y,worldY:target.y-this.scroll,size:target.size,age:0});
+   }
+   const size='family'in target?target.size/30:1.3;this.emit('explosion',x,y,size,'family'in target?target.family:undefined);this.score+='family'in target?FAMILY[target.family].score:1500;this.kills++;
+  }
+ }
+ private updateWrecks(dt:number):void{
+  for(const wreck of this.wrecks){wreck.age+=dt;wreck.y=wreck.worldY+this.scroll;}
+  // Smoke has headroom above its base; recycle only once the entire remnant has passed the bottom.
+  this.wrecks=this.wrecks.filter(wreck=>wreck.y-wreck.size*2<432);
+ }
+ /** Every hull point belongs to one of three physical weapon sectors. */
+ private damageBossAt(x:number,y:number,amount:number):void{
+  const boss=this.boss;if(!boss||boss.phase!=='fight')return;
+  const sector=(dx:number)=>dx<-boss.size*.065?-1:dx>boss.size*.065?1:0;
+  const hitSector=sector(x-boss.x),local=boss.parts.filter(p=>sector(p.dx)===hitSector&&p.hp>0);
+  boss.flash=.095;
+  if(local.length){const target=local.sort((a,b)=>Math.abs(a.y-y)-Math.abs(b.y-y))[0];this.damage(target,amount,x,y);}
+  else{
+   const remaining=boss.parts.filter(p=>p.hp>0);if(!remaining.length)return;
+   const reduced=amount*.25/remaining.length;
+   for(const target of remaining)this.damage(target,reduced,x,y);
+  }
  }
  private applySpecial(dt:number):void{
-  const targets:(Actor|Component)[]=[...this.enemies.filter(e=>e.hp>0),...(this.boss?.phase==='fight'?this.boss.parts.filter(p=>p.hp>0):[])];
-  const hit=targets.filter(e=>this.up?e.y<this.player.y&&Math.abs(e.x-this.player.x)<44:e.x>this.player.x&&Math.abs(e.y-this.player.y)<44).sort((a,b)=>this.up?b.y-a.y:a.x-b.x)[0];
-  if(hit){this.specialImpact={x:hit.x,y:hit.y};this.damage(hit,40*dt,hit.x,hit.y);}
+  const bomb=this.bomb;if(!bomb)return;
+  const before=bomb.age;bomb.age+=dt;
+  if(bomb.phase==='flight'){
+   const travel=Math.min(dt,Math.max(0,.65-before))*280;
+   if(this.up)bomb.y=Math.max(this.arena.top+65,bomb.y-travel);else bomb.x=Math.min(this.arena.right-65,bomb.x+travel);
+   if(bomb.age>=.65){bomb.phase='blast';this.emit('explosion',bomb.x,bomb.y,3);}
+  }
+  if(bomb.phase==='blast'){
+   const age=bomb.age-.65,blastDt=Math.min(dt,Math.max(0,bomb.age-.65));
+   bomb.radius=(this.up?155:180)*Math.min(1,age/.35);this.specialImpact={x:bomb.x,y:bomb.y};
+   for(const target of this.enemies){
+    if(target.hp<=0||(target.submarine&&target.submarine.exposure<.6))continue;
+    const d=Math.hypot(target.x-bomb.x,target.y-bomb.y);
+    if(d<bomb.radius+target.size*.3)this.damage(target,90*blastDt,target.x,target.y);
+   }
+   if(this.boss?.phase==='fight')for(const target of this.boss.parts){
+    if(target.hp>0&&Math.hypot(target.x-bomb.x,target.y-bomb.y)<bomb.radius+target.radius)this.damage(target,90*blastDt,target.x,target.y);
+   }
+   for(const shot of this.bullets)if(shot.active&&shot.enemy&&Math.hypot(shot.x-bomb.x,shot.y-bomb.y)<bomb.radius)shot.active=false;
+  }
+  if(bomb.age>=2.75){this.bomb=undefined;this.specialTime=0;}
  }
  private hurtPlayer():void{
   if(this.player.invulnerable>0||this.specialTime>0||this.state!=='play')return;
   this.lives--;this.deaths++;this.emit('death');this.emit('explosion',this.player.x,this.player.y,1.2);
   if(this.weapons.weaponLevel>1||this.weapons.powerMeter>0)this.cargo.push({id:++this.sequence,x:this.player.x,y:this.player.y-20,vx:55,vy:-35,kind:'power',crate:false,hp:1,age:0});
-  this.weapons.weaponLevel=1;this.weapons.powerMeter=0;this.specialTime=0;this.burst.reset();this.player.invulnerable=3;
+  this.weapons.weaponLevel=1;this.weapons.powerMeter=0;this.specialTime=0;this.bomb=undefined;this.burst.reset();this.player.invulnerable=3;
   if(this.lives<=0){this.state='defeat';this.emit('defeat');return;}
   this.player.x=this.up?384:80;this.player.y=this.up?375:230;
   for(const b of this.bullets)if(b.enemy&&Math.hypot(b.x-this.player.x,b.y-this.player.y)<75)b.active=false;
@@ -141,7 +210,7 @@ export class ArcadeWorld {
   }this.cargo=this.cargo.filter(c=>c.age<(c.crate?23:24)&&c.y<465&&c.x>this.arena.left-60);
  }
  private startBoss(mini:boolean):void{
-  const boss:Boss={mini,x:this.up?384:820,y:this.up?-140:215,size:mini?(this.up?145:175):(this.up?286:310),age:0,phase:'enter',configuration:1,timer:0,attack:0,attackTime:0,volley:0,aimX:384,aimY:370,parts:[]};
+  const boss:Boss={mini,x:this.up?384:820,y:this.up?-140:215,size:mini?(this.up?132:175):(this.up?216:310),age:0,phase:'enter',configuration:1,timer:0,attack:0,attackTime:0,volley:0,aimX:384,aimY:370,parts:[]};
   this.boss=boss;this.installParts(boss,3);this.emit(mini?'mini':'boss',0,0,1,mini?'PATRULHA PESADA':this.mission.boss);
  }
  private installParts(b:Boss,count:number):void{
@@ -150,21 +219,21 @@ export class ArcadeWorld {
   b.parts=mounts.map(([mx,my])=>{const dx=mx*b.size,dy=my*b.size,hp=b.mini?95:this.up?(b.configuration===1?200:90):200;return{id:++this.sequence,x:b.x+dx,y:b.y+dy,dx,dy,hp,maxHp:hp,radius:b.mini?10:13,flash:0,warning:0,angle:this.up?Math.PI/2:Math.PI};});
  }
  private updateBoss(dt:number):void{
-  const b=this.boss;if(!b)return;b.age+=dt;b.timer+=dt;
+  const b=this.boss;if(!b)return;b.age+=dt;b.timer+=dt;b.flash=Math.max(0,(b.flash??0)-dt);
   if(b.phase==='enter'||b.phase==='return'){
    const t=clamp(b.timer/2.5,0,1),ease=1-(1-t)**3;
-   if(this.up){b.x=384;b.y=-170+ease*(b.mini?300:b.configuration===1?354:375);}else{b.x=830-ease*250;b.y=215;}
+   if(this.up){b.x=384;b.y=-170+ease*(b.mini?300:b.configuration===1?336:350);}else{b.x=830-ease*250;b.y=215;}
    if(t>=1){b.phase='fight';b.timer=0;}
   }else if(b.phase==='retreat'){
    if(this.up)b.y-=85*dt;else b.x+=85*dt;
    if(b.timer>2.8){b.phase='absent';b.timer=0;this.emit('radio',0,0,1,'Ei... aquilo está voltando por baixo!');}
   }else if(b.phase==='absent'){
-   if(b.timer>=5){b.configuration=2;b.size=324;b.phase='return';b.timer=0;this.installParts(b,6);this.emit('return');}
+   if(b.timer>=5){b.configuration=2;b.size=this.up?236:324;b.phase='return';b.timer=0;this.installParts(b,6);this.emit('return');}
   }else if(b.phase==='sink'){
    if(Math.floor(b.timer*9)!==Math.floor((b.timer-dt)*9))this.emit('explosion',b.x+Math.sin(b.timer*31)*b.size*.3,b.y+Math.cos(b.timer*23)*b.size*.25,.6+b.timer*.12);
-   if(b.timer>2.6){const mini=b.mini;this.boss=undefined;this.clearHostileBullets();if(!mini){this.state='exit';this.exitTime=0;this.specialTime=0;this.cargo=[];this.enemies=[];this.obstacles=[];for(const shot of this.bullets)shot.active=false;this.score+=10000+this.lives*1000;this.emit('victory');}else{this.score+=3000;this.emit('radio',0,0,1,this.up?'A pista está livre. Próxima parada: a fenda!':'Patrulha vencida! Vamos ao distrito das cores!');}}return;
+   if(b.timer>2.6){const mini=b.mini;this.boss=undefined;this.clearHostileBullets();if(!mini){this.state='exit';this.exitTime=0;this.specialTime=0;this.bomb=undefined;this.cargo=[];this.enemies=[];this.obstacles=[];for(const shot of this.bullets)shot.active=false;this.score+=10000+this.lives*1000;this.emit('victory');}else{this.score+=3000;this.emit('radio',0,0,1,this.up?'A pista está livre. Próxima parada: a fenda!':'Patrulha vencida! Vamos ao distrito das cores!');}}return;
   }else{
-   if(this.up)b.x=384+Math.sin(b.age*.65)*20;else b.y=210+Math.sin(b.age*.65)*65;
+   if(this.up)b.x=384+Math.sin(b.age*.65)*14;else b.y=210+Math.sin(b.age*.65)*65;
    const alive=b.parts.filter(p=>p.hp>0);
    if(!alive.length){if(!b.mini&&this.up&&b.configuration===1){b.phase='retreat';b.timer=0;this.clearHostileBullets();this.emit('explosion',b.x,b.y,2);}else{b.phase='sink';b.timer=0;this.clearHostileBullets();}return;}
    b.attackTime+=dt;const warning=b.attack%4===3?1.35:.8,shootEnd=warning+(b.attack%4===2?1.2:.65),cycle=shootEnd+(b.mini?1.2:1.05);
@@ -186,10 +255,10 @@ export class ArcadeWorld {
     else if(i===b.attack%parts.length)for(const a of[-.28,0,.28])this.hostile(mx,my,aim+a,88+volley*8,9.5);
     return;
    }
-   if(pattern===0){for(const a of[-.48,-.24,0,.24,.48])this.hostile(mx,my,forward+a,90+(this.hard?20:0),4.4);}
+   if(pattern===0){for(const a of[-.48,-.24,0,.24,.48])this.hostile(mx,my,forward+a,125+(this.hard?20:0),4.4);}
    else if(pattern===1){for(const a of[-.10,.10])this.hostile(mx,my,aim+a,155+(this.hard?25:0),3.8);}
    else if(pattern===2)this.hostile(mx,my,aim+(volley-1)*.16,180,3.3);
-   else if(i===b.attack%parts.length){for(let j=0;j<12;j++)this.hostile(mx,my,TAU*j/12+volley*.14,72,8.5);}
+   else if(i===b.attack%parts.length){for(let j=0;j<12;j++)this.hostile(mx,my,TAU*j/12+volley*.14,105,8.5);}
   });this.emit('enemy-shot',b.x,b.y);
  }
  private spawnObstacle():void{
