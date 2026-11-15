@@ -1,11 +1,11 @@
 {
   "errors": [],
   "pause": {
-    "before": 3.8916666666666555,
-    "after": 3.8916666666666555,
+    "before": 4.074999999999992,
+    "after": 4.074999999999992,
     "audio": {
       "track": "stage1",
-      "position": 3.76664,
+      "position": 4.002748,
       "volume": 0.0936,
       "paused": true,
       "failed": false
@@ -40,7 +40,7 @@
     ],
     "audio": {
       "track": "boss1",
-      "position": 4.982974,
+      "position": 5.128337,
       "volume": 0.0936,
       "paused": false,
       "failed": false
