@@ -65,7 +65,7 @@ SOLAR.encounters.sort((a,b)=>a.at-b.at);
 /** Reserved data is deliberately not a playable/unlocked mission. */
 export const FUTURE_ROUTES=[{id:'secret-side',kind:'secret',perspective:'SIDE',duration:120,unlock:null},{id:'secret-up-a',kind:'secret',perspective:'UP',duration:180,unlock:null},{id:'secret-up-b',kind:'secret',perspective:'UP',duration:180,unlock:null},{id:'sixth-campaign',kind:'extra',perspective:'SIDE',unlock:'campaign-complete'},{id:'remix',kind:'remix',perspective:null,unlock:null}] as const;
 export const SUPPLIES=[{at:18,kind:'power'},{at:42,kind:'power'},{at:68,kind:'power'},{at:94,kind:'power'},{at:118,kind:'power'},{at:145,kind:'special'},{at:201,kind:'power'},{at:219,kind:'power'},{at:239,kind:'life'},{at:253,kind:'power'},{at:275,kind:'power'}] as const;
-export const FAMILY={fighter:{hp:2,size:29,score:160,fire:2.4},interceptor:{hp:3,size:31,score:220,fire:1.8},acrobat:{hp:3,size:30,score:200,fire:2.8},bomber:{hp:16,size:49,score:700,fire:2.1},boat:{hp:11,size:41,score:600,fire:2.5},ship:{hp:25,size:63,score:1200,fire:2.3},tank:{hp:12,size:34,score:500,fire:2.6},tower:{hp:14,size:36,score:550,fire:2.2},airship:{hp:18,size:57,score:950,fire:2.6},alien:{hp:5,size:32,score:350,fire:2.9},submarine:{hp:22,size:64,score:1000,fire:1.8}} satisfies Record<Family,{hp:number;size:number;score:number;fire:number}>;
+export const FAMILY={fighter:{hp:2,size:20,score:160,fire:2.4},interceptor:{hp:3,size:22,score:220,fire:1.8},acrobat:{hp:3,size:21,score:200,fire:2.8},bomber:{hp:16,size:38,score:700,fire:2.1},boat:{hp:11,size:41,score:600,fire:2.5},ship:{hp:25,size:63,score:1200,fire:2.3},tank:{hp:12,size:34,score:500,fire:2.6},tower:{hp:14,size:36,score:550,fire:2.2},airship:{hp:18,size:46,score:950,fire:2.6},alien:{hp:5,size:22,score:350,fire:2.9},submarine:{hp:22,size:64,score:1000,fire:1.8}} satisfies Record<Family,{hp:number;size:number;score:number;fire:number}>;
 export function regionAt(time:number):number{return time<45?0:time<90?1:time<135?2:time<155?3:time<200?4:time<255?5:6;}
 export function formationOffsets(f:Formation):[number,number][]{
  switch(f){case'solo':return[[0,0]];case'pair':return[[-.12,0],[.12,0]];case'trio':return[[-.17,0],[0,.1],[.17,0]];case'quartet':return[[-.21,0],[-.07,.08],[.07,.08],[.21,0]];case'v':return[[-.28,-.16],[-.14,-.08],[0,0],[.14,-.08],[.28,-.16]];case'stagger':return[[-.18,0],[-.06,-.12],[.06,-.24],[.18,-.36]];case'horde':return Array.from({length:8},(_,i)=>[(i%4-1.5)*.13,-Math.floor(i/4)*.18]);case'escort':return[[0,0],[-.17,-.1],[.17,-.1]];case'pincer':return[[-.35,0],[.35,0]];case'successive':return[[0,0],[.12,-.22],[-.12,-.44],[0,-.66]];}
@@ -73,8 +73,8 @@ export function formationOffsets(f:Formation):[number,number][]{
 
 /** Fixed silhouette, color and speed per enemy; aircraft do not resize bullets between volleys. */
 export const ENEMY_SHOTS:Record<Family,{radius:number;speed:number;color:number}>={
- fighter:{radius:2.6,speed:145,color:0},interceptor:{radius:2.8,speed:185,color:1},acrobat:{radius:2.6,speed:155,color:2},
- bomber:{radius:4.2,speed:140,color:1},boat:{radius:4.1,speed:140,color:0},ship:{radius:4.8,speed:145,color:1},
- tank:{radius:4.1,speed:150,color:0},tower:{radius:4.6,speed:145,color:1},airship:{radius:4.4,speed:140,color:1},
- alien:{radius:3.4,speed:165,color:2},submarine:{radius:4.6,speed:155,color:0},
+ fighter:{radius:2.1,speed:145,color:0},interceptor:{radius:2.2,speed:185,color:1},acrobat:{radius:2.1,speed:155,color:2},
+ bomber:{radius:3.0,speed:140,color:1},boat:{radius:2.9,speed:140,color:0},ship:{radius:3.3,speed:145,color:1},
+ tank:{radius:2.9,speed:150,color:0},tower:{radius:3.2,speed:145,color:1},airship:{radius:3.1,speed:140,color:1},
+ alien:{radius:2.5,speed:165,color:2},submarine:{radius:3.2,speed:155,color:0},
 };

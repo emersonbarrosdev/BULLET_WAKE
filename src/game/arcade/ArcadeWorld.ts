@@ -249,16 +249,16 @@ export class ArcadeWorld {
    const aim=Math.atan2(b.aimY-p.y,b.aimX-p.x),mx=p.x+Math.cos(pattern===0?forward:aim)*p.radius*1.1,my=p.y+Math.sin(pattern===0?forward:aim)*p.radius*1.1;
    if(!this.up){
     // Giro builds moving horizontal lanes; Pula-Onda owns the radial naval pattern below.
-    if(pattern===0)for(const a of[-.32,0,.32])this.hostile(mx,my,forward+a+(volley-1)*.08,102+(this.hard?20:0),4.4);
-    else if(pattern===1)for(const a of[-.13,.13])this.hostile(mx,my,aim+a,145+volley*12,3.8);
-    else if(pattern===2)for(const a of[-.09,.09])this.hostile(mx,my,aim+Math.sin(volley*1.7)*.24+a,170,3.3);
-    else if(i===b.attack%parts.length)for(const a of[-.28,0,.28])this.hostile(mx,my,aim+a,88+volley*8,9.5);
+    if(pattern===0)for(const a of[-.32,0,.32])this.hostile(mx,my,forward+a+(volley-1)*.08,102+(this.hard?20:0),3.1);
+    else if(pattern===1)for(const a of[-.13,.13])this.hostile(mx,my,aim+a,145+volley*12,2.7);
+    else if(pattern===2)for(const a of[-.09,.09])this.hostile(mx,my,aim+Math.sin(volley*1.7)*.24+a,170,2.4);
+    else if(i===b.attack%parts.length)for(const a of[-.28,0,.28])this.hostile(mx,my,aim+a,88+volley*8,7.5);
     return;
    }
-   if(pattern===0){for(const a of[-.48,-.24,0,.24,.48])this.hostile(mx,my,forward+a,125+(this.hard?20:0),4.4);}
-   else if(pattern===1){for(const a of[-.10,.10])this.hostile(mx,my,aim+a,155+(this.hard?25:0),3.8);}
-   else if(pattern===2)this.hostile(mx,my,aim+(volley-1)*.16,180,3.3);
-   else if(i===b.attack%parts.length){for(let j=0;j<12;j++)this.hostile(mx,my,TAU*j/12+volley*.14,105,8.5);}
+   if(pattern===0){for(const a of[-.48,-.24,0,.24,.48])this.hostile(mx,my,forward+a,125+(this.hard?20:0),3.1);}
+   else if(pattern===1){for(const a of[-.10,.10])this.hostile(mx,my,aim+a,155+(this.hard?25:0),2.7);}
+   else if(pattern===2)this.hostile(mx,my,aim+(volley-1)*.16,180,2.4);
+   else if(i===b.attack%parts.length){for(let j=0;j<12;j++)this.hostile(mx,my,TAU*j/12+volley*.14,105,7.4);}
   });this.emit('enemy-shot',b.x,b.y);
  }
  private spawnObstacle():void{
