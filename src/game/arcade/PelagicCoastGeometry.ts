@@ -21,6 +21,11 @@ export function formationRow(spec:ArchipelagoFormationSpec,rawY:number):readonly
  return [spec.centerX-spec.width/2,spec.centerX+spec.width/2];
 }
 export const coastBoundary=paintedCoastBoundary;
+/** Maps left/right bank shoreline onto any UP playfield span [arenaLeft .. arenaLeft + arenaWidth] without stretching land art. */
+export function coastWorldEdgeX(worldY:number,side:CoastSide,arenaLeft=192,arenaWidth=COAST_WIDTH):number{
+ const raw=coastBoundary(worldY,side);
+ return side<0?arenaLeft+raw:arenaLeft+arenaWidth-(COAST_WIDTH-raw);
+}
 export function coastAtScroll(scroll:number,y:number,side:CoastSide):number{return coastBoundary(y-scroll,side);}
 export function isOpenSeaAt(y:number,side:CoastSide):boolean{return coastBoundary(y,side)===(side<0?0:COAST_WIDTH);}
 export function visibleFormations(scroll:number,padding=40):Array<{spec:ArchipelagoFormationSpec;y:number;key:string}>{

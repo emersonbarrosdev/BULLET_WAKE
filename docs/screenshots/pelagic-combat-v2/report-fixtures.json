@@ -3,79 +3,44 @@
   "errors": [],
   "fixtures": [
     {
-      "name": "01-submarines-emerge"
+      "name": "01-sub-enter"
     },
     {
-      "name": "02-submarines-hold"
+      "name": "02-sub-sec0-bow"
     },
     {
-      "name": "03-balloon-and-pickups"
+      "name": "03-sub-hull-damage-crater"
     },
     {
-      "name": "04-wet-hulls-and-round-shot"
+      "name": "04-sub-transition"
     },
     {
-      "name": "05-hit-overlay"
+      "name": "05-sub-sec2-conning-intact"
     },
     {
-      "name": "06-bomb-flight"
+      "name": "06-sub-sec2-conning-ruined"
     },
     {
-      "name": "07-colossal-blast"
+      "name": "07-sub-sec4-stern-reactor"
     },
     {
-      "name": "08-colossal-blast-1920"
+      "name": "08-sub-special-blast"
     },
     {
-      "name": "09-boss-intact"
+      "name": "09-sub-collapse-destruction"
     },
     {
-      "name": "10-boss-left-destroyed"
+      "name": "11-sub-1920x1080"
     },
     {
-      "name": "11-automatic-flyout"
+      "name": "12-sub-mobile-854x480-touch"
+    },
+    {
+      "name": "10-sub-flyout"
     }
   ],
-  "submarines": [
-    {
-      "x": 305.8072097055833,
-      "y": 80,
-      "phase": "hold",
-      "key": "arc-submarine-v2",
-      "alpha": 1,
-      "rotation": 0
-    },
-    {
-      "x": 401.94460008436056,
-      "y": 180,
-      "phase": "hold",
-      "key": "arc-submarine-v2",
-      "alpha": 1,
-      "rotation": 0
-    }
-  ],
-  "flash": [
-    {
-      "alpha": 0.4,
-      "key": "arc-boss"
-    },
-    {
-      "alpha": 0.4,
-      "key": "arc-wet-hull-4"
-    }
-  ],
-  "bomb": {
-    "phase": "blast",
-    "age": 1.0000000000000002,
-    "radius": 155,
-    "key": "arc-colossal-v2"
-  },
-  "sectors": {
-    "leftHp": 0,
-    "reducedDamage": 5
-  },
   "flyout": {
     "state": "exit",
-    "y": 148.5
+    "y": 250.33333333333232
   }
 }

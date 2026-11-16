@@ -8,25 +8,20 @@ import { PrototypeScene } from './game/scenes/PrototypeScene';
 import { EndingScene } from './game/scenes/EndingScene';
 import { ArcadeScene } from './game/arcade/ArcadeScene';
 
-// Disponibiliza o Phaser globalmente no escopo do navegador para debug e extensibilidade
-(window as unknown as { Phaser: typeof Phaser }).Phaser = Phaser;
-
 async function bootGame(): Promise<void> {
-  // Força o download e ativação real das fontes Oxanium e Rajdhani antes de iniciar as cenas Phaser
+  // Inicia o carregamento de fontes sem bloquear a criação imediata do canvas Phaser e do loading.
   if (typeof document !== 'undefined' && 'fonts' in document) {
-    try {
-      await Promise.allSettled([
+    void Promise.race([
+      Promise.allSettled([
         document.fonts.load('600 18px "Oxanium"'),
         document.fonts.load('700 24px "Oxanium"'),
         document.fonts.load('800 32px "Oxanium"'),
         document.fonts.load('500 16px "Rajdhani"'),
         document.fonts.load('600 18px "Rajdhani"'),
         document.fonts.load('700 20px "Rajdhani"'),
-      ]);
-      await document.fonts.ready;
-    } catch {
-      // Fallback gracioso caso offline
-    }
+      ]),
+      new Promise<void>((resolve) => setTimeout(resolve, 300)),
+    ]);
   }
 
   const host = document.getElementById('game');
@@ -34,12 +29,16 @@ async function bootGame(): Promise<void> {
     throw new Error('Elemento #game não encontrado para inicializar BULLET WAKE.');
   }
 
+  // Nasce já no tamanho real do viewport para evitar salto de escala ou faixas no carregamento.
+  const initWidth = Math.max(1, Math.floor(host.clientWidth || window.innerWidth || GAME_WIDTH));
+  const initHeight = Math.max(1, Math.floor(host.clientHeight || window.innerHeight || GAME_HEIGHT));
+
   const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO, // Preferir WebGL; fallback Canvas fornecido pelo Phaser.
     parent: host,
     backgroundColor: GAME_BACKGROUND,
-    width: GAME_WIDTH,
-    height: GAME_HEIGHT,
+    width: initWidth,
+    height: initHeight,
     render: {
       antialias: true,
       antialiasGL: true,
@@ -56,17 +55,25 @@ async function bootGame(): Promise<void> {
       mode: Phaser.Scale.FIT,
       // O CSS Flexbox centraliza o Canvas.
       autoCenter: Phaser.Scale.NO_CENTER,
-      width: GAME_WIDTH,
-      height: GAME_HEIGHT,
+      width: initWidth,
+      height: initHeight,
     },
     scene: [ArcadeScene, TitleScene, StageSelectScene, PilotSelectScene, PrototypeScene, EndingScene],
   };
 
   const game = new Phaser.Game(config);
-  (window as unknown as { __GAME__: Phaser.Game }).__GAME__ = game;
+
+  let cleanupDevTools: (() => void) | undefined;
+  if (__BW_DEVTOOLS__ && import.meta.env.DEV) {
+    const { mountDevTools } = await import('./devtools/mountDevTools');
+    cleanupDevTools = mountDevTools(game, Phaser);
+  }
 
   if (import.meta.hot) {
-    import.meta.hot.dispose(() => game.destroy(true));
+    import.meta.hot.dispose(() => {
+      cleanupDevTools?.();
+      game.destroy(true);
+    });
   }
 }
 

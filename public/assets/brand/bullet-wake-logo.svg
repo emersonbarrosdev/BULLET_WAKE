@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="420" viewBox="0 0 960 420">
+  <defs>
+    <linearGradient id="bwGold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fffbe0"/>
+      <stop offset="28%" stop-color="#ffea4a"/>
+      <stop offset="68%" stop-color="#ffaa08"/>
+      <stop offset="100%" stop-color="#db5f00"/>
+    </linearGradient>
+    <linearGradient id="bwCyan" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#ccf8ff"/>
+      <stop offset="72%" stop-color="#3cd7ff"/>
+      <stop offset="100%" stop-color="#0b77cc"/>
+    </linearGradient>
+    <linearGradient id="bwBlade" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.0"/>
+      <stop offset="22%" stop-color="#38bdf8" stop-opacity="0.95"/>
+      <stop offset="62%" stop-color="#fde047"/>
+      <stop offset="100%" stop-color="#ff4d6d"/>
+    </linearGradient>
+    <linearGradient id="bwRibbon" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff4d6d"/>
+      <stop offset="50%" stop-color="#ffdf5a"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <filter id="bwShadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="8" stdDeviation="5" flood-color="rgba(5,20,48,0.52)" flood-opacity="0.9"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#bwShadow)">
+    <!-- Integrated sleek velocity wing-blade & sonic chevron swoop behind lockup -->
+    <path d="M 70 218 L 892 178 L 856 206 L 106 238 Z"
+          fill="url(#bwBlade)" stroke="#061836" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M 134 344 Q 512 384 858 258 Q 888 244 894 226 Q 862 256 792 280 Q 496 364 156 336 Z"
+          fill="url(#bwRibbon)" stroke="#061836" stroke-width="5.5" stroke-linejoin="round"/>
+
+    <!-- Speed lines left -->
+    <path d="M 52 132 L 194 124 L 180 138 L 46 142 Z" fill="#5ce1ff" stroke="#061836" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 38 164 L 166 158 L 154 170 L 32 174 Z" fill="#ffdf5a" stroke="#061836" stroke-width="3.5" stroke-linejoin="round"/>
+
+    <!-- Supersonic sonic-boom chevrons right -->
+    <path d="M 792 84 L 916 56 L 866 96 L 902 108 L 766 116 Z"
+          fill="#ff4d6d" stroke="#061836" stroke-width="4.5" stroke-linejoin="round"/>
+
+    <!-- BULLET -->
+    <g transform="translate(476, 178) skewX(-12)">
+      <text x="0" y="0" text-anchor="middle"
+            font-family="'Oxanium', 'Impact', 'Arial Black', sans-serif"
+            font-weight="900" font-size="146" letter-spacing="5"
+            fill="none" stroke="#051633" stroke-width="34" stroke-linejoin="round">BULLET</text>
+      <text x="0" y="0" text-anchor="middle"
+            font-family="'Oxanium', 'Impact', 'Arial Black', sans-serif"
+            font-weight="900" font-size="146" letter-spacing="5"
+            fill="none" stroke="#8ef4ff" stroke-width="11" stroke-linejoin="round">BULLET</text>
+      <text x="0" y="0" text-anchor="middle"
+            font-family="'Oxanium', 'Impact', 'Arial Black', sans-serif"
+            font-weight="900" font-size="146" letter-spacing="5"
+            fill="url(#bwGold)" stroke="#061836" stroke-width="5.5" stroke-linejoin="round">BULLET</text>
+      <clipPath id="bulletTopClip"><rect x="-440" y="-128" width="880" height="60"/></clipPath>
+      <text x="0" y="0" text-anchor="middle" clip-path="url(#bulletTopClip)"
+            font-family="'Oxanium', 'Impact', 'Arial Black', sans-serif"
+            font-weight="900" font-size="146" letter-spacing="5"
+            fill="#ffffff" opacity="0.30">BULLET</text>
+    </g>
+
+    <!-- WAKE (tucked tightly under BULLET for unified emblem silhouette) -->
+    <g transform="translate(492, 312) skewX(-12)">
+      <text x="0" y="0" text-anchor="middle"
+            font-family="'Oxanium', 'Impact', 'Arial Black', sans-serif"
+            font-weight="900" font-size="132" letter-spacing="12"
+            fill="none" stroke="#051633" stroke-width="32" stroke-linejoin="round">WAKE</text>
+      <text x="0" y="0" text-anchor="middle"
+            font-family="'Oxanium', 'Impact', 'Arial Black', sans-serif"
+            font-weight="900" font-size="132" letter-spacing="12"
+            fill="none" stroke="#ffdf5a" stroke-width="9" stroke-linejoin="round">WAKE</text>
+      <text x="0" y="0" text-anchor="middle"
+            font-family="'Oxanium', 'Impact', 'Arial Black', sans-serif"
+            font-weight="900" font-size="132" letter-spacing="12"
+            fill="url(#bwCyan)" stroke="#061836" stroke-width="5" stroke-linejoin="round">WAKE</text>
+    </g>
+
+    <!-- Clean left/right star-spark gleams -->
+    <polygon points="154,262 198,250 184,268 208,284 148,286" fill="#5ce1ff" stroke="#061836" stroke-width="3.5" stroke-linejoin="round"/>
+    <polygon points="802,248 848,236 828,258 854,272 786,274" fill="#ffdf5a" stroke="#061836" stroke-width="3.5" stroke-linejoin="round"/>
+  </g>
+</svg>

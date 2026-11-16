@@ -1,6 +1,10 @@
 import Phaser from 'phaser';
 import type {ArcadeWorld} from './ArcadeWorld';
-export const SUPPLY_ART='arc-supply-v2',SUB_ART='arc-submarine-v2',BOMB_ART='arc-bomb-v2',BLAST_ART='arc-colossal-v2';
+import {EMPLACEMENT_TEXTURE,GUN_SMOKE_TEXTURE} from './PelagicEmplacements';
+import {SUB_HULL_DISPLAY_W,SUB_SECTION_HEIGHT,subSectionCenterY,type SubModule} from './PelagicSubmarineBoss';
+import {clamp} from './geometry';
+import {spriteContact} from '../render/SpriteSilhouette';
+export const SUPPLY_ART='arc-supply-v2',SUB_ART='arc-submarine-v2',BOMB_ART='arc-bomb-v2',BLAST_ART='arc-colossal-v2',SUB_HULL_ART='arc-sub-hull',SUB_SUBMERGED_ART='arc-sub-submerged',SUB_PARTS_ART='arc-sub-parts';
 function frames(scene:Phaser.Scene,key:string,columns:number,rows:number):void{
  const t=scene.textures.get(key),s=t.getSourceImage() as HTMLImageElement;
  if(t.has('0'))return;
@@ -10,7 +14,8 @@ function frames(scene:Phaser.Scene,key:string,columns:number,rows:number):void{
  }
 }
 export function installCombatArt(scene:Phaser.Scene):void{
- frames(scene,SUPPLY_ART,4,4);frames(scene,SUB_ART,2,1);frames(scene,BOMB_ART,2,2);frames(scene,BLAST_ART,4,3);
+ frames(scene,SUPPLY_ART,4,4);frames(scene,SUB_ART,2,1);frames(scene,BOMB_ART,2,2);frames(scene,BLAST_ART,4,3);frames(scene,SUB_HULL_ART,5,1);frames(scene,SUB_PARTS_ART,4,2);
+ if(scene.textures.exists(SUB_SUBMERGED_ART))frames(scene,SUB_SUBMERGED_ART,5,1);
  // Build 6-frame animated water-hugging spritesheets for naval hulls (4=boat, 5=ship).
  // Proportions scale by `u = cw / 100` so bow V-foam, side wave collars, and stern churn stay crisp at gameplay scale.
  for(const frame of[4,5]){
@@ -65,7 +70,6 @@ export function installCombatArt(scene:Phaser.Scene):void{
   const t=scene.textures.createCanvas(key,cw*framesCount,ch)!,c=t.context;
   for(let fi=0;fi<framesCount;fi++){
    const ox=fi*cw,phase=fi/framesCount*Math.PI*2;
-   const surge=fi/framesCount;
 
    // 1. Deep submerged shadow pocket under hull so craft rests inside water volume
    c.save();
@@ -78,32 +82,7 @@ export function installCombatArt(scene:Phaser.Scene):void{
    }
    c.restore();
 
-   // 2. Bold outer concentric aqua ripple rings framing hull waterline (animated outward across frames)
-   c.save();
-   for(let r=0;r<2;r++){
-    const exp=(surge+r*.5)%1;
-    const pad=u*(2.4+exp*6.8);
-    c.strokeStyle=`rgba(116,242,255,${((1-exp)*.66).toFixed(2)})`;
-    c.lineWidth=u*(2.2-exp*.9);
-    c.lineCap='round';c.lineJoin='round';
-    for(const side of[-1,1]){
-     c.beginPath();
-     let started=false;
-     for(let s=0;s<=14;s++){
-      const frac=s/14*.98,ry=sampleRow(frac);
-      if(rightEdge[ry]<0)continue;
-      const ex=side<0?leftEdge[ry]:rightEdge[ry];
-      const ripple=Math.sin(frac*9-phase+r*1.8)*u*1.4;
-      const px=ox+ex+side*(pad*(.45+frac*.75)+ripple);
-      const py=ry-dir*u*exp*2;
-      if(!started){c.moveTo(px,py);started=true;}else c.lineTo(px,py);
-     }
-     if(started)c.stroke();
-    }
-   }
-   c.restore();
-
-   // 3. Draw hull shifted slightly with wave heave across frames
+   // 2. Draw hull shifted slightly with wave heave across frames (no geometric outer rings around enemies)
    const frameHeave=Math.sin(phase)*u*1.1;
    c.drawImage(scratch,ox,frameHeave);
 
@@ -224,5 +203,123 @@ export class BombArt{
    this.blast.setVisible(true).setFrame(f).setPosition(b.x,b.y).setDisplaySize(size,size).setAlpha((1-mix)*fade);
    this.blend.setVisible(true).setFrame(Math.min(11,f+1)).setPosition(b.x,b.y).setDisplaySize(size,size).setAlpha(mix*fade);
   }
+ }
+}
+
+const SUB_PART_FRAME:{[K in SubModule['kind']]:{alive:number;dead:number;size:number}}={
+ turret:{alive:0,dead:7,size:44},
+ launcher:{alive:1,dead:5,size:46},
+ armor:{alive:4,dead:5,size:48},
+ bridge:{alive:2,dead:3,size:86},
+ propeller:{alive:6,dead:5,size:50},
+ reactor:{alive:4,dead:5,size:60},
+};
+
+export class SubmarineBossArt{
+ private hullSprites:Phaser.GameObjects.Sprite[]=[];
+ private submergedSprites:Phaser.GameObjects.Sprite[]=[];
+ private partSprites=new Map<number,Phaser.GameObjects.Sprite>();
+ private craterPool:Phaser.GameObjects.Sprite[]=[];
+ private firePool:Phaser.GameObjects.Sprite[]=[];
+ private smokePool:Phaser.GameObjects.Sprite[]=[];
+ constructor(private scene:Phaser.Scene){
+  for(let i=0;i<5;i++){
+   const hasSub=scene.textures.exists(SUB_SUBMERGED_ART);
+   this.submergedSprites.push(scene.add.sprite(384,-300,hasSub?SUB_SUBMERGED_ART:SUB_HULL_ART,i).setDepth(2.15).setVisible(false));
+   this.hullSprites.push(scene.add.sprite(384,-300,SUB_HULL_ART,i).setDepth(3.1).setVisible(false));
+  }
+ }
+ private borrow(pool:Phaser.GameObjects.Sprite[],used:number,texture:string,depth:number):Phaser.GameObjects.Sprite{
+  let s=pool[used];
+  if(!s){s=this.scene.add.sprite(0,0,texture).setDepth(depth);pool.push(s);}
+  return s.setTexture(texture).setDepth(depth).setVisible(true);
+ }
+ hide():void{
+  for(const s of this.hullSprites)s.setVisible(false);
+  for(const s of this.submergedSprites)s.setVisible(false);
+  for(const s of this.partSprites.values())s.setVisible(false);
+  for(const s of this.craterPool)s.setVisible(false);
+  for(const s of this.firePool)s.setVisible(false);
+  for(const s of this.smokePool)s.setVisible(false);
+ }
+ hullContact(sectionIndex:number,ax:number,ay:number,bx:number,by:number,radius:number):number|null{
+  const s=this.hullSprites[sectionIndex];
+  if(!s||!s.visible)return null;
+  return spriteContact(s,ax,ay,bx,by,radius);
+ }
+ draw(w:ArcadeWorld,overlays:HitOverlays,_g:Phaser.GameObjects.Graphics,quality:number):void{
+  const b=w.boss,sub=b?.sub;
+  if(!b||!sub||sub.phase==='done'){this.hide();return;}
+  let cratersUsed=0,firesUsed=0,smokeUsed=0;
+  const collapseK=sub.phase==='collapse'?clamp(sub.timer/3.6,0,1):0;
+  const shakeX=sub.phase==='collapse'?Math.sin(sub.timer*47)*(1-collapseK*.4)*4.2:0;
+  const shakeY=sub.phase==='collapse'?Math.cos(sub.timer*39)*(1-collapseK*.4)*2.6:0;
+  const bob=sub.phase==='fight'?Math.sin(w.elapsed*1.9)*1.1:0;
+  const sinkDrop=sub.phase==='collapse'?collapseK*18:0;
+  const sinkScale=sub.phase==='collapse'?1-collapseK*.10:1;
+  const subAlpha=sub.phase==='collapse'?(collapseK<.55?1:1-(collapseK-.55)/.45*.78):1;
+  const hullTint=sub.phase==='collapse'&&collapseK>.40?0x459dc2:0xffffff;
+  const liveParts=new Set<number>();
+
+  for(const sec of sub.sections){
+   const cy=subSectionCenterY(sub,sec.index)+bob+shakeY+sinkDrop;
+   const visible=cy>-SUB_SECTION_HEIGHT*.75&&cy<432+SUB_SECTION_HEIGHT*.75;
+   const submergedSprite=this.submergedSprites[sec.index];
+   const hullSprite=this.hullSprites[sec.index];
+   submergedSprite.setFrame(sec.index).setPosition(b.x+shakeX,cy).setDisplaySize(SUB_HULL_DISPLAY_W*sinkScale,(SUB_SECTION_HEIGHT+2)*sinkScale).setAlpha(subAlpha*.94).setVisible(visible);
+   hullSprite.setFrame(sec.index).setPosition(b.x+shakeX,cy).setDisplaySize(SUB_HULL_DISPLAY_W*sinkScale,(SUB_SECTION_HEIGHT+2)*sinkScale).setAlpha(subAlpha*(sub.phase==='collapse'?Math.max(.18,1-collapseK*.75):1)).setTint(sec.hullFlash>0&&sec.index===sub.activeSection?0xffd0c4:hullTint).setVisible(visible);
+   if(!visible)continue;
+
+   for(const m of sec.marks){
+    const mx=b.x+shakeX+m.dx*sinkScale,my=cy+m.dy*sinkScale;
+    const crater=this.borrow(this.craterPool,cratersUsed++,SUB_PARTS_ART,4.2);
+    crater.setFrame(5).setPosition(mx,my).setDisplaySize(30*m.size*sinkScale,30*m.size*sinkScale).setRotation((m.seed%7)*.5).setAlpha(.92*subAlpha);
+    if(quality>0){
+     const phase=w.elapsed*11+m.seed;
+     const fire=this.borrow(this.firePool,firesUsed++,EMPLACEMENT_TEXTURE,8.8);
+     fire.setFrame(4+Math.floor(phase)%4).setPosition(mx,my-3).setDisplaySize(22*m.size*sinkScale,22*m.size*sinkScale).setAlpha(.84*subAlpha);
+    }
+    if(quality>1||(quality===1&&sec.completed)){
+     const drift=(w.elapsed*1.6+m.seed*.13)%1;
+     const puff=this.borrow(this.smokePool,smokeUsed++,GUN_SMOKE_TEXTURE,9.5);
+     puff.setFrame(Math.min(7,Math.floor(drift*8))).setPosition(mx-drift*12,my-8-drift*16).setDisplaySize((18+drift*16)*m.size,(18+drift*16)*m.size).setAlpha((1-drift)*.52*subAlpha);
+    }
+   }
+
+   for(const p of sec.parts){
+    liveParts.add(p.id);
+    const spec=SUB_PART_FRAME[p.kind];
+    let sprite=this.partSprites.get(p.id);
+    if(!sprite){sprite=this.scene.add.sprite(p.x,p.y,SUB_PARTS_ART,spec.alive).setDepth(7);this.partSprites.set(p.id,sprite);}
+    const recoilX=p.kind==='turret'&&p.hp>0?-Math.cos(p.angle)*p.recoil*4.5:0;
+    const recoilY=p.kind==='turret'&&p.hp>0?-Math.sin(p.angle)*p.recoil*4.5:0;
+    const px=b.x+shakeX+p.dx*sinkScale+recoilX,py=cy+p.dy*sinkScale+recoilY;
+    const frame=p.hp>0?spec.alive:spec.dead;
+    const rot=p.hp>0?(p.kind==='turret'?p.angle-Math.PI/2:p.kind==='propeller'?w.elapsed*3.8*(p.dx<0?1:-1):0):(p.kind==='turret'?((p.id%5)-2)*.22:0);
+    const depth=p.kind==='bridge'?8.2:p.kind==='reactor'?7.4:7;
+    sprite.setTexture(SUB_PARTS_ART,frame).setPosition(px,py).setDisplaySize(spec.size*sinkScale,spec.size*sinkScale).setRotation(rot).setDepth(depth).setAlpha(subAlpha).setTint(hullTint).setVisible(true);
+    if(p.hp>0&&sec.index===sub.activeSection)overlays.draw(sprite,p.flash);
+    if(p.hp>0&&p.warning>.35&&sec.index===sub.activeSection&&sub.phase==='fight'&&p.kind==='turret'&&quality>0){
+     const fire=this.borrow(this.firePool,firesUsed++,EMPLACEMENT_TEXTURE,8.6);
+     fire.setFrame(4+Math.floor(w.elapsed*16)%4).setPosition(px+Math.cos(p.angle)*p.radius*1.02,py+Math.sin(p.angle)*p.radius*1.02).setDisplaySize(10+p.warning*6,10+p.warning*6).setAlpha(p.warning*.82);
+    }
+    if(p.hp<=0&&p.kind==='bridge'&&quality>0){
+     const fire=this.borrow(this.firePool,firesUsed++,EMPLACEMENT_TEXTURE,9.0);
+     fire.setFrame(4+Math.floor(w.elapsed*12)%4).setPosition(px,py-8).setDisplaySize(34*sinkScale,34*sinkScale).setAlpha(.9*subAlpha);
+    }
+   }
+  }
+  for(const [id,s] of this.partSprites)if(!liveParts.has(id))s.setVisible(false);
+  for(let i=cratersUsed;i<this.craterPool.length;i++)this.craterPool[i].setVisible(false);
+  for(let i=firesUsed;i<this.firePool.length;i++)this.firePool[i].setVisible(false);
+  for(let i=smokeUsed;i<this.smokePool.length;i++)this.smokePool[i].setVisible(false);
+ }
+ clear():void{
+  for(const s of this.hullSprites)s.setVisible(false);
+  for(const s of this.submergedSprites)s.setVisible(false);
+  for(const s of this.partSprites.values())s.destroy();this.partSprites.clear();
+  for(const s of this.craterPool)s.destroy();this.craterPool=[];
+  for(const s of this.firePool)s.destroy();this.firePool=[];
+  for(const s of this.smokePool)s.destroy();this.smokePool=[];
  }
 }

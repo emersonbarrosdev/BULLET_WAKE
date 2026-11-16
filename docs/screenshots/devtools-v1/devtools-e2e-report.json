@@ -1,0 +1,36 @@
+{
+  "testA_devServer": {},
+  "testB_prodBuild": {
+    "jsChunks": 1,
+    "bundleBytes": 1855583,
+    "mainChunk": "index-CpQFc7Jf.js"
+  },
+  "testC_preview": {
+    "hasGameGlobal": false,
+    "hasPhaserGlobal": false,
+    "hasDevToolsGlobal": false,
+    "hasDevButtonOrPanel": false,
+    "canvasOk": true
+  },
+  "testD_devModeBuild": {
+    "jsChunks": 1,
+    "bundleBytes": 1855583,
+    "mainChunk": "index-CpQFc7Jf.js"
+  },
+  "functional30": {},
+  "screenshots": {
+    "01-title-with-devtools": 130998,
+    "02-stages-tab": 130658,
+    "03-pelagic-checkpoint-archipelago": 187528,
+    "06-miniboss-gameplay": 104988,
+    "04-bosses-tab": 119004,
+    "05-boss-final-section3": 181560,
+    "07-player-full-5esp": 188288,
+    "08-enemy-spawner": 185852,
+    "09-collision-hitboxes-overlay": 206640,
+    "10-performance-tab": 216364,
+    "11-visual-animation-previewer": 222552,
+    "12-preview-no-devtools": 106200
+  },
+  "errors": []
+}

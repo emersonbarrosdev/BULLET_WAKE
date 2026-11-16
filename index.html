@@ -1,22 +1,86 @@
 <!doctype html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#101827" />
-    <meta name="description" content="BULLET WAKE — shoot 'em up vertical 2D Neo-Arcade de ficção científica contra invasão alienígena." />
-    <link rel="icon" href="data:," />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
-    <title>BULLET WAKE</title>
-  </head>
-  <body>
-    <main id="app">
-      <div id="game" aria-label="Área de jogo BULLET WAKE"></div>
-      <div id="rotate-hint" role="status">Gire o dispositivo para jogar na horizontal.</div>
-      <noscript>Ative o JavaScript para executar o jogo.</noscript>
-    </main>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+<html lang="pt-BR" style="background:#040d21">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#040d21" />
+  <meta name="description"
+    content="BULLET WAKE — shoot 'em up arcade cartoon de ação aérea e naval." />
+  <link rel="icon" href="data:," />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Oxanium:wght@600;700;800&family=Rajdhani:wght@500;600;700&display=swap"
+    rel="stylesheet" />
+  <title>BULLET WAKE</title>
+  <style>
+    html, body, #app, #game {
+      margin: 0; padding: 0; width: 100%; height: 100%; height: 100dvh;
+      background: #040d21; overflow: hidden;
+    }
+    #game canvas { display: block; }
+    #rotate-hint { display: none; }
+    #bw-boot-loading {
+      position: fixed; inset: 0; width: 100%; height: 100%; height: 100dvh; z-index: 900;
+      box-sizing: border-box;
+      padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: #040d21; color: #eaf6ff;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+      font-variant-numeric: tabular-nums;
+      user-select: none;
+    }
+    #bw-boot-loading.bw-hidden, #bw-boot-loading.is-hidden {
+      display: none; opacity: 0; visibility: hidden; pointer-events: none;
+    }
+    .bw-boot-label {
+      height: 20px; line-height: 20px; flex-shrink: 0;
+      font-size: 15px; font-weight: 800; letter-spacing: 0.16em; margin-bottom: 14px; color: #e2f4ff;
+    }
+    .bw-boot-frame {
+      width: min(360px, 78vw); height: 18px; padding: 3px; flex-shrink: 0;
+      background: #07152e; border: 2px solid rgba(76, 230, 255, 0.78);
+      border-radius: 9px; box-sizing: border-box; overflow: hidden;
+      box-shadow: 0 0 18px rgba(44, 224, 255, 0.16);
+    }
+    .bw-boot-fill {
+      width: 0%; height: 100%; border-radius: 5px;
+      background: linear-gradient(90deg, #1ea8f5 0%, #4ce6ff 65%, #b8fbff 100%);
+      box-shadow: 0 0 10px rgba(76, 230, 255, 0.55);
+      transition: none;
+    }
+    .bw-boot-pct {
+      height: 18px; line-height: 18px; min-width: 52px; text-align: center; flex-shrink: 0;
+      font-size: 13px; font-weight: 700; letter-spacing: 0.08em; margin-top: 11px; color: #4ce6ff;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="bw-boot-loading" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Carregando BULLET WAKE">
+    <div class="bw-boot-label">CARREGANDO</div>
+    <div class="bw-boot-frame"><div id="bw-boot-fill" class="bw-boot-fill"></div></div>
+    <div id="bw-boot-pct" class="bw-boot-pct">0%</div>
+  </div>
+  <div id="rotate-hint" role="dialog" aria-live="polite" aria-label="Gire o dispositivo para horizontal">
+    <div class="bw-rotate-card">
+      <svg class="bw-rotate-svg" viewBox="0 0 96 96" width="84" height="84" aria-hidden="true">
+        <rect x="28" y="14" width="40" height="68" rx="8" fill="#0d264d" stroke="#4ce6ff" stroke-width="3.5"/>
+        <rect x="34" y="23" width="28" height="44" rx="3" fill="#133d78"/>
+        <circle cx="48" cy="74" r="3" fill="#ffdf5a"/>
+        <path d="M 76 30 A 26 26 0 0 1 78 62" fill="none" stroke="#ffdf5a" stroke-width="4" stroke-linecap="round"/>
+        <polygon points="79,67 71,58 84,56" fill="#ffdf5a"/>
+      </svg>
+      <p class="bw-rotate-title">GIRE O DISPOSITIVO PARA A HORIZONTAL</p>
+      <p class="bw-rotate-sub">BULLET WAKE utiliza formato widescreen 16:9 no Android.</p>
+    </div>
+  </div>
+  <main id="app">
+    <div id="game" aria-label="Área de jogo BULLET WAKE"></div>
+    <noscript>Ative o JavaScript para executar o jogo.</noscript>
+  </main>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
 </html>

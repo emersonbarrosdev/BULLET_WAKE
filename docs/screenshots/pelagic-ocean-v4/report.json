@@ -1,0 +1,53 @@
+{
+  "errors": [],
+  "captures": [
+    "01-costa-praia-rochas.png",
+    "02-porto-navio.png",
+    "03-farol-enseada.png",
+    "04-combate-naval-movimento.png",
+    "05-combate-naval-hold.png",
+    "06-submarinos-emergindo.png",
+    "07-submarinos-superficie.png",
+    "08-submarinos-submergindo.png",
+    "09-chefe-colosso-mar-aberto.png",
+    "10-qualidade-baixa.png",
+    "11-qualidade-media.png",
+    "12-qualidade-alta.png"
+  ],
+  "frozenScrollDelta": {
+    "waterDeltaY": 1.9600000000000364,
+    "swellDeltaY": 17.765517241379257,
+    "causticsDeltaY": 7.559999999999945
+  },
+  "simulationParity": {
+    "equal": true,
+    "sampleScore": 0,
+    "scroll": 189.9999999999988
+  },
+  "performance": [
+    {
+      "quality": 0,
+      "frames": 361,
+      "fps": 60,
+      "medianMs": 16.7,
+      "p95Ms": 17,
+      "heapMB": 52.5
+    },
+    {
+      "quality": 1,
+      "frames": 360,
+      "fps": 59.8,
+      "medianMs": 16.7,
+      "p95Ms": 16.9,
+      "heapMB": 52.9
+    },
+    {
+      "quality": 2,
+      "frames": 360,
+      "fps": 59.8,
+      "medianMs": 16.7,
+      "p95Ms": 16.8,
+      "heapMB": 44.4
+    }
+  ]
+}

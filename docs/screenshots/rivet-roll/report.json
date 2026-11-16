@@ -1,0 +1,98 @@
+{
+  "poses": {
+    "01-neutral": {
+      "bank": 0,
+      "frame": 3,
+      "angle": 0,
+      "texture": "pelagic-rivet-up"
+    },
+    "02-left-moderate": {
+      "bank": -0.319,
+      "frame": 2,
+      "angle": 0,
+      "texture": "pelagic-rivet-up"
+    },
+    "03-left-strong": {
+      "bank": -0.685,
+      "frame": 8,
+      "angle": 0,
+      "texture": "pelagic-rivet-up"
+    },
+    "04-left-max": {
+      "bank": -0.979,
+      "frame": 0,
+      "angle": 0,
+      "texture": "pelagic-rivet-up"
+    },
+    "05-return-neutral": {
+      "bank": -0.004,
+      "frame": 24,
+      "angle": 0,
+      "texture": "pelagic-rivet-up"
+    },
+    "06-right-moderate": {
+      "bank": 0.319,
+      "frame": 25,
+      "angle": 0,
+      "texture": "pelagic-rivet-up"
+    },
+    "07-right-strong": {
+      "bank": 0.685,
+      "frame": 5,
+      "angle": 0,
+      "texture": "pelagic-rivet-up"
+    },
+    "08-right-max": {
+      "bank": 0.979,
+      "frame": 6,
+      "angle": 0,
+      "texture": "pelagic-rivet-up"
+    },
+    "09-reversal-mid-pass": {
+      "bank": 0.237,
+      "frame": 11,
+      "angle": 0,
+      "texture": "pelagic-rivet-up"
+    }
+  },
+  "transitions": {
+    "rightToLeft": [
+      5,
+      4,
+      3,
+      2,
+      1,
+      0
+    ]
+  },
+  "combat": {
+    "firingAtMaxRoll": {
+      "col": 0,
+      "angle": 0,
+      "bulletsUp": 24,
+      "centerStraight": true
+    },
+    "sideUntouched": true
+  },
+  "perf": {
+    "frames": 109,
+    "avgFps": 60.4
+  },
+  "screenshots": {
+    "01-neutral": 300028,
+    "02-left-moderate": 300478,
+    "03-left-strong": 302352,
+    "04-left-max": 299942,
+    "05-return-neutral": 302492,
+    "06-right-moderate": 302014,
+    "07-right-strong": 302204,
+    "08-right-max": 301746,
+    "09-reversal-mid-pass": 302858,
+    "10-max-left-firing-full": 309604
+  },
+  "video": {
+    "path": "docs/videos/rivet-roll-sonic-wings.webm",
+    "bytes": 598647
+  },
+  "errors": []
+}

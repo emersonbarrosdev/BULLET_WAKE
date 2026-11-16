@@ -8,10 +8,11 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "vite",
+    "dev:lan": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview --host 0.0.0.0",
+    "preview": "vite preview",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "assets:generate": "node scripts/generate-sprites.mjs",
     "assets:rivet": "node scripts/generate-rivet-v2.mjs",
@@ -22,6 +23,7 @@
     "assets:bosses": "node scripts/generate-boss-krm17.mjs && node scripts/generate-bosses-2-5.mjs",
     "assets:pilots": "node scripts/generate-pilots.mjs",
     "assets:enemies": "node scripts/generate-sprites.mjs",
+    "assets:pelagic": "node scripts/pack-pelagic-animations.mjs",
     "predev": "npm run assets:enemies && npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses && npm run assets:pilots",
     "prebuild": "npm run assets:enemies && npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses && npm run assets:pilots",
     "pretest": "npm run assets:enemies && npm run assets:rivet:v3 && npm run assets:moth && npm run assets:knuckle && npm run assets:pickups && npm run assets:bosses && npm run assets:pilots"

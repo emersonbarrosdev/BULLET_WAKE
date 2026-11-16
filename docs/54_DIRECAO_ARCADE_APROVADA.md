@@ -525,25 +525,19 @@ O usuário não quer simplesmente segurar o botão durante toda a partida.
 
 Também não quer apertar uma vez para cada projétil individual.
 
-## Comportamento escolhido
-Um acionamento produz uma rajada curta.
+## Comportamento definitivo (estilo Sonic Wings / Aero Fighters)
+Um novo pressionamento produz uma rajada curta de 3 pulsos; manter o botão pressionado **não** repete rajadas no modo arcade padrão.
 
-Exemplo inicial de balanceamento:
+- **Ao pressionar TIRO:** inicia imediatamente 1 rajada com 3 pulsos (`0 ms`, `+65 ms`, `+130 ms` — duração ~130 ms). A rajada conclui os 3 pulsos mesmo se o jogador soltar antes.
+- **Ao manter TIRO pressionado (modo padrão):** finaliza apenas a rajada iniciada; **nenhuma nova rajada é gerada** após 280 ms, 380 ms ou qualquer outro intervalo.
+- **Ao soltar e pressionar novamente:** libera o próximo acionamento, respeitando o intervalo mínimo de **280 ms** entre inícios de rajadas (toques durante o cooldown são ignorados, sem fila).
+- **Mísseis automáticos:** nos níveis compatíveis (`NV3+`), integram-se apenas às rajadas efetivamente acionadas, respeitando seu cooldown original (`1,5 s` em NV3/NV4 e `1,1 s` em FULL).
+- **Escopo da Fenda Pelágica:** regra aplicada integralmente à Fenda Pelágica; a Cidade Solar preserva o comportamento legado da fase 2.
 
-- Três projéteis por rajada.
-- Intervalo interno aproximado de 65 ms.
-- Intervalo mínimo entre rajadas por toque de aproximadamente 280 ms.
-- Ao segurar, rajadas automáticas a cada aproximadamente 380 ms.
-Esses números são pontos de partida para testes, não valores definitivos.
+## Acessibilidade (`DISPARO ACESSÍVEL`)
+O autofire contínuo ao segurar o botão permanece disponível exclusivamente como recurso opcional em **Opções -> Disparo Acessível** (`rapidFire`, desativado por padrão para novos jogadores).
 
-O objetivo é recompensar o jogador que participa ativamente do disparo sem exigir pressionamentos frenéticos.
-
-## Acessibilidade
-Permitir segurar para disparar automaticamente.
-
-Considerar uma configuração de disparo automático acessível.
-
-A diferença de dano entre pressionar ritmicamente e segurar não pode ser tão grande que a opção acessível se torne inviável.
+Quando ativado explicitamente pelo jogador, segurar TIRO repete rajadas na cadência de 280 ms. No modo arcade padrão (`DESATIVADO`), segurar nunca repete.
 
 ## RIVET
 O tiro principal existente já foi aprovado.
@@ -838,6 +832,26 @@ Combate com múltiplos padrões.
 A conclusão normal deve acontecer após pelo menos cinco minutos de gameplay relevante.
 
 Os tempos são referências flexíveis de direção, não cronômetros para forçar espera sem conteúdo.
+
+## Reformulação do Combate Aéreo e Naval (Tarefa 14 — Fenda Pelágica)
+
+Escopo estrito à **Fase 1 (`FENDA` / `world.up === true`)**; a **Cidade Solar (`SOLAR` / `!world.up`)** preserva integralmente as cadências e velocidades legadas via `LEGACY_SOLAR_FIRE` e `LEGACY_SOLAR_SHOTS` em `src/game/arcade/content.ts`.
+
+### Torres Articuladas e Origem no Cano (`src/game/arcade/PelagicWeaponMounts.ts`)
+- **Spritesheets modulares (`public/assets/arcade/pelagic-review/`):** `pelagic-turrets.webp` (`4×2`, células `160×160`, pivô normalizado `(0.5, 0.38125)` e boca em `0.51875 * displaySize`), `submarines-clean.webp` (casco limpo sem canos fixos) e `defense-tower-clean.webp` (frame 0 íntegro com anel metálico, frame 1 base em ruína preservada).
+- **Unidades montadas:** `boat` (torreta dupla), `ship` (torre principal e torre de proa alternadas), `submarine` (duas torretas de convés sincronizadas com fase `'hold'` e `exposure >= 0.92`), `tank` (bunker octogonal estático + canhão giratório), `tower` (base de pedra fixa com `rotation = 0` + canhão de ferro giratório; destroço único sem torreta ao morrer) e `heli_warhawk` (gatling giratória de queixo + lançador subalar fixo).
+- **Sincronização física e visual:** rotação com velocidade angular (`slewAngle`), recuo de disparo e spawn de projéteis/flashes diretamente nas coordenadas calculadas da ponta do cano (`muzzleX`, `muzzleY`).
+
+### Ritmo, Cadência, Entradas Laterais e Vetor de Voo (`src/game/arcade/content.ts`, `ArcadeWorld.ts`)
+- **Cadência inspirada em Sonic Wings:** tempos de recarga reduzidos (`0.72–1.32s`) e diferenciação de velocidade por papel (`interceptor` > `fighter` > `acrobat` > `bomber`), com atraso progressivo entre membros da mesma formação.
+- **Entradas laterais opostas:** trajetórias `'side-cross'` e `'side-curve'` com `entry: 'left' | 'right'` surgindo além das bordas laterais da arena na faixa superior segura (`y <= 185`), bloqueadas de atirar enquanto ocultas atrás do HUD lateral.
+- **Orientação pelo vetor `(vx, vy)`:** aeronaves e curvas laterais alinham a proa ao deslocamento instantâneo (`atan2(vy, vx) + Math.PI / 2`) combinado a inclinação lateral (`smoothBank`) e sombras 2.5D proporcionais à altitude.
+
+### Quatro Arquétipos de Helicópteros (`pelagic-helicopters.webp`, `pelagic-rotors.webp`, `pelagic-enemy-missile.webp`)
+1. **`heli_scout` (HP `7`, Batedor Leve):** visual futurista pérola/ciano/lima, entrada veloz com esquivas horizontais e rajada dupla.
+2. **`heli_utility` (HP `14`, Utilitário Twin-Rotor):** laranja/ardósia industrial com rotores gêmeos contra-rotativos, permanência no topo oscilando em altitude e disparos pareados.
+3. **`heli_phantom` (HP `20`, Furtivo Experimental):** violeta/magenta facetado com avanços laterais rápidos e leque sincronizado de 3 projéteis.
+4. **`heli_warhawk` (HP `36`, Caça-Canhão Militar):** único helicóptero em camuflagem militar verde-oliva/cáqui; alterna duas rajadas de gatling do queixo com **1 único míssil reto não-teleguiado de alta velocidade** (`WARHAWK_MISSILE_SPEED_NORMAL = 345`, `WARHAWK_MISSILE_SPEED_HARD = 375`), precedido por linha de mira de trava e renderizado com `pelagic-enemy-missile.webp` e rastro curto de fumaça controlada.
 
 ---
 
@@ -2138,3 +2152,14 @@ DESAFIADOR.
 MEMORÁVEL.
 
 **MENOS CINEMA. MAIS JOGO.**
+
+---
+
+# ATUALIZAÇÃO TAREFA 21 — ARCO DAS MARÉS (FENDA PELÁGICA) E LAYOUTS RESPONSIVOS
+
+- **Substituição do Miniboss da Fase 1 (`UP`):** O antigo miniboss naval da Fenda Pelágica em `155s` foi removido permanentemente em favor do evento jogável **Arco das Marés** (`148s–198s`, [`PelagicTideArch.ts`](../src/game/arcade/PelagicTideArch.ts)); o miniboss da **Cidade Solar (`SIDE`)** permanece inalterado.
+- **Ciclo de Travessia:** `approach -> descent -> low-flight -> under-arch -> ascent -> checkpoint -> complete`, com descida e subida automáticas de altitude (`1.0 -> 0.0 -> 1.0`), controle lateral 100% livre, bloqueio estrito de aeronaves/helicópteros até `altitudeRestored === true`, `10` canhões costeiros ancorados ao cenário e `7` barcos de patrulha, colisão física com pilares laterais e passagem real da RIVET por baixo da ponte de pedra com projéteis legíveis acima dela.
+- **Checkpoint Real:** Desbloqueado apenas após atravessar o arco e restaurar altitude (`+1500` base + `+2000` sem dano, não re-farmável), habilitando **CONTINUAR DO CHECKPOINT** em caso de derrota.
+- **Layouts Dedicados na Fenda Pelágica (`UP`):**
+  - **PC Horizontal (`768×432` lógico):** Painel esquerdo compacto (`0..160`), sem painel direito, barra superior compacta (`160..768`) com pontuação, nível `NV`, barra de rota e pausa `[II]`.
+  - **Android Vertical (`384×600..820` lógico em modo retrato tátil):** Tela cheia vertical sem painéis laterais nem aviso de rotação (`#rotate-hint` restrito às missões `SIDE`), faixa superior compacta e controles touch na base (joystick esquerdo; `ESP` acima de `TIRO` à direita).

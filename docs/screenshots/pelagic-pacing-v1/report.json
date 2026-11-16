@@ -1,0 +1,121 @@
+{
+  "pc": {
+    "resolution": "1366x768",
+    "screenshots": {
+      "01-opening-combat": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\01-opening-combat.png",
+      "02-fighters-attack": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\02-fighters-attack.png",
+      "03-side-entry-planes": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\03-side-entry-planes.png",
+      "04-boat-firing": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\04-boat-firing.png",
+      "05-submarine-attack": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\05-submarine-attack.png",
+      "06-coastal-cannon": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\06-coastal-cannon.png",
+      "07-heli-scout": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\07-heli-scout.png",
+      "08-heli-utility": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\08-heli-utility.png",
+      "09-heli-phantom": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\09-heli-phantom.png",
+      "10-warhawk-missile": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\10-warhawk-missile.png",
+      "11-mixed-air-cannon": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\11-mixed-air-cannon.png",
+      "12-tide-arch": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\12-tide-arch.png",
+      "13-final-escalation": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\13-final-escalation.png",
+      "14-colosso-entrance": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\14-colosso-entrance.png",
+      "16-devtools-pacing": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\16-devtools-pacing.png"
+    },
+    "perf": {
+      "generatedAt": "2026-11-16T18:08:03.408Z",
+      "measurementKind": "controlled-simulation",
+      "scenarioName": "Fenda Pelagica Ritmo v25 (1366x768)",
+      "missionId": 1,
+      "quality": 2,
+      "resolution": "1366x768",
+      "durationSeconds": 23.1,
+      "frames": 1383,
+      "currentFps": 60,
+      "avgFps": 59.9,
+      "avgMs": 16.69,
+      "medianMs": 16.69,
+      "p95Ms": 16.71,
+      "p99Ms": 16.73,
+      "enemies": 0,
+      "bullets": 0,
+      "objects": 880,
+      "effects": 0,
+      "heapMb": 64.5,
+      "rendererInfo": "ANGLE (AMD, AMD Radeon(TM) Graphics (0x00001681) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    "pacing": {
+      "playableSeconds": 0,
+      "visibleEnemySeconds": 0,
+      "threatSeconds": 0,
+      "pctWithVisibleEnemy": 0,
+      "pctWithThreat": 0,
+      "maxEnemyGapSeconds": 0,
+      "maxThreatGapSeconds": 0,
+      "idleGapsOver2s": 0,
+      "idleGapsOver3s": 0,
+      "totalEncounters": 0,
+      "totalEnemyShots": 0,
+      "enemyShotsPerMinute": 0,
+      "peakSimultaneousEnemies": 0,
+      "peakSimultaneousBullets": 0,
+      "reinforcementsSpawned": 0,
+      "wavesAnticipated": 0,
+      "bossDurationSeconds": 3.1,
+      "bossShotsFired": 0,
+      "bossShotsPerMinute": 0,
+      "suppressedReason": "boss-fight",
+      "timelineLog": []
+    },
+    "video": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\videos\\fenda-pelagica-ritmo-v25.webm"
+  },
+  "androidPortrait": {
+    "resolution": "720x1600",
+    "note": "Chromium DevTools mobile portrait + touch emulation (physical Android hardware not connected).",
+    "screenshots": {
+      "15-android-portrait-combat": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-pacing-v1\\15-android-portrait-combat.png"
+    },
+    "pacing": {
+      "upLayout": "portrait",
+      "arenaWidth": 384,
+      "rotateDisplay": "none",
+      "pacing": {
+        "playableSeconds": 2.9,
+        "visibleEnemySeconds": 2.5,
+        "threatSeconds": 2.5,
+        "pctWithVisibleEnemy": 85.9,
+        "pctWithThreat": 85.9,
+        "maxEnemyGapSeconds": 0.41,
+        "maxThreatGapSeconds": 0.41,
+        "idleGapsOver2s": 0,
+        "idleGapsOver3s": 0,
+        "totalEncounters": 1,
+        "totalEnemyShots": 2,
+        "enemyShotsPerMinute": 41.4,
+        "peakSimultaneousEnemies": 1,
+        "peakSimultaneousBullets": 4,
+        "reinforcementsSpawned": 0,
+        "wavesAnticipated": 1,
+        "bossDurationSeconds": 0,
+        "bossShotsFired": 0,
+        "bossShotsPerMinute": 0,
+        "suppressedReason": null,
+        "timelineLog": [
+          {
+            "at": 48,
+            "region": 1,
+            "kind": "suppress",
+            "detail": "post-death-recovery"
+          },
+          {
+            "at": 48.4,
+            "region": 1,
+            "kind": "anticipate",
+            "detail": "wave@51s(submarine)"
+          }
+        ]
+      }
+    }
+  },
+  "devtoolsCheck": {
+    "openOk": true,
+    "textSample": "Fase: FENDA PELÁGICA (NORMAL) | Rota: 300s / 300s | Região #7: FENDA PELÁGICA\nDiretor: encontro 72/72 | Próximo @ fims | Supressão: boss-fight\nPresença: inimigo=0% | ameaça=0% | Ma"
+  },
+  "errors": []
+}

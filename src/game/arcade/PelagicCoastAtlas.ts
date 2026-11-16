@@ -80,14 +80,14 @@ export function installOceanDepthTexture(scene:Phaser.Scene):string{
  for(let y=0;y<512;y++)for(let x=0;x<512;x++){
   const a=x/512*TAU,b=y/512*TAU;
   const n=.5+.24*Math.sin(a*2+b)+.16*Math.cos(b*3-a*2)+.11*Math.sin(a*5+b*3);
-  // Subtle lateral shoaling (shallower turquoise near left/right edges, deeper cobalt trench in center)
+  // Subtle bathymetric trench in center transitioning outward toward warmer turquoise coastal shelf
   const centerDist=Math.abs(x/512-.5)*2;
-  const shoal=Math.pow(centerDist,1.6)*.28;
+  const shoal=Math.pow(centerDist,1.45)*.38;
   const i=(y*512+x)*4;
   p.data.set([
-   Math.min(255,4+n*7+shoal*18),
-   Math.min(255,40+n*30+shoal*58),
-   Math.min(255,84+n*52+shoal*66),
+   Math.min(255,3+n*6+shoal*18),
+   Math.min(255,38+n*28+shoal*76),
+   Math.min(255,90+n*52+shoal*72),
    255
   ],i);
  }

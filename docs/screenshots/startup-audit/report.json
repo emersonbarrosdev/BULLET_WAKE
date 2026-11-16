@@ -1,0 +1,256 @@
+{
+  "scenarios": {
+    "prod-clean-1280x720": {
+      "mode": "prod",
+      "viewport": "1280x720",
+      "mobile": false,
+      "samplesCount": 278,
+      "screencastCount": 220,
+      "firstSkyFrame": 205,
+      "bootToMenuFadeMs": 5779,
+      "maxWhitePixels": 185,
+      "loadingCanvasSizes": [
+        "1280x720"
+      ],
+      "maxCanvasCount": 1,
+      "baselineFrameSize": {
+        "w": 360,
+        "h": 18
+      },
+      "openingHistory": null,
+      "openingPhaseHistory": null,
+      "hasDevToolsHook": false
+    },
+    "prod-warm-1366x768": {
+      "mode": "prod",
+      "viewport": "1366x768",
+      "mobile": false,
+      "samplesCount": 256,
+      "screencastCount": 221,
+      "firstSkyFrame": 209,
+      "bootToMenuFadeMs": 5543,
+      "maxWhitePixels": 190,
+      "loadingCanvasSizes": [
+        "1366x768"
+      ],
+      "maxCanvasCount": 1,
+      "baselineFrameSize": {
+        "w": 360,
+        "h": 18
+      },
+      "openingHistory": null,
+      "openingPhaseHistory": null,
+      "hasDevToolsHook": false
+    },
+    "prod-1920x1080": {
+      "mode": "prod",
+      "viewport": "1920x1080",
+      "mobile": false,
+      "samplesCount": 257,
+      "screencastCount": 212,
+      "firstSkyFrame": 204,
+      "bootToMenuFadeMs": 5358,
+      "maxWhitePixels": 148,
+      "loadingCanvasSizes": [
+        "1920x1080"
+      ],
+      "maxCanvasCount": 1,
+      "baselineFrameSize": {
+        "w": 360,
+        "h": 18
+      },
+      "openingHistory": null,
+      "openingPhaseHistory": null,
+      "hasDevToolsHook": false
+    },
+    "prod-slow-net-1280x720": {
+      "mode": "prod",
+      "viewport": "1280x720",
+      "mobile": false,
+      "samplesCount": 917,
+      "screencastCount": 848,
+      "firstSkyFrame": 836,
+      "bootToMenuFadeMs": 15774,
+      "maxWhitePixels": 185,
+      "loadingCanvasSizes": [
+        "1280x720"
+      ],
+      "maxCanvasCount": 1,
+      "baselineFrameSize": {
+        "w": 360,
+        "h": 18
+      },
+      "openingHistory": null,
+      "openingPhaseHistory": null,
+      "hasDevToolsHook": false
+    },
+    "prod-blocked-fonts-1280x720": {
+      "mode": "prod",
+      "viewport": "1280x720",
+      "mobile": false,
+      "samplesCount": 256,
+      "screencastCount": 224,
+      "firstSkyFrame": 210,
+      "bootToMenuFadeMs": 5417,
+      "maxWhitePixels": 184,
+      "loadingCanvasSizes": [
+        "1280x720"
+      ],
+      "maxCanvasCount": 1,
+      "baselineFrameSize": {
+        "w": 360,
+        "h": 18
+      },
+      "openingHistory": null,
+      "openingPhaseHistory": null,
+      "hasDevToolsHook": false
+    },
+    "android-portrait-1080x1920": {
+      "mode": "prod",
+      "viewport": "1080x1920",
+      "mobile": true,
+      "samplesCount": 251,
+      "screencastCount": 211,
+      "firstSkyFrame": 205,
+      "bootToMenuFadeMs": 5497,
+      "maxWhitePixels": 213,
+      "loadingCanvasSizes": [
+        "1080x1920"
+      ],
+      "maxCanvasCount": 1,
+      "baselineFrameSize": {
+        "w": 360,
+        "h": 18
+      },
+      "openingHistory": null,
+      "openingPhaseHistory": null,
+      "hasDevToolsHook": false
+    },
+    "android-portrait-720x1600": {
+      "mode": "prod",
+      "viewport": "720x1600",
+      "mobile": true,
+      "samplesCount": 253,
+      "screencastCount": 221,
+      "firstSkyFrame": 207,
+      "bootToMenuFadeMs": 5412,
+      "maxWhitePixels": 234,
+      "loadingCanvasSizes": [
+        "720x1600"
+      ],
+      "maxCanvasCount": 1,
+      "baselineFrameSize": {
+        "w": 360,
+        "h": 18
+      },
+      "openingHistory": null,
+      "openingPhaseHistory": null,
+      "hasDevToolsHook": false
+    },
+    "android-landscape-844x390": {
+      "mode": "prod",
+      "viewport": "844x390",
+      "mobile": true,
+      "samplesCount": 252,
+      "screencastCount": 247,
+      "firstSkyFrame": 215,
+      "bootToMenuFadeMs": 5379,
+      "maxWhitePixels": 186,
+      "loadingCanvasSizes": [
+        "844x390"
+      ],
+      "maxCanvasCount": 1,
+      "baselineFrameSize": {
+        "w": 360,
+        "h": 18
+      },
+      "openingHistory": null,
+      "openingPhaseHistory": null,
+      "hasDevToolsHook": false
+    },
+    "dev-clean-1280x720": {
+      "mode": "dev",
+      "viewport": "1280x720",
+      "mobile": false,
+      "samplesCount": 278,
+      "screencastCount": 212,
+      "firstSkyFrame": 203,
+      "bootToMenuFadeMs": 5742,
+      "maxWhitePixels": 185,
+      "loadingCanvasSizes": [
+        "1280x720"
+      ],
+      "maxCanvasCount": 1,
+      "baselineFrameSize": {
+        "w": 360,
+        "h": 18
+      },
+      "openingHistory": [
+        "LOADING",
+        "STUDIO_SPLASH",
+        "MAIN_MENU"
+      ],
+      "openingPhaseHistory": [
+        "BOOT",
+        "LOADING",
+        "LOADING_COMPLETE",
+        "STUDIO_SPLASH",
+        "STUDIO_EXIT",
+        "TITLE_READY",
+        "TITLE_VISIBLE"
+      ],
+      "hasDevToolsHook": false
+    },
+    "dev-reload-f5-1280x720": {
+      "mode": "dev",
+      "viewport": "1280x720",
+      "mobile": false,
+      "samplesCount": 237,
+      "screencastCount": 214,
+      "firstSkyFrame": 206,
+      "bootToMenuFadeMs": 5358,
+      "maxWhitePixels": 185,
+      "loadingCanvasSizes": [
+        "1280x720"
+      ],
+      "maxCanvasCount": 1,
+      "baselineFrameSize": {
+        "w": 360,
+        "h": 18
+      },
+      "openingHistory": [
+        "LOADING",
+        "STUDIO_SPLASH",
+        "MAIN_MENU"
+      ],
+      "openingPhaseHistory": [
+        "BOOT",
+        "LOADING",
+        "LOADING_COMPLETE",
+        "STUDIO_SPLASH",
+        "STUDIO_EXIT",
+        "TITLE_READY",
+        "TITLE_VISIBLE"
+      ],
+      "hasDevToolsHook": false
+    }
+  },
+  "screenshots": {
+    "prod-clean-1280x720-01-loading-early": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\startup-audit\\prod-clean-1280x720-01-loading-early.png",
+    "prod-clean-1280x720-02-loading-mid": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\startup-audit\\prod-clean-1280x720-02-loading-mid.png",
+    "prod-clean-1280x720-03-loading-100": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\startup-audit\\prod-clean-1280x720-03-loading-100.png",
+    "prod-clean-1280x720-05-studio-splash-peak": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\startup-audit\\prod-clean-1280x720-05-studio-splash-peak.png",
+    "prod-clean-1280x720-08-main-menu-settled": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\startup-audit\\prod-clean-1280x720-08-main-menu-settled.png",
+    "android-portrait-1080x1920-menu": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\startup-audit\\android-portrait-1080x1920-menu.png",
+    "dev-clean-1280x720-01-loading-early": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\startup-audit\\dev-clean-1280x720-01-loading-early.png",
+    "dev-clean-1280x720-02-loading-mid": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\startup-audit\\dev-clean-1280x720-02-loading-mid.png",
+    "dev-clean-1280x720-03-loading-100": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\startup-audit\\dev-clean-1280x720-03-loading-100.png",
+    "dev-clean-1280x720-04-studio-splash-first": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\startup-audit\\dev-clean-1280x720-04-studio-splash-first.png",
+    "dev-clean-1280x720-05-studio-splash-peak": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\startup-audit\\dev-clean-1280x720-05-studio-splash-peak.png",
+    "dev-clean-1280x720-06-studio-exit": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\startup-audit\\dev-clean-1280x720-06-studio-exit.png",
+    "dev-clean-1280x720-07-main-menu-first": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\startup-audit\\dev-clean-1280x720-07-main-menu-first.png",
+    "dev-clean-1280x720-08-main-menu-settled": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\startup-audit\\dev-clean-1280x720-08-main-menu-settled.png"
+  },
+  "video": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\videos\\startup-sequence.webm",
+  "errors": []
+}

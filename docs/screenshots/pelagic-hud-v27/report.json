@@ -1,0 +1,280 @@
+{
+  "resolutions": {
+    "1280x720": {
+      "rect": {
+        "w": 1280,
+        "h": 720,
+        "aspect": 1.778
+      },
+      "hud": {
+        "visible": true,
+        "scoreText": "0000000",
+        "weaponLevel": 1,
+        "weaponLevelText": "NV 1",
+        "lives": 3,
+        "specialCharges": 2,
+        "radioActive": true,
+        "radioText": "Entrando na Fenda Pelágica. Rota aberta, vamos decolar!",
+        "radioExpression": 0,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 744,
+          "y": 14
+        },
+        "arena": {
+          "left": 192,
+          "right": 576,
+          "top": 28,
+          "bottom": 420,
+          "width": 384
+        }
+      }
+    },
+    "1366x768": {
+      "rect": {
+        "w": 1366,
+        "h": 768,
+        "aspect": 1.779
+      },
+      "hud": {
+        "visible": true,
+        "scoreText": "0000000",
+        "weaponLevel": 1,
+        "weaponLevelText": "NV 1",
+        "lives": 3,
+        "specialCharges": 2,
+        "radioActive": true,
+        "radioText": "Entrando na Fenda Pelágica. Rota aberta, vamos decolar!",
+        "radioExpression": 0,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 744,
+          "y": 14
+        },
+        "arena": {
+          "left": 192,
+          "right": 576,
+          "top": 28,
+          "bottom": 420,
+          "width": 384
+        }
+      }
+    },
+    "1920x1080": {
+      "rect": {
+        "w": 1920,
+        "h": 1080,
+        "aspect": 1.778
+      },
+      "hud": {
+        "visible": true,
+        "scoreText": "0000000",
+        "weaponLevel": 1,
+        "weaponLevelText": "NV 1",
+        "lives": 3,
+        "specialCharges": 2,
+        "radioActive": true,
+        "radioText": "Entrando na Fenda Pelágica. Rota aberta, vamos decolar!",
+        "radioExpression": 0,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 744,
+          "y": 14
+        },
+        "arena": {
+          "left": 192,
+          "right": 576,
+          "top": 28,
+          "bottom": 420,
+          "width": 384
+        }
+      }
+    },
+    "2560x1440": {
+      "rect": {
+        "w": 2560,
+        "h": 1440,
+        "aspect": 1.778
+      },
+      "hud": {
+        "visible": true,
+        "scoreText": "0000000",
+        "weaponLevel": 1,
+        "weaponLevelText": "NV 1",
+        "lives": 3,
+        "specialCharges": 2,
+        "radioActive": true,
+        "radioText": "Canal livre. Rota aberta!",
+        "radioExpression": 0,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 744,
+          "y": 14
+        },
+        "arena": {
+          "left": 192,
+          "right": 576,
+          "top": 28,
+          "bottom": 420,
+          "width": 384
+        }
+      }
+    }
+  },
+  "functionalChecks": {
+    "startHud": {
+      "visible": true,
+      "scoreText": "0000000",
+      "weaponLevel": 1,
+      "weaponLevelText": "NV 1",
+      "lives": 3,
+      "specialCharges": 2,
+      "radioActive": true,
+      "radioText": "Entrando na Fenda Pelágica. Rota aberta, vamos decolar!",
+      "radioExpression": 0,
+      "assisted": false,
+      "pauseCenter": {
+        "x": 744,
+        "y": 14
+      },
+      "arena": {
+        "left": 192,
+        "right": 576,
+        "top": 28,
+        "bottom": 420,
+        "width": 384
+      }
+    },
+    "quietRest": {
+      "visible": true,
+      "scoreText": "0000000",
+      "weaponLevel": 1,
+      "weaponLevelText": "NV 1",
+      "lives": 3,
+      "specialCharges": 2,
+      "radioActive": false,
+      "radioText": "Canal livre. Rota aberta!",
+      "radioExpression": 0,
+      "assisted": false,
+      "pauseCenter": {
+        "x": 744,
+        "y": 14
+      },
+      "arena": {
+        "left": 192,
+        "right": 576,
+        "top": 28,
+        "bottom": 420,
+        "width": 384
+      }
+    },
+    "combatScore": {
+      "visible": true,
+      "scoreText": "0004640",
+      "weaponLevel": 1,
+      "weaponLevelText": "NV 1",
+      "lives": 3,
+      "specialCharges": 2,
+      "radioActive": true,
+      "radioText": "Caças rápidos chegando! Mantenha o ritmo!",
+      "radioExpression": 3,
+      "assisted": false,
+      "pauseCenter": {
+        "x": 744,
+        "y": 14
+      },
+      "arena": {
+        "left": 192,
+        "right": 576,
+        "top": 28,
+        "bottom": 420,
+        "width": 384
+      }
+    },
+    "levelsAndResources": {
+      "levelsSeen": [
+        "NV 1",
+        "NV 2",
+        "NV 3",
+        "NV 4",
+        "NV 5"
+      ],
+      "midHud": {
+        "visible": true,
+        "scoreText": "0123450",
+        "weaponLevel": 5,
+        "weaponLevelText": "NV 5",
+        "lives": 2,
+        "specialCharges": 1,
+        "radioActive": true,
+        "radioText": "Caças rápidos chegando! Mantenha o ritmo!",
+        "radioExpression": 3,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 744,
+          "y": 14
+        },
+        "arena": {
+          "left": 192,
+          "right": 576,
+          "top": 28,
+          "bottom": 420,
+          "width": 384
+        }
+      }
+    },
+    "pauseClickAndResume": {
+      "pausedScreen": "pause",
+      "resumedScreen": "play"
+    }
+  },
+  "fpsBenchmark": {
+    "avgFrameMs": 17.26,
+    "fps": 57.9,
+    "hudCpuMsPerFrame": 0.26
+  },
+  "androidPortraitCheck": {
+    "portraitUpActive": true,
+    "hud": {
+      "visible": false,
+      "scoreText": "0035850",
+      "weaponLevel": 1,
+      "weaponLevelText": "NV 1",
+      "lives": 3,
+      "specialCharges": 2,
+      "radioActive": false,
+      "radioText": "Entrando na Fenda Pelágica. Rota aberta, vamos decolar!",
+      "radioExpression": 0,
+      "assisted": false,
+      "pauseCenter": {
+        "x": 364,
+        "y": 17
+      },
+      "arena": {
+        "left": 0,
+        "right": 384,
+        "top": 34,
+        "bottom": 839,
+        "width": 384
+      }
+    }
+  },
+  "solarIsolationCheck": {
+    "mission": 2,
+    "up": false,
+    "desktopHudVisible": false
+  },
+  "screenshots": {
+    "01-start-1280x720": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\01-start-1280x720.png",
+    "02-res-1920x1080": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\02-res-1920x1080.png",
+    "02-res-2560x1440": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\02-res-2560x1440.png",
+    "03-quiet-rest": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\03-quiet-rest.png",
+    "04-combat-live-1280x720": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\04-combat-live-1280x720.png",
+    "05-nv5-comms-lives-special": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\05-nv5-comms-lives-special.png",
+    "06-tide-arch-hud": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\06-tide-arch-hud.png",
+    "07-boss-colosso-hud": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\07-boss-colosso-hud.png",
+    "08-pause-overlay": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\08-pause-overlay.png",
+    "09-android-portrait-intact": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\09-android-portrait-intact.png"
+  },
+  "errors": []
+}

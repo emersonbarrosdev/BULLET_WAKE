@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PELAGIC_COAST,visibleCoast,waterCorridor,touchesCoast,prepareSurface,moveSurface,surfaceMount} from '../src/game/arcade/PelagicEnvironment.ts';
-import {waterScrollOffset,WATER_SCALE,WATER_TILE_SIZE} from '../src/game/arcade/PelagicWater.ts';
+import {waterScrollOffset,waterDriftX,swellScrollOffset,causticsScrollOffset,WATER_SCALE,WATER_TILE_SIZE} from '../src/game/arcade/PelagicWater.ts';
 import {coastBoundary,coastAtScroll,isOpenSeaAt,ARCHIPELAGO_SPECS,COAST_PERIOD,COAST_WIDTH,visibleFormations,formationRow} from '../src/game/arcade/PelagicCoastGeometry.ts';
 import {ArcadeWorld} from '../src/game/arcade/ArcadeWorld.ts';
 import {MISSIONS} from '../src/game/arcade/content.ts';
@@ -52,6 +52,16 @@ test('continuous banks retain navigable water and stable world-anchored sockets'
  }
  let easternBay=0;for(let y=0;y<COAST_PERIOD;y++)if(isOpenSeaAt(y,1))easternBay++;
  assert(easternBay>40&&easternBay<COAST_PERIOD*.15);
+});
+
+test('ocean wave layers animate smoothly over time even when scroll is stationary',()=>{
+ const a0=waterScrollOffset(900,0),a1=waterScrollOffset(900,2.5);
+ const s0=swellScrollOffset(900,0),s1=swellScrollOffset(900,2.5);
+ const c0=causticsScrollOffset(900,0),c1=causticsScrollOffset(900,2.5);
+ assert(Math.abs(a1-a0)>1,'primary water must drift smoothly while paused');
+ assert(Math.abs(s1.y-s0.y)>10,'secondary swell must keep rolling independently');
+ assert(Math.abs(c1.y-c0.y)>10&&c1.alpha>.05,'caustics must keep moving and breathing');
+ assert(Math.abs(waterDriftX(1.3))>0);
 });
 
 test('paired boats retain separate lanes instead of converging on one center point',()=>{

@@ -7,7 +7,7 @@
  */
 export const GAME_WIDTH = 768;
 export const GAME_HEIGHT = 432;
-export const GAME_BACKGROUND = '#060d17' as const;
+export const GAME_BACKGROUND = '#040d21' as const;
 
 // Corredor de Combate Vertical Central Expandido (432px de largura, 432px de altura, centro exato em X=384)
 export const PLAYFIELD_X = 168;

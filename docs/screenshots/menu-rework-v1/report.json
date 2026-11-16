@@ -1,0 +1,229 @@
+{
+  "previewBootCheck": {
+    "previewSawLoading": true,
+    "previewSawMenu": true,
+    "maxWhitePixelsDuringBoot": 11
+  },
+  "sequenceTransitions": [
+    "LOADING",
+    "STUDIO_SPLASH",
+    "MAIN_MENU"
+  ],
+  "whiteFlashCheck": {
+    "checkedFrames": 22,
+    "maxWhitePixels": 11
+  },
+  "loadingFrameChecks": [
+    {
+      "pct": "0%",
+      "frameW": 360,
+      "frameH": 18,
+      "overlayW": 1366,
+      "overlayH": 768
+    },
+    {
+      "pct": "0%",
+      "frameW": 360,
+      "frameH": 18,
+      "overlayW": 1366,
+      "overlayH": 768
+    },
+    {
+      "pct": "0%",
+      "frameW": 360,
+      "frameH": 18,
+      "overlayW": 1366,
+      "overlayH": 768
+    },
+    {
+      "pct": "11%",
+      "frameW": 360,
+      "frameH": 18,
+      "overlayW": 1366,
+      "overlayH": 768
+    },
+    {
+      "pct": "14%",
+      "frameW": 360,
+      "frameH": 18,
+      "overlayW": 1366,
+      "overlayH": 768
+    },
+    {
+      "pct": "51%",
+      "frameW": 360,
+      "frameH": 18,
+      "overlayW": 1366,
+      "overlayH": 768
+    },
+    {
+      "pct": "100%",
+      "frameW": 360,
+      "frameH": 18,
+      "overlayW": 1366,
+      "overlayH": 768
+    }
+  ],
+  "staticSkyCheck": {
+    "moved": true,
+    "avgPixelDiff": 0,
+    "planesT0": [
+      {
+        "x": 854,
+        "y": 76
+      },
+      {
+        "x": 700,
+        "y": 101
+      },
+      {
+        "x": -120,
+        "y": 152
+      },
+      {
+        "x": -120,
+        "y": 108
+      },
+      {
+        "x": -120,
+        "y": 166
+      }
+    ],
+    "planesT2": [
+      {
+        "x": 854,
+        "y": 76
+      },
+      {
+        "x": 427,
+        "y": 88
+      },
+      {
+        "x": -120,
+        "y": 152
+      },
+      {
+        "x": -120,
+        "y": 108
+      },
+      {
+        "x": -120,
+        "y": 166
+      }
+    ]
+  },
+  "menuLayoutCheck": {
+    "screen": "title",
+    "openingState": "MAIN_MENU",
+    "heroVisible": false,
+    "logoVisible": true,
+    "logoBounds": {
+      "x": 384,
+      "y": 116,
+      "w": 292,
+      "h": 208
+    },
+    "buttons": [
+      {
+        "label": "INICIAR JORNADA",
+        "x": 384,
+        "y": 265
+      },
+      {
+        "label": "CONTROLES",
+        "x": 384,
+        "y": 307
+      },
+      {
+        "label": "OPÇÕES",
+        "x": 384,
+        "y": 349
+      }
+    ],
+    "planes": [
+      {
+        "x": 854,
+        "y": 76,
+        "visible": false
+      },
+      {
+        "x": 748,
+        "y": 100,
+        "visible": true
+      },
+      {
+        "x": -120,
+        "y": 152,
+        "visible": false
+      },
+      {
+        "x": -120,
+        "y": 108,
+        "visible": false
+      },
+      {
+        "x": -120,
+        "y": 166,
+        "visible": false
+      }
+    ],
+    "skyStatic": true
+  },
+  "controlsTabsCheck": {
+    "pcInfo": {
+      "screen": "controls",
+      "tab": "pc"
+    },
+    "padTab": "gamepad",
+    "androidTab": "android"
+  },
+  "responsiveViewports": {
+    "1920x1080": {
+      "w": 1920,
+      "h": 1080,
+      "bg": "rgb(4, 13, 33)"
+    },
+    "1280x720": {
+      "w": 1280,
+      "h": 720,
+      "bg": "rgb(4, 13, 33)"
+    },
+    "854x480": {
+      "w": 854,
+      "h": 480,
+      "bg": "rgb(4, 13, 33)"
+    }
+  },
+  "mobilePortraitCheck": {
+    "display": "none",
+    "bg": "rgba(0, 0, 0, 0)",
+    "coarse": true
+  },
+  "skipCheck": {
+    "skippedTo": "MAIN_MENU"
+  },
+  "gamepadMockCheck": {
+    "autoSwitchedTab": "gamepad"
+  },
+  "screenshots": {
+    "18-preview-prod-main-menu": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\18-preview-prod-main-menu.png",
+    "01-loading-early": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\01-loading-early.png",
+    "02-loading-mid": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\02-loading-mid.png",
+    "03-loading-full": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\03-loading-full.png",
+    "04-botan-studio": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\04-botan-studio.png",
+    "05-transition-to-menu": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\05-transition-to-menu.png",
+    "06-main-menu-1366x768": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\06-main-menu-1366x768.png",
+    "07-menu-planes-t0": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\07-menu-planes-t0.png",
+    "08-menu-planes-t2s": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\08-menu-planes-t2s.png",
+    "09-controls-pc": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\09-controls-pc.png",
+    "10-controls-ps5-dualsense": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\10-controls-ps5-dualsense.png",
+    "11-controls-android": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\11-controls-android.png",
+    "12-options": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\12-options.png",
+    "13-pilot": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\13-pilot.png",
+    "14-main-menu-1920x1080": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\14-main-menu-1920x1080.png",
+    "15-main-menu-1280x720": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\15-main-menu-1280x720.png",
+    "16-main-menu-854x480": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\16-main-menu-854x480.png",
+    "17-mobile-portrait-menu": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\menu-rework-v1\\17-mobile-portrait-menu.png"
+  },
+  "errors": []
+}

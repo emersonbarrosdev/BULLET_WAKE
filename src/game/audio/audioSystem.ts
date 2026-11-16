@@ -85,11 +85,15 @@ export class AudioSystem {
   // --- EFEITOS SONOROS (SFX) ---
 
   /** Short, bounded cartoon accents. The approved RIVET cannon remains unchanged. */
-  playArcade(kind:'navigate'|'confirm'|'impact'|'pop'|'boom'|'orb'|'cannon'|'transition'|'special'):void {
+  playArcade(kind:'navigate'|'confirm'|'impact'|'pop'|'boom'|'orb'|'cannon'|'transition'|'special'|'bonus'|'arch-descent'|'arch-ascent'|'checkpoint'):void {
     this.unlock();
-    if(!this.ctx||!this.sfxGain||this.isMuted||this.environment==='space'||!this.allowSound('arcade-'+kind,kind==='impact'?.07:kind==='orb'?.09:.12))return;
+    if(!this.ctx||!this.sfxGain||this.isMuted||this.environment==='space'||!this.allowSound('arcade-'+kind,kind==='impact'?.07:kind==='orb'?.09:kind==='bonus'?.18:.12))return;
     if(kind==='navigate'){this.tone('sine',660,880,.045,.08);return;}
     if(kind==='confirm'){this.tone('triangle',523,523,.07,.13);this.tone('sine',1046,1046,.10,.1,.06);return;}
+    if(kind==='bonus'){this.tone('sine',880,1175,.075,.075);this.tone('triangle',1318,1568,.11,.06,.045);return;}
+    if(kind==='arch-descent'){this.noise(.55,.11,1650);this.tone('triangle',340,145,.48,.11);return;}
+    if(kind==='arch-ascent'){this.noise(.48,.11,2200);this.tone('triangle',165,420,.46,.11);return;}
+    if(kind==='checkpoint'){[523.25,659.25,783.99,1046.5].forEach((f,i)=>this.tone('triangle',f,f*1.01,.16,.11,i*.07));return;}
     if(kind==='impact'){this.noise(.035,.12,3700);this.tone('triangle',930,380,.055,.07);return;}
     if(kind==='orb'||kind==='cannon'){this.tone('triangle',kind==='orb'?460:260,kind==='orb'?170:70,.12,.12);this.noise(.04,.06,1900);return;}
     if(kind==='transition'){[392,523,659].forEach((f,i)=>this.tone('triangle',f,f,.14,.08,i*.08));return;}
@@ -100,7 +104,7 @@ export class AudioSystem {
   playShot(pilotId: 'nolan' | 'cora' | 'harlan' | 'lyra' | 'bento', level = 1): void {
     this.unlock();
     if (!this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
-    if(!this.allowSound('player-shot',.065))return;
+    if(!this.allowSound('player-shot',.025))return;
     const voices:Partial<Record<string,CombatVoice>>={cora:'violet',lyra:'emerald',harlan:'amber',bento:'celestial'};
     const voice=voices[pilotId];if(voice){this.playDesignedVoice(voice);return;}
     const now = this.ctx.currentTime;
@@ -108,9 +112,11 @@ export class AudioSystem {
     if (pilotId === 'nolan'||pilotId==='lyra'||pilotId==='bento') {
       this.cannonBuffers??=cannonSamples(this.ctx);
       const source=this.trackSoundSource(this.ctx.createBufferSource()),gain=this.ctx.createGain();
-      source.buffer=this.cannonBuffers[this.cannonIndex++%this.cannonBuffers.length];
-      source.playbackRate.value=pilotId==='bento'?1.1:pilotId==='lyra'?1.06:1;
-      gain.gain.value=.38+Math.min(level,4)*.025;
+      const idx = this.cannonIndex++;
+      source.buffer=this.cannonBuffers[idx%this.cannonBuffers.length];
+      const baseRate = pilotId==='bento'?1.1:pilotId==='lyra'?1.06:[0.97, 1.04, 1.11][idx % 3];
+      source.playbackRate.value=baseRate;
+      gain.gain.value=.36+Math.min(level,4)*.022;
       source.connect(gain);gain.connect(this.sfxGain);source.onended=()=>{source.disconnect();gain.disconnect();};source.start(now);
     } else if (pilotId === 'cora') {
       // Laser fino agudo com harmônicos

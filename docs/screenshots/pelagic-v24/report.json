@@ -1,0 +1,37 @@
+{
+  "resolution": "1366x768",
+  "screenshots": {
+    "01-heli-scout-firing": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-v24\\01-heli-scout-firing.png",
+    "02-heli-utility-firing": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-v24\\02-heli-utility-firing.png",
+    "03-heli-phantom-banking": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-v24\\03-heli-phantom-banking.png",
+    "04-heli-warhawk-missile": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-v24\\04-heli-warhawk-missile.png",
+    "05-heli-warhawk-damaged": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-v24\\05-heli-warhawk-damaged.png",
+    "06-coastal-cannons-debug-origin": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-v24\\06-coastal-cannons-debug-origin.png",
+    "07-tide-arch-cannons-boats-debug": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-v24\\07-tide-arch-cannons-boats-debug.png",
+    "08-ship-turret-and-cannon-wreck": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-v24\\08-ship-turret-and-cannon-wreck.png"
+  },
+  "perf": {
+    "generatedAt": "2026-11-16T20:23:29.144Z",
+    "measurementKind": "automated",
+    "scenarioName": "v24-combat",
+    "missionId": 1,
+    "quality": 2,
+    "resolution": "1366x768",
+    "durationSeconds": 3.21,
+    "frames": 175,
+    "currentFps": 39.9,
+    "avgFps": 55,
+    "avgMs": 18.19,
+    "medianMs": 16.7,
+    "p95Ms": 24.93,
+    "p99Ms": 25.05,
+    "enemies": 2,
+    "bullets": 3,
+    "objects": 873,
+    "effects": 0,
+    "heapMb": 54.4,
+    "rendererInfo": "ANGLE (AMD, AMD Radeon(TM) Graphics (0x00001681) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+  },
+  "weaponDebugVerified": true,
+  "errors": []
+}

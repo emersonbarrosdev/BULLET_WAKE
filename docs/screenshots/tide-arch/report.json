@@ -1,0 +1,130 @@
+{
+  "pc": {
+    "resolutions": [
+      "1366x768",
+      "1920x1080"
+    ],
+    "checks": {
+      "layout": {
+        "upLayout": "pc",
+        "arena": {
+          "left": 160,
+          "right": 768,
+          "top": 28,
+          "bottom": 420
+        },
+        "hudTopY": 14,
+        "hudVisible": true,
+        "hudLeftVisible": true,
+        "hudRightVisible": false,
+        "pauseVisible": true,
+        "portraitUpActive": false,
+        "rotateHintHidden": true
+      },
+      "descentAlt": 0.83,
+      "lowFlightAirBlocked": true,
+      "underArchDepth": {
+        "inBand": true,
+        "altitude": 0
+      },
+      "checkpointActive": true,
+      "airResumed": true
+    },
+    "perf": {
+      "frames": 116,
+      "avgFps": 52.7,
+      "p50Ms": 16.7,
+      "p95Ms": 25.1
+    },
+    "screenshots": {
+      "pc-01-approach": 315698,
+      "pc-02-descent": 363844,
+      "pc-03-low-flight": 369742,
+      "pc-04-under-arch": 331212,
+      "pc-05-ascent": 303200,
+      "pc-06-checkpoint": 301756,
+      "pc-07-air-return": 275388,
+      "pc-1080p-under-arch": 514194
+    },
+    "video": {
+      "path": "docs/videos/arco-das-mares-pc.webm",
+      "bytes": 1269647
+    }
+  },
+  "androidPortrait": {
+    "resolutions": [
+      "720x1600",
+      "1080x1920"
+    ],
+    "note": "Tested via Chromium DevTools mobile portrait + touch emulation (physical Android hardware not connected).",
+    "checks": {
+      "layout": {
+        "upLayout": "portrait",
+        "arena": {
+          "left": 0,
+          "right": 384,
+          "top": 34,
+          "bottom": 806
+        },
+        "portraitUpActive": true,
+        "hudLeftHidden": true,
+        "hudRightHidden": true,
+        "hudVisible": true,
+        "hudTopY": 16,
+        "touchShown": true,
+        "touchLayout": {
+          "joystick": {
+            "x": 45,
+            "y": 753,
+            "radius": 33,
+            "hitRadius": 49,
+            "travelRadius": 29,
+            "knobRadius": 13.5
+          },
+          "fire": {
+            "x": 345,
+            "y": 757,
+            "radius": 27,
+            "hitRadius": 37
+          },
+          "special": {
+            "x": 341,
+            "y": 689,
+            "radius": 21,
+            "hitRadius": 27
+          },
+          "pause": {
+            "x": 364,
+            "y": 17,
+            "radius": 17,
+            "hitRadius": 23
+          },
+          "moveZoneSplitX": 192,
+          "scale": 1,
+          "opacity": 0.52
+        },
+        "requireLandscape": "false",
+        "rotateHintHidden": true
+      },
+      "sideRotateHint": {
+        "requireLandscape": "true",
+        "rotateHintVisible": true
+      }
+    },
+    "perf": {
+      "frames": 122,
+      "avgFps": 55.1,
+      "p50Ms": 16.7,
+      "p95Ms": 25.1
+    },
+    "screenshots": {
+      "android-01-approach-720x1600": 278158,
+      "android-02-descent-720x1600": 273860,
+      "android-03-low-flight-1080x1920": 402420,
+      "android-04-under-arch-1080x1920": 364872,
+      "android-05-checkpoint-720x1600": 278658,
+      "android-06-air-return-720x1600": 258036
+    }
+  },
+  "errors": []
+}

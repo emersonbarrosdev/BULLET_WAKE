@@ -82,15 +82,15 @@
   ],
   "pixelContinuity": [
     {
-      "mean": 0,
-      "peak": 0,
+      "mean": 0.00010473060067027584,
+      "peak": 1,
       "changedFraction": 0,
       "width": 384,
       "height": 432
     },
     {
-      "mean": 0,
-      "peak": 0,
+      "mean": 0.00010473060067027584,
+      "peak": 1,
       "changedFraction": 0,
       "width": 384,
       "height": 432

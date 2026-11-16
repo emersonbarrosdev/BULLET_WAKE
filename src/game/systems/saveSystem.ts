@@ -1,5 +1,6 @@
 import type { CampaignFlight } from './campaignFlight.ts';
 import { CAMPAIGN_MAIN_STAGES, SECRET_PILOT_CODE, SECRET_STAGE_IDS } from '../data/pilotStories.ts';
+import { defaultTouchSettings, sanitizeTouchSettings, type TouchControlSettings } from '../arcade/TouchControls.ts';
 /**
  * BULLET WAKE — Sistema de Salvamento e Persistência de Campanha.
  * Armazenamento versionado via localStorage com fallback em memória.
@@ -11,6 +12,8 @@ export interface GameSettings {
   isMuted: boolean;
   difficulty: 'normal' | 'hard' | 'arcade';
   rapidFire: boolean;
+  assisted: boolean;
+  touch: TouchControlSettings;
 }
 
 export interface StageScoreRecord {
@@ -49,6 +52,8 @@ export function defaultSaveData(): SaveData {
       isMuted: false,
       difficulty: 'normal',
       rapidFire: false,
+      assisted: false,
+      touch: defaultTouchSettings(),
     },
   };
 }
@@ -76,6 +81,8 @@ export class SaveSystem {
               settings: {
                 ...defaultSaveData().settings,
                 ...(parsed.settings || {}),
+                assisted: Boolean(parsed.settings?.assisted),
+                touch: sanitizeTouchSettings(parsed.settings?.touch),
               },
             };
             // The previous untouched default is migrated; explicit custom mixes remain intact.
@@ -174,7 +181,9 @@ export class SaveSystem {
   }
 
   updateSettings(settings: Partial<GameSettings>): void {
-    this.data.settings = { ...this.data.settings, ...settings };
+    const next = { ...this.data.settings, ...settings };
+    next.touch = sanitizeTouchSettings(next.touch);
+    this.data.settings = next;
     this.save();
   }
 

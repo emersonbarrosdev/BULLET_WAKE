@@ -88,38 +88,70 @@ try{
   window.s=window.__GAME__.scene.getScene('ArcadeScene');
   s.audio.setMix(0,0,true);s.begin(0);s.scene.pause();s.quality=2;
   window.coastRender=()=>{s.backdrop.draw(s.clock,s.world,s.quality);s.renderWorld(0);};
-  window.coastFixture=(scroll,actors=false)=>{
+  window.subFixture=(route=300)=>{
    s.begin(0);s.scene.pause();s.world.state='play';s.world.waveIndex=999;s.world.supplyIndex=999;
-   s.world.route=30;s.world.elapsed=24;s.world.scroll=scroll;s.world.player.invulnerable=0;
-   s.world.enemies=[];s.world.cargo=[];s.world.events=[];s.world.bullets.forEach(b=>b.active=false);
-   if(actors){
-    s.world.spawnEncounter({family:'tank',formation:'pair',motion:'stationary',lane:.25});
-    s.world.spawnEncounter({family:'tower',formation:'solo',motion:'stationary',lane:.8});
-    s.world.spawnEncounter({family:'boat',formation:'pair',motion:'stationary',lane:.5});
-   }
+   s.world.miniStarted=true;s.world.bossStarted=false;
+   s.world.route=route;s.world.elapsed=route;s.world.scroll=route*38;s.world.player.invulnerable=999;
+   s.world.enemies=[];s.world.cargo=[];s.world.events=[];s.world.boss=undefined;s.world.bullets.forEach(b=>b.active=false);
+   s.world.step(1/60);
    coastRender();
-   if(!actors){s.player.setVisible(false);s.backdrop.shadows?.forEach(x=>x.setVisible(false));}
   };true;
  `);
 
- await evaluate("coastFixture(0);s.world.spawnEncounter({family:'submarine',formation:'pair',motion:'stationary',lane:.5});s.world.updateEnemies(.6);coastRender();true");
- await screenshot('01-submarines-emerge');
- await evaluate("s.world.updateEnemies(.7);coastRender();true");await screenshot('02-submarines-hold');
- report.submarines=await evaluate("s.world.enemies.filter(e=>e.submarine).map(e=>({x:e.x,y:e.y,phase:e.submarine.phase,key:s.enemySprites.get(e.id).texture.key,alpha:s.enemySprites.get(e.id).alpha,rotation:s.enemySprites.get(e.id).rotation}))");
- assert.equal(report.submarines.length,2);assert(report.submarines.every(e=>e.key==='arc-submarine-v2'&&e.rotation===0&&e.alpha===1));
- await evaluate("coastFixture(0);s.world.cargo=[{id:901,x:330,y:150,vx:0,vy:0,kind:'power',crate:true,hp:3,age:.25},{id:902,x:410,y:190,vx:0,vy:0,kind:'power',crate:false,hp:1,age:.25},{id:903,x:360,y:240,vx:0,vy:0,kind:'life',crate:false,hp:1,age:.25},{id:904,x:415,y:290,vx:0,vy:0,kind:'special',crate:false,hp:1,age:.25}];coastRender();true");
- await screenshot('03-balloon-and-pickups');
- await evaluate("coastFixture(0);s.world.player.invulnerable=0;s.world.spawnEncounter({family:'boat',formation:'pair',motion:'stationary',lane:.5});s.world.enemies.forEach((e,i)=>{e.navigation.worldY=130+i*100;e.y=e.navigation.worldY;e.x=335+i*70;});s.world.firePrimary();coastRender();true");
- await screenshot('04-wet-hulls-and-round-shot');
- await evaluate("s.world.enemies[0].flash=.09;coastRender();true");await screenshot('05-hit-overlay');
- report.flash=await evaluate("s.hitOverlays.sprites.filter(x=>x.visible).map(x=>({alpha:x.alpha,key:x.texture.key}))");assert(report.flash.length>0&&report.flash.every(x=>x.alpha<=.4));
- await evaluate("coastFixture(0);s.world.step(.05,{x:0,y:0,fire:false,special:true});for(let i=0;i<5;i++)s.world.step(.05);coastRender();true");await screenshot('06-bomb-flight');
- await evaluate("for(let i=0;i<14;i++)s.world.step(.05);coastRender();true");await screenshot('07-colossal-blast');
- report.bomb=await evaluate("({phase:s.world.bomb?.phase,age:s.world.bomb?.age,radius:s.world.bomb?.radius,key:s.bombArt.blast.texture.key})");assert.equal(report.bomb.phase,'blast');
- await resize(1920,1080);await screenshot('08-colossal-blast-1920');await resize(1366,768);
- await evaluate("coastFixture(0);s.world.startBoss(false);s.world.boss.timer=2.5;s.world.updateBoss(.01);s.world.updateBoss(.01);coastRender();true");await screenshot('09-boss-intact');
- report.sectors=await evaluate("(()=>{const b=s.world.boss;const left=b.parts.find(p=>p.dx<0);s.world.damageBossAt(b.x-b.size*.2,b.y,left.hp);const before=b.parts.reduce((v,p)=>v+p.hp,0);s.world.damageBossAt(b.x-b.size*.2,b.y,20);const after=b.parts.reduce((v,p)=>v+p.hp,0);coastRender();return{leftHp:left.hp,reducedDamage:before-after}})()");assert.equal(report.sectors.leftHp,0);assert(Math.abs(report.sectors.reducedDamage-5)<1e-7);await screenshot('10-boss-left-destroyed');
- await evaluate("s.world.boss.phase='sink';s.world.boss.timer=2.61;s.world.updateBoss(.01);for(let i=0;i<35;i++)s.world.step(.05,{x:0,y:1,fire:true,special:false});coastRender();true");await screenshot('11-automatic-flyout');
+ // 01: Colossal Submarine Bow entering open ocean arena (zero coastal beaches behind boss)
+ await evaluate("subFixture(300);for(let i=0;i<50;i++)s.world.step(1/60);coastRender();true");
+ await screenshot('01-sub-enter');
+ const openOceanCheck=await evaluate("({coastVisible:s.backdrop.pelagicState().coast.visible,subVisible:s.subBossArt.hullSprites[0].visible})");
+ assert.equal(openOceanCheck.coastVisible,false);assert.equal(openOceanCheck.subVisible,true);
+
+ // 02: Section 0 (PROA BLINDADA) active combat with turrets warning & spherical shots
+ await evaluate("for(let i=0;i<130;i++)s.world.step(1/60,{x:0,y:0,fire:true,special:false});coastRender();true");
+ await screenshot('02-sub-sec0-bow');
+
+ // 03: Direct hull damage craters, broken turret base, fire & smoke
+ await evaluate("(()=>{const sub=s.world.boss.sub,s0=sub.sections[0];s0.parts[0].hp=0;s0.parts[1].hp=0;s0.marks.push({dx:-46,dy:-22,size:.9,seed:7},{dx:-24,dy:20,size:.85,seed:19});s0.hullHp=40;s0.hullFlash=.09;coastRender();})()");
+ await screenshot('03-sub-hull-damage-crater');
+
+ // 04: Smooth transition scroll between Sec 0 ruined bow and Sec 1 Armamento Frontal
+ await evaluate("(()=>{const sub=s.world.boss.sub,s0=sub.sections[0];s0.hullHp=0;s0.parts.forEach(p=>p.hp=0);for(let i=0;i<52;i++)s.world.step(1/60);coastRender();})()");
+ await screenshot('04-sub-transition');
+ assert.equal(await evaluate("s.world.boss.sub.phase"),'transition');
+
+ // 05: Section 2 (TORRE DE COMANDO) intact towering bridge & flanking fire
+ await evaluate("(()=>{const sub=s.world.boss.sub;sub.activeSection=2;sub.subScroll=sub.targetScroll=480;sub.phase='fight';for(let i=0;i<60;i++)s.world.step(1/60,{x:0,y:0,fire:true,special:false});coastRender();})()");
+ await screenshot('05-sub-sec2-conning-intact');
+
+ // 06: Section 2 with Conning Tower destroyed -> burning ruined wreck + red hull flash
+ await evaluate("(()=>{const sub=s.world.boss.sub,s2=sub.sections[2],br=s2.parts.find(p=>p.kind==='bridge');s.world.damageSubModule(sub,s2,br,999,br.x,br.y);s2.hullHp=80;for(let i=0;i<30;i++)s.world.step(1/60);coastRender();})()");
+ await screenshot('06-sub-sec2-conning-ruined');
+ assert.equal(await evaluate("s.world.boss.sub.bridgeDestroyed"),true);
+
+ // 07: Section 4 (PROPULSÃO ABISSAL) stern shrouded turbines + glowing reactor spiral
+ await evaluate("(()=>{const sub=s.world.boss.sub;sub.activeSection=4;sub.subScroll=sub.targetScroll=960;sub.phase='fight';for(let i=0;i<115;i++)s.world.step(1/60,{x:.35,y:0,fire:true,special:false});coastRender();})()");
+ await screenshot('07-sub-sec4-stern-reactor');
+
+ // 08: Tormenta Escarlate special blast over Section 4
+ await evaluate("s.world.weapons.weaponLevel=5;s.world.step(1/60,{x:0,y:0,fire:false,special:true});for(let i=0;i<50;i++)s.world.step(1/60);coastRender();true");
+ await screenshot('08-sub-special-blast');
+ assert.equal(await evaluate("s.world.bomb?.phase"),'blast');
+
+ // 09: Staged 3.6s collapse + chain explosions + submerge
+ await evaluate("(()=>{const sub=s.world.boss.sub,s4=sub.sections[4];s4.hullHp=0;s4.parts.forEach(p=>p.hp=0);for(let i=0;i<90;i++){s.world.step(1/60);s.consumeEvents();}s.backdrop.draw(s.clock,s.world,2);s.renderWorld(1/60);})()");
+ await screenshot('09-sub-collapse-destruction');
+ assert.equal(await evaluate("s.world.boss.sub.phase"),'collapse');
+
+ // 10: Automatic flyout after collapse -> Result screen, plus 1920x1080 & 854x480 compact touch
+ await resize(1920,1080);
+ await evaluate("(()=>{const sub=s.world.boss.sub;sub.activeSection=2;sub.subScroll=sub.targetScroll=480;sub.phase='fight';s.world.boss.phase='fight';coastRender();})()");
+ await screenshot('11-sub-1920x1080');
+ await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
+ await resize(854,480);
+ await evaluate("s.setTouchVisible(true);coastRender();true");
+ await screenshot('12-sub-mobile-854x480-touch');
+ await send('Emulation.setTouchEmulationEnabled',{enabled:false});
+ await resize(1366,768);
+ await evaluate("subFixture(300);(()=>{const sub=s.world.boss.sub;sub.phase='collapse';sub.timer=3.58;for(let i=0;i<60;i++)s.world.step(1/60);coastRender();})()");
+ await screenshot('10-sub-flyout');
  report.flyout=await evaluate("({state:s.world.state,y:s.world.player.y})");assert.equal(report.flyout.state,'exit');
 
  if(process.argv.includes('--routes')){

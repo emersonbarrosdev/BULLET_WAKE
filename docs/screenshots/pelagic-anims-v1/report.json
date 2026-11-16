@@ -1,0 +1,96 @@
+{
+  "errors": [],
+  "textures": {
+    "rivetFrames": 28,
+    "enemyAirFrames": 112,
+    "ufoFrames": 6,
+    "vfxFrames": 16
+  },
+  "assertions": {
+    "bankColumns": {
+      "neutral": 3,
+      "left": 0,
+      "right": 6
+    },
+    "recoilHitboxInvariant": {
+      "nv1": {
+        "wx": 384,
+        "wy": 330,
+        "sx": 384,
+        "sy": 330.8925,
+        "bullets": 1
+      },
+      "fireNv5Bullets": 10
+    },
+    "enemyAirTextures": [
+      {
+        "family": "fighter",
+        "texture": "pelagic-enemy-air",
+        "frame": 16
+      },
+      {
+        "family": "interceptor",
+        "texture": "pelagic-enemy-air",
+        "frame": 30
+      },
+      {
+        "family": "acrobat",
+        "texture": "pelagic-enemy-air",
+        "frame": 70
+      },
+      {
+        "family": "bomber",
+        "texture": "pelagic-enemy-air",
+        "frame": 100
+      },
+      {
+        "family": "alien",
+        "texture": "pelagic-ufo-anim",
+        "frame": 2
+      }
+    ],
+    "solarCityUp": false
+  },
+  "performance": {
+    "q0": {
+      "quality": 0,
+      "frames": 90,
+      "avgMs": 17.43,
+      "p95Ms": 17.1,
+      "fps": 57.4
+    },
+    "q1": {
+      "quality": 1,
+      "frames": 90,
+      "avgMs": 16.69,
+      "p95Ms": 16.9,
+      "fps": 59.9
+    },
+    "q2": {
+      "quality": 2,
+      "frames": 90,
+      "avgMs": 16.69,
+      "p95Ms": 16.8,
+      "fps": 59.9
+    }
+  },
+  "fixtures": [
+    "01-rivet-neutral",
+    "02-rivet-bank-left",
+    "03-rivet-bank-right-overboost",
+    "04-rivet-fire-nv1",
+    "05-rivet-fire-nv5-full",
+    "06-enemies-air-maneuvers",
+    "07-enemies-damage-smoke",
+    "08-enemies-destruction",
+    "09a-rivet-invulnerability",
+    "09b-rivet-recovery",
+    "10-intense-combat",
+    "11-solar-city-untouched"
+  ],
+  "video": {
+    "bytes": 915198,
+    "mimeType": "video/webm;codecs=vp9",
+    "file": "pelagic-anims-demo.webm"
+  }
+}

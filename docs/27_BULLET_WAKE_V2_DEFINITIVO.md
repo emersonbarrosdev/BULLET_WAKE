@@ -35,7 +35,7 @@ Rajada Escarlate conserva sprite e som aprovados. Uma pressão produz três puls
 
 RIVET evolui com 2/2/2/3 P: nove P até FULL. Níveis 1–5: 1/2/3/6/7 projéteis por pulso; dois mísseis automáticos no NV3/NV4 a cada 1,5 s; três guiados no FULL a cada 1,1 s. P não troca a arma para outro conjunto.
 
-Tormenta Escarlate: corredor frontal de plasma durante três segundos. Dano somente ao alvo atingido, orçamento de 120 sob contato contínuo. Impacto acompanha o alvo real, flash e explosões locais. Proteção durante o especial e limpeza de balas próximas, sem coletável de escudo.
+Tormenta Escarlate (revisão canônica em bomba + explosão em área): bomba lançada da posição da nave por 0,65 s a 280 px/s (limitada a 65 px das bordas frontal/lateral, sem dano durante o voo), seguida de detonação e explosão em área por 2,1 s (2,75 s totais), expandindo até raio de 155 px na Fenda e 180 px na Cidade. Aplica dano contínuo limitado à janela da explosão (90/s) aos inimigos expostos (submarinos com exposição >= 0,6) e componentes vivos do chefe em fase de combate no raio, limpa tiros hostis dentro da área e protege o jogador por toda a duração, sem coletável de escudo. (Histórico: substitui a especificação anterior de corredor frontal de plasma registrada em [48](48_RIVET_CACA_TORMENTA_ESCARLATE.md); sprites e validação em [67](67_TASK2_COMBAT_VALIDATION.md).)
 
 Início com 3 vidas e 2 especiais; limites 5/5. Recursos no máximo rendem pontos, sem estoque oculto. Cada roteiro possui onze caixas: nove P, uma vida e um especial. Destruir a caixa libera um item que quica nas bordas durante 24 segundos. Ao morrer: NV1, medidor zero, três segundos de proteção e um único P comum se havia potência. Nenhuma restauração instantânea de FULL ou reabastecimento de especial.
 
@@ -54,9 +54,9 @@ Teclado: WASD/setas, Espaço, X, Esc. Controle padrão: analógico/direcional, b
 | A partir de 155 s | Miniboss naval de três canhões | Miniboss transportador lateral |
 | 200–255 s | Patrulhas e superfície | Distrito industrial e barreiras |
 | 255–300 s | Fenda e escalada final | Altos da cidade e escalada aérea |
-| Após 300 s | Encouraçado Pula-Onda | Mega Dirigível Giro |
+| Após 300 s | Submarino Colosso Abissal | Mega Dirigível Giro |
 
-Pula-Onda: três armas independentes; fuga após destruição, cinco segundos inteiros ausente e retorno ampliado com seis armas. Scrolling desacelera/paralisa; a água continua animada. Casco não absorve tiros destinados às armas nem distribui dano à peça mais próxima. Leques lentos, pares mirados, salvas rápidas e grandes esferas radiais alternam aviso, ataque e pausa. Destruição em camadas e saída automática da RIVET.
+Submarino Colosso Abissal (chefe canônico da Fenda Pelágica — UP): estrutura modular colossal em cinco seções progressivas (`PROA BLINDADA`, `ARMAMENTO FRONTAL`, `TORRE DE COMANDO`, `ARMAMENTO TRASEIRO`, `PROPULSÃO ABISSAL`, ~3.640 EHP total), enfrentada em área naval de mar aberto sem margens costeiras atrás do combate. Cada seção possui placas de casco destrutíveis diretamente e múltiplos armamentos independentes (torres duplas giratórias, silos VLS, escotilhas blindadas, ponte de comando, turbinas de popa e reator abissal). Acertar partes vivas danifica o módulo; acertar o convés exposto ou trechos já sem torre danifica o casco diretamente com marcas de cratera, fogo e fumaça persistentes, sem redirecionar para canhões distantes. Armas quebradas param de atirar; destruir a Torre de Comando altera visualmente a ponte para ruína em chamas e acelera a cadência do submarino. Bombas da Tormenta Escarlate respeitam teto por seção ativa (`220` total, `90` por parte, `110` no casco), impedindo pular seções mesmo com FULL e cinco especiais. Derrotar a quinta seção aciona colapso progressivo em camadas (`3,6 s`) com submersão e saída automática da RIVET. *(Histórico: substitui o conceito anterior de retorno em duas fases do Encouraçado Pula-Onda).*
 
 Giro: dirigível lateral, deslocamento vertical, hélices e três baterias independentes. Salvas frontais/miradas e ataque esférico anunciado. Sem fuga naval ou segunda configuração copiada da Fenda. Armas destruídas deixam de disparar; inclinação e explosões na queda. Resultados e encerramento das duas missões.
 
@@ -68,7 +68,7 @@ Oito composições originais atendem doze contextos: menu/intro, seleção/resul
 
 Música começa em 18%, com ganho adicional de mixagem 0,52, abaixo dos efeitos. Ambos são ajustáveis. Pausa preserva cursor; navegar nas opções não religa a música. Vitória/derrota não repetem. UI, esferas, canhões, impactos, explosões e especial usam síntese curta original; o canhão aprovado da RIVET foi preservado.
 
-HUD com pontos, potência, ícones de vidas/especiais, pausa e rota. Sem integridade nem barra do chefe sobre a arena. Rádio breve em acontecimentos, sem chat permanente. Pausa mantém o fundo e oferece continuar, controles, opções e saída com confirmação.
+HUD com pontos, potência, ícones de vidas/especiais, pausa e rota; durante confrontos contra chefes modulares na Fenda, barra discreta no topo superior da raia exibe seção ativa (`1/5`–`5/5`) e integridade modular sem invadir a área jogável ou os painéis laterais. Rádio breve em acontecimentos, sem chat permanente. Pausa mantém o fundo e oferece continuar, controles, opções e saída com confirmação.
 
 ## Futuro — somente metadados
 

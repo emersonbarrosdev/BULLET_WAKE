@@ -1,0 +1,64 @@
+{
+  "errors": [],
+  "events": {
+    "navalConvoyNormal": {
+      "count": 5,
+      "vessels": [
+        {
+          "family": "ship",
+          "x": 354,
+          "y": 52,
+          "tex": "arc-wet-hull-5"
+        },
+        {
+          "family": "boat",
+          "x": 309,
+          "y": 90,
+          "tex": "arc-wet-hull-4"
+        },
+        {
+          "family": "boat",
+          "x": 399,
+          "y": 90,
+          "tex": "arc-wet-hull-4"
+        }
+      ],
+      "duplicateBlocked": true
+    },
+    "navalConvoyHardCount": 6,
+    "eliteNormal": {
+      "aces": 3,
+      "enemyBullets": 2
+    },
+    "eliteHardAces": 4,
+    "coordinatedStrike": {
+      "total": 3,
+      "subExposure": 1,
+      "enemyBullets": 5
+    },
+    "rareVisitor": {
+      "active": 1,
+      "tex": "pelagic-ufo-anim",
+      "duplicateBlocked": true
+    },
+    "rareKillBonusDelta": 2200
+  },
+  "performance": {
+    "frames": 60,
+    "avgTickMs": 3.32
+  },
+  "captures": [
+    "01-naval-convoy-normal",
+    "02-naval-convoy-hard",
+    "03-elite-interception-normal",
+    "04-elite-interception-hard",
+    "05-coordinated-strike",
+    "06-rare-visitor",
+    "07-rare-visitor-destroyed"
+  ],
+  "video": {
+    "bytes": 904847,
+    "mimeType": "video/webm;codecs=vp9",
+    "file": "pelagic-events-demo.webm"
+  }
+}

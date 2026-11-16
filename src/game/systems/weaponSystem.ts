@@ -414,7 +414,7 @@ export function getPrimaryProjectiles(
   if(familyOrPilot==='nolan'&&family==='ion'){
     const lanes=level===1?[[0,0]]:level===2?[[-3,0],[3,0]]:level===3?[[0,-14],[0,0],[0,14]]:level===4?[[-3,-18],[3,-18],[-3,0],[3,0],[-3,18],[3,18]]:[[0,-24],[0,-16],[0,-8],[0,0],[0,8],[0,16],[0,24]];
     return lanes.map(([x,angle])=>({texture:'shot-moth',animation:'shot-moth-loop',x:originX+x,y:originY,
-      velocityX:640*Math.sin(angle*Math.PI/180),velocityY:-640*Math.cos(angle*Math.PI/180),
+      velocityX:1040*Math.sin(angle*Math.PI/180),velocityY:-1040*Math.cos(angle*Math.PI/180),
       damage:level===1?2.35:level===2?1.65:level===3?1.8:level===4?1.35:1.5,hitRadius:2.5,scale:1}));
   }
 
