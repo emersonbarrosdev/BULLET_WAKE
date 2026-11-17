@@ -60,8 +60,8 @@ export type TouchDownAction = 'none' | 'pause' | 'move' | 'fire' | 'special';
 
 export const WORLD_WIDTH = 768;
 export const WORLD_HEIGHT = 432;
-export const CENTER_ARENA_LEFT = 192;
-export const CENTER_ARENA_RIGHT = 576;
+export const CENTER_ARENA_LEFT = 184;
+export const CENTER_ARENA_RIGHT = 584;
 
 const ZERO_INSETS: SafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 
