@@ -132,8 +132,8 @@ function imageWindow(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
 }
 
 function buildStaticTextures(scene: Phaser.Scene): void {
-  const backdropKey = 'bw-fenda-hud-native-base-v4';
-  const trimKey = 'bw-fenda-hud-native-trim-v4';
+  const backdropKey = 'bw-fenda-hud-native-base-v5';
+  const trimKey = 'bw-fenda-hud-native-trim-v5';
   if (!scene.textures.exists(backdropKey)) {
     const texture = scene.textures.createCanvas(backdropKey, W * SCALE, H * SCALE);
     if (texture) {
@@ -158,7 +158,7 @@ function buildStaticTextures(scene: Phaser.Scene): void {
       // Camadas separadas por função, com espaço reservado ao pause no topo direito.
       card(c, 7, 8, 146, 115);    // Missão
       card(c, 7, 130, 146, 166);  // Bayek
-      card(c, 7, 303, 146, 88);   // Rádio
+      card(c, 7, 303, 146, 119);  // Rádio — espaço ampliado após retirar o logo
       card(c, 616, 28, 145, 182); // Nave
       card(c, 616, 216, 145, 55); // Armamento
       card(c, 616, 277, 145, 55); // Bomba
@@ -207,7 +207,7 @@ function buildStaticTextures(scene: Phaser.Scene): void {
       titlePlate(c, 632, 57, 94, 16, '#3ae5ff');
       imageWindow(c, 623, 77, 130, 126);
       // Rádio com janela de texto sem fotografia duplicada.
-      imageWindow(c, 15, 333, 130, 50);
+      imageWindow(c, 15, 333, 130, 80);
 
       // Pontuação, integrada à linha y=0, SEM barra atravessando a arena.
       const topGrad = c.createLinearGradient(0, 0, 0, 16);
@@ -221,9 +221,6 @@ function buildStaticTextures(scene: Phaser.Scene): void {
       poly(c, [342, 0, 353, 0, 361, 5, 355, 5]); c.fill();
       poly(c, [426, 0, 415, 0, 407, 5, 413, 5]); c.fill();
 
-      // Logo só recebe fundo discreto; o próprio asset fica pequeno no canto inferior.
-      c.fillStyle = 'rgba(32,152,235,.19)';
-      poly(c, [12, 400, 111, 400, 100, 426, 0, 426]); c.fill();
       c.restore(); texture.refresh();
     }
   }
@@ -257,15 +254,15 @@ function buildStaticTextures(scene: Phaser.Scene): void {
 
 export class PelagicDesktopHud {
   readonly chassis: Phaser.GameObjects.Image;
-  readonly bayekPortrait: Phaser.GameObjects.Sprite;
+  readonly bayekPortrait: Phaser.GameObjects.Image;
   readonly routeThumb: Phaser.GameObjects.Image;
-  readonly logo: Phaser.GameObjects.Image;
   readonly rivetSide: Phaser.GameObjects.Sprite;
   readonly scoreValue: Phaser.GameObjects.Text;
 
   private readonly allNodes: VisibleNode[];
   private readonly indicatorInk: Phaser.GameObjects.Graphics;
-  private readonly hearts: Phaser.GameObjects.Image[] = [];
+  private readonly lifeHeart: Phaser.GameObjects.Image;
+  private readonly livesCountText: Phaser.GameObjects.Text;
   private readonly radioMessage: Phaser.GameObjects.Text;
   private readonly missionName: Phaser.GameObjects.Text;
   private visible = false;
@@ -281,8 +278,8 @@ export class PelagicDesktopHud {
     buildStaticTextures(scene);
     const label = (x: number, y: number, value: string, size: number,
       color = '#ffffff', originX = 0.5) => scene.add.text(x, y, value, {
-        fontFamily: FONT, fontSize: size + 'px', fontStyle: 'bold',
-        color, stroke: '#02132c', strokeThickness: 1.1,
+        fontFamily: FONT, fontSize: size + 'px', fontStyle: size >= 14 ? '600' : 'normal',
+        color, stroke: '#02132c', strokeThickness: 0.55,
       }).setResolution(3).setOrigin(originX, 0.5).setDepth(44).setVisible(false);
 
     this.chassis = scene.add.image(384, 216, 'bw-fenda-hud-native-base-v4')
@@ -291,15 +288,10 @@ export class PelagicDesktopHud {
     const missionArt = scene.add.image(80, 90, UI_TEX.hudRoutePelagic)
       .setDisplaySize(126, 52).setDepth(40).setVisible(false);
     this.routeThumb = missionArt;
-    const sky = scene.add.image(80, 212, UI_TEX.hudPelagicSky)
-      .setDisplaySize(128, 136).setDepth(40).setVisible(false);
-    // Sprite real de pilots.webp, frame 0 — sem imagem do mockup.
-    this.bayekPortrait = scene.add.sprite(80, 214, 'arc-pilots', 0)
-      .setDisplaySize(132, 132).setDepth(41).setVisible(false);
-    // Mesma arte original do Bayek, exibida inteira em vez de ampliar o rosto.
-    // Logo original HD logo-arcade.webp: preservar proporção 1024:650.
-    this.logo = scene.add.image(49, 410, UI_TEX.logo)
-      .setDisplaySize(62, 39.4).setDepth(43).setVisible(false);
+    // Retrato HD original da coleção de artes HUD do próprio repositório,
+    // importado pelo Vite (sem recortes de mockup, sem esticar spritesheet).
+    this.bayekPortrait = scene.add.image(80, 212, UI_TEX.hudBayekHd)
+      .setDisplaySize(129, 135).setDepth(41).setVisible(false);
 
     const trim = scene.add.image(384, 216, 'bw-fenda-hud-native-trim-v4')
       .setDisplaySize(768, 432).setDepth(42).setVisible(false);
@@ -311,31 +303,34 @@ export class PelagicDesktopHud {
 
     const shipName = label(630, 44, 'RIVET', 18, '#ffffff', 0);
     const shipClass = label(643, 65, 'VANGUARDA', 11.5, '#073364', 0);
-    const weaponsHeader = label(643, 229, 'ARMAMENTO', 12.25, '#ffffff', 0);
-    const bombHeader = label(650, 291, 'BOMBA', 13.5, '#ffffff', 0);
+    const weaponsHeader = label(643, 229, 'POWER', 13, '#ffffff', 0);
+    const bombHeader = label(650, 291, 'ESPECIAL', 13, '#ffffff', 0);
     const livesHeader = label(647, 351, 'VIDAS', 13.5, '#ffffff', 0);
 
     this.rivetSide = scene.add.sprite(688, 143, PELAGIC_RIVET_SHEET, 3)
-      .setDisplaySize(114, 114).setDepth(43).setVisible(false);
+      .setDisplaySize(89, 89).setDepth(43).setVisible(false);
     this.scoreValue = label(384, 8, '0', 16, '#ffffff');
 
-    this.radioMessage = scene.add.text(22, 343, 'Canal livre.\nRota aberta!', {
-      fontFamily: FONT, fontSize: '11.5px', fontStyle: 'bold',
-      color: '#ffffff', stroke: '#06162e', strokeThickness: 0.9,
-      wordWrap: { width: 117, useAdvancedWrap: true }, lineSpacing: 1.5,
+    this.radioMessage = scene.add.text(22, 340, 'Canal livre.\nRota aberta!', {
+      fontFamily: FONT, fontSize: '11.3px', fontStyle: 'normal',
+      color: '#f3faff', stroke: '#03132b', strokeThickness: 0.4,
+      wordWrap: { width: 118, useAdvancedWrap: true }, lineSpacing: 1.7,
     }).setResolution(3).setOrigin(0, 0).setDepth(45).setVisible(false);
 
     this.indicatorInk = scene.add.graphics().setDepth(44).setVisible(false);
-    for (let i = 0; i < 5; i++) {
-      this.hearts.push(scene.add.image(688, 385, 'bw-hud-heart-native-v4')
-        .setDisplaySize(28, 28).setDepth(45).setVisible(false));
-    }
+    this.lifeHeart = scene.add.image(661, 382, 'bw-hud-heart-native-v4')
+      .setDisplaySize(34, 34).setDepth(45).setVisible(false);
+    this.livesCountText = scene.add.text(690, 381, '× 3', {
+      fontFamily: FONT, fontSize: '23px', fontStyle: 'normal',
+      color: '#f5faff', stroke: '#02132c', strokeThickness: 0.65,
+    }).setOrigin(0, 0.5).setResolution(3).setDepth(45).setVisible(false);
 
     this.allNodes = [
-      this.chassis, missionArt, sky, this.bayekPortrait, this.logo, trim,
+      this.chassis, missionArt, this.bayekPortrait, trim,
       missionHeader, this.missionName, bayekName, radioHeader, shipName,
       shipClass, weaponsHeader, bombHeader, livesHeader, this.rivetSide,
-      this.scoreValue, this.radioMessage, this.indicatorInk, ...this.hearts,
+      this.scoreValue, this.radioMessage, this.indicatorInk,
+      this.lifeHeart, this.livesCountText,
     ];
   }
 
@@ -375,7 +370,7 @@ export class PelagicDesktopHud {
       }
       if (line) lines.push(line);
     }
-    for (let i = 0; i < lines.length; i += 3) result.push(lines.slice(i, i + 3).join('\n'));
+    for (let i = 0; i < lines.length; i += 4) result.push(lines.slice(i, i + 4).join('\n'));
     return result.length ? result : [message];
   }
 
@@ -436,22 +431,15 @@ export class PelagicDesktopHud {
         .setFontSize(8).setText('ASSISTIDO').setColor('#c5fff9');
     }
 
-    // Indicadores reais: armamento, bomba e corações.
+    // Indicadores reais: POWER, ESPECIAL e contador cumulativo de vidas.
     const g = this.indicatorInk; g.clear();
     for (let i = 0; i < 5; i++) {
       this.slot(g, 627 + i * 26, 243, i < world.weapons.weaponLevel, false);
       this.slot(g, 627 + i * 26, 304, i < world.weapons.specialCharges, true);
     }
-    const count = Math.max(0, Math.min(5, Math.floor(world.lives)));
-    const show = count > 3 ? 5 : 3;
-    const spacing = show === 3 ? 34 : 25;
-    const startX = 688 - spacing * (show - 1) / 2;
-    for (let i = 0; i < this.hearts.length; i++) {
-      this.hearts[i].setVisible(i < show)
-        .setPosition(startX + i * spacing, 381)
-        .setDisplaySize(show === 3 ? 29 : 24, show === 3 ? 29 : 24)
-        .setAlpha(i < count ? 1 : .17);
-    }
+    // Vidas cumulativas: um coração e a contagem completa (sem limite artificial).
+    this.lifeHeart.setVisible(true);
+    this.livesCountText.setText('× ' + Math.max(0, Math.floor(world.lives))).setVisible(true);
 
     // Boss HP: só aparece em combate, sem obstruir a descida normal dos inimigos.
     if (world.boss?.sub && world.boss.sub.phase !== 'done') {
