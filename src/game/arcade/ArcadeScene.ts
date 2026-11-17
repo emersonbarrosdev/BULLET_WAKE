@@ -1438,18 +1438,20 @@ export class ArcadeScene extends Phaser.Scene {
     const isDesktopPelagic = !!this.world.up && !this.touchShown && !this.portraitUpActive;
     const container = this.add.container(0, 0).setDepth(68);
     if (isDesktopPelagic) {
-      // Top-right Pause arcade badge inside right panel header (`y = 0..32`, above ROTA 01)
-      container.setPosition(739, 16).setSize(40, 26);
+      // Pausa discreta no topo direito, integrada às bordas da HUD.
+      container.setPosition(739, 14).setSize(40, 26);
       const bg = this.add.graphics();
       const drawCompactPc = (focused: boolean) => {
-        bg.clear()
-          .fillStyle(focused ? 0x10407c : 0x061e4a, .96)
-          .fillRoundedRect(-15, -10.5, 30, 21, 10)
-          .lineStyle(1.6, focused ? 0xffe46b : 0x3ce5ff, .98)
-          .strokeRoundedRect(-15, -10.5, 30, 21, 10)
-          .fillStyle(focused ? 0xffffff : 0xffe033, 1)
-          .fillRoundedRect(-5, -5, 3.2, 10, 1)
-          .fillRoundedRect(1.8, -5, 3.2, 10, 1);
+        bg.clear();
+        bg.fillStyle(focused ? 0x0e4277 : 0x061c40, 0.98)
+          .fillRoundedRect(-17, -10, 34, 20, 5)
+          .lineStyle(1.1, focused ? 0xffdf49 : 0x41e4ff, 0.95)
+          .strokeRoundedRect(-17, -10, 34, 20, 5)
+          .lineStyle(0.5, 0xbdfaff, 0.4)
+          .strokeRoundedRect(-14.5, -7.5, 29, 15, 3.8)
+          .fillStyle(focused ? 0xfff5bd : 0xffd933, 1)
+          .fillRoundedRect(-5, -5, 3.2, 10, 0.7)
+          .fillRoundedRect(1.8, -5, 3.2, 10, 0.7);
       };
       drawCompactPc(false);
       container.add(bg);
