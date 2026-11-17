@@ -22,7 +22,7 @@ import { clamp } from './geometry';
 import { getCombatVirtualSize } from '../render/combatResolution';
 import { SUB_BEAM_HALF_W, SUB_SECTION_HEIGHT, subSectionCenterY } from './PelagicSubmarineBoss';
 
-const STAGE1_LEFT = 160, STAGE1_WIDTH = 448;
+const STAGE1_LEFT = 192, STAGE1_WIDTH = 384;
 export const MENU_HORIZON = 300;
 const FAMILIES = ['fighter', 'interceptor', 'acrobat', 'bomber', 'boat', 'ship', 'tank', 'tower'];
 
