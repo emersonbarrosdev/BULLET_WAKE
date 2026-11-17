@@ -54,6 +54,9 @@ export class PelagicDesktopHud {
   private lastWorld: ArcadeWorld | null = null;
   private lastScore = '';
   private lastRadioText = 'Canal livre.\nRota aberta!';
+  private radioPages = ['Canal livre.\nRota aberta!'];
+  private radioReceivedAt = 0;
+  private radioNeedsTimeReset = true;
   private lastRadioExpr = 0;
   private visible = false;
 
@@ -209,12 +212,29 @@ export class PelagicDesktopHud {
 
   isVisible(): boolean { return this.visible; }
 
-  /** A radio transmission stays visible until replaced by a newer message. */
+  /** Preserve a transmission until the next one, without overflowing the card. */
   setRadioMessage(text: string): void {
     const next = text.trim().replace(/\\n/g, '\n');
     if (!next || next === this.lastRadioText) return;
     this.lastRadioText = next;
-    this.radioText.setText(next);
+    const lines: string[] = [];
+    for (const paragraph of next.split('\n')) {
+      let line = '';
+      for (const word of paragraph.split(/\s+/).filter(Boolean)) {
+        if (line && (line + ' ' + word).length > 20) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = line ? line + ' ' + word : word;
+        }
+      }
+      if (line) lines.push(line);
+    }
+    const pages: string[] = [];
+    for (let i = 0; i < lines.length; i += 4) pages.push(lines.slice(i, i + 4).join('\n'));
+    this.radioPages = pages.length ? pages : [next];
+    this.radioText.setText(this.radioPages[0]);
+    this.radioNeedsTimeReset = true;
   }
 
   private slot(g: Phaser.GameObjects.Graphics, x: number, y: number, on: boolean, special: boolean): void {
@@ -234,18 +254,28 @@ export class PelagicDesktopHud {
     bossHudLabel: Phaser.GameObjects.Text,
     comms: PelagicCommsState | null,
     _introRadioActive: boolean,
-    _clock: number,
+    clock: number,
   ): void {
     if (!this.visible) this.setVisible(true);
 
     if (this.lastWorld !== world) {
       this.lastWorld = world;
       this.lastRadioText = 'Canal livre.\nRota aberta!';
+      this.radioPages = [this.lastRadioText];
       this.radioText.setText(this.lastRadioText);
+      this.radioNeedsTimeReset = true;
     }
     if (comms?.text) {
       this.setRadioMessage(comms.text);
       this.lastRadioExpr = comms.expression;
+    }
+    if (this.radioNeedsTimeReset) {
+      this.radioReceivedAt = clock;
+      this.radioNeedsTimeReset = false;
+    }
+    if (this.radioPages.length > 1) {
+      const page = Math.floor(Math.max(0, clock - this.radioReceivedAt) / 4.5) % this.radioPages.length;
+      if (this.radioText.text !== this.radioPages[page]) this.radioText.setText(this.radioPages[page]);
     }
     this.missionTitle.setText(world.mission.name.toUpperCase());
 
