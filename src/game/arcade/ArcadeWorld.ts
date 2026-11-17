@@ -138,7 +138,7 @@ export class ArcadeWorld {
             this.arena = { ...options.arena };
         } else if (mission.perspective === 'UP') {
             this.arena = this.upLayout === 'pc'
-                ? { left: 192, right: 576, top: 28, bottom: 420 }
+                ? { left: 184, right: 584, top: 28, bottom: 420 }
                 : this.upLayout === 'portrait'
                     ? { left: 0, right: 384, top: 34, bottom: 668 }
                     : { left: 192, right: 576, top: 38, bottom: 420 };
