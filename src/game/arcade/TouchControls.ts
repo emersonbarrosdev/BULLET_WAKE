@@ -60,8 +60,8 @@ export type TouchDownAction = 'none' | 'pause' | 'move' | 'fire' | 'special';
 
 export const WORLD_WIDTH = 768;
 export const WORLD_HEIGHT = 432;
-export const CENTER_ARENA_LEFT = 192;
-export const CENTER_ARENA_RIGHT = 576;
+export const CENTER_ARENA_LEFT = 160;
+export const CENTER_ARENA_RIGHT = 608;
 
 const ZERO_INSETS: SafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 
@@ -243,16 +243,10 @@ export function computeTouchLayout(
         specX = actionClampX(fireX + dir * minButtonDist, specialRadius);
     }
 
-    // Keep the pause trigger clear of the HUD score readout (centered around 680, 50)
-    // even when landscape safe-area cutouts push controls inward from the top-right bezel.
+    // O placar não usa a lateral: o botão pausa permanece no painel direito.
     const defaultPauseX = WORLD_WIDTH - Math.max(24, safeRight + 24);
-    const pauseHitsScoreBox = defaultPauseX < 732 && safeTop + 16 > 28;
-    const pauseX = pauseHitsScoreBox
-        ? 596
-        : clamp(defaultPauseX, 732, WORLD_WIDTH - 24);
-    const pauseY = pauseHitsScoreBox
-        ? clamp(Math.max(20, safeTop + 12), 18, 34)
-        : clamp(Math.max(18, safeTop + 14), 18, 30);
+    const pauseX = clamp(defaultPauseX, CENTER_ARENA_RIGHT + 24, WORLD_WIDTH - 24);
+    const pauseY = clamp(Math.max(18, safeTop + 14), 18, 36);
 
     return {
         joystick: {
