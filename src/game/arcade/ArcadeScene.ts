@@ -154,7 +154,7 @@ export class ArcadeScene extends Phaser.Scene {
     }
   }
   private criticalOpeningAssetsReady(): boolean {
-    return [UI_TEX.logo, UI_TEX.skyPanorama, UI_TEX.wingmenAnim, UI_TEX.menuHeliSide, UI_TEX.menuHeliPatrolSide, UI_TEX.padDualSense, UI_TEX.mobileLandscape, UI_TEX.icons, UI_TEX.glow, UI_TEX.hudPelagicSky, UI_TEX.hudPelagicChassis, UI_TEX.hudRoutePelagic]
+    return [UI_TEX.logo, UI_TEX.skyPanorama, UI_TEX.wingmenAnim, UI_TEX.menuHeliSide, UI_TEX.menuHeliPatrolSide, UI_TEX.padDualSense, UI_TEX.mobileLandscape, UI_TEX.icons, UI_TEX.glow, UI_TEX.hudPelagicSky, UI_TEX.hudBayekPortrait, UI_TEX.hudRoutePelagic]
       .every(key => this.textures.exists(key));
   }
   private syncLoadVisual(p: number, visible = true): void {
@@ -330,7 +330,7 @@ export class ArcadeScene extends Phaser.Scene {
       this.world.setArenaBounds(
         usePortraitPlay
           ? { left: 0, right: 384, top: 34, bottom: targetH - 14 }
-          : { left: 192, right: 576, top: 28, bottom: 420 },
+          : { left: 160, right: 608, top: 18, bottom: 424 },
       );
       this.lastHud = '';
     }
@@ -843,7 +843,7 @@ export class ArcadeScene extends Phaser.Scene {
     const portH = usePortrait ? this.portraitCanvasHeight() : 432;
     this.world = new ArcadeWorld(MISSIONS[index], carry, index === 0 ? {
       upLayout: usePortrait ? 'portrait' : 'pc',
-      arena: usePortrait ? { left: 0, right: 384, top: 34, bottom: portH - 14 } : { left: 192, right: 576, top: 28, bottom: 420 },
+      arena: usePortrait ? { left: 0, right: 384, top: 34, bottom: portH - 14 } : { left: 160, right: 608, top: 18, bottom: 424 },
     } : undefined);
     this.world.accessibility = settings.rapidFire;
     this.world.assisted = index === 0 && settings.assisted;
@@ -855,7 +855,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.player.setVisible(true); this.audio.play(index ? 'stage2' : 'stage1'); this.show('play');
   }
   private disposeWorld(): void {
-    this.touchController?.clearAll(); this.emplacements?.clear(); this.hitOverlays?.clear(); this.bombArt?.draw(); this.subBossArt?.clear(); this.bossHudLabel?.setVisible(false); this.pelagicAssistBadge?.setVisible(false); this.pelagicCheckpointBadge?.setVisible(false); this.pelagicSpecialText?.setVisible(false); this.pelagicAnims?.clear(); this.pelagicComms.reset();
+    this.touchController?.clearAll(); this.emplacements?.clear(); this.hitOverlays?.clear(); this.bombArt?.draw(); this.subBossArt?.clear(); this.bossHudLabel?.setVisible(false); this.pelagicAssistBadge?.setVisible(false); this.pelagicCheckpointBadge?.setVisible(false); this.pelagicSpecialText?.setVisible(false); this.pelagicAnims?.clear(); this.pelagicComms.reset(); this.pelagicDesktopHud?.resetComms();
     this.clearBonusPopups();
     this.world = undefined; this.pelagicDesktopHud?.setVisible(false); this.player?.setVisible(false); this.bossSprite?.setVisible(false); this.lifeIcons.forEach(s => s.setVisible(false)); this.hud?.setText(''); this.radio?.setVisible(false); this.combatInk?.clear(); this.decor?.clear(); this.lastHud = '';
     for (const map of [this.enemySprites, this.partSprites, this.turrets]) { for (const s of map.values()) s.destroy(); map.clear(); } for (const s of this.cargoSprites.values()) s.destroy(); this.cargoSprites.clear(); for (const s of this.bulletSprites) s.setVisible(false); for (const e of this.effects) { e.sprite.setVisible(false); this.effectPool.push(e.sprite); } this.effects = []; globalAudio.stopCombatEffects();
@@ -1114,30 +1114,10 @@ export class ArcadeScene extends Phaser.Scene {
     for (const fx of this.effects) { fx.age += dt; fx.sprite.setPosition(fx.sprite.x + fx.vx * dt, fx.sprite.y + fx.vy * dt).setRotation(fx.sprite.rotation + fx.spin * dt).setAlpha(1 - fx.age / fx.duration * .7); fx.sprite.setFrame(Math.min(15, Math.floor(fx.age / fx.duration * 16))); }
     this.effects = this.effects.filter(f => { if (f.age >= f.duration) { f.sprite.setVisible(false); this.effectPool.push(f.sprite); return false; } return true; });
     this.updateBonusPopups(dt);
-    this.renderHud();
+    this.renderHud(dt);
     if (w.up) {
-      if (w.state !== 'intro') {
-        const comms = this.pelagicComms.current();
-        if (comms && !this.portraitUpActive && !['result', 'defeat'].includes(this.screen)) {
-          this.radio.setOrigin(0, 0).setPosition(602, 281)
-            .setStyle({
-              fontFamily: FONT,
-              fontSize: '9.5px',
-              fontStyle: 'bold italic',
-              color: '#eef8ff',
-              stroke: '#031029',
-              strokeThickness: 2,
-              lineSpacing: 2.2,
-              wordWrap: { width: 146 },
-              align: 'left',
-            })
-            .setText(comms.text.replace(/\n/g, ' ')).setVisible(true);
-        } else {
-          this.radio.setVisible(false);
-        }
-      } else if (this.portraitUpActive) {
-        this.radio.setVisible(false);
-      }
+      // Desktop Fenda Pelágica owns persistent radio inside Left Panel via PelagicDesktopHud
+      this.radio.setVisible(false);
     } else if (this.clock > this.messageUntil) {
       this.radio.setVisible(false);
     }
@@ -1195,7 +1175,7 @@ export class ArcadeScene extends Phaser.Scene {
       if (o.warning > 0 || o.x > 735) { g.fillStyle(0xff6857, .85).fillTriangle(731, o.y - 8, 731, o.y + 8, 718, o.y); }
     }
   }
-  private renderHud(): void {
+  private renderHud(dt = 0): void {
     const w = this.world!, g = this.decor; g.clear();
     if (w.up) {
       const cpVisible = this.clock < this.checkpointBannerUntil && this.screen === 'play';
@@ -1234,20 +1214,22 @@ export class ArcadeScene extends Phaser.Scene {
         return;
       }
 
-      // PC Horizontal Layout: unified 3-region arcade HUD (Left 192u | Center 384u + Top Bar | Right 192u)
+      // PC Horizontal Layout: 160 / 448 / 160 modular arcade HUD (X = 160..608, Y = 0..432)
       this.hud.setVisible(false);
+      this.radio.setVisible(false);
       this.pelagicSpecialText.setVisible(false);
-      this.pelagicCheckpointBadge.setPosition(384, 44).setVisible(cpVisible);
+      this.pelagicCheckpointBadge.setPosition(384, 40).setVisible(cpVisible);
       this.pelagicDesktopHud.draw(
         w,
-        g,
         this.lifeIcons,
         this.pelagicLevel,
         this.pelagicAssistBadge,
         this.bossHudLabel,
         this.pelagicComms.current(),
+        '',
         w.state === 'intro',
         this.clock,
+        dt,
       );
     } else {
       this.pelagicDesktopHud.setVisible(false);
@@ -1271,25 +1253,7 @@ export class ArcadeScene extends Phaser.Scene {
         g.beginPath().moveTo(x + 2, 9).lineTo(x - 5, 20).lineTo(x, 20).lineTo(x - 2, 29).lineTo(x + 7, 16).lineTo(x + 2, 16).closePath().fillPath();
       }
     }
-    if (w.state === 'intro' && w.up && !this.portraitUpActive) {
-      this.radio
-        .setOrigin(0, 0)
-        .setStyle({
-          fontFamily: FONT,
-          fontSize: '9.5px',
-          fontStyle: 'bold italic',
-          color: '#eef8ff',
-          stroke: '#031029',
-          strokeThickness: 2,
-          lineSpacing: 2.5,
-          wordWrap: { width: 132 },
-          align: 'left',
-        })
-        .setText('Entrando na Fenda Pelágica. Radar limpo por enquanto... Mas fiquem atentos, é uma rota instável!')
-        .setPosition(606, 267)
-        .setVisible(true);
-      this.messageUntil = this.clock + .5;
-    } else if (w.state === 'intro' && !w.up) {
+    if (w.state === 'intro' && !w.up) {
       g.fillStyle(0xffe77d, .95).fillRoundedRect(220, 170, 328, 75, 12);
       const label = w.mission.name;
       this.radio.setOrigin(.5).setText(`MISSÃO ${this.currentMission + 1}\n${label}`).setPosition(384, 207).setVisible(true);
@@ -1444,18 +1408,18 @@ export class ArcadeScene extends Phaser.Scene {
     const isDesktopPelagic = !!this.world.up && !this.touchShown && !this.portraitUpActive;
     const container = this.add.container(0, 0).setDepth(68);
     if (isDesktopPelagic) {
-      // Top-right Pause arcade badge inside right panel header (`y = 0..32`, above ROTA 01)
-      container.setPosition(739, 16).setSize(40, 26);
+      // Discrete futuristic top-right Pause button inside Right Panel [608..768], clear of RIVET/VANGUARDA
+      container.setPosition(746, 18).setSize(32, 24);
       const bg = this.add.graphics();
       const drawCompactPc = (focused: boolean) => {
         bg.clear()
-          .fillStyle(focused ? 0x10407c : 0x061e4a, .96)
-          .fillRoundedRect(-15, -10.5, 30, 21, 10)
-          .lineStyle(1.6, focused ? 0xffe46b : 0x3ce5ff, .98)
-          .strokeRoundedRect(-15, -10.5, 30, 21, 10)
-          .fillStyle(focused ? 0xffffff : 0xffe033, 1)
-          .fillRoundedRect(-5, -5, 3.2, 10, 1)
-          .fillRoundedRect(1.8, -5, 3.2, 10, 1);
+          .fillStyle(focused ? 0x0f3b76 : 0x041a44, .96)
+          .fillRoundedRect(-11, -8, 22, 16, 4.5)
+          .lineStyle(1.4, focused ? 0xffe46b : 0x4ee6ff, .96)
+          .strokeRoundedRect(-11, -8, 22, 16, 4.5)
+          .fillStyle(focused ? 0xffffff : 0xffdf33, 1)
+          .fillRoundedRect(-3.6, -4.2, 2.4, 8.4, 0.8)
+          .fillRoundedRect(1.2, -4.2, 2.4, 8.4, 0.8);
       };
       drawCompactPc(false);
       container.add(bg);
@@ -1712,29 +1676,13 @@ export class ArcadeScene extends Phaser.Scene {
   devTriggerPilotComms(category: 'start' | 'threat' | 'submarine' | 'pickup' | 'damage' | 'miniboss' | 'boss' | 'victory' | 'special-event', detail?: string, text?: string): void {
     if (!this.world?.up) return;
     this.pelagicComms.trigger({ category, detail, text });
-    const cur = this.pelagicComms.current();
-    if (cur && !this.portraitUpActive) {
-      this.radio
-        .setOrigin(0, 0)
-        .setStyle({
-          fontFamily: FONT,
-          fontSize: '9.5px',
-          fontStyle: 'bold italic',
-          color: '#eef8ff',
-          stroke: '#031029',
-          strokeThickness: 2,
-          lineSpacing: 2.2,
-          wordWrap: { width: 146 },
-          align: 'left',
-        })
-        .setPosition(602, 281)
-        .setText(cur.text.replace(/\n/g, ' '))
-        .setVisible(true);
+    if (!this.portraitUpActive) {
+      this.renderHud(0);
     }
   }
   devPelagicHudState() {
     if (!this.world) return null;
-    return this.pelagicDesktopHud.snapshot(this.world, this.pelagicLevel, this.radio, this.pauseBtn);
+    return this.pelagicDesktopHud.snapshot(this.world, this.pauseBtn);
   }
   refreshHudVisual(): void {
     if (!this.world) return;

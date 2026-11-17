@@ -13,14 +13,14 @@ import {
 const FENDA = MISSIONS[0];
 const SOLAR = MISSIONS[1];
 
-test('PC Desktop Pelagic preserves 25%-50%-25% horizontal arena (192..576, 384u wide)', () => {
+test('PC Desktop Pelagic preserves 160 / 448 / 160 horizontal arena (160..608, 448u wide)', () => {
     const pc = new ArcadeWorld(FENDA, undefined, { upLayout: 'pc' });
     assert.equal(pc.upLayout, 'pc');
-    assert.equal(pc.arena.left, 192);
-    assert.equal(pc.arena.right, 576);
-    assert.equal(pc.arena.top, 28);
-    assert.equal(pc.arena.bottom, 420);
-    assert.equal(pc.arenaWidth, 384);
+    assert.equal(pc.arena.left, 160);
+    assert.equal(pc.arena.right, 608);
+    assert.equal(pc.arena.top, 18);
+    assert.equal(pc.arena.bottom, 424);
+    assert.equal(pc.arenaWidth, 448);
     assert.equal(pc.arena.left, CENTER_ARENA_LEFT);
     assert.equal(pc.arena.right, CENTER_ARENA_RIGHT);
 });
@@ -40,7 +40,7 @@ test('Android Portrait Pelagic and Cidade Solar layouts remain strictly unchange
 
 test('Pause button touch layout sits cleanly in the right-panel top header away from center gameplay', () => {
     const layout = computeTouchLayout(defaultTouchSettings());
-    assert.ok(layout.pause.x >= 730, `Pause x (${layout.pause.x}) must stay in top-right panel corner`);
+    assert.ok(layout.pause.x >= 728, `Pause x (${layout.pause.x}) must stay in top-right panel corner`);
     assert.ok(layout.pause.y >= 14 && layout.pause.y <= 32, `Pause y (${layout.pause.y}) must sit in right top header`);
     assert.ok(layout.pause.x > CENTER_ARENA_RIGHT, 'Pause target must never enter center gameplay arena');
 });

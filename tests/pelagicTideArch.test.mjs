@@ -289,12 +289,12 @@ test('24-30: Special bomb, weapons LV1/LV3/FULL, Hard intensity, layout switchin
   }
   assert(shotsHard > shotsNorm, `Hard cannon/boat volume (${shotsHard}) should exceed Normal (${shotsNorm})`);
 
-  // PC Horizontal (192..576) & Android Portrait (0..384) arena resizing & constructors
+  // PC Horizontal (160..608) & Android Portrait (0..384) arena resizing & constructors
   const pcW = new ArcadeWorld({ ...FENDA, encounters: [] }, undefined, { upLayout: 'pc' });
   assert.equal(pcW.upLayout, 'pc');
-  assert.equal(pcW.arenaWidth, 384);
-  assert.equal(pcW.arena.left, 192);
-  assert.equal(pcW.arena.right, 576);
+  assert.equal(pcW.arenaWidth, 448);
+  assert.equal(pcW.arena.left, 160);
+  assert.equal(pcW.arena.right, 608);
   const portW = new ArcadeWorld({ ...FENDA, encounters: [] }, undefined, { upLayout: 'portrait' });
   assert.equal(portW.upLayout, 'portrait');
   assert.equal(portW.arenaWidth, 384);
