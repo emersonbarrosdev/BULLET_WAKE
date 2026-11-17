@@ -4,6 +4,7 @@ import {
     FAMILY,
     LEGACY_SOLAR_FIRE,
     LEGACY_SOLAR_SHOTS,
+    MISSIONS,
     SUPPLIES,
     WARHAWK_MISSILE_SPEED_HARD,
     WARHAWK_MISSILE_SPEED_NORMAL,
@@ -15,6 +16,11 @@ import {
     type Mission,
     type Motion,
 } from './content.ts';
+import {
+    ArcadeStageDirector,
+    type StageDirectorSnapshot,
+    type StageEventDef,
+} from './ArcadeStageDirector.ts';
 import {
     getMountSpecs,
     hasArticulatedMounts,
@@ -112,6 +118,7 @@ export type UpLayoutMode = 'classic' | 'pc' | 'portrait';
 export interface ArcadeWorldOptions {
     upLayout?: UpLayoutMode;
     arena?: Box;
+    seed?: number;
 }
 
 export class ArcadeWorld {
@@ -120,12 +127,15 @@ export class ArcadeWorld {
     weapons: PlayerWeaponsState = createPlayerWeapons('nolan'); lives = 3; score = 0; kills = 0; deaths = 0; collected = 0; elapsed = 0; route = 0; scroll = 0; scrollSpeed = 38; region = 0; player = { x: 384, y: 368, invulnerable: 2.5, bank: 0, altitude: 1 };
     state: 'intro' | 'play' | 'exit' | 'victory' | 'defeat' = 'intro'; introTime = 2.2; exitTime = 0; specialTime = 0; missileTime = 0; specialEdge = false; specialImpact?: { x: number; y: number };
     contact?: ContactQuery; bossContact?: BossContactQuery; subHullContact?: SubHullContactQuery; accessibility = false; hard = false; assisted = false;
-    devInvincible = false; enemyFireRateScale = 1; enemyShotSpeedScale = 1;
+    devInvincible = false; devSandboxIsolated = false; devIsolatedEventId?: string; enemyFireRateScale = 1; enemyShotSpeedScale = 1; enemySpeedScale = 1; playerSpeedScale = 1; specialDurationScale = 1;
+    seed = 1337;
     readonly specialEventsTriggered = new Set<PelagicSpecialEventId>();
     readonly pelagicScoring = new PelagicScoringTracker();
     readonly tideArch = new TideArchController();
     readonly pacingDirector = new PelagicCombatDirector();
+    readonly stageDirector: ArcadeStageDirector;
     checkpoint?: PelagicCheckpointSnapshot;
+    private rngState = 1337;
     private burst = new BurstController(); private sequence = 0; private waveIndex = 0; private supplyIndex = 0; private miniStarted = false; private bossStarted = false; private nextObstacle = 98;
     private rareSpawnCount = 0; private rareRewardClaimed = false; private convoyBonusClaimed = false; private assistedDeathHinted = false;
     private stepEnemyShots = 0; private directorPaused = false;
@@ -133,6 +143,9 @@ export class ArcadeWorld {
     readonly upLayout: UpLayoutMode;
     constructor(mission: Mission, carry?: CampaignFlight, options?: ArcadeWorldOptions) {
         this.mission = mission;
+        const mIdx = Math.max(0, MISSIONS.indexOf(mission));
+        this.stageDirector = new ArcadeStageDirector(mission, mIdx);
+        this.setSeed(options?.seed ?? 1337);
         this.upLayout = options?.upLayout ?? 'classic';
         if (options?.arena) {
             this.arena = { ...options.arena };
@@ -147,6 +160,17 @@ export class ArcadeWorld {
         }
         const restored = enterStage('nolan', mission.id, carry); this.weapons = restored.weapons; this.lives = restored.health.lives; this.score = restored.score;
         this.player.x = this.arenaCenterX; this.player.y = this.playerHomeY;
+    }
+    setSeed(seed: number): void {
+        const clean = Number.isFinite(seed) ? Math.floor(Math.abs(seed)) : 1337;
+        this.seed = clean || 1337;
+        this.rngState = this.seed;
+    }
+    nextRandom(): number {
+        let t = (this.rngState += 0x6d2b79f5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     }
     get up(): boolean { return this.mission.perspective === 'UP'; }
     get arenaWidth(): number { return this.arena.right - this.arena.left; }
@@ -169,7 +193,13 @@ export class ArcadeWorld {
         const dt = clamp(seconds, 0, .05); if (this.state === 'victory' || this.state === 'defeat') return;
         if (this.state === 'intro') { this.introTime -= dt; this.scroll += 25 * dt; if (this.introTime <= 0) { this.state = 'play'; if (this.up) this.emit('comms', 0, 0, 1, 'start'); else this.emit('radio', 0, 0, 1, 'Cidade Solar, a RIVET chegou!'); } return; }
         if (this.state === 'exit') { this.exitTime += dt; this.scroll += 30 * dt; this.updateWrecks(dt); if (this.up) this.player.y -= 130 * dt; else this.player.x += 250 * dt; if (this.exitTime >= 3.4) this.state = 'victory'; return; }
-        this.elapsed += dt; this.route = Math.min(300, this.route + dt); this.region = regionAt(this.route);
+        this.elapsed += dt;
+        const advanceRoute = !this.directorPaused && (!this.devSandboxIsolated || Boolean(this.devIsolatedEventId));
+        if (advanceRoute) {
+            this.route = Math.min(300, this.route + dt);
+            this.region = regionAt(this.route);
+            this.stageDirector.markRegionReached(this.region, this.route);
+        }
         this.stepEnemyShots = 0;
         if (this.up) {
             for (const award of this.pelagicScoring.advanceSector(this.region, this.route, this.effectiveHard)) {
@@ -178,7 +208,8 @@ export class ArcadeWorld {
             }
         }
         this.player.invulnerable = Math.max(0, this.player.invulnerable - dt);
-        const n = Math.max(1, Math.hypot(input.x, input.y)), speed = 174;
+        const speedMul = this.playerSpeedScale !== 1 ? clamp(this.playerSpeedScale, 0.35, 2.5) : 1;
+        const n = Math.max(1, Math.hypot(input.x, input.y)), speed = 174 * speedMul;
         this.player.x = clamp(this.player.x + input.x / n * speed * dt, this.arena.left + 14, this.arena.right - 14);
         const yRange = this.up
             ? this.tideArch.playerLongitudinalClamp(this.arena.top, this.arena.bottom, this.playerHomeY)
@@ -196,13 +227,20 @@ export class ArcadeWorld {
             this.fireMissiles();
             this.missileTime = this.weapons.weaponLevel === 5 ? 1.1 : 1.5;
         }
-        if (input.special && !this.specialEdge && this.weapons.specialCharges > 0 && this.specialTime <= 0) { this.weapons.specialCharges--; this.specialTime = 2.75; this.bomb = { id: ++this.sequence, x: this.player.x, y: this.player.y, age: 0, phase: 'flight', radius: 0 }; this.emit('special'); }
+        if (input.special && !this.specialEdge && this.weapons.specialCharges > 0 && this.specialTime <= 0) {
+            this.weapons.specialCharges--;
+            const durMul = this.specialDurationScale !== 1 ? clamp(this.specialDurationScale, 0.3, 2.5) : 1;
+            this.specialTime = 2.75 * durMul;
+            this.bomb = { id: ++this.sequence, x: this.player.x, y: this.player.y, age: 0, phase: 'flight', radius: 0 };
+            this.emit('special');
+        }
         this.specialEdge = input.special;
         if (this.specialTime > 0) { this.specialImpact = undefined; this.applySpecial(dt); }
         if (this.up && !this.boss) {
             const archStep = this.tideArch.step(dt, this.route, this.scroll, this.player.y, this.playerHomeY);
             this.player.altitude = this.tideArch.altitude;
             if (archStep.enteredPhase) {
+                this.stageDirector.markArchPhase(archStep.enteredPhase, this.route);
                 if (archStep.enteredPhase === 'approach') {
                     for (const rem of this.enemies) if (!rem.ground) rem.archRetiring = true;
                     this.emit('comms', 0, 0, 1, 'arch:approach');
@@ -227,34 +265,61 @@ export class ArcadeWorld {
         } else {
             this.player.altitude = 1;
         }
-        while (this.waveIndex < this.mission.encounters.length && this.route >= this.mission.encounters[this.waveIndex].at) {
-            const e = this.mission.encounters[this.waveIndex++];
-            if (this.up && (e.at === 155 || this.tideArch.airSpawnsBlocked)) continue;
-            if (!this.up && e.at === 155) continue;
-            this.dispatchScriptedEncounter(e);
-        }
-        if (this.up && !this.boss && !this.tideArch.airSpawnsBlocked) {
-            for (const spec of PELAGIC_TIMED_EVENTS) {
-                if (this.route >= spec.at && !this.specialEventsTriggered.has(spec.id)) this.triggerSpecialEvent(spec.id);
+        if (!this.directorPaused) {
+            const iso = this.devSandboxIsolated ? this.devIsolatedEventId : undefined;
+            while (this.waveIndex < this.mission.encounters.length && this.route >= this.mission.encounters[this.waveIndex].at) {
+                const idx = this.waveIndex++;
+                const e = this.mission.encounters[idx];
+                const encId = `stage-${this.mission.id}-enc-${idx}`;
+                if (iso && iso !== encId) continue;
+                if (this.up && (e.at === 155 || this.tideArch.airSpawnsBlocked)) {
+                    this.stageDirector.markEncounterSkipped(idx, e.at === 155 ? 'Substituído pelo Arco das Marés' : 'Bloqueado pelo Arco das Marés');
+                    continue;
+                }
+                if (!this.up && e.at === 155) {
+                    this.stageDirector.markEncounterSkipped(idx, 'Substituído pelo Miniboss');
+                    continue;
+                }
+                this.stageDirector.markEncounterTriggered(idx, this.route);
+                this.dispatchScriptedEncounter(e);
             }
-            if (isRareVisitorEligible(true, this.route, this.deaths, this.kills, this.rareSpawnCount > 0 || this.specialEventsTriggered.has('rare-visitor'), false)) {
-                this.triggerSpecialEvent('rare-visitor');
+            if (this.up && !this.boss && !this.tideArch.airSpawnsBlocked) {
+                for (const spec of PELAGIC_TIMED_EVENTS) {
+                    const evId = `stage-${this.mission.id}-special-${spec.id}`;
+                    if (iso && iso !== evId) continue;
+                    if (this.route >= spec.at && !this.specialEventsTriggered.has(spec.id)) this.triggerSpecialEvent(spec.id);
+                }
+                const rareId = `stage-${this.mission.id}-special-rare-visitor`;
+                if ((!iso || iso === rareId) && isRareVisitorEligible(true, this.route, this.deaths, this.kills, this.rareSpawnCount > 0 || this.specialEventsTriggered.has('rare-visitor'), false)) {
+                    this.triggerSpecialEvent('rare-visitor');
+                }
             }
+            while (this.supplyIndex < SUPPLIES.length && this.route >= SUPPLIES[this.supplyIndex].at) {
+                const idx = this.supplyIndex++;
+                const c = SUPPLIES[idx];
+                const supId = `stage-${this.mission.id}-supply-${idx}-${c.kind}`;
+                if (iso && iso !== supId) continue;
+                const lane = .25 + (this.supplyIndex % 3) * .24;
+                this.cargo.push({ id: ++this.sequence, x: this.up ? this.arena.left + lane * this.arenaWidth : this.arena.right + 15, y: this.up ? -25 : 85 + lane * 250, vx: this.up ? 20 : -32, vy: this.up ? 25 : 0, kind: c.kind, crate: true, hp: 3, age: 0 });
+                this.stageDirector.markSupplyTriggered(idx, this.route);
+            }
+            if (!this.up && this.route >= 155 && !this.miniStarted && (!iso || iso === `stage-${this.mission.id}-miniboss`)) {
+                this.miniStarted = true;
+                this.startBoss(true);
+            }
+            if (this.route >= 300 && !this.bossStarted && !this.boss && (!iso || iso === `stage-${this.mission.id}-boss`)) {
+                this.bossStarted = true;
+                if (this.up) for (const rem of this.enemies) if (rem.hp > 0) this.pelagicScoring.onSquadMemberEscaped(rem.squadId);
+                this.enemies = []; this.clearHostileBullets(); this.startBoss(false);
+            }
+            if (!iso && !this.up && this.route >= this.nextObstacle && this.route < 270) { this.spawnObstacle(); this.nextObstacle += this.route < 135 ? 12 : 33; }
         }
-        while (this.supplyIndex < SUPPLIES.length && this.route >= SUPPLIES[this.supplyIndex].at) { const c = SUPPLIES[this.supplyIndex++]; const lane = .25 + (this.supplyIndex % 3) * .24; this.cargo.push({ id: ++this.sequence, x: this.up ? this.arena.left + lane * this.arenaWidth : this.arena.right + 15, y: this.up ? -25 : 85 + lane * 250, vx: this.up ? 20 : -32, vy: this.up ? 25 : 0, kind: c.kind, crate: true, hp: 3, age: 0 }); }
-        if (!this.up && this.route >= 155 && !this.miniStarted) { this.miniStarted = true; this.startBoss(true); }
-        if (this.route >= 300 && !this.bossStarted && !this.boss) {
-            this.bossStarted = true;
-            if (this.up) for (const rem of this.enemies) if (rem.hp > 0) this.pelagicScoring.onSquadMemberEscaped(rem.squadId);
-            this.enemies = []; this.clearHostileBullets(); this.startBoss(false);
-        }
-        if (!this.up && this.route >= this.nextObstacle && this.route < 270) { this.spawnObstacle(); this.nextObstacle += this.route < 135 ? 12 : 33; }
         let targetScroll = !this.up && this.region === 3 ? 85 : this.up && this.tideArch.isActive ? this.tideArch.targetScrollSpeed() : 38;
         if (this.boss && !this.boss.mini) targetScroll = this.boss.sub ? (this.boss.sub.phase === 'transition' ? 115 : this.boss.sub.phase === 'collapse' ? 35 : 42) : (this.boss.phase === 'absent' ? 20 : 0);
         else if (this.boss) targetScroll = 16;
         this.scrollSpeed += (targetScroll - this.scrollSpeed) * Math.min(1, dt * 1.5); this.scroll += this.scrollSpeed * dt;
         this.updateWrecks(dt); this.updateEnemies(dt); this.updateBoss(dt); this.updateCargo(dt); this.updateObstacles(dt); this.updateBullets(dt);
-        if (this.up && !this.directorPaused && this.state === 'play') {
+        if (!this.devSandboxIsolated && this.up && !this.directorPaused && this.state === 'play') {
             this.stepDynamicDirector(dt);
         }
         if (this.up && this.tideArch.isPillarCollisionActive(this.scroll, this.player.y)) {
@@ -276,6 +341,7 @@ export class ArcadeWorld {
             this.rareSpawnCount++;
         }
         this.specialEventsTriggered.add(id);
+        this.stageDirector.markSpecialTriggered(id, this.route);
         this.emit('radio', 0, 0, 1, spec.radio);
         const roster = this.effectiveHard && spec.hardExtra ? [...spec.members, ...spec.hardExtra] : spec.members;
         for (const member of roster) {
@@ -407,6 +473,7 @@ export class ArcadeWorld {
             tideArchCompleted: true,
             scoringState: this.pelagicScoring.exportState(),
         };
+        this.stageDirector.markArchPhase('checkpoint', this.route);
         this.emit('checkpoint', this.player.x, this.player.y, 1, 'CHECKPOINT ALCANÇADO');
         this.emit('comms', 0, 0, 1, 'arch:checkpoint');
     }
@@ -440,6 +507,7 @@ export class ArcadeWorld {
         this.tideArch.jumpTo('complete', this.scroll, this.playerHomeY);
         this.tideArch.bonusAwarded = true;
         this.bossStarted = false;
+        this.stageDirector.syncAfterJump(this.route, this.region);
         this.player.x = this.arenaCenterX;
         this.player.y = this.playerHomeY;
         this.player.bank = 0;
@@ -620,15 +688,17 @@ export class ArcadeWorld {
         });
     }
     private updateEnemies(dt: number): void {
+        const spdMul = this.enemySpeedScale !== 1 ? clamp(this.enemySpeedScale, 0.25, 3) : 1;
+        const mDt = dt * spdMul;
         for (const e of this.enemies) {
             if (e.hp <= 0) continue;
             const prevX = e.x, prevY = e.y;
-            e.age += dt; e.flash = Math.max(0, e.flash - dt); const t = e.age;
+            e.age += mDt; e.flash = Math.max(0, e.flash - dt); const t = e.age;
             let advance = e.speed, cross = 0;
             switch (e.motion) { case 'sine': cross = Math.sin(t * 2.6 + e.offset) * 26; break; case 'curve': cross = Math.sin(t * 1.25 + e.offset) * 58; break; case 'zigzag': cross = 2 / Math.PI * Math.asin(Math.sin(t * 2.8)) * 32; break; case 'diagonal': cross = (e.lane < (this.up ? this.arenaCenterX : 216) ? 1 : -1) * t * 36; break; case 'turn': cross = Math.sin(Math.min(Math.PI, t * 1.05)) * 66; advance = t > 3.2 ? -42 : e.speed * 1.08; break; case 'dive': advance = e.speed * 1.1 + Math.min(175, t * t * 32); cross = Math.sin(t * 2.2) * 32; break; case 'accelerate': advance = e.speed * .85 + Math.min(155, t * 42); break; case 'retreat': advance = t > 3.8 ? -65 : e.speed * .9; cross = Math.sin(t * 1.6) * 16; break; case 'stationary': advance = t < 1.8 ? 62 : 16; break; }
             if (e.archRetiring && this.up && !e.ground) {
-                e.y += Math.max(155, e.speed * 1.35) * dt;
-                e.x += (e.x < this.arenaCenterX ? -42 : 42) * dt;
+                e.y += Math.max(155, e.speed * 1.35) * mDt;
+                e.x += (e.x < this.arenaCenterX ? -42 : 42) * mDt;
             } else if (e.submarine) {
                 const sub = e.submarine; sub.phase = t < 1.2 ? 'emerge' : t < 8.2 ? 'hold' : 'submerge';
                 sub.exposure = clamp(t < 1.2 ? t / 1.2 : t < 8.2 ? 1 : 1 - (t - 8.2) / 1.2, 0, 1);
@@ -639,46 +709,46 @@ export class ArcadeWorld {
                     e.x = clamp(this.arenaCenterX + Math.sin(t * 1.45) * 124, this.arena.left + 26, this.arena.right - 26);
                     e.y = clamp(108 + Math.sin(t * 2.55) * 34 + enterOffset, enterOffset < 0 ? -90 : this.arena.top + 18, 225);
                 } else {
-                    e.y -= 155 * dt;
-                    e.x = clamp(e.x + (e.x < this.arenaCenterX ? -45 : 45) * dt, this.arena.left - 30, this.arena.right + 30);
+                    e.y -= 155 * mDt;
+                    e.x = clamp(e.x + (e.x < this.arenaCenterX ? -45 : 45) * mDt, this.arena.left - 30, this.arena.right + 30);
                 }
             } else if (this.up && e.eventRole === 'elite-ace') {
                 if (t < 1.3) {
-                    e.y += e.speed * 1.08 * dt;
+                    e.y += e.speed * 1.08 * mDt;
                     e.x = clamp(e.lane + Math.sin(t * 2.2 + e.offset) * 44, this.arena.left + 16, this.arena.right - 16);
                 } else if (t < 5.0) {
-                    e.y = clamp(e.y + Math.sin(t * 2.1 + e.offset) * 20 * dt, this.arena.top + 28, 178);
+                    e.y = clamp(e.y + Math.sin(t * 2.1 + e.offset) * 20 * mDt, this.arena.top + 28, 178);
                     e.x = clamp(e.lane + Math.sin(t * 2.35 + e.offset) * 58, this.arena.left + 16, this.arena.right - 16);
                 } else {
-                    e.y += e.speed * 1.15 * dt;
+                    e.y += e.speed * 1.15 * mDt;
                     const peel = (e.lane < this.arenaCenterX ? -1 : 1) * (t - 5.0) * 62;
                     e.x = clamp(e.lane + peel + Math.sin(t * 2.35 + e.offset) * 26, this.arena.left + 14, this.arena.right - 14);
                 }
             } else if (this.up && e.ground) {
                 const archClamp = e.archBoat ? computeArchOpening(this.arena.left, this.arena.right) : undefined;
-                moveSurface(e, this.scroll, dt, this.arena.left, this.arenaWidth, archClamp);
+                moveSurface(e, this.scroll, mDt, this.arena.left, this.arenaWidth, archClamp);
             } else if (this.up && e.family === 'heli_utility') {
                 e.altitude = .88 + Math.sin(t * 2.2 + e.offset) * .16;
                 if (t < 1.25) {
-                    e.y += (e.speed + 26) * dt;
+                    e.y += (e.speed + 26) * mDt;
                     e.x = clamp(e.lane + Math.sin(t * 1.4 + e.offset) * 18, this.arena.left + 26, this.arena.right - 26);
                 } else if (t < 6.0) {
                     const hoverY = clamp(96 + (e.offset % 2) * 24 + Math.sin(t * 2.0 + e.offset) * 8, this.arena.top + 26, 168);
-                    e.y += (hoverY - e.y) * Math.min(1, dt * 3.5);
+                    e.y += (hoverY - e.y) * Math.min(1, mDt * 3.5);
                     e.x = clamp(e.lane + Math.sin((t - 1.25) * 1.25 + e.offset) * 48, this.arena.left + 26, this.arena.right - 26);
                 } else {
-                    e.y += Math.max(this.scrollSpeed + 28, e.speed * 1.05) * dt;
-                    e.x = clamp(e.x + (e.x < this.arenaCenterX ? -32 : 32) * dt, this.arena.left + 20, this.arena.right - 20);
+                    e.y += Math.max(this.scrollSpeed + 28, e.speed * 1.05) * mDt;
+                    e.x = clamp(e.x + (e.x < this.arenaCenterX ? -32 : 32) * mDt, this.arena.left + 20, this.arena.right - 20);
                 }
             } else if (this.up && e.family === 'heli_phantom') {
                 e.altitude = .82 + Math.sin(t * 3.6 + e.offset) * .12;
                 const dir = e.entry === 'right' ? -1 : 1;
                 if (t < 1.1) {
                     if (e.entry === 'left' || e.entry === 'right') {
-                        e.x += dir * (e.speed * 1.15) * dt;
-                        e.y = clamp(e.y + 42 * dt, this.arena.top + 22, 165);
+                        e.x += dir * (e.speed * 1.15) * mDt;
+                        e.y = clamp(e.y + 42 * mDt, this.arena.top + 22, 165);
                     } else {
-                        e.y += (e.speed * 1.02) * dt;
+                        e.y += (e.speed * 1.02) * mDt;
                         e.x = clamp(e.lane + Math.sin(t * 3 + e.offset) * 32, this.arena.left + 24, this.arena.right - 24);
                     }
                 } else if (t < 6.4) {
@@ -686,53 +756,53 @@ export class ArcadeWorld {
                     if (phase < 1.05) {
                         // Fast lateral-diagonal stealth dash
                         const dSign = Math.floor((t - 1.1) / 1.95) % 2 === 0 ? dir : -dir;
-                        e.x = clamp(e.x + dSign * (e.speed * 1.38) * dt, this.arena.left + 24, this.arena.right - 24);
-                        e.y = clamp(e.y + Math.sin(t * 3.2) * 26 * dt, this.arena.top + 24, 175);
+                        e.x = clamp(e.x + dSign * (e.speed * 1.38) * mDt, this.arena.left + 24, this.arena.right - 24);
+                        e.y = clamp(e.y + Math.sin(t * 3.2) * 26 * mDt, this.arena.top + 24, 175);
                     } else {
                         // Brief stabilized lock window to align 3-way fan
-                        e.y = clamp(e.y + Math.sin(t * 2.4) * 10 * dt, this.arena.top + 24, 175);
+                        e.y = clamp(e.y + Math.sin(t * 2.4) * 10 * mDt, this.arena.top + 24, 175);
                     }
                 } else {
-                    e.y += (e.speed * 1.2) * dt;
+                    e.y += (e.speed * 1.2) * mDt;
                 }
             } else if (this.up && e.family === 'heli_warhawk') {
                 e.altitude = .94 + Math.sin(t * 1.8) * .08;
                 if (t < 1.35) {
-                    e.y += 96 * dt;
-                    e.x = clamp(e.x + (this.arenaCenterX - e.x) * dt * .9, this.arena.left + 36, this.arena.right - 36);
+                    e.y += 96 * mDt;
+                    e.x = clamp(e.x + (this.arenaCenterX - e.x) * mDt * .9, this.arena.left + 36, this.arena.right - 36);
                 } else if (t < 11.2) {
                     const stationY = clamp(98 + Math.sin(t * 1.35) * 14, this.arena.top + 32, 152);
-                    e.y += (stationY - e.y) * Math.min(1, dt * 3.2);
+                    e.y += (stationY - e.y) * Math.min(1, mDt * 3.2);
                     e.x = clamp(this.arenaCenterX + Math.sin((t - 1.35) * 0.92 + e.offset) * 92, this.arena.left + 38, this.arena.right - 38);
                 } else {
-                    e.y += 108 * dt;
+                    e.y += 108 * mDt;
                 }
             } else if (this.up && e.family === 'heli_scout') {
                 e.altitude = .85 + Math.sin(t * 4.2 + e.offset) * .10;
                 if (e.entry === 'left' || e.entry === 'right') {
                     const dir = e.entry === 'left' ? 1 : -1;
                     const curveTurn = clamp((t - .9) / 1.3, 0, 1);
-                    e.x = clamp(e.x + dir * (e.speed * (1.15 - curveTurn * .65) + Math.sin(t * 4.2 + e.offset) * 32) * dt, this.arena.left - 120, this.arena.right + 120);
-                    e.y += Math.max(this.scrollSpeed + 18, 34 + curveTurn * (e.speed * .85)) * dt;
+                    e.x = clamp(e.x + dir * (e.speed * (1.15 - curveTurn * .65) + Math.sin(t * 4.2 + e.offset) * 32) * mDt, this.arena.left - 120, this.arena.right + 120);
+                    e.y += Math.max(this.scrollSpeed + 18, 34 + curveTurn * (e.speed * .85)) * mDt;
                 } else {
-                    e.y += Math.max(this.scrollSpeed + 20, e.speed * .82) * dt;
+                    e.y += Math.max(this.scrollSpeed + 20, e.speed * .82) * mDt;
                     e.x = clamp(e.lane + Math.sin(t * 3.6 + e.offset) * 74, this.arena.left + 20, this.arena.right - 20);
                 }
             } else if (this.up && (e.entry === 'left' || e.entry === 'right' || e.motion === 'side-cross' || e.motion === 'side-curve')) {
                 const dir = e.entry === 'right' ? -1 : 1;
                 if (e.motion === 'side-cross') {
-                    e.x += dir * e.speed * dt;
-                    e.y += (34 + Math.sin(t * 2.2 + e.offset) * 20) * dt;
+                    e.x += dir * e.speed * mDt;
+                    e.y += (34 + Math.sin(t * 2.2 + e.offset) * 20) * mDt;
                 } else {
                     // side-curve: sweep aggressively horizontally from wing edge then bank smoothly down into arena
                     const turn = clamp((t - .55) / 1.45, 0, 1);
                     const vxLocal = dir * e.speed * (1.05 - turn * .78) + Math.sin(t * 2.8 + e.offset) * 18;
                     const vyLocal = Math.max(this.scrollSpeed + 16, 28 + turn * e.speed * .98);
-                    e.x = clamp(e.x + vxLocal * dt, this.arena.left - 140, this.arena.right + 140);
-                    e.y += vyLocal * dt;
+                    e.x = clamp(e.x + vxLocal * mDt, this.arena.left - 140, this.arena.right + 140);
+                    e.y += vyLocal * mDt;
                 }
-            } else if (this.up) { advance = Math.max(this.scrollSpeed + 16, advance); e.y += advance * dt; e.x = clamp(e.lane + cross, this.arena.left + 12, this.arena.right - 12); }
-            else { e.x -= Math.max(32, advance) * dt; e.y = clamp(e.lane + cross, this.arena.top + 12, this.arena.bottom - 12); }
+            } else if (this.up) { advance = Math.max(this.scrollSpeed + 16, advance); e.y += advance * mDt; e.x = clamp(e.lane + cross, this.arena.left + 12, this.arena.right - 12); }
+            else { e.x -= Math.max(32, advance) * mDt; e.y = clamp(e.lane + cross, this.arena.top + 12, this.arena.bottom - 12); }
 
             if (dt > 0) {
                 e.vx = (e.x - prevX) / dt;
@@ -1065,16 +1135,19 @@ export class ArcadeWorld {
     }
     private applySpecial(dt: number): void {
         const bomb = this.bomb; if (!bomb) return;
+        const durScale = this.specialDurationScale !== 1 ? clamp(this.specialDurationScale, 0.3, 2.5) : 1;
+        const flightEnd = 0.65 * durScale;
+        const totalDur = 2.75 * durScale;
         const before = bomb.age; bomb.age += dt;
         if (bomb.phase === 'flight') {
-            const travel = Math.min(dt, Math.max(0, .65 - before)) * 280;
+            const travel = Math.min(dt, Math.max(0, flightEnd - before)) * (280 / durScale);
             if (this.up) bomb.y = Math.max(this.arena.top + 65, bomb.y - travel); else bomb.x = Math.min(this.arena.right - 65, bomb.x + travel);
-            if (bomb.age >= .65) { bomb.phase = 'blast'; this.emit('explosion', bomb.x, bomb.y, 3, 'special-blast'); }
+            if (bomb.age >= flightEnd) { bomb.phase = 'blast'; this.emit('explosion', bomb.x, bomb.y, 3, 'special-blast'); }
         }
         if (bomb.phase === 'blast') {
-            const start = Math.max(.65, before), end = Math.min(2.75, bomb.age), blastDt = Math.max(0, end - start);
-            const age = Math.min(2.1, bomb.age - .65);
-            bomb.radius = (this.up ? 155 : 180) * Math.min(1, age / .35); this.specialImpact = { x: bomb.x, y: bomb.y };
+            const start = Math.max(flightEnd, before), end = Math.min(totalDur, bomb.age), blastDt = Math.max(0, end - start) / durScale;
+            const age = Math.min(2.1 * durScale, bomb.age - flightEnd);
+            bomb.radius = (this.up ? 155 : 180) * Math.min(1, age / (0.35 * durScale)); this.specialImpact = { x: bomb.x, y: bomb.y };
             for (const target of this.enemies) {
                 if (target.hp <= 0 || (target.submarine && target.submarine.exposure < .6)) continue;
                 const d = Math.hypot(target.x - bomb.x, target.y - bomb.y);
@@ -1110,8 +1183,8 @@ export class ArcadeWorld {
             }
             for (const shot of this.bullets) if (shot.active && shot.enemy && Math.hypot(shot.x - bomb.x, shot.y - bomb.y) < bomb.radius) shot.active = false;
         }
-        if (bomb.age >= 2.75) { this.bomb = undefined; this.specialTime = 0; this.specialImpact = undefined; }
-        else this.specialTime = Math.max(0, 2.75 - bomb.age);
+        if (bomb.age >= totalDur) { this.bomb = undefined; this.specialTime = 0; this.specialImpact = undefined; }
+        else this.specialTime = Math.max(0, totalDur - bomb.age);
     }
     private hurtPlayer(): void {
         if (this.devInvincible || this.player.invulnerable > 0 || this.specialTime > 0 || this.state !== 'play') return;
@@ -1193,6 +1266,7 @@ export class ArcadeWorld {
     }
     private startBoss(mini: boolean): void {
         if (mini && this.up) return;
+        this.stageDirector.setStatus(mini ? `stage-${this.mission.id}-miniboss` : `stage-${this.mission.id}-boss`, 'active', this.route);
         if (this.up) this.pelagicScoring.onBossStart(mini);
         if (!mini && this.up) {
             const sub = createSubmarineBoss(() => ++this.sequence, this.arenaCenterX);
@@ -1223,7 +1297,7 @@ export class ArcadeWorld {
             if (b.timer >= 5) { b.configuration = 2; b.size = this.up ? 236 : 324; b.phase = 'return'; b.timer = 0; this.installParts(b, 6); this.emit('return'); }
         } else if (b.phase === 'sink') {
             if (b.timer < .42 && Math.floor(b.timer * 10) !== Math.floor((b.timer - dt) * 10)) this.emit('explosion', b.x + Math.sin(b.timer * 31) * b.size * .3, b.y + Math.cos(b.timer * 23) * b.size * .25, b.mini ? 1.2 : 1.6);
-            if (b.timer > .75) { const mini = b.mini; this.boss = undefined; this.clearHostileBullets(); if (!mini) { this.state = 'exit'; this.exitTime = 0; this.specialTime = 0; this.bomb = undefined; this.cargo = []; this.enemies = []; this.obstacles = []; for (const shot of this.bullets) shot.active = false; this.score += 10000 + this.lives * 1000; this.emit('victory'); } else { if (this.up) { const perf = this.pelagicScoring.completeBoss(true, this.effectiveHard); const totalMini = PELAGIC_MINI_BASE_CLEAR + perf.bonus; this.score += totalMini; this.emit('bonus', this.arenaCenterX, 150, totalMini, perf.noDeath ? 'PATRULHA INTACTA' : 'PATRULHA VENCIDA'); } else { this.score += 3000; } this.emit('radio', 0, 0, 1, this.up ? 'A pista está livre. Próxima parada: a fenda!' : 'Patrulha vencida! Vamos ao distrito das cores!'); } } return;
+            if (b.timer > .75) { const mini = b.mini; this.boss = undefined; this.clearHostileBullets(); this.stageDirector.setStatus(mini ? `stage-${this.mission.id}-miniboss` : `stage-${this.mission.id}-boss`, 'completed', this.route); if (!mini) { this.state = 'exit'; this.exitTime = 0; this.specialTime = 0; this.bomb = undefined; this.cargo = []; this.enemies = []; this.obstacles = []; for (const shot of this.bullets) shot.active = false; this.score += 10000 + this.lives * 1000; this.emit('victory'); } else { if (this.up) { const perf = this.pelagicScoring.completeBoss(true, this.effectiveHard); const totalMini = PELAGIC_MINI_BASE_CLEAR + perf.bonus; this.score += totalMini; this.emit('bonus', this.arenaCenterX, 150, totalMini, perf.noDeath ? 'PATRULHA INTACTA' : 'PATRULHA VENCIDA'); } else { this.score += 3000; } this.emit('radio', 0, 0, 1, this.up ? 'A pista está livre. Próxima parada: a fenda!' : 'Patrulha vencida! Vamos ao distrito das cores!'); } } return;
         } else {
             if (this.up && b.mini) this.pelagicScoring.tickBoss(true, dt);
             if (this.up) b.x = this.arenaCenterX + Math.sin(b.age * .65) * 14; else b.y = 210 + Math.sin(b.age * .65) * 65;
@@ -1296,6 +1370,7 @@ export class ArcadeWorld {
             if (sub.timer >= 3.6) {
                 sub.phase = 'done';
                 this.boss = undefined; this.clearHostileBullets();
+                this.stageDirector.setStatus(`stage-${this.mission.id}-boss`, 'completed', this.route);
                 this.state = 'exit'; this.exitTime = 0; this.specialTime = 0; this.bomb = undefined;
                 this.cargo = []; this.enemies = []; this.obstacles = [];
                 for (const shot of this.bullets) shot.active = false;
@@ -1436,7 +1511,10 @@ export class ArcadeWorld {
     }
 
     /** Jumps safely to a deterministic checkpoint time in the current mission without leaving stale entities. */
-    devJumpToCheckpoint(targetSeconds: number, opts?: { pauseDirector?: boolean }): void {
+    devJumpToCheckpoint(
+        targetSeconds: number,
+        opts?: { pauseDirector?: boolean; isolated?: boolean; seed?: number },
+    ): void {
         const t = clamp(targetSeconds, 0, 300);
         this.clearArenaEntities();
         this.events.length = 0;
@@ -1445,6 +1523,7 @@ export class ArcadeWorld {
         this.elapsed = t;
         this.route = t;
         this.region = regionAt(t);
+        if (opts?.seed !== undefined) this.setSeed(opts.seed);
         let scrollPos = 0;
         if (this.up) {
             scrollPos = t * 38;
@@ -1463,13 +1542,19 @@ export class ArcadeWorld {
         this.tideArch.reset();
         this.pacingDirector.reset();
         this.directorPaused = Boolean(opts?.pauseDirector);
+        this.devSandboxIsolated = Boolean(opts?.isolated);
+        this.devIsolatedEventId = undefined;
         this.checkpoint = undefined;
+        this.rareSpawnCount = 0;
+        this.rareRewardClaimed = false;
+        this.convoyBonusClaimed = false;
+        this.assistedDeathHinted = false;
         const scState = this.pelagicScoring.exportState();
         this.pelagicScoring.restoreState({ ...scState, currentSector: this.region, sectorHadDeath: false });
 
         this.waveIndex = this.mission.encounters.findIndex(e => e.at >= t);
         if (this.waveIndex < 0) this.waveIndex = this.mission.encounters.length;
-        if (opts?.pauseDirector) this.waveIndex = this.mission.encounters.length;
+        if (opts?.pauseDirector || opts?.isolated) this.waveIndex = this.mission.encounters.length;
         this.supplyIndex = SUPPLIES.findIndex(s => s.at >= t);
         if (this.supplyIndex < 0) this.supplyIndex = SUPPLIES.length;
 
@@ -1490,26 +1575,32 @@ export class ArcadeWorld {
 
         this.miniStarted = !this.up && t >= 155;
         this.bossStarted = t >= 300;
+        this.stageDirector.syncAfterJump(t, this.region, {
+            pauseDirector: this.directorPaused || this.devSandboxIsolated,
+        });
+
         if (this.bossStarted) {
             this.startBoss(false);
         } else if (!this.up && t >= 155 && t < 185) {
             this.startBoss(true);
         } else if (this.up && t >= 148 && t < 185) {
             const stage: Exclude<TideArchPhase, 'idle'> = t < 153 ? 'approach' : t < 158 ? 'descent' : t < 171 ? 'low-flight' : t < 177 ? 'under-arch' : t < 181 ? 'ascent' : 'checkpoint';
-            this.devJumpTideArch(stage, opts?.pauseDirector);
+            this.devJumpTideArch(stage, this.directorPaused, this.devSandboxIsolated);
         } else if (this.up) {
             if (t >= 185) this.tideArch.jumpTo('complete', this.scroll, this.playerHomeY);
-            this.emit('comms', 0, 0, 1, 'start');
+            if (t <= 2) this.emit('comms', 0, 0, 1, 'start');
         }
     }
 
     /** Jumps deterministically to any Arco das Marés stage for DevTools and automated verification. */
-    devJumpTideArch(stage: Exclude<TideArchPhase, 'idle'>, pauseDirector = false): void {
+    devJumpTideArch(stage: Exclude<TideArchPhase, 'idle'>, pauseDirector = false, isolated = false): void {
         if (!this.up) return;
         this.clearArenaEntities();
         this.events.length = 0;
         this.introTime = 0;
         this.state = 'play';
+        this.directorPaused = pauseDirector;
+        this.devSandboxIsolated = isolated;
         const routeMap: Record<Exclude<TideArchPhase, 'idle'>, number> = {
             approach: 148,
             descent: 153,
@@ -1529,7 +1620,7 @@ export class ArcadeWorld {
         this.player.y = this.playerHomeY;
         this.player.bank = 0;
         this.player.invulnerable = 1.5;
-        this.waveIndex = pauseDirector ? this.mission.encounters.length : Math.max(0, this.mission.encounters.findIndex(e => e.at >= t));
+        this.waveIndex = (pauseDirector || isolated) ? this.mission.encounters.length : Math.max(0, this.mission.encounters.findIndex(e => e.at >= t));
         if (this.waveIndex < 0) this.waveIndex = this.mission.encounters.length;
         this.supplyIndex = Math.max(0, SUPPLIES.findIndex(s => s.at >= t));
         if (this.supplyIndex < 0) this.supplyIndex = SUPPLIES.length;
@@ -1537,6 +1628,8 @@ export class ArcadeWorld {
         this.bossStarted = false;
         const scState = this.pelagicScoring.exportState();
         this.pelagicScoring.restoreState({ ...scState, currentSector: this.region, sectorHadDeath: false });
+        this.stageDirector.syncAfterJump(t, this.region, { pauseDirector: pauseDirector || isolated });
+        this.stageDirector.markArchPhase(stage, t);
 
         const { cannons, boats } = this.tideArch.jumpTo(stage, this.scroll, this.playerHomeY);
         this.player.altitude = this.tideArch.altitude;
@@ -1684,6 +1777,146 @@ export class ArcadeWorld {
         return this.pacingDirector.snapshot();
     }
 
+    devStageDirectorSnapshot(): StageDirectorSnapshot {
+        return this.stageDirector.snapshot(this.route, this.region);
+    }
+
+    devSensorSnapshot(): {
+        tideArchPhase: TideArchPhase;
+        archScreenY: number;
+        bridgeBandActive: boolean;
+        pierCollisionActive: boolean;
+        opening: ReturnType<typeof computeArchOpening>;
+        altitude: number;
+        altitudeRestored: boolean;
+        crossedArch: boolean;
+        checkpointReached: boolean;
+        airSpawnsBlocked: boolean;
+        bossActive: boolean;
+        subActiveSection: number | null;
+    } {
+        const opening = computeArchOpening(this.arena.left, this.arena.right);
+        return {
+            tideArchPhase: this.tideArch.phase,
+            archScreenY: Number(this.tideArch.archScreenY(this.scroll).toFixed(1)),
+            bridgeBandActive: this.up && this.tideArch.isInBridgeBand(this.scroll, this.player.y),
+            pierCollisionActive: this.up && this.tideArch.isPillarCollisionActive(this.scroll, this.player.y),
+            opening,
+            altitude: Number(this.player.altitude.toFixed(2)),
+            altitudeRestored: this.tideArch.altitudeRestored,
+            crossedArch: this.tideArch.crossedArch,
+            checkpointReached: this.tideArch.checkpointReached,
+            airSpawnsBlocked: this.tideArch.airSpawnsBlocked,
+            bossActive: Boolean(this.boss),
+            subActiveSection: this.boss?.sub ? this.boss.sub.activeSection : null,
+        };
+    }
+
+    devRunStageEvent(
+        eventId: string,
+        opts?: { action?: 'go-to' | 'before' | 'run'; isolated?: boolean; leadSeconds?: number; seed?: number },
+    ): { ok: boolean; message: string; def?: StageEventDef } {
+        const def = this.stageDirector.defs.find((d) => d.id === eventId);
+        if (!def) return { ok: false, message: `Evento '${eventId}' não pertence à missão ${this.mission.name}.` };
+        const action = opts?.action ?? 'run';
+        const isolated = opts?.isolated ?? false;
+
+        if (action === 'before') {
+            const lead = opts?.leadSeconds ?? 4;
+            const anchor = def.atSeconds !== undefined ? Math.max(0, def.atSeconds - lead) : def.preJumpSeconds;
+            this.devJumpToCheckpoint(anchor, {
+                pauseDirector: false,
+                isolated,
+                seed: opts?.seed,
+            });
+            if (isolated) this.devIsolatedEventId = def.id;
+            if (def.payload.kind === 'arch-phase' && def.payload.phase !== 'approach') {
+                const prevMap: Record<string, Exclude<TideArchPhase, 'idle'>> = {
+                    descent: 'approach',
+                    'low-flight': 'descent',
+                    'under-arch': 'low-flight',
+                    ascent: 'under-arch',
+                    checkpoint: 'low-flight',
+                };
+                const prev = prevMap[def.payload.phase];
+                if (prev) this.devJumpTideArch(prev, false, isolated);
+                if (isolated) this.devIsolatedEventId = def.id;
+            }
+            if (def.payload.kind === 'special-event' && def.payload.eventId === 'rare-visitor') {
+                this.deaths = 0;
+                this.kills = Math.max(10, this.kills);
+                this.rareSpawnCount = 0;
+                this.specialEventsTriggered.delete('rare-visitor');
+            }
+            return {
+                ok: true,
+                def,
+                message: `Inicializado antes de '${def.name}' (${isolated ? 'Isolado' : 'Integrado'}).`,
+            };
+        }
+
+        if (action === 'go-to') {
+            if (def.payload.kind === 'arch-phase') {
+                this.devJumpTideArch(def.payload.phase, isolated, isolated);
+                if (isolated) this.devIsolatedEventId = def.id;
+                return { ok: true, def, message: `Saltou para '${def.name}'.` };
+            }
+            const t = def.atSeconds ?? def.preJumpSeconds;
+            this.devJumpToCheckpoint(t, { pauseDirector: isolated, isolated, seed: opts?.seed });
+            if (isolated) this.devIsolatedEventId = def.id;
+            return { ok: true, def, message: `Saltou para ${t}s (${def.name}).` };
+        }
+
+        // action === 'run'
+        switch (def.payload.kind) {
+            case 'region': {
+                this.devJumpToCheckpoint(def.payload.at, { pauseDirector: isolated, isolated, seed: opts?.seed });
+                return { ok: true, def, message: `Setor '${def.name}' iniciado (${isolated ? 'Isolado' : 'Integrado'}).` };
+            }
+            case 'arch-phase': {
+                this.devJumpTideArch(def.payload.phase, false, isolated);
+                if (isolated) this.devIsolatedEventId = def.id;
+                return { ok: true, def, message: `'${def.name}' em execução (${isolated ? 'Isolado' : 'Integrado'}).` };
+            }
+            case 'special-event': {
+                const baseAt = def.atSeconds ?? 66;
+                this.devJumpToCheckpoint(Math.max(4, baseAt - 0.5), { pauseDirector: isolated, isolated, seed: opts?.seed });
+                if (isolated) this.devIsolatedEventId = def.id;
+                if (def.payload.eventId === 'rare-visitor') {
+                    this.deaths = 0;
+                    this.kills = Math.max(10, this.kills);
+                    this.rareSpawnCount = 0;
+                }
+                this.specialEventsTriggered.delete(def.payload.eventId);
+                this.triggerSpecialEvent(def.payload.eventId, true);
+                return { ok: true, def, message: `Evento '${def.name}' disparado (${isolated ? 'Isolado' : 'Integrado'}).` };
+            }
+            case 'supply': {
+                this.devJumpToCheckpoint(def.payload.at, { pauseDirector: isolated, isolated, seed: opts?.seed });
+                this.devSpawnCargoItem(def.payload.supplyKind);
+                this.stageDirector.markSupplyTriggered(def.payload.supplyIndex, this.route);
+                return { ok: true, def, message: `Suprimento '${def.payload.supplyKind.toUpperCase()}' lançado.` };
+            }
+            case 'encounter': {
+                this.devJumpToCheckpoint(def.payload.encounter.at, { pauseDirector: isolated, isolated, seed: opts?.seed });
+                if (isolated) this.devIsolatedEventId = def.id;
+                this.stageDirector.markEncounterTriggered(def.payload.encounterIndex, this.route);
+                this.devSpawnEncounter(def.payload.encounter, { keepExisting: false });
+                return { ok: true, def, message: `'${def.name}' em execução (${isolated ? 'Isolado' : 'Integrado'}).` };
+            }
+            case 'miniboss': {
+                this.devJumpToCheckpoint(155, { pauseDirector: isolated, isolated, seed: opts?.seed });
+                this.devStartBoss(true);
+                return { ok: true, def, message: `Miniboss iniciado (${isolated ? 'Isolado' : 'Integrado'}).` };
+            }
+            case 'boss': {
+                this.devJumpToCheckpoint(300, { pauseDirector: isolated, isolated, seed: opts?.seed });
+                this.devStartBoss(false);
+                return { ok: true, def, message: `'${def.name}' iniciado (${isolated ? 'Isolado' : 'Integrado'}).` };
+            }
+        }
+    }
+
     devDirectorSnapshot(): {
         route: number;
         region: number;
@@ -1692,6 +1925,7 @@ export class ArcadeWorld {
         nextEncounterAt: number | null;
         triggeredEvents: PelagicSpecialEventId[];
         pacing: PelagicPacingSnapshot;
+        stageDirector: StageDirectorSnapshot;
     } {
         return {
             route: Number(this.route.toFixed(2)),
@@ -1701,6 +1935,7 @@ export class ArcadeWorld {
             nextEncounterAt: this.waveIndex < this.mission.encounters.length ? this.mission.encounters[this.waveIndex].at : null,
             triggeredEvents: [...this.specialEventsTriggered],
             pacing: this.pacingDirector.snapshot(),
+            stageDirector: this.stageDirector.snapshot(this.route, this.region),
         };
     }
 

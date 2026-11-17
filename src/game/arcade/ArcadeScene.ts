@@ -1601,7 +1601,7 @@ export class ArcadeScene extends Phaser.Scene {
   }
   setDevSimulationPaused(paused: boolean): void { this.devSimulationPaused = paused; }
   isDevSimulationPaused(): boolean { return this.devSimulationPaused; }
-  setDevTimeScale(scale: number): void { this.devTimeScale = clamp(scale, 0.1, 2); }
+  setDevTimeScale(scale: number): void { this.devTimeScale = clamp(scale, 0.1, 4); }
   getDevTimeScale(): number { return this.devTimeScale; }
   stepDevSimulation(dtSeconds = 1 / 120): void {
     if (!this.world || this.screen !== 'play') return;
@@ -1629,21 +1629,23 @@ export class ArcadeScene extends Phaser.Scene {
   devJumpToCheckpoint(
     missionIndex: number,
     targetSeconds: number,
-    opts?: { pauseDirector?: boolean; bossMini?: boolean; subSectionIndex?: number; tideArchStage?: Exclude<TideArchPhase, 'idle'> },
+    opts?: { pauseDirector?: boolean; isolated?: boolean; seed?: number; bossMini?: boolean; subSectionIndex?: number; tideArchStage?: Exclude<TideArchPhase, 'idle'> },
   ): void {
     this.devSaveGuard = true;
     this.devSimulationPaused = false;
     this.begin(missionIndex);
     const w = this.world!;
     w.introTime = 0;
+    if (opts?.seed !== undefined) w.setSeed(opts.seed);
     if (opts?.tideArchStage && w.up) {
-      w.devJumpTideArch(opts.tideArchStage, opts.pauseDirector);
+      w.devJumpTideArch(opts.tideArchStage, opts.pauseDirector, opts.isolated);
       this.audio.play('stage1');
     } else if (opts?.bossMini !== undefined && !(opts.bossMini && w.up)) {
       w.devStartBoss(opts.bossMini, opts.subSectionIndex);
+      w.devSandboxIsolated = Boolean(opts.isolated);
       this.audio.play(opts.bossMini ? (w.up ? 'mini1' : 'mini2') : (w.up ? 'boss1' : 'boss2'));
     } else {
-      w.devJumpToCheckpoint(targetSeconds, { pauseDirector: opts?.pauseDirector });
+      w.devJumpToCheckpoint(targetSeconds, { pauseDirector: opts?.pauseDirector, isolated: opts?.isolated, seed: opts?.seed });
       if (targetSeconds >= 300) this.audio.play(w.up ? 'boss1' : 'boss2');
       else if (!w.up && targetSeconds >= 155 && targetSeconds < 185) this.audio.play('mini2');
       else this.audio.play(missionIndex ? 'stage2' : 'stage1');
@@ -1653,8 +1655,42 @@ export class ArcadeScene extends Phaser.Scene {
     this.renderWorld(0);
     this.refreshHudVisual();
   }
-  devJumpTideArch(stage: Exclude<TideArchPhase, 'idle'>): void {
-    this.devJumpToCheckpoint(0, 148, { tideArchStage: stage });
+  devJumpTideArch(stage: Exclude<TideArchPhase, 'idle'>, isolated = false): void {
+    this.devJumpToCheckpoint(0, 148, { tideArchStage: stage, isolated });
+  }
+  devRunStageEvent(
+    missionIndex: number,
+    eventId: string,
+    opts?: { action?: 'go-to' | 'before' | 'run'; isolated?: boolean; leadSeconds?: number; seed?: number },
+  ): { ok: boolean; message: string } {
+    this.devSaveGuard = true;
+    this.devSimulationPaused = false;
+    this.begin(missionIndex);
+    const w = this.world!;
+    const res = w.devRunStageEvent(eventId, opts);
+    if (w.boss && !w.boss.mini) this.audio.play(w.up ? 'boss1' : 'boss2');
+    else if (w.boss && w.boss.mini) this.audio.play(w.up ? 'mini1' : 'mini2');
+    else this.audio.play(missionIndex ? 'stage2' : 'stage1');
+    this.consumeEvents();
+    this.backdrop.draw(w.elapsed, w, this.quality);
+    this.renderWorld(0);
+    this.refreshHudVisual();
+    return { ok: res.ok, message: res.message };
+  }
+  devApplyLiveTuning(patch: {
+    playerSpeedScale?: number;
+    enemySpeedScale?: number;
+    enemyFireRateScale?: number;
+    enemyShotSpeedScale?: number;
+    specialDurationScale?: number;
+  }): void {
+    const w = this.world;
+    if (!w) return;
+    if (patch.playerSpeedScale !== undefined) w.playerSpeedScale = clamp(patch.playerSpeedScale, 0.35, 2.5);
+    if (patch.enemySpeedScale !== undefined) w.enemySpeedScale = clamp(patch.enemySpeedScale, 0.25, 3);
+    if (patch.enemyFireRateScale !== undefined) w.enemyFireRateScale = clamp(patch.enemyFireRateScale, 0.25, 4);
+    if (patch.enemyShotSpeedScale !== undefined) w.enemyShotSpeedScale = clamp(patch.enemyShotSpeedScale, 0.25, 3);
+    if (patch.specialDurationScale !== undefined) w.specialDurationScale = clamp(patch.specialDurationScale, 0.3, 2.5);
   }
   devStartEnemyTest(
     missionIndex: number,
@@ -1663,7 +1699,7 @@ export class ArcadeScene extends Phaser.Scene {
   ): Actor[] {
     this.devSaveGuard = true;
     if (!this.world || this.currentMission !== missionIndex || this.screen !== 'play') {
-      this.devJumpToCheckpoint(missionIndex, 10, { pauseDirector: opts?.pauseDirector ?? true });
+      this.devJumpToCheckpoint(missionIndex, 10, { pauseDirector: opts?.pauseDirector ?? true, isolated: true });
     } else {
       this.world.clearArenaEntities();
     }
@@ -1687,11 +1723,11 @@ export class ArcadeScene extends Phaser.Scene {
           color: '#eef8ff',
           stroke: '#031029',
           strokeThickness: 2,
-          lineSpacing: 2.5,
-          wordWrap: { width: 132 },
+          lineSpacing: 2.2,
+          wordWrap: { width: 146 },
           align: 'left',
         })
-        .setPosition(606, 267)
+        .setPosition(602, 281)
         .setText(cur.text.replace(/\n/g, ' '))
         .setVisible(true);
     }
