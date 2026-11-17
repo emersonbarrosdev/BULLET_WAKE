@@ -13,14 +13,14 @@ import {
 const FENDA = MISSIONS[0];
 const SOLAR = MISSIONS[1];
 
-test('PC Desktop Pelagic preserves 25%-50%-25% horizontal arena (192..576, 384u wide)', () => {
+test('PC Desktop Pelagic uses approved 184/400/184 horizontal arena with no top/bottom HUD border', () => {
     const pc = new ArcadeWorld(FENDA, undefined, { upLayout: 'pc' });
     assert.equal(pc.upLayout, 'pc');
-    assert.equal(pc.arena.left, 192);
-    assert.equal(pc.arena.right, 576);
+    assert.equal(pc.arena.left, 184);
+    assert.equal(pc.arena.right, 584);
     assert.equal(pc.arena.top, 28);
     assert.equal(pc.arena.bottom, 420);
-    assert.equal(pc.arenaWidth, 384);
+    assert.equal(pc.arenaWidth, 400);
     assert.equal(pc.arena.left, CENTER_ARENA_LEFT);
     assert.equal(pc.arena.right, CENTER_ARENA_RIGHT);
 });
