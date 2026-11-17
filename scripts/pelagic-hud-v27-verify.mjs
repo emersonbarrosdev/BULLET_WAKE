@@ -179,13 +179,13 @@ try {
   })()`);
   await sleep(600);
 
-  // 1. Verify Start State (score 0000000, NV 1, 3 lives, 2 specials, intro/start comm active)
+  // 1. Verify Start State (score 0, NV 1, 3 lives, 2 specials, intro/start comm active)
   const startHud = await evaluate(`window.__GAME__.scene.getScene('ArcadeScene').devPelagicHudState()`);
   assert.equal(startHud.visible, true);
-  assert.equal(startHud.arena.left, 192);
-  assert.equal(startHud.arena.right, 576);
-  assert.equal(startHud.arena.width, 384);
-  assert.equal(startHud.scoreText, '0000000');
+  assert.equal(startHud.arena.left, 184);
+  assert.equal(startHud.arena.right, 584);
+  assert.equal(startHud.arena.width, 400);
+  assert.equal(startHud.scoreText, '0');
   assert.equal(startHud.weaponLevel, 1);
   assert.equal(startHud.weaponLevelText, 'NV 1');
   assert.equal(startHud.lives, 3);
@@ -206,7 +206,7 @@ try {
       };
     })()`);
     assert.equal(meta.hud.visible, true);
-    assert.equal(meta.hud.arena.width, 384);
+    assert.equal(meta.hud.arena.width, 400);
     assert.ok(Math.abs(meta.rect.aspect - 16 / 9) < 0.02, `16:9 canvas preserved at ${rw}x${rh}`);
     report.resolutions[`${rw}x${rh}`] = meta;
     if (rw === 1920 || rw === 2560) await shot(`02-res-${rw}x${rh}`);
@@ -224,7 +224,7 @@ try {
   })()`);
   await sleep(120);
   const quietHud = await evaluate(`window.__GAME__.scene.getScene('ArcadeScene').devPelagicHudState()`);
-  assert.equal(quietHud.radioActive, false, 'Radio dialogue must rest quietly when no message is active');
+  assert.equal(quietHud.radioActive, true, 'HUD must persist the last radio message until the next one');
   assert.equal(quietHud.radioExpression, 0);
   report.functionalChecks.quietRest = quietHud;
   await shot('03-quiet-rest');
@@ -246,7 +246,7 @@ try {
   await sleep(100);
   const combatHud = await evaluate(`window.__GAME__.scene.getScene('ArcadeScene').devPelagicHudState()`);
   assert.ok(Number(combatHud.scoreText) > 0, `Expected real score > 0 during combat, got ${combatHud.scoreText}`);
-  assert.equal(combatHud.scoreText.length, 7);
+  assert.ok(!combatHud.scoreText.startsWith('0'), 'Nonzero score must have no left-padded zeros');
   report.functionalChecks.combatScore = combatHud;
   await shot('04-combat-live-1280x720');
 
@@ -275,7 +275,7 @@ try {
   const midHud = await evaluate(`window.__GAME__.scene.getScene('ArcadeScene').devPelagicHudState()`);
   assert.equal(midHud.lives, 2);
   assert.equal(midHud.specialCharges, 1);
-  assert.equal(midHud.scoreText, '0123450');
+  assert.equal(midHud.scoreText, '123450');
   assert.equal(midHud.weaponLevelText, 'NV 5');
   assert.equal(midHud.radioActive, true);
   assert.equal(midHud.radioExpression, 3);
