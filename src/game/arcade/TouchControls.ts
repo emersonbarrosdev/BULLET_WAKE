@@ -196,7 +196,7 @@ export function computeTouchLayout(
     const specialRadius = Math.round(20 * scale * 10) / 10;
 
     // Base anchors defined in standard right-handed orientation (`joystick` left, actions right),
-    // kept inside side columns (x <= 186 and x >= 582) and lower ergonomic corner.
+    // kept inside side columns (x < 160 and x > 608) and lower ergonomic corner.
     let baseJoyX = clean.position === 'raised' ? 102 : clean.position === 'wide' ? 68 : 82;
     let baseJoyY = clean.position === 'raised' ? 344 : clean.position === 'wide' ? 378 : 378;
 
@@ -243,16 +243,11 @@ export function computeTouchLayout(
         specX = actionClampX(fireX + dir * minButtonDist, specialRadius);
     }
 
-    // Keep the pause trigger clear of the HUD score readout (centered around 680, 50)
-    // even when landscape safe-area cutouts push controls inward from the top-right bezel.
+    // O placar agora fica no topo CENTRAL. Pausa sempre no painel direito;
+    // jamais deslocar o botão para x=596 (dentro da nova arena 160..608).
     const defaultPauseX = WORLD_WIDTH - Math.max(24, safeRight + 24);
-    const pauseHitsScoreBox = defaultPauseX < 732 && safeTop + 16 > 28;
-    const pauseX = pauseHitsScoreBox
-        ? 596
-        : clamp(defaultPauseX, 732, WORLD_WIDTH - 24);
-    const pauseY = pauseHitsScoreBox
-        ? clamp(Math.max(20, safeTop + 12), 18, 34)
-        : clamp(Math.max(18, safeTop + 14), 18, 30);
+    const pauseX = clamp(defaultPauseX, CENTER_ARENA_RIGHT + 24, WORLD_WIDTH - 24);
+    const pauseY = clamp(Math.max(18, safeTop + 14), 18, 36);
 
     return {
         joystick: {
