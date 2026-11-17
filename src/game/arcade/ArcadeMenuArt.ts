@@ -25,6 +25,7 @@ export const UI_TEX = {
     hudRoutePelagic: 'ui-hud-route-pelagic',
     hudPelagicSky: 'ui-hud-pelagic-sky',
     hudPelagicChassis: 'ui-hud-pelagic-chassis',
+    rivetProfile: 'ui-rivet-profile',
     rivetCruise: 'ui-rivet-cruise',
     wingmenAnim: 'ui-wingmen-anim',
     menuHeliSide: 'ui-menu-heli-side',
@@ -77,6 +78,7 @@ export function preloadMenuAssets(scene: Phaser.Scene, base: string): void {
     scene.load.image(UI_TEX.hudRoutePelagic, `${p}hud-route-pelagic.webp`);
     scene.load.image(UI_TEX.hudPelagicSky, `${p}hud-pelagic-sky.webp`);
     scene.load.image(UI_TEX.hudPelagicChassis, `${p}hud-pelagic-chassis.webp`);
+    scene.load.image(UI_TEX.rivetProfile, `${p}rivet-profile.webp`);
     scene.load.spritesheet(UI_TEX.rivetCruise, `${p}rivet-cruise.webp`, { frameWidth: 256, frameHeight: 256 });
     scene.load.spritesheet(UI_TEX.wingmenAnim, `${p}wingmen-anim.webp`, { frameWidth: 256, frameHeight: 256 });
     scene.load.spritesheet(UI_TEX.menuHeliSide, `${p}menu-heli-side.webp`, { frameWidth: 256, frameHeight: 256 });

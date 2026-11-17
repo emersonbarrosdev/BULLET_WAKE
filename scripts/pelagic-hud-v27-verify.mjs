@@ -170,16 +170,79 @@ try {
   }
   assert.equal(ready, true, 'ArcadeScene must finish boot & preload HUD chassis texture');
 
-  // Dismiss intro splash cleanly if still in intro, then start Stage 1 UP cleanly in live render loop
+  // 0. Title Screen verification: 3 approved planes ONLY + uniform button sizes + yellow hover on CONTROLES/OPÇÕES
   await evaluate(`(() => {
     const s = window.__GAME__.scene.getScene('ArcadeScene');
     s.audio.setMix(0, 0, true);
+    s.show('title');
+  })()`);
+  await sleep(300);
+
+  // Move mouse onto CONTROLES (384, 306) and verify golden focus plate activates cleanly
+  {
+    const pt = await evaluate(`(() => {
+      const s = window.__GAME__.scene.getScene('ArcadeScene');
+      const rect = document.querySelector('canvas').getBoundingClientRect();
+      const cam = s.cameras.main;
+      return {
+        x: rect.left + (rect.width * ((384 - cam.worldView.x) / cam.worldView.width)),
+        y: rect.top + (rect.height * ((306 - cam.worldView.y) / cam.worldView.height)),
+      };
+    })()`);
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: pt.x, y: pt.y });
+    await sleep(160);
+  }
+  const titleCheck = await evaluate(`(() => {
+    const s = window.__GAME__.scene.getScene('ArcadeScene');
+    const animKeys = s.menuPlanes.map(sp => sp.anims?.currentAnim?.key ?? '');
+    const widths = s.buttons.map(b => Math.round(b.bg.focus.displayWidth));
+    const heights = s.buttons.map(b => Math.round(b.bg.focus.displayHeight));
+    const focusedIdx = s.buttons.findIndex(b => b.bg.focus.visible);
+    return {
+      planeCount: s.menuPlanes.length,
+      animKeys,
+      widths,
+      heights,
+      focusedIdx,
+    };
+  })()`);
+  assert.equal(titleCheck.planeCount, 3, 'Title Screen must only have the 3 approved planes');
+  assert.deepEqual(titleCheck.animKeys, ['ui-wingman-0', 'ui-wingman-1', 'ui-wingman-2']);
+  assert.equal(new Set(titleCheck.widths).size, 1, 'All 3 title buttons must have the same width');
+  assert.equal(new Set(titleCheck.heights).size, 1, 'All 3 title buttons must have the same height');
+  assert.equal(titleCheck.focusedIdx, 1, 'Hovering CONTROLES must show golden yellow focus background');
+  report.functionalChecks.titleMenu = titleCheck;
+  await shot('00-title-hover-controles');
+
+  // Verify Pilot Selection screen (static 1-thruster RIVET side profile + zero bobbing tween)
+  await evaluate(`window.__GAME__.scene.getScene('ArcadeScene').show('pilot')`);
+  await sleep(220);
+  const pilotCheck = await evaluate(`(() => {
+    const s = window.__GAME__.scene.getScene('ArcadeScene');
+    const imgs = s.ui.list.filter(o => o && o.texture && o.texture.key === 'ui-rivet-profile');
+    const activeTweensOnProfile = s.tweens.getTweensOf(imgs).length;
+    return {
+      screen: s.screen,
+      profileCount: imgs.length,
+      angle: imgs[0]?.angle ?? null,
+      activeTweensOnProfile,
+    };
+  })()`);
+  assert.equal(pilotCheck.screen, 'pilot');
+  assert.equal(pilotCheck.profileCount, 1, 'Pilot screen must use static ui-rivet-profile image');
+  assert.equal(pilotCheck.activeTweensOnProfile, 0, 'Pilot screen ship profile must remain static');
+  report.functionalChecks.pilotScreen = pilotCheck;
+  await shot('00b-pilot-select');
+
+  // Start Stage 1 UP cleanly in live render loop
+  await evaluate(`(() => {
+    const s = window.__GAME__.scene.getScene('ArcadeScene');
     s.begin(0);
     s.world.devInvincible = true;
   })()`);
   await sleep(600);
 
-  // 1. Verify Start State (score 0000000, NV 1, 3 lives, 2 specials, intro/start comm active)
+  // 1. Verify Start State (value-only score 0000000, POWER label, lv 1, 3 lives, 2 specials, intro/start comm active)
   const startHud = await evaluate(`window.__GAME__.scene.getScene('ArcadeScene').devPelagicHudState()`);
   assert.equal(startHud.visible, true);
   assert.equal(startHud.arena.left, 192);
@@ -187,7 +250,7 @@ try {
   assert.equal(startHud.arena.width, 384);
   assert.equal(startHud.scoreText, '0000000');
   assert.equal(startHud.weaponLevel, 1);
-  assert.equal(startHud.weaponLevelText, 'NV 1');
+  assert.equal(startHud.weaponLevelText, 'POWER');
   assert.equal(startHud.lives, 3);
   assert.equal(startHud.specialCharges, 2);
   assert.ok(startHud.pauseCenter && startHud.pauseCenter.x > 720 && startHud.pauseCenter.y <= 22, 'Pause button must sit in right-panel header');
@@ -250,7 +313,7 @@ try {
   report.functionalChecks.combatScore = combatHud;
   await shot('04-combat-live-1280x720');
 
-  // 4. Test NV 1..5 transitions, lives drop (3 -> 2), special usage (2 -> 1), and Bayek radio dynamic switching
+  // 4. Test Power levels 1..5, lives drop (3 -> 2), special usage (2 -> 1), and Bayek radio comms
   const levelsSeen = [];
   for (let lv = 1; lv <= 5; lv++) {
     await evaluate(`(() => {
@@ -259,8 +322,9 @@ try {
       s.renderWorld(1 / 60);
     })()`);
     const st = await evaluate(`window.__GAME__.scene.getScene('ArcadeScene').devPelagicHudState()`);
-    assert.equal(st.weaponLevelText, `NV ${lv}`);
-    levelsSeen.push(st.weaponLevelText);
+    assert.equal(st.weaponLevelText, 'POWER');
+    assert.equal(st.weaponLevel, lv);
+    levelsSeen.push(st.weaponLevel);
   }
   await evaluate(`(() => {
     const s = window.__GAME__.scene.getScene('ArcadeScene');
@@ -276,9 +340,9 @@ try {
   assert.equal(midHud.lives, 2);
   assert.equal(midHud.specialCharges, 1);
   assert.equal(midHud.scoreText, '0123450');
-  assert.equal(midHud.weaponLevelText, 'NV 5');
+  assert.equal(midHud.weaponLevelText, 'POWER');
+  assert.equal(midHud.weaponLevel, 5);
   assert.equal(midHud.radioActive, true);
-  assert.equal(midHud.radioExpression, 3);
   report.functionalChecks.levelsAndResources = { levelsSeen, midHud };
   await shot('05-nv5-comms-lives-special');
 
@@ -307,7 +371,7 @@ try {
   await shot('07-boss-colosso-hud');
 
   // 6. Real mouse click on Top-Right Pause button & Resume
-  await clickWorld(744, 14);
+  await clickWorld(739, 16);
   const pausedScreen = await evaluate(`window.__GAME__.scene.getScene('ArcadeScene').screen`);
   assert.equal(pausedScreen, 'pause', 'Clicking top-right pause button must open pause menu');
   await shot('08-pause-overlay');

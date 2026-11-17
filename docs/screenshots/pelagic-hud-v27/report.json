@@ -10,16 +10,16 @@
         "visible": true,
         "scoreText": "0000000",
         "weaponLevel": 1,
-        "weaponLevelText": "NV 1",
+        "weaponLevelText": "POWER",
         "lives": 3,
         "specialCharges": 2,
         "radioActive": true,
-        "radioText": "Entrando na Fenda Pelágica. Rota aberta, vamos decolar!",
+        "radioText": "Entrando na Fenda Pelágica. Radar limpo por enquanto... Mas fiquem atentos, é uma rota instável!",
         "radioExpression": 0,
         "assisted": false,
         "pauseCenter": {
-          "x": 744,
-          "y": 14
+          "x": 739,
+          "y": 16
         },
         "arena": {
           "left": 192,
@@ -40,16 +40,16 @@
         "visible": true,
         "scoreText": "0000000",
         "weaponLevel": 1,
-        "weaponLevelText": "NV 1",
+        "weaponLevelText": "POWER",
         "lives": 3,
         "specialCharges": 2,
         "radioActive": true,
-        "radioText": "Entrando na Fenda Pelágica. Rota aberta, vamos decolar!",
+        "radioText": "Entrando na Fenda Pelágica. Radar limpo por enquanto... Mas fiquem atentos, é uma rota instável!",
         "radioExpression": 0,
         "assisted": false,
         "pauseCenter": {
-          "x": 744,
-          "y": 14
+          "x": 739,
+          "y": 16
         },
         "arena": {
           "left": 192,
@@ -70,16 +70,16 @@
         "visible": true,
         "scoreText": "0000000",
         "weaponLevel": 1,
-        "weaponLevelText": "NV 1",
+        "weaponLevelText": "POWER",
         "lives": 3,
         "specialCharges": 2,
         "radioActive": true,
-        "radioText": "Entrando na Fenda Pelágica. Rota aberta, vamos decolar!",
+        "radioText": "Entrando na Fenda Pelágica. Radar limpo por enquanto... Mas fiquem atentos, é uma rota instável!",
         "radioExpression": 0,
         "assisted": false,
         "pauseCenter": {
-          "x": 744,
-          "y": 14
+          "x": 739,
+          "y": 16
         },
         "arena": {
           "left": 192,
@@ -100,7 +100,7 @@
         "visible": true,
         "scoreText": "0000000",
         "weaponLevel": 1,
-        "weaponLevelText": "NV 1",
+        "weaponLevelText": "POWER",
         "lives": 3,
         "specialCharges": 2,
         "radioActive": true,
@@ -108,8 +108,8 @@
         "radioExpression": 0,
         "assisted": false,
         "pauseCenter": {
-          "x": 744,
-          "y": 14
+          "x": 739,
+          "y": 16
         },
         "arena": {
           "left": 192,
@@ -122,20 +122,45 @@
     }
   },
   "functionalChecks": {
+    "titleMenu": {
+      "planeCount": 3,
+      "animKeys": [
+        "ui-wingman-0",
+        "ui-wingman-1",
+        "ui-wingman-2"
+      ],
+      "widths": [
+        236,
+        236,
+        236
+      ],
+      "heights": [
+        36,
+        36,
+        36
+      ],
+      "focusedIdx": 1
+    },
+    "pilotScreen": {
+      "screen": "pilot",
+      "profileCount": 1,
+      "angle": 0,
+      "activeTweensOnProfile": 0
+    },
     "startHud": {
       "visible": true,
       "scoreText": "0000000",
       "weaponLevel": 1,
-      "weaponLevelText": "NV 1",
+      "weaponLevelText": "POWER",
       "lives": 3,
       "specialCharges": 2,
       "radioActive": true,
-      "radioText": "Entrando na Fenda Pelágica. Rota aberta, vamos decolar!",
+      "radioText": "Entrando na Fenda Pelágica. Radar limpo por enquanto... Mas fiquem atentos, é uma rota instável!",
       "radioExpression": 0,
       "assisted": false,
       "pauseCenter": {
-        "x": 744,
-        "y": 14
+        "x": 739,
+        "y": 16
       },
       "arena": {
         "left": 192,
@@ -149,7 +174,7 @@
       "visible": true,
       "scoreText": "0000000",
       "weaponLevel": 1,
-      "weaponLevelText": "NV 1",
+      "weaponLevelText": "POWER",
       "lives": 3,
       "specialCharges": 2,
       "radioActive": false,
@@ -157,8 +182,8 @@
       "radioExpression": 0,
       "assisted": false,
       "pauseCenter": {
-        "x": 744,
-        "y": 14
+        "x": 739,
+        "y": 16
       },
       "arena": {
         "left": 192,
@@ -172,7 +197,7 @@
       "visible": true,
       "scoreText": "0004640",
       "weaponLevel": 1,
-      "weaponLevelText": "NV 1",
+      "weaponLevelText": "POWER",
       "lives": 3,
       "specialCharges": 2,
       "radioActive": true,
@@ -180,8 +205,8 @@
       "radioExpression": 3,
       "assisted": false,
       "pauseCenter": {
-        "x": 744,
-        "y": 14
+        "x": 739,
+        "y": 16
       },
       "arena": {
         "left": 192,
@@ -193,17 +218,17 @@
     },
     "levelsAndResources": {
       "levelsSeen": [
-        "NV 1",
-        "NV 2",
-        "NV 3",
-        "NV 4",
-        "NV 5"
+        1,
+        2,
+        3,
+        4,
+        5
       ],
       "midHud": {
         "visible": true,
         "scoreText": "0123450",
         "weaponLevel": 5,
-        "weaponLevelText": "NV 5",
+        "weaponLevelText": "POWER",
         "lives": 2,
         "specialCharges": 1,
         "radioActive": true,
@@ -211,8 +236,8 @@
         "radioExpression": 3,
         "assisted": false,
         "pauseCenter": {
-          "x": 744,
-          "y": 14
+          "x": 739,
+          "y": 16
         },
         "arena": {
           "left": 192,
@@ -229,9 +254,9 @@
     }
   },
   "fpsBenchmark": {
-    "avgFrameMs": 17.26,
-    "fps": 57.9,
-    "hudCpuMsPerFrame": 0.26
+    "avgFrameMs": 18.53,
+    "fps": 54,
+    "hudCpuMsPerFrame": 0.356
   },
   "androidPortraitCheck": {
     "portraitUpActive": true,
@@ -243,7 +268,7 @@
       "lives": 3,
       "specialCharges": 2,
       "radioActive": false,
-      "radioText": "Entrando na Fenda Pelágica. Rota aberta, vamos decolar!",
+      "radioText": "Entrando na Fenda Pelágica. Radar limpo por enquanto... Mas fiquem atentos, é uma rota instável!",
       "radioExpression": 0,
       "assisted": false,
       "pauseCenter": {
@@ -265,6 +290,8 @@
     "desktopHudVisible": false
   },
   "screenshots": {
+    "00-title-hover-controles": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\00-title-hover-controles.png",
+    "00b-pilot-select": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\00b-pilot-select.png",
     "01-start-1280x720": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\01-start-1280x720.png",
     "02-res-1920x1080": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\02-res-1920x1080.png",
     "02-res-2560x1440": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\pelagic-hud-v27\\02-res-2560x1440.png",

@@ -23,29 +23,14 @@ export interface PelagicHudStateSnapshot {
 
 /**
  * Modular PC Horizontal Desktop HUD for Fenda Pelágica (Stage 1 UP).
- * Assembles the unified 3-region cabinet frame (Left 192u | Center 384u | Right 192u)
- * cleanly out of separate layered textures, live portraits, animated waveform, and Phaser text.
+ * Uses the 1920x1080 (2.5x) vector/HD-rebuilt chassis (with crisp baked frames, static 1-thruster
+ * RIVET profile, Bayek portraits, ROTA 01 artwork, RÁDIO dialogue box & static labels) and renders
+ * ONLY dynamic live telemetry on top: Score, POWER gauge squares, VIDAS icons, ESPECIAL slots,
+ * active boss HP bar, and animated RÁDIO waveform.
  */
 export class PelagicDesktopHud {
-    readonly bayekSky: Phaser.GameObjects.Image;
-    readonly bayekPortrait: Phaser.GameObjects.Sprite;
-    readonly routeThumb: Phaser.GameObjects.Image;
-    readonly radioSky: Phaser.GameObjects.Image;
-    readonly radioPortrait: Phaser.GameObjects.Sprite;
     readonly chassis: Phaser.GameObjects.Image;
-    readonly logo: Phaser.GameObjects.Image;
-    readonly rivetSide: Phaser.GameObjects.Sprite;
-    readonly bayekTag: Phaser.GameObjects.Text;
-    readonly rivetTitle: Phaser.GameObjects.Text;
-    readonly vanguardaTag: Phaser.GameObjects.Text;
-    readonly vidasLabel: Phaser.GameObjects.Text;
-    readonly especialLabel: Phaser.GameObjects.Text;
-    readonly scoreLabel: Phaser.GameObjects.Text;
     readonly scoreValue: Phaser.GameObjects.Text;
-    readonly rotaTag: Phaser.GameObjects.Text;
-    readonly rotaName: Phaser.GameObjects.Text;
-    readonly radioHeader: Phaser.GameObjects.Text;
-    readonly radioName: Phaser.GameObjects.Text;
 
     private readonly allNodes: Array<Phaser.GameObjects.Components.Visible & Phaser.GameObjects.GameObject>;
     private visible = false;
@@ -59,13 +44,13 @@ export class PelagicDesktopHud {
             txt: string,
             size: number,
             color: string,
-            opts?: { ox?: number; oy?: number; stroke?: string; strokeThickness?: number; depth?: number; style?: string },
+            opts?: { ox?: number; oy?: number; stroke?: string; strokeThickness?: number; depth?: number },
         ) =>
             scene.add
                 .text(x, y, txt, {
                     fontFamily: FONT,
                     fontSize: `${size}px`,
-                    fontStyle: opts?.style ?? 'bold italic',
+                    fontStyle: 'bold italic',
                     color,
                     stroke: opts?.stroke ?? '#041430',
                     strokeThickness: opts?.strokeThickness ?? 2.6,
@@ -75,59 +60,18 @@ export class PelagicDesktopHud {
                 .setDepth(opts?.depth ?? 42)
                 .setVisible(false);
 
-        // Underlay sky apertures + live Bayek portraits + coastal mission artwork (behind chassis frame bevels)
-        this.bayekSky = scene.add.image(96, 166, UI_TEX.hudPelagicSky).setDisplaySize(160, 122).setDepth(38.5).setVisible(false);
-        this.bayekPortrait = scene.add.sprite(96, 170, 'arc-pilots', 0).setDisplaySize(148, 148).setDepth(39.0).setVisible(false);
-        this.routeThumb = scene.add
-            .image(672, 120, UI_TEX.hudRoutePelagic)
-            .setDisplaySize(160, 76)
-            .setDepth(38.8)
+        this.chassis = scene.add
+            .image(384, 216, UI_TEX.hudPelagicChassis)
+            .setDisplaySize(768, 432)
+            .setDepth(39.6)
             .setVisible(false);
-        this.radioSky = scene.add.image(623, 223, UI_TEX.hudPelagicSky).setDisplaySize(54, 54).setDepth(38.5).setVisible(false);
-        this.radioPortrait = scene.add.sprite(623, 225, 'arc-pilots', 0).setDisplaySize(54, 54).setDepth(39.0).setVisible(false);
 
-        // Unified 2x metallic cobalt & glowing cyan cabinet frame (with transparent windows)
-        this.chassis = scene.add.image(384, 216, UI_TEX.hudPelagicChassis).setDisplaySize(768, 432).setDepth(39.6).setVisible(false);
-
-        // Foreground modular art & arcade typography (above graphics depth 41)
-        this.logo = scene.add.image(96, 51, UI_TEX.logo).setDisplaySize(156, 100).setDepth(42).setVisible(false);
-        this.rivetSide = scene.add.sprite(53, 277, UI_TEX.rivetCruise, 0).setDisplaySize(66, 66).setDepth(42).setVisible(false);
-        if (scene.anims.exists('ui-rivet-cruise')) this.rivetSide.play('ui-rivet-cruise');
-
-        this.bayekTag = mkText(96, 228.5, 'BAYEK', 13.5, '#071d44', { stroke: '#fff7b8', strokeThickness: 1 });
-        this.rivetTitle = mkText(132, 269.5, 'RIVET', 14.5, '#ffffff', { strokeThickness: 3 });
-        this.vanguardaTag = mkText(132, 289.5, 'VANGUARDA', 8.5, '#ffffff', { stroke: '#052b5e', strokeThickness: 2 });
-        this.vidasLabel = mkText(22, 326, 'VIDAS', 10, '#ffffff', { ox: 0, strokeThickness: 2.4 });
-        this.especialLabel = mkText(22, 367, 'ESPECIAL', 9.5, '#ffffff', { ox: 0, strokeThickness: 2.4 });
-
-        this.scoreLabel = mkText(224, 14.5, 'PONTUAÇÃO', 11.5, '#ffffff', { ox: 0, stroke: '#04122b', strokeThickness: 2.8 });
-        this.scoreValue = mkText(308, 14.5, '0000000', 13.5, '#ffdf33', { ox: 0, stroke: '#04122b', strokeThickness: 2.8 });
-
-        this.rotaTag = mkText(643, 48.5, 'ROTA 01', 10.5, '#071d44', { stroke: '#fff7b8', strokeThickness: 1 });
-        this.rotaName = mkText(672, 70, 'FENDA PELÁGICA', 13, '#ffffff', { strokeThickness: 2.8 });
-        this.radioHeader = mkText(618, 180.5, 'RÁDIO', 11, '#ffffff', { ox: 0, strokeThickness: 2.4 });
-        this.radioName = mkText(695, 206.5, 'BAYEK', 10.5, '#071d44', { stroke: '#fff7b8', strokeThickness: 1 });
+        // Top Bar: Score value ONLY (centered cleanly in left half [209..368], midline y=14)
+        this.scoreValue = mkText(290, 14, '0000000', 15, '#ffdf33', { stroke: '#04122b', strokeThickness: 3 });
 
         this.allNodes = [
-            this.bayekSky,
-            this.bayekPortrait,
-            this.routeThumb,
-            this.radioSky,
-            this.radioPortrait,
             this.chassis,
-            this.logo,
-            this.rivetSide,
-            this.bayekTag,
-            this.rivetTitle,
-            this.vanguardaTag,
-            this.vidasLabel,
-            this.especialLabel,
-            this.scoreLabel,
             this.scoreValue,
-            this.rotaTag,
-            this.rotaName,
-            this.radioHeader,
-            this.radioName,
         ];
     }
 
@@ -158,61 +102,24 @@ export class PelagicDesktopHud {
     ): void {
         if (!this.visible) this.setVisible(true);
 
-        // 1. Dynamic ribbons / pills on top of chassis (`depth 41`)
-        drawChamferRibbon(g, 96, 228.5, 134, 21, 'gold', 7);
-        drawChamferRibbon(g, 132, 289.5, 78, 15, 'cyan', 5);
-        drawAngledTag(g, 592, 40, 108, 17, 'gold', 8);
-        drawAngledTag(g, 656, 198, 82, 17, 'gold', 7);
-
-        // Small matching yellow diagonal accent next to BAYEK radio nameplate
-        g.fillStyle(0xffe029, 1)
-            .beginPath()
-            .moveTo(741, 198)
-            .lineTo(747, 198)
-            .lineTo(742, 215)
-            .lineTo(736, 215)
-            .closePath()
-            .fillPath();
-
-        // Cyan radio signal icon ((•)) beside RÁDIO header
-        g.fillStyle(0x36f2ff, 1).fillCircle(604, 180.5, 2.2);
-        g.lineStyle(1.4, 0x36f2ff, 0.95);
-        for (const r of [4.8, 7.6]) {
-            g.beginPath().arc(604, 180.5, r, -0.75, 0.75, false).strokePath();
-            g.beginPath().arc(604, 180.5, r, Math.PI - 0.75, Math.PI + 0.75, false).strokePath();
-        }
-
-        // 2. VIDAS (5 RIVET UP mini-icons, active bright vs lost dim slate)
+        // 1. VIDAS (5 crisp RIVET UP mini-icons evenly aligned beside baked VIDAS label at y=317.5)
         lifeIcons.forEach((sprite, i) => {
-            sprite.setPosition(76 + i * 18.5, 326).setDisplaySize(16, 19).setVisible(true);
+            sprite.setPosition(78 + i * 19.5, 317.5).setDisplaySize(15, 18).setVisible(true);
             if (i < world.lives) sprite.clearTint().setAlpha(1);
             else sprite.setTint(0x6998cc).setAlpha(0.46);
         });
 
-        // 3. ESPECIAL lightning icon + 5 chamfered segments
-        g.fillStyle(0xffe033, 1)
-            .lineStyle(1.4, 0x051636, 1)
-            .beginPath()
-            .moveTo(82, 358.5)
-            .lineTo(75.5, 367.5)
-            .lineTo(80, 367.5)
-            .lineTo(78, 375.5)
-            .lineTo(86.5, 365.5)
-            .lineTo(81.5, 365.5)
-            .closePath()
-            .fillPath()
-            .strokePath();
-
+        // 2. ESPECIAL 5 chamfered slots aligned beside baked lightning bolt (x=113..176, cy=352.5)
         for (let i = 0; i < 5; i++) {
-            const sx = 95 + i * 14.5;
-            const sy = 360.5;
+            const sx = 113 + i * 13;
+            const sy = 346.2;
             const filled = i < world.weapons.specialCharges;
-            g.fillStyle(filled ? 0xffe033 : 0x092454, 1).fillRoundedRect(sx, sy, 12, 12.5, 2.5);
-            if (filled) g.fillStyle(0xfff9b8, 0.55).fillRect(sx + 1.5, sy + 1.3, 9, 2.5);
-            g.lineStyle(1.1, filled ? 0xfff07a : 0x42c4e8, filled ? 0.95 : 0.85).strokeRoundedRect(sx, sy, 12, 12.5, 2.5);
+            g.fillStyle(filled ? 0xffdf2e : 0x092252, 1).fillRoundedRect(sx, sy, 11.2, 12.6, 2.4);
+            if (filled) g.fillStyle(0xfff9b8, 0.6).fillRect(sx + 1.3, sy + 1.1, 8.6, 2.3);
+            g.lineStyle(1.1, filled ? 0xffe866 : 0x3b80b8, filled ? 0.96 : 0.85).strokeRoundedRect(sx, sy, 11.2, 12.6, 2.4);
         }
 
-        // 4. Unified Top Bar Score (`0000000`) & Weapon Level (`NV 1..5`) + 5 glowing segments
+        // 3. Unified Top Bar: value-only Score | (baked divider at x=368) | POWER + 5 Power-Up gold squares
         const scoreStr = String(Math.max(0, Math.floor(world.score))).padStart(7, '0');
         if (scoreStr !== this.lastScoreStr) {
             this.scoreValue.setText(scoreStr);
@@ -222,7 +129,7 @@ export class PelagicDesktopHud {
         levelText
             .setStyle({
                 fontFamily: FONT,
-                fontSize: '11.5px',
+                fontSize: '12px',
                 fontStyle: 'bold italic',
                 color: '#ffffff',
                 stroke: '#04122b',
@@ -230,20 +137,23 @@ export class PelagicDesktopHud {
             })
             .setResolution(2)
             .setOrigin(0, 0.5)
-            .setPosition(408, 14.5)
-            .setText(`NV ${world.weapons.weaponLevel}`)
+            .setPosition(382, 14)
+            .setText('POWER')
             .setVisible(true);
 
         for (let i = 0; i < 5; i++) {
-            const x = 450 + i * 19;
+            const x = 442 + i * 19.5;
             const y = 8;
             const active = i < world.weapons.weaponLevel;
-            g.fillStyle(active ? 0x1ae6ff : 0x0a2452, 1).fillRoundedRect(x, y, 16, 12.5, 3);
-            if (active) g.fillStyle(0xb6feff, 0.55).fillRoundedRect(x + 1.5, y + 1.4, 13, 2.6, 1);
-            g.lineStyle(1.1, active ? 0x7ef5ff : 0x3b96c8, active ? 0.96 : 0.85).strokeRoundedRect(x, y, 16, 12.5, 3);
+            g.fillStyle(active ? 0xffdf2e : 0x08214e, 1).fillRoundedRect(x, y, 16.5, 12, 2.8);
+            if (active) {
+                g.fillStyle(0xfff9b8, 0.65).fillRoundedRect(x + 1.4, y + 1.3, 13.7, 2.6, 1);
+                g.fillStyle(0xd97706, 0.48).fillRect(x + 1.5, y + 9.2, 13.5, 1.8);
+            }
+            g.lineStyle(1.1, active ? 0xfff078 : 0x3c7db4, active ? 0.98 : 0.85).strokeRoundedRect(x, y, 16.5, 12, 2.8);
         }
 
-        // Subtle ASSISTIDO tag cleanly inside top-right header strip beside Pause button (never crowds top score bar)
+        // Subtle ASSISTIDO tag cleanly inside top-right header strip beside Pause button
         if (world.isAssisted) {
             assistBadge
                 .setStyle({
@@ -255,13 +165,13 @@ export class PelagicDesktopHud {
                     strokeThickness: 2,
                 })
                 .setOrigin(0.5)
-                .setPosition(648, 14.5)
+                .setPosition(665, 16)
                 .setVisible(true);
         } else {
             assistBadge.setVisible(false);
         }
 
-        // 5. Boss HP bar cleanly tucked directly under the unified top bar inside center arena when boss is live
+        // 4. Boss HP bar cleanly tucked directly under the unified top bar inside center arena when boss is live
         if (world.boss?.sub && world.boss.sub.phase !== 'done') {
             const sub = world.boss.sub;
             const sec = sub.sections[sub.activeSection];
@@ -298,18 +208,14 @@ export class PelagicDesktopHud {
             bossHudLabel.setVisible(false);
         }
 
-        // 6. RÁDIO Pilot Portrait Expression + Animated / Quiet Audio Waveform
+        // 5. RÁDIO Animated / Quiet Audio Waveform (x = 661..749, cy = 243 below BAYEK plate)
         const speaking = !!comms || introRadioActive;
-        const targetExpr = speaking ? (comms?.expression ?? 0) : 0;
-        if (targetExpr !== this.lastRadioExpr) {
-            this.radioPortrait.setFrame(targetExpr);
-            this.lastRadioExpr = targetExpr;
-        }
+        this.lastRadioExpr = speaking ? (comms?.expression ?? 0) : 0;
 
         const bars = 18;
-        const baseX = 660;
-        const stepX = 4.9;
-        const centerY = 236;
+        const baseX = 661;
+        const stepX = 5.1;
+        const centerY = 243;
         for (let i = 0; i < bars; i++) {
             const bx = baseX + i * stepX;
             const env = Math.sin((i / (bars - 1)) * Math.PI);
@@ -319,7 +225,6 @@ export class PelagicDesktopHud {
                 g.fillStyle(0x2cf0ff, 0.92).fillRoundedRect(bx, centerY - bh * 0.5, 2.8, bh, 1.3);
                 g.fillStyle(0xb5feff, 0.7).fillRect(bx + 0.6, centerY - bh * 0.28, 1.6, bh * 0.56);
             } else {
-                // Quiet rest state when no radio transmission is active
                 const dotH = 2.4 + env * 1.4;
                 g.fillStyle(0x32c5e8, 0.36).fillRoundedRect(bx, centerY - dotH * 0.5, 2.6, dotH, 1.2);
             }
@@ -353,69 +258,4 @@ export class PelagicDesktopHud {
             },
         };
     }
-
-    getLevelTextPreview(levelText: Phaser.GameObjects.Text): string {
-        return levelText.text;
-    }
-}
-
-function drawChamferRibbon(
-    g: Phaser.GameObjects.Graphics,
-    cx: number,
-    cy: number,
-    w: number,
-    h: number,
-    style: 'gold' | 'cyan',
-    skew = 7,
-): void {
-    const x0 = cx - w * 0.5;
-    const x1 = cx + w * 0.5;
-    const y0 = cy - h * 0.5;
-    const y1 = cy + h * 0.5;
-    const fill = style === 'gold' ? 0xffe029 : 0x0cb8f5;
-    const hi = style === 'gold' ? 0xfff8b5 : 0x7ef2ff;
-    const line = style === 'gold' ? 0x061a3d : 0x052854;
-
-    g.fillStyle(fill, 1)
-        .lineStyle(1.4, line, 1)
-        .beginPath()
-        .moveTo(x0 + skew, y0)
-        .lineTo(x1 - skew, y0)
-        .lineTo(x1, cy)
-        .lineTo(x1 - skew, y1)
-        .lineTo(x0 + skew, y1)
-        .lineTo(x0, cy)
-        .closePath()
-        .fillPath()
-        .strokePath();
-
-    g.lineStyle(1, hi, 0.72).lineBetween(x0 + skew + 2, y0 + 2, x1 - skew - 2, y0 + 2);
-}
-
-function drawAngledTag(
-    g: Phaser.GameObjects.Graphics,
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    style: 'gold' | 'cyan',
-    slant = 7,
-): void {
-    const fill = style === 'gold' ? 0xffe029 : 0x0cb8f5;
-    const hi = style === 'gold' ? 0xfff8b5 : 0x7ef2ff;
-    const line = style === 'gold' ? 0x061a3d : 0x052854;
-
-    g.fillStyle(fill, 1)
-        .lineStyle(1.3, line, 1)
-        .beginPath()
-        .moveTo(x + 3, y)
-        .lineTo(x + w, y)
-        .lineTo(x + w - slant, y + h)
-        .lineTo(x, y + h)
-        .lineTo(x, y + 3)
-        .closePath()
-        .fillPath()
-        .strokePath();
-
-    g.lineStyle(1, hi, 0.65).lineBetween(x + 4, y + 1.8, x + w - 3, y + 1.8);
 }

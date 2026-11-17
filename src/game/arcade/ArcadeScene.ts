@@ -182,18 +182,11 @@ export class ArcadeScene extends Phaser.Scene {
     this.logo = this.add.sprite(384, 116, UI_TEX.logo).setDisplaySize(292, 208).setDepth(5).setVisible(false);
     for (let i = 0; i < 5; i++)this.lifeIcons.push(this.add.image(447 + i * 17, 19, 'arc-rivet', 1).setDisplaySize(15, 19).setDepth(46).setVisible(false));
     for (let i = 0; i < 3; i++)this.wingmen.push(this.add.sprite(-100, 100, UI_TEX.wingmenAnim, i * 4).setDisplaySize(40, 40).setDepth(1.6).setVisible(false));
-    // Real gameplay aircraft & painted military helicopter on Title Screen (zero flat vector shapes)
-    // Sequential side-to-side flyby queue (never RIVET; always one gameplay plane or painted helicopter at a time)
+    // Only the 3 approved wingman aircraft (blue prop, yellow jet, pink prop) fly across the Title Screen one at a time.
     this.menuPlanes.push(
-      this.add.sprite(124, 82, UI_TEX.rivetCruise, 0).setDisplaySize(132, 132).setDepth(2.1).setVisible(false).play('ui-rivet-cruise'),
-      this.add.sprite(148, 166, UI_TEX.wingmenAnim, 0).setDisplaySize(54, 54).setDepth(1.9).setVisible(false).play('ui-wingman-0'),
-      this.add.sprite(618, 164, UI_TEX.wingmenAnim, 4).setDisplaySize(46, 46).setDepth(1.9).setVisible(false).play('ui-wingman-1'),
-      this.add.sprite(648, 80, UI_TEX.menuHeliSide, 0).setDisplaySize(128, 128).setDepth(2.1).setVisible(false).play('ui-menu-heli-side'),
-      this.add.sprite(-120, 86, UI_TEX.wingmenAnim, 0).setDisplaySize(58, 58).setDepth(2.0).setVisible(false).play('ui-wingman-0'),
-      this.add.sprite(-120, 96, UI_TEX.menuHeliSide, 0).setDisplaySize(116, 116).setDepth(2.0).setVisible(false).play('ui-menu-heli-side'),
-      this.add.sprite(-120, 152, UI_TEX.wingmenAnim, 4).setDisplaySize(54, 54).setDepth(2.0).setVisible(false).play('ui-wingman-1'),
-      this.add.sprite(-120, 108, UI_TEX.menuHeliPatrolSide, 0).setDisplaySize(116, 116).setDepth(2.0).setVisible(false).play('ui-menu-heli-patrol-side'),
-      this.add.sprite(-120, 166, UI_TEX.wingmenAnim, 12).setDisplaySize(64, 64).setDepth(2.0).setVisible(false).play('ui-wingman-3'),
+      this.add.sprite(-120, 92, UI_TEX.wingmenAnim, 0).setDisplaySize(58, 58).setDepth(2.0).setVisible(false).play('ui-wingman-0'),
+      this.add.sprite(-120, 140, UI_TEX.wingmenAnim, 4).setDisplaySize(56, 56).setDepth(2.0).setVisible(false).play('ui-wingman-1'),
+      this.add.sprite(-120, 168, UI_TEX.wingmenAnim, 8).setDisplaySize(58, 58).setDepth(2.0).setVisible(false).play('ui-wingman-2'),
     );
     this.installIntroActors();
     this.ui = this.add.container(0, 0).setDepth(60);
@@ -406,9 +399,9 @@ export class ArcadeScene extends Phaser.Scene {
       }
     } else if (screen === 'title') {
       this.audio.play('menu');
-      this.button(384, 264, 'INICIAR JORNADA', () => this.show('pilot'), 236, 36, { fontSize: 13.5, primaryGold: true });
-      this.button(384, 306, 'CONTROLES', () => { this.pauseOrigin = 'title'; this.show('controls'); }, 220, 34, { fontSize: 13, titleSecondary: true });
-      this.button(384, 348, 'OPÇÕES', () => { this.pauseOrigin = 'title'; this.show('settings'); }, 220, 34, { fontSize: 13, titleSecondary: true });
+      this.button(384, 264, 'INICIAR JORNADA', () => this.show('pilot'), 236, 36, { fontSize: 13.5 });
+      this.button(384, 306, 'CONTROLES', () => { this.pauseOrigin = 'title'; this.show('controls'); }, 236, 36, { fontSize: 13.5 });
+      this.button(384, 348, 'OPÇÕES', () => { this.pauseOrigin = 'title'; this.show('settings'); }, 236, 36, { fontSize: 13.5 });
       if (old === 'intro') {
         const vSize = getCombatVirtualSize(this);
         const veil = this.add.rectangle(vSize.w * 0.5, vSize.h * 0.5, vSize.w + 16, vSize.h + 16, 0x040d21, 1).setDepth(85);
@@ -428,34 +421,38 @@ export class ArcadeScene extends Phaser.Scene {
       this.audio.play('select'); this.addModalBackdrop(0x041530, .36, false);
       makeRibbon(this, 384, 28, 332, 38, 'gold', this.ui);
       this.text(384, 28, 'ESCOLHA SEU PILOTO', 17, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
-      makePanel(this, 384, 146, 678, 170, 'cobalt', this.ui);
-      makePanel(this, 132, 146, 134, 134, 'gold', this.ui);
-      this.ui.add(this.add.image(132, 143, 'arc-pilots', 3).setDisplaySize(112, 112));
-      makeRibbon(this, 132, 206, 112, 24, 'gold', this.ui);
+      makePanel(this, 384, 146, 678, 174, 'cobalt', this.ui);
+      makePanel(this, 132, 144, 136, 136, 'gold', this.ui);
+      this.ui.add(this.add.image(132, 140, 'arc-pilots', 3).setDisplaySize(114, 114));
+      makeRibbon(this, 132, 206, 114, 24, 'gold', this.ui);
       this.text(132, 206, 'BAYEK', 12, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 1 });
-      const plane = this.add.sprite(306, 123, UI_TEX.rivetCruise, 0).setDisplaySize(96, 96).setAngle(-5).play('ui-rivet-cruise');
+      const bay = this.add.graphics()
+        .fillStyle(0x05214d, .82).fillRoundedRect(218, 72, 188, 92, 10)
+        .lineStyle(1.4, UI.cyan, .62).strokeRoundedRect(218, 72, 188, 92, 10)
+        .lineStyle(1, UI.cyan, .22).lineBetween(428, 74, 428, 218);
+      this.ui.add(bay);
+      const plane = this.add.image(312, 118, UI_TEX.rivetProfile).setDisplaySize(134, 80);
       this.ui.add(plane);
-      this.tweens.add({ targets: plane, y: '+=3', duration: 1050, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-      this.text(306, 172, 'RIVET  •  VANGUARDA', 12, UI.cyanHex);
-      this.text(306, 190, 'Três motores. Um destino: trazer todos.', 10, UI.silver);
-      makeIcon(this, 225, 208, UI_ICON.lightning, 16, this.ui);
-      this.text(318, 208, 'ESPECIAL: TORMENTA ESCARLATE', 9.5, UI.goldHex);
-      const stats: [string, number, number, number][] = [['VELOCIDADE', 4, UI_PIP.cyan, 98], ['ARMAMENTO', 5, UI_PIP.gold, 142], ['BLINDAGEM', 3, UI_PIP.green, 186]];
+      this.text(312, 176, 'RIVET  •  VANGUARDA', 12, UI.cyanHex);
+      this.text(312, 193, 'Asas da Vanguarda. Um destino: trazer todos.', 9.5, UI.silver);
+      makeIcon(this, 224, 212, UI_ICON.lightning, 16, this.ui);
+      this.text(318, 212, 'ESPECIAL: TORMENTA ESCARLATE', 9.5, UI.goldHex);
+      const stats: [string, number, number, number][] = [['VELOCIDADE', 4, UI_PIP.cyan, 96], ['ARMAMENTO', 5, UI_PIP.gold, 140], ['BLINDAGEM', 3, UI_PIP.green, 184]];
       for (const [lbl, val, pip, sy] of stats) {
-        this.text(558, sy - 16, lbl, 9.5, UI.silver);
-        makeGaugeMeter(this, 558, sy + 3, 164, 22, 5, val, pip, this.ui);
+        this.text(566, sy - 16, lbl, 9.5, UI.silver);
+        makeGaugeMeter(this, 566, sy + 3, 170, 22, 5, val, pip, this.ui);
       }
       const portraits = [0, 4, 5, 6, 7], names = ['BAYEK', 'TITA', 'LEONA', 'OSVALD', 'HIEN'];
       for (let i = 0; i < 5; i++) {
         const cx = 112 + i * 136;
-        makePanel(this, cx, 288, 124, 98, i === 0 ? 'gold' : 'cobalt', this.ui);
-        this.ui.add(this.add.image(cx, 272, 'arc-pilots', portraits[i]).setDisplaySize(50, 50).setAlpha(i ? .52 : 1));
-        if (i) makeIcon(this, cx + 40, 254, UI_ICON.padlock, 21, this.ui);
-        this.text(cx, 305, names[i], 11, i ? UI.silver : UI.goldHex);
-        this.text(cx, 318, i ? 'EM BREVE' : 'PRONTO', 7.5, i ? UI.slate : UI.cyanHex);
+        makePanel(this, cx, 290, 124, 96, i === 0 ? 'gold' : 'cobalt', this.ui);
+        this.ui.add(this.add.image(cx, 274, 'arc-pilots', portraits[i]).setDisplaySize(50, 50).setAlpha(i ? .52 : 1));
+        if (i) makeIcon(this, cx + 40, 256, UI_ICON.padlock, 21, this.ui);
+        this.text(cx, 307, names[i], 11, i ? UI.silver : UI.goldHex);
+        this.text(cx, 320, i ? 'EM BREVE' : 'PRONTO', 7.5, i ? UI.slate : UI.cyanHex);
       }
-      this.button(468, 382, 'DECOLAR COM BAYEK', () => this.show('missions'), 286, 40, { fontSize: 14 });
-      this.button(154, 382, 'VOLTAR', () => this.show('title'), 156, 36, { fontSize: 13 });
+      this.button(468, 384, 'DECOLAR COM BAYEK', () => this.show('missions'), 286, 40, { fontSize: 14 });
+      this.button(154, 384, 'VOLTAR', () => this.show('title'), 156, 36, { fontSize: 13 });
     } else if (screen === 'missions') {
       this.addModalBackdrop(0x041530, .36, false);
       makeRibbon(this, 384, 30, 318, 38, 'gold', this.ui);
@@ -968,76 +965,39 @@ export class ArcadeScene extends Phaser.Scene {
     for (const n of [this.introWash, this.introHalo, this.introCrest, this.introTitle, this.introSub]) n.setVisible(false);
   }
   private renderMenuAircraft(time: number): void {
-    // Gameplay RIVET (SIDE 3-thruster), gameplay prop fighter, gameplay jet, and painted military helicopter.
-    // Passagem contínua de um lado ao outro sem a RIVET: 3 aviões da gameplay + 2 helicópteros, SEMPRE 1 por vez.
+    // Passagem contínua de um lado ao outro apenas com os 3 aviões aprovados (sem helicópteros, sem verde, sem RIVET), 1 por vez.
     const portraitTitle = !this.world && this.screen === 'title' && this.isPortraitMobileMode();
-    const rivet = this.menuPlanes[0];
-    if (rivet) {
-      if (rivet.anims.currentAnim?.key !== 'ui-rivet-cruise') rivet.play('ui-rivet-cruise');
-      const rx = (portraitTitle ? 268 : 122) + Math.sin(time * 0.68) * (portraitTitle ? 6 : 10);
-      const ry = (portraitTitle ? -104 : 82) + Math.cos(time * 1.12) * 4.5;
-      const rt = clamp(-Math.sin(time * 1.12) * 2.8, -5, 5);
-      rivet.setFlipX(false).setPosition(rx, ry).setDisplaySize(portraitTitle ? 108 : 134, portraitTitle ? 108 : 134).setAngle(rt).setAlpha(0.98).setVisible(true);
-      const legs: ReadonlyArray<{ idx: number; anim: string; dir: 1 | -1; dur: number; y: number; size: number; amp: number }> = [
-        { idx: 0, anim: 'ui-wingman-0', dir: 1, dur: 5.8, y: portraitTitle ? -68 : 76, size: portraitTitle ? 54 : 62, amp: 5 },
-        { idx: 1, anim: 'ui-menu-heli-side', dir: -1, dur: 6.8, y: portraitTitle ? -102 : 94, size: portraitTitle ? 102 : 120, amp: 7 },
-        { idx: 2, anim: 'ui-wingman-1', dir: 1, dur: 5.0, y: portraitTitle ? 182 : 158, size: portraitTitle ? 50 : 56, amp: 4 },
-        { idx: 3, anim: 'ui-menu-heli-patrol-side', dir: -1, dur: 6.8, y: portraitTitle ? -86 : 112, size: portraitTitle ? 102 : 120, amp: 6 },
-        { idx: 4, anim: 'ui-wingman-3', dir: 1, dur: 6.2, y: portraitTitle ? 196 : 168, size: portraitTitle ? 58 : 66, amp: 4 },
-      ];
-      for (const s of this.menuPlanes) s.setVisible(false);
-      if (!this.menuPlanes.length) return;
-      const totalDur = legs.reduce((acc, l) => acc + l.dur, 0);
-      // Offset +2.2s so opening frame immediately greets player mid-sky without an empty sky first
-      let cursor = (time + 2.2) % totalDur;
-      let active = legs[0];
-      let progress = 0;
-      for (const leg of legs) {
-        if (cursor < leg.dur) {
-          active = leg;
-          progress = cursor / leg.dur;
-          break;
-        }
-        cursor -= leg.dur;
+    for (const s of this.menuPlanes) s.setVisible(false);
+    if (!this.menuPlanes.length) return;
+    const legs: ReadonlyArray<{ idx: number; anim: string; dir: 1 | -1; dur: number; y: number; size: number; amp: number }> = [
+      { idx: 0, anim: 'ui-wingman-0', dir: 1, dur: 5.6, y: portraitTitle ? -68 : 88, size: portraitTitle ? 54 : 62, amp: 5 },
+      { idx: 1, anim: 'ui-wingman-1', dir: -1, dur: 5.0, y: portraitTitle ? 182 : 128, size: portraitTitle ? 52 : 58, amp: 4 },
+      { idx: 2, anim: 'ui-wingman-2', dir: 1, dur: 5.6, y: portraitTitle ? 196 : 168, size: portraitTitle ? 54 : 62, amp: 5 },
+    ];
+    const totalDur = legs.reduce((acc, l) => acc + l.dur, 0);
+    // Offset +2.0s so opening frame greets player with the blue prop plane mid-sky
+    let cursor = (time + 2.0) % totalDur;
+    let active = legs[0];
+    let progress = 0;
+    for (const leg of legs) {
+      if (cursor < leg.dur) {
+        active = leg;
+        progress = cursor / leg.dur;
+        break;
       }
-      const prop = this.menuPlanes[1];
-      if (prop) {
-        if (prop.anims.currentAnim?.key !== 'ui-wingman-0') prop.play('ui-wingman-0');
-        const px = (portraitTitle ? 256 : 148) + Math.sin(time * 0.56 + 0.4) * (portraitTitle ? 18 : 34);
-        const pvy = Math.cos(time * 1.18 + 0.4) * 4.5;
-        const py = (portraitTitle ? 186 : 166) + Math.sin(time * 1.18 + 0.4) * 4.5;
-        const tilt = clamp(pvy * 0.7, -5, 5);
-        prop.setFlipX(false).setPosition(px, py).setDisplaySize(portraitTitle ? 46 : 54, portraitTitle ? 46 : 54).setAngle(tilt).setAlpha(0.96).setVisible(true);
-      }
-      const jet = this.menuPlanes[2];
-      if (jet) {
-        if (jet.anims.currentAnim?.key !== 'ui-wingman-1') jet.play('ui-wingman-1');
-        const jx = (portraitTitle ? 512 : 616) + Math.sin(time * 0.62 + 1.8) * (portraitTitle ? 18 : 32);
-        const jy = (portraitTitle ? 184 : 164) + Math.cos(time * 1.24 + 0.9) * 4.5;
-        const tilt = clamp(Math.sin(time * 1.24 + 0.9) * -2.6, -5, 5);
-        jet.setFlipX(false).setPosition(jx, jy).setDisplaySize(portraitTitle ? 40 : 46, portraitTitle ? 40 : 46).setAngle(tilt).setAlpha(0.94).setVisible(true);
-      }
-      const heli = this.menuPlanes[3];
-      if (heli) {
-        if (heli.anims.currentAnim?.key !== 'ui-menu-heli-side') heli.play('ui-menu-heli-side');
-        const hx = (portraitTitle ? 500 : 646) + Math.sin(time * 0.52) * (portraitTitle ? 10 : 18);
-        const hvx = Math.cos(time * 0.52) * 18 * 0.52;
-        const hy = (portraitTitle ? -104 : 80) + Math.sin(time * 1.22 + 0.7) * 5;
-        const tilt = clamp((hvx / 12) * 3.5, -5, 5);
-        heli.setFlipX(false).setPosition(hx, hy).setDisplaySize(portraitTitle ? 104 : 128, portraitTitle ? 104 : 128).setAngle(tilt).setAlpha(0.98).setVisible(true);
-      }
-      const sp = this.menuPlanes[active.idx];
-      if (!sp) return;
-      if (sp.anims.currentAnim?.key !== active.anim) sp.play(active.anim);
-      const minX = portraitTitle ? 128 : -86;
-      const maxX = portraitTitle ? 640 : 854;
-      const x = active.dir > 0 ? minX + (maxX - minX) * progress : maxX - (maxX - minX) * progress;
-      const y = active.y + Math.sin(progress * Math.PI * 3) * active.amp;
-      const vy = Math.cos(progress * Math.PI * 3) * active.amp * 3;
-      const tilt = clamp((vy / 38) * 3.5 * active.dir, -5, 5);
-      // Both wingmen-anim and both side helicopters natively face LEFT in texture frames -> flipX when flying RIGHT
-      sp.setFlipX(active.dir > 0).setPosition(x, y).setDisplaySize(active.size, active.size).setAngle(tilt).setAlpha(0.96).setVisible(true);
+      cursor -= leg.dur;
     }
+    const sp = this.menuPlanes[active.idx];
+    if (!sp) return;
+    if (sp.anims.currentAnim?.key !== active.anim) sp.play(active.anim);
+    const minX = portraitTitle ? 128 : -86;
+    const maxX = portraitTitle ? 640 : 854;
+    const x = active.dir > 0 ? minX + (maxX - minX) * progress : maxX - (maxX - minX) * progress;
+    const y = active.y + Math.sin(progress * Math.PI * 3) * active.amp;
+    const vy = Math.cos(progress * Math.PI * 3) * active.amp * 3;
+    const tilt = clamp((vy / 38) * 3.5 * active.dir, -5, 5);
+    // All wingmen sprites natively face LEFT in wingmen-anim.webp -> flipX when flying RIGHT
+    sp.setFlipX(active.dir > 0).setPosition(x, y).setDisplaySize(active.size, active.size).setAngle(tilt).setAlpha(0.96).setVisible(true);
   }
   private renderMenu(): void {
     this.decor.clear(); this.hud.setText(''); this.combatInk.clear(); const time = this.clock;
@@ -1159,7 +1119,7 @@ export class ArcadeScene extends Phaser.Scene {
       if (w.state !== 'intro') {
         const comms = this.pelagicComms.current();
         if (comms && !this.portraitUpActive && !['result', 'defeat'].includes(this.screen)) {
-          this.radio.setOrigin(0, 0).setPosition(607, 270)
+          this.radio.setOrigin(0, 0).setPosition(602, 281)
             .setStyle({
               fontFamily: FONT,
               fontSize: '9.5px',
@@ -1167,8 +1127,8 @@ export class ArcadeScene extends Phaser.Scene {
               color: '#eef8ff',
               stroke: '#031029',
               strokeThickness: 2,
-              lineSpacing: 2.5,
-              wordWrap: { width: 132 },
+              lineSpacing: 2.2,
+              wordWrap: { width: 146 },
               align: 'left',
             })
             .setText(comms.text.replace(/\n/g, ' ')).setVisible(true);
@@ -1325,8 +1285,8 @@ export class ArcadeScene extends Phaser.Scene {
           wordWrap: { width: 132 },
           align: 'left',
         })
-        .setText('Entrando na Fenda Pelágica. Rota aberta, vamos decolar!')
-        .setPosition(607, 270)
+        .setText('Entrando na Fenda Pelágica. Radar limpo por enquanto... Mas fiquem atentos, é uma rota instável!')
+        .setPosition(606, 267)
         .setVisible(true);
       this.messageUntil = this.clock + .5;
     } else if (w.state === 'intro' && !w.up) {
@@ -1441,7 +1401,7 @@ export class ArcadeScene extends Phaser.Scene {
   private message(text: string): void {
     const up = !!this.world?.up;
     this.radio.setOrigin(up ? 0 : .5, up ? 0 : .5).setText(text)
-      .setPosition(up ? 646 : 384, up ? 295 : 65).setVisible(true);
+      .setPosition(up ? 602 : 384, up ? 281 : 65).setVisible(true);
     this.messageUntil = this.clock + (up ? 6 : 3.3);
   }
   private bestScoreFor(stageId?: number): number {
@@ -1484,15 +1444,15 @@ export class ArcadeScene extends Phaser.Scene {
     const isDesktopPelagic = !!this.world.up && !this.touchShown && !this.portraitUpActive;
     const container = this.add.container(0, 0).setDepth(68);
     if (isDesktopPelagic) {
-      // Top-right Pause arcade badge inside right panel header (`y = 0..27`, above ROTA 01)
-      container.setPosition(744, 14).setSize(40, 26);
+      // Top-right Pause arcade badge inside right panel header (`y = 0..32`, above ROTA 01)
+      container.setPosition(739, 16).setSize(40, 26);
       const bg = this.add.graphics();
       const drawCompactPc = (focused: boolean) => {
         bg.clear()
           .fillStyle(focused ? 0x10407c : 0x061e4a, .96)
-          .fillRoundedRect(-14, -10.5, 28, 21, 9)
+          .fillRoundedRect(-15, -10.5, 30, 21, 10)
           .lineStyle(1.6, focused ? 0xffe46b : 0x3ce5ff, .98)
-          .strokeRoundedRect(-14, -10.5, 28, 21, 9)
+          .strokeRoundedRect(-15, -10.5, 30, 21, 10)
           .fillStyle(focused ? 0xffffff : 0xffe033, 1)
           .fillRoundedRect(-5, -5, 3.2, 10, 1)
           .fillRoundedRect(1.8, -5, 3.2, 10, 1);
@@ -1731,7 +1691,7 @@ export class ArcadeScene extends Phaser.Scene {
           wordWrap: { width: 132 },
           align: 'left',
         })
-        .setPosition(607, 270)
+        .setPosition(606, 267)
         .setText(cur.text.replace(/\n/g, ' '))
         .setVisible(true);
     }
