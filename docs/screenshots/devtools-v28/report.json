@@ -1,0 +1,127 @@
+{
+  "functionalTests": {
+    "test1Checkpoint": {
+      "sensor": {
+        "tideArchPhase": "checkpoint",
+        "archScreenY": 581.9,
+        "bridgeBandActive": false,
+        "pierCollisionActive": false,
+        "opening": {
+          "left": 263,
+          "right": 505,
+          "center": 384,
+          "width": 242,
+          "pierLeftWidth": 71,
+          "pierRightWidth": 71
+        },
+        "altitude": 1,
+        "altitudeRestored": true,
+        "crossedArch": true,
+        "checkpointReached": true,
+        "airSpawnsBlocked": false,
+        "bossActive": false,
+        "subActiveSection": null
+      },
+      "hasCheckpoint": true,
+      "logKinds": [
+        "activation",
+        "sensor-enter",
+        "completed",
+        "sensor-exit"
+      ],
+      "logCount": 16
+    },
+    "test2Boss": {
+      "bossPhase": "fight",
+      "activeSection": 2,
+      "sectionName": "TORRE DE COMANDO",
+      "enemyBullets": 14,
+      "playerShotsFired": 43
+    },
+    "test3WaveAndTuning": {
+      "initialCount": 5,
+      "deltaTuned": 3.625,
+      "deltaBase": 2.9
+    },
+    "test4Upgrades": {
+      "fullBullets": 7,
+      "specialActive": true,
+      "hudWeaponLevel": 5,
+      "hudLives": 4,
+      "hudSpecials": 4
+    },
+    "test5StageSwitch": {
+      "solarMission": 2,
+      "solarBossMini": true,
+      "fendaMission": 1,
+      "fendaRoute": 148,
+      "fendaBossNull": true,
+      "staleSolarSprites": 0,
+      "stageDirMissionId": 1
+    },
+    "test7RestartConsistency": [
+      {
+        "route": 114.5,
+        "seed": 5150,
+        "px": 384,
+        "py": 368,
+        "enemyCount": 5,
+        "lives": 3
+      },
+      {
+        "route": 114.5,
+        "seed": 5150,
+        "px": 384,
+        "py": 368,
+        "enemyCount": 5,
+        "lives": 3
+      },
+      {
+        "route": 114.5,
+        "seed": 5150,
+        "px": 384,
+        "py": 368,
+        "enemyCount": 5,
+        "lives": 3
+      }
+    ],
+    "test6NormalGameplay": {
+      "saveGuard": false,
+      "route": 1.67,
+      "state": "play",
+      "stageDirActiveOrDone": {
+        "pending": 99,
+        "active": 1,
+        "completed": 1,
+        "skipped": 0,
+        "blocked": 0
+      }
+    }
+  },
+  "fpsMeasurements": {
+    "fpsDevOverlay": {
+      "frames": 59,
+      "avgMs": 18.11,
+      "p95Ms": 25.1,
+      "fps": 55.2
+    },
+    "fpsNormal": {
+      "frames": 59,
+      "avgMs": 20.09,
+      "p95Ms": 25.7,
+      "fps": 49.8
+    }
+  },
+  "productionIsolation": {
+    "hasDevtoolsGlobal": false,
+    "hasGameGlobal": false,
+    "hasDevToggleDom": false,
+    "hasDevPanelDom": false
+  },
+  "screenshots": {
+    "01-checkpoint-sensor-overlay": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\devtools-v28\\01-checkpoint-sensor-overlay.png",
+    "02-boss-colosso-devtools": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\devtools-v28\\02-boss-colosso-devtools.png",
+    "03-stage-switch-cleanup": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\devtools-v28\\03-stage-switch-cleanup.png"
+  },
+  "errors": []
+}

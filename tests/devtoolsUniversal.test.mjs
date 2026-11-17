@@ -3,9 +3,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { ArcadeStageDirector, buildMissionStageEvents } from '../src/game/arcade/ArcadeStageDirector.ts';
 import { ArcadeWorld } from '../src/game/arcade/ArcadeWorld.ts';
 import { FAMILY, FENDA, FUTURE_ROUTES, MISSIONS, SOLAR } from '../src/game/arcade/content.ts';
 import { DevCombatControls } from '../src/devtools/DevCombatControls.ts';
+import { DevEventLogger } from '../src/devtools/DevEventLogger.ts';
 import { DevPerformanceMonitor } from '../src/devtools/DevPerformanceMonitor.ts';
 import { DevScenarioRegistry } from '../src/devtools/DevScenarioRegistry.ts';
 import { DevScenarioRunner } from '../src/devtools/DevScenarioRunner.ts';
@@ -177,9 +179,105 @@ test('Production build isolation: source gating and compiled dist/ contain zero 
     'mountDevTools',
     'DevCollisionOverlay',
     'DevScenarioRegistry',
+    'DevEventLogger',
     '__GAME__',
     'bullet_wake_devtools_prefs_v1',
   ]) {
     assert(!jsBundle.includes(forbidden), `Forbidden dev symbol '${forbidden}' leaked into dist/assets/${jsFiles[0]}!`);
   }
+});
+
+test('ArcadeStageDirector serves as single source of truth for timed and conditional events without fake timestamps', () => {
+  const fendaDefs = buildMissionStageEvents(MISSIONS[0], 0);
+  const solarDefs = buildMissionStageEvents(MISSIONS[1], 1);
+
+  assert(fendaDefs.length > 20 && solarDefs.length > 10);
+  const archDescent = fendaDefs.find((d) => d.id === 'stage-1-arch-descent');
+  const rare = fendaDefs.find((d) => d.id === 'stage-1-special-rare-visitor');
+  const boss = fendaDefs.find((d) => d.id === 'stage-1-boss');
+
+  assert(archDescent && archDescent.triggerKind === 'conditional' && archDescent.atSeconds === undefined);
+  assert(rare && rare.triggerKind === 'conditional' && rare.atSeconds === undefined && rare.repeatPolicy === 'capped');
+  assert(boss && boss.triggerKind === 'timed' && boss.atSeconds === 300);
+
+  const dir = new ArcadeStageDirector(MISSIONS[0], 0);
+  assert.equal(dir.defs.length, fendaDefs.length);
+
+  // Adapter consumes identical IDs from ArcadeStageDirector
+  const registry = new DevScenarioRegistry();
+  const fendaAdapter = registry.getAdapterByMissionIndex(0);
+  assert(fendaAdapter);
+  assert.deepEqual(
+    fendaAdapter.events.map((e) => e.id),
+    fendaDefs.map((d) => d.id),
+  );
+});
+
+test('Stage Jump backward/forward restores coherent ArcadeStageDirector flags and blocks duplicate past events', () => {
+  const w = makeWorld(0);
+  // Jump late past rare visitor and timed events
+  w.devJumpToCheckpoint(225, { seed: 4242 });
+  assert.equal(w.seed, 4242);
+  let snap = w.devStageDirectorSnapshot();
+  assert.equal(snap.entries.find((e) => e.id === 'stage-1-special-naval-convoy')?.status, 'skipped');
+  assert.equal(snap.entries.find((e) => e.id === 'stage-1-arch-checkpoint')?.status, 'completed');
+  assert.equal(snap.entries.find((e) => e.id === 'stage-1-special-coordinated-strike')?.status, 'pending');
+
+  // Jump backwards to before early rare visitor & Tide Arch: stale future flags/counters MUST reset cleanly!
+  w.devJumpToCheckpoint(50, { seed: 777 });
+  assert.equal(w.seed, 777);
+  snap = w.devStageDirectorSnapshot();
+  assert.equal(snap.entries.find((e) => e.id === 'stage-1-arch-approach')?.status, 'pending');
+  assert.equal(snap.entries.find((e) => e.id === 'stage-1-special-naval-convoy')?.status, 'pending');
+  assert(!w.specialEventsTriggered.has('naval-convoy'));
+  assert(!w.specialEventsTriggered.has('elite-interception'));
+});
+
+test('Event Sandbox isolated vs integrated execution and sensor crossing checkpoint validation', () => {
+  const w = makeWorld(0);
+  // Start just before Arco das Marés passage in isolated mode (no ambient encounters interfering)
+  const pre = w.devRunStageEvent('stage-1-arch-checkpoint', { action: 'before', isolated: true, seed: 2026 });
+  assert.equal(pre.ok, true);
+  assert.equal(w.devSandboxIsolated, true);
+  w.devInvincible = true;
+
+  let enteredBridgeBand = false;
+  let reachedCheckpoint = false;
+  for (let i = 0; i < 60 * 16; i++) {
+    // Center safely inside the arch opening
+    w.step(1 / 60, { x: 0, y: 0, fire: false, special: false });
+    const s = w.devSensorSnapshot();
+    if (s.bridgeBandActive) enteredBridgeBand = true;
+    if (s.checkpointReached) {
+      reachedCheckpoint = true;
+      break;
+    }
+  }
+  assert.equal(enteredBridgeBand, true, 'Ship must traverse real Tide Arch bridge sensor band');
+  assert.equal(reachedCheckpoint, true, 'Tide Arch checkpoint must activate via real sensor traversal');
+  assert(w.hasActiveCheckpoint && w.checkpoint?.tideArchCompleted === true);
+});
+
+test('DevEventLogger emits deduplicated edge-triggered entries and Live Tuning scales cleanly', () => {
+  const w = makeWorld(0);
+  const logger = new DevEventLogger();
+  const fakeScene = { world: w };
+
+  logger.observeScene(fakeScene);
+  const afterInit = logger.getEntries().length;
+  // Calling observeScene repeatedly on idle/static frames must NOT emit duplicate logs
+  for (let i = 0; i < 30; i++) logger.observeScene(fakeScene);
+  assert.equal(logger.getEntries().length, afterInit, 'Idle frames must never flood deduplicated log');
+
+  // Verify Live Tuning runtime scaling without mutating official constants
+  const normalXBefore = w.player.x;
+  w.step(1 / 60, { x: 1, y: 0, fire: false, special: false });
+  const deltaNormal = w.player.x - normalXBefore;
+
+  w.player.x = normalXBefore;
+  w.playerSpeedScale = 1.5;
+  w.step(1 / 60, { x: 1, y: 0, fire: false, special: false });
+  const deltaFast = w.player.x - normalXBefore;
+  assert(deltaFast > deltaNormal * 1.4, 'Live Tuning playerSpeedScale must scale movement immediately');
+  w.playerSpeedScale = 1;
 });

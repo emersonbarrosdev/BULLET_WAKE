@@ -2,13 +2,12 @@ import {
   FAMILY,
   FENDA,
   MISSIONS,
-  SUPPLIES,
   type EntrySide,
   type Family,
   type Mission,
   type Motion,
 } from '../game/arcade/content.ts';
-import { PELAGIC_RARE_EVENT, PELAGIC_TIMED_EVENTS } from '../game/arcade/PelagicSpecialEvents.ts';
+import { buildMissionStageEvents } from '../game/arcade/ArcadeStageDirector.ts';
 import { SUB_BOSS_NAME, createSubmarineBoss } from '../game/arcade/PelagicSubmarineBoss.ts';
 import type {
   DevBossSectionSpec,
@@ -105,88 +104,24 @@ function buildBossesForMission(mission: Mission, missionIndex: number): DevBossS
 }
 
 function buildEventsForMission(mission: Mission, missionIndex: number): DevEventSpec[] {
-  const events: DevEventSpec[] = [];
-
-  if (mission.perspective === 'UP') {
-    const archSteps = [
-      { stage: 'approach', label: 'Arco das Marés — 1. Aproximação', at: 148 },
-      { stage: 'descent', label: 'Arco das Marés — 2. Descida Automática', at: 153 },
-      { stage: 'low-flight', label: 'Arco das Marés — 3. Voo Baixo & Combate', at: 162 },
-      { stage: 'under-arch', label: 'Arco das Marés — 4. Passagem Sob o Arco', at: 173 },
-      { stage: 'ascent', label: 'Arco das Marés — 5. Subida Automática', at: 177 },
-      { stage: 'checkpoint', label: 'Arco das Marés — 6. Checkpoint Alcançado', at: 181 },
-    ] as const;
-    for (const st of archSteps) {
-      events.push({
-        id: `stage-${mission.id}-arch-${st.stage}`,
-        stageId: mission.id,
-        missionIndex,
-        name: st.label,
-        atSeconds: st.at,
-        kind: 'special-event',
-        description: `Inicia etapa real '${st.stage}' do Arco das Marés`,
-        trigger(scene) {
-          scene.devJumpTideArch(st.stage);
-          return `${st.label} ativada em ${mission.name}.`;
-        },
-      });
-    }
-    for (const spec of [...PELAGIC_TIMED_EVENTS, PELAGIC_RARE_EVENT]) {
-      events.push({
-        id: `stage-${mission.id}-special-${spec.id}`,
-        stageId: mission.id,
-        missionIndex,
-        name: `Evento Especial: ${spec.id}`,
-        atSeconds: spec.at,
-        kind: 'special-event',
-        description: spec.radio.replace(/\n/g, ' '),
-        trigger(scene) {
-          if (!scene.world || scene.getCurrentMissionIndex() !== missionIndex || scene.screen !== 'play') {
-            scene.devJumpToCheckpoint(missionIndex, Math.max(5, spec.at - 1), { pauseDirector: true });
-          }
-          scene.world!.triggerSpecialEvent(spec.id, true);
-          return `Evento especial '${spec.id}' acionado em ${mission.name}.`;
-        },
-      });
-    }
-  }
-
-  for (const sup of SUPPLIES) {
-    events.push({
-      id: `stage-${mission.id}-supply-${sup.at}-${sup.kind}`,
-      stageId: mission.id,
-      missionIndex,
-      name: `Suprimento ${sup.kind.toUpperCase()} (${sup.at}s)`,
-      atSeconds: sup.at,
-      kind: 'supply',
-      description: `Cápsula de ${sup.kind} na rota`,
-      trigger(scene) {
-        if (!scene.world || scene.getCurrentMissionIndex() !== missionIndex || scene.screen !== 'play') {
-          scene.devJumpToCheckpoint(missionIndex, sup.at, { pauseDirector: true });
-        }
-        scene.world!.devSpawnCargoItem(sup.kind);
-        return `Suprimento ${sup.kind.toUpperCase()} gerado em ${mission.name}.`;
-      },
-    });
-  }
-
-  mission.encounters.forEach((enc, idx) => {
-    events.push({
-      id: `stage-${mission.id}-enc-${idx}`,
-      stageId: mission.id,
-      missionIndex,
-      name: `Encontro #${idx + 1}: ${enc.family} (${enc.formation}, ${enc.at}s)`,
-      atSeconds: enc.at,
-      kind: 'encounter',
-      description: `motion=${enc.motion} lane=${enc.lane}${enc.entry ? ` entry=${enc.entry}` : ''}`,
-      trigger(scene) {
-        scene.devStartEnemyTest(missionIndex, enc, { pauseDirector: true });
-        return `Encontro #${idx + 1} (${enc.family} • ${enc.formation}) iniciado.`;
-      },
-    });
-  });
-
-  return events;
+  return buildMissionStageEvents(mission, missionIndex).map((def) => ({
+    id: def.id,
+    stageId: def.stageId,
+    missionIndex: def.missionIndex,
+    name: def.name,
+    triggerKind: def.triggerKind,
+    atSeconds: def.atSeconds,
+    preJumpSeconds: def.preJumpSeconds,
+    conditionLabel: def.conditionLabel,
+    dependencies: def.dependencies,
+    entities: def.entities,
+    repeatPolicy: def.repeatPolicy,
+    kind: def.category,
+    description: def.description,
+    trigger(scene, opts) {
+      return scene.devRunStageEvent(missionIndex, def.id, opts).message;
+    },
+  }));
 }
 
 export function createPlayableStageAdapters(): DevStageAdapter[] {

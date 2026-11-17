@@ -172,6 +172,25 @@ export class DevScenarioRunner {
     return preset;
   }
 
+  runTimelineEvent(
+    scene: ArcadeScene,
+    missionIndex: number,
+    eventId: string,
+    opts?: { action?: 'go-to' | 'before' | 'run'; isolated?: boolean; leadSeconds?: number; seed?: number },
+  ): string {
+    this.state.beginTestSession(scene);
+    const seed = opts?.seed ?? this.state.getPrefs().seed;
+    const execute = () => scene.devRunStageEvent(missionIndex, eventId, { ...opts, seed });
+    const res = execute();
+    this.state.recordReplayAction(
+      `Evento ${eventId} (${opts?.action ?? 'run'}, ${opts?.isolated ? 'Isolado' : 'Integrado'}, seed=${seed})`,
+      () => {
+        execute();
+      },
+    );
+    return res.message;
+  }
+
   /**
    * Runs a deterministic isolated simulation verifying that every boss stage and section advances
    * sequentially without skipping phases or stalling. Never touches saves or UI state.

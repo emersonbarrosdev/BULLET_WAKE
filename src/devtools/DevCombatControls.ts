@@ -106,4 +106,44 @@ export class DevCombatControls {
   spawnCargo(scene: ArcadeScene, kind: 'power' | 'life' | 'special'): void {
     scene.world?.devSpawnCargoItem(kind);
   }
+
+  getLiveTuning(scene?: ArcadeScene): {
+    playerSpeedScale: number;
+    enemySpeedScale: number;
+    enemyFireRateScale: number;
+    enemyShotSpeedScale: number;
+    specialDurationScale: number;
+  } {
+    const w = scene?.world;
+    return {
+      playerSpeedScale: w?.playerSpeedScale ?? 1,
+      enemySpeedScale: w?.enemySpeedScale ?? 1,
+      enemyFireRateScale: w?.enemyFireRateScale ?? 1,
+      enemyShotSpeedScale: w?.enemyShotSpeedScale ?? 1,
+      specialDurationScale: w?.specialDurationScale ?? 1,
+    };
+  }
+
+  applyLiveTuning(
+    scene: ArcadeScene,
+    patch: {
+      playerSpeedScale?: number;
+      enemySpeedScale?: number;
+      enemyFireRateScale?: number;
+      enemyShotSpeedScale?: number;
+      specialDurationScale?: number;
+    },
+  ): void {
+    scene.devApplyLiveTuning(patch);
+  }
+
+  resetLiveTuning(scene: ArcadeScene): void {
+    scene.devApplyLiveTuning({
+      playerSpeedScale: 1,
+      enemySpeedScale: 1,
+      enemyFireRateScale: 1,
+      enemyShotSpeedScale: 1,
+      specialDurationScale: 1,
+    });
+  }
 }

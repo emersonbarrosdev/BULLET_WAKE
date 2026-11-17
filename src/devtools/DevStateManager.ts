@@ -11,6 +11,7 @@ function defaultPrefs(): DevToolsPrefs {
     x: 16,
     y: 16,
     seed: 1337,
+    sandboxIsolated: true,
   };
 }
 
@@ -44,6 +45,7 @@ export class DevStateManager {
         x: typeof parsed.x === 'number' && Number.isFinite(parsed.x) ? Math.max(4, parsed.x) : def.x,
         y: typeof parsed.y === 'number' && Number.isFinite(parsed.y) ? Math.max(4, parsed.y) : def.y,
         seed: typeof parsed.seed === 'number' && Number.isFinite(parsed.seed) ? Math.floor(parsed.seed) : def.seed,
+        sandboxIsolated: typeof parsed.sandboxIsolated === 'boolean' ? parsed.sandboxIsolated : def.sandboxIsolated,
       };
     } catch {
       return def;

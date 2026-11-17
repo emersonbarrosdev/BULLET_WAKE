@@ -3,6 +3,7 @@ import type { ArcadeScene } from '../game/arcade/ArcadeScene';
 import { DevAnimationPreviewer } from './DevAnimationPreviewer';
 import { DevCollisionOverlay } from './DevCollisionOverlay';
 import { DevCombatControls } from './DevCombatControls';
+import { DevEventLogger } from './DevEventLogger';
 import { DevPerformanceMonitor } from './DevPerformanceMonitor';
 import { DevScenarioRegistry } from './DevScenarioRegistry';
 import { DevScenarioRunner } from './DevScenarioRunner';
@@ -16,6 +17,7 @@ export interface DevToolsGlobalApi {
   readonly runner: DevScenarioRunner;
   readonly combat: DevCombatControls;
   readonly collisions: DevCollisionOverlay;
+  readonly logger: DevEventLogger;
   readonly perf: DevPerformanceMonitor;
   readonly previewer: DevAnimationPreviewer;
   getScene(): ArcadeScene | undefined;
@@ -39,6 +41,7 @@ export function mountDevTools(game: Phaser.Game, phaserLib: typeof Phaser): () =
   const combat = new DevCombatControls();
   const runner = new DevScenarioRunner(registry, state, combat);
   const collisions = new DevCollisionOverlay();
+  const logger = new DevEventLogger();
   const perf = new DevPerformanceMonitor();
   const previewer = new DevAnimationPreviewer();
 
@@ -50,6 +53,7 @@ export function mountDevTools(game: Phaser.Game, phaserLib: typeof Phaser): () =
     runner,
     combat,
     collisions,
+    logger,
     perf,
     previewer,
   });
@@ -61,6 +65,7 @@ export function mountDevTools(game: Phaser.Game, phaserLib: typeof Phaser): () =
     runner,
     combat,
     collisions,
+    logger,
     perf,
     previewer,
     getScene,
@@ -93,6 +98,7 @@ export function mountDevTools(game: Phaser.Game, phaserLib: typeof Phaser): () =
       },
       onRender: (activeScene, deltaMs) => {
         perf.recordFrame(deltaMs);
+        logger.observeScene(activeScene);
         collisions.draw(activeScene);
         hudTickCounter++;
         if (hudTickCounter % 4 === 0) panel.tickVisualUpdate();

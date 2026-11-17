@@ -38,10 +38,10 @@ Isso inicia `vite --host 0.0.0.0`. Após o teste no aparelho Android, encerre o 
 
 ## 4. Abas e Funcionalidades
 
-### `FASES`
+### `FASES` (Stage Jump & Checkpoints)
 - Lista automaticamente todas as fases jogáveis registradas em `MISSIONS` ([content.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/game/arcade/content.ts)) — rotas reservadas em `FUTURE_ROUTES` nunca aparecem como jogáveis.
-- Permite iniciar do começo, ir direto ao **Miniboss** (`155s`), ir direto ao **Boss Final** (`300s`), carregar qualquer checkpoint (`0s`, `45s`, `90s`, `135s`, `155s`, `200s`, `255s`, `300s`), reiniciar o trecho atual, reiniciar a fase ou **Voltar ao Menu** encerrando a sessão dev com restauração limpa.
-- Ao carregar um checkpoint (`ArcadeScene.devJumpToCheckpoint` / `ArcadeWorld.devJumpToCheckpoint`), o sistema sincroniza cenário, `scroll`, `route`, `elapsed`, região, índice do diretor de encontros (`waveIndex`), `supplyIndex`, obstáculos e `specialEventsTriggered` (evitando eventos passados reaparecerem) e ajusta a trilha sonora correspondente.
+- Permite **Stage Jump por instante arbitrário (`mm:ss` ou segundos `0..300`)**, além de iniciar do começo, ir direto ao **Miniboss** (`155s`), **Arco das Marés**, **Boss Final** (`300s`), carregar qualquer checkpoint (`0s`, `45s`, `90s`, `135s`, `148s/155s`, `200s`, `255s`, `300s`), alternar fase com limpeza completa (`Alternar Próxima Fase`), reiniciar trecho ou **Voltar ao Menu** com restauração limpa.
+- Ao saltar (`ArcadeScene.devJumpToCheckpoint` / `ArcadeWorld.devJumpToCheckpoint`), o sistema sincroniza o **`ArcadeStageDirector`** (`syncAfterJump`), cenário, `scroll`, `route`, `elapsed`, região, suprimentos, eventos condicionais/temporais, `seed` determinística, `tideArch` e trilha sonora correspondente, sem vazar entidades ou timers antigos.
 
 ### `BOSSES`
 - Inicia diretamente o Miniboss (`Patrulha Pesada Naval` / `Patrulha Pesada Aérea`) ou Boss Final (`Colosso Abissal` / `Mega Dirigível Giro`).
@@ -57,27 +57,34 @@ Isso inicia `vite --host 0.0.0.0`. Após o teste no aparelho Android, encerre o 
 - Detecta automaticamente todas as famílias reais de `FAMILY` (incluindo `heli_scout`, `heli_utility`, `heli_phantom`, `heli_warhawk`, aviões, navios, submarinos, torres e tanques).
 - Permite configurar quantidade (`1..24`), formação, trajetória, lado de entrada (`top`, `left`, `right`), faixa, velocidade, multiplicadores de cadência/velocidade de tiro (exclusivos do modo de teste sem alterar a produção), posição inicial e dificuldade, além de atalhos prontos (10 caças, formação em V, entradas laterais, submarino emergindo, torre costeira, Warhawk com míssil etc.).
 
-### `JOGADOR / ARMAS`
+### `JOGADOR / ARMAS` & `Live Tuning Temporário`
 - Configura ao vivo nível da arma (`NV1..FULL`), medidor `P` (`0..2`), vidas (`1..5`), especiais (`0..5`), pontuação, dificuldade (`Normal`/`Difícil`), disparo acessível, modo assistido e **Invencibilidade Dev** (`world.devInvincible = true`, protege apenas a RIVET).
 - Botões para disparo manual/rajada, mísseis, especial, soltar cápsulas (`power`, `life`, `special`), **RESETAR RIVET** e **TESTAR MORTE** (`world.devTriggerControlledDeath`, que executa a regra real de perda de vida, queda de nível e cápsula de recuperação).
+- **Live Tuning Temporário (Runtime DEV):** permite multiplicar temporariamente velocidade da nave (`playerSpeedScale`), velocidade dos inimigos (`enemySpeedScale`), cadência de tiro inimiga (`enemyFireRateScale`), velocidade de projéteis (`enemyShotSpeedScale`) e duração do especial (`specialDurationScale`), com botão **Restaurar Padrões (1.0x)** e **sem alterar arquivos oficiais ou saves**.
 
-### `COLISÕES`
-- Implementado em [DevCollisionOverlay.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/devtools/DevCollisionOverlay.ts).
-- Desenha em tempo real os **dados exatos da simulação** sobre os sprites sem afetar o jogo:
+### `COLISÕES`, Sensores & Log Deduplicado
+- Implementado em [DevCollisionOverlay.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/devtools/DevCollisionOverlay.ts) e [DevEventLogger.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/devtools/DevEventLogger.ts).
+- Desenha em tempo real os **dados exatos da simulação** sobre os sprites sem modificar colisões reais:
   - Hitbox elíptica da RIVET (`sweepEllipse` `rx=5, ry=7`) e raio de coleta (`22px`).
+  - **Sensores & Triggers do Arco das Marés:** banda da ponte (`[archY - 54 .. archY + 58]`), corredor central seguro (`computeArchOpening`) e paredes de risco laterais dos rochedos.
+  - **Zonas de Spawn & Lanes:** faixas superiores e entradas laterais.
   - Hitboxes reais dos inimigos, limites dos sprites e raio de colisão aérea.
   - Hitboxes, rastro `sweep` (`(px, py) -> (x, y)`) e vetores de direção `(vx, vy)` dos projéteis.
   - Pivôs das torretas e coordenadas exatas da ponta dos canos (`resolveActorMounts` / `resolveUnmountedMuzzle`).
   - Módulos, setores de dano, blindagens e casco das seções do `Colosso Abissal`.
   - Obstáculos (`width × height`), caixas/suprimentos e raio ativo da bomba especial.
+- **Log Deduplicado:** registra apenas transições de estado (`sensor-enter`, `sensor-exit`, `activation`, `completed`, `condition-fail`, `collision`) sem flooding por frame.
 
-### `EVENTOS`
-- Lista eventos especiais registrados (`PELAGIC_TIMED_EVENTS`, `PELAGIC_RARE_EVENT`), suprimentos (`SUPPLIES`) e encontros da missão selecionada, exibe snapshot do diretor e permite acionar encontros, reiniciar o último evento, avançar ao próximo encontro e testar diálogos do Bayek.
+### `EVENTOS` (Stage Director, Event Timeline & Event Sandbox)
+- Alimentado diretamente pela **fonte única de verdade** [ArcadeStageDirector.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/game/arcade/ArcadeStageDirector.ts) (mesmo catálogo usado pela gameplay real em `ArcadeWorld`).
+- Eventos puramente condicionais (`arch-descent`, `low-flight`, `under-arch`, `ascent`, `arch-checkpoint`, `rare-visitor`) exibem condição real e dependências explícitas, **sem horários fictícios**.
+- Filtros por **Busca**, **Categoria** e **Estado** (`pending`/`active`/`completed`/`skipped`/`blocked`), com seletor claro entre **TESTE ISOLADO** (ondas paralelas desativadas) e **TESTE INTEGRADO** (progressão normal contínua).
+- Ações diretas no evento selecionado: **`GO TO EVENT`**, **`START BEFORE EVENT (-4s)`**, **`RUN EVENT`**, **`RESTART EVENT`** e **`INSPECT EVENT`**.
 
 ### `DESEMPENHO`
 - Implementado em [DevPerformanceMonitor.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/devtools/DevPerformanceMonitor.ts).
 - Exibe FPS atual/médio, média, mediana, P95, P99, contagem viva de inimigos, tiros, objetos Phaser, efeitos, qualidade visual (`0/1/2`), resolução, memória JS (`performance.memory` quando suportada) e GPU (`WEBGL_debug_renderer_info`).
-- Controles determinísticos: **Pausar Simulação**, **Retomar**, **Passo `1/120s`**, velocidade `100%` / `50%` / `25%`, troca de qualidade e **6 cenários de estresse controlado** com limpeza completa ao encerrar.
+- Controles determinísticos: **Pausar Simulação**, **Retomar**, **Passo `1/60s` / `1/120s`**, **Reiniciar Último Teste**, velocidades `0.25x` / `0.5x` / `1.0x` / `2.0x` / `4.0x`, troca de qualidade e **6 cenários de estresse controlado** com limpeza completa ao encerrar.
 - Os relatórios JSON gerados diferenciam explicitamente `measurementKind: "interactive"` de `"controlled-simulation"`.
 
 ### `VISUAL`
@@ -89,7 +96,12 @@ Isso inicia `vite --host 0.0.0.0`. Após o teste no aparelho Android, encerre o 
 ## 5. Como Estender para Novas Fases, Inimigos, Checkpoints e Chefes
 
 ### Registrar uma nova fase jogável
-Adicione a nova `Mission` ao array `MISSIONS` em [src/game/arcade/content.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/game/arcade/content.ts). O [DevStageAdapter.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/devtools/DevStageAdapter.ts) descobre automaticamente toda missão em `MISSIONS` (ignorando `FUTURE_ROUTES`) e registra seus checkpoints, miniboss, boss e encontros no [DevScenarioRegistry.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/devtools/DevScenarioRegistry.ts) sem alterar o painel.
+Adicione a nova `Mission` ao array `MISSIONS` em [src/game/arcade/content.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/game/arcade/content.ts). Tanto o controlador centralizado [ArcadeStageDirector.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/game/arcade/ArcadeStageDirector.ts) quanto o [DevStageAdapter.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/devtools/DevStageAdapter.ts) e o [DevScenarioRegistry.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/devtools/DevScenarioRegistry.ts) descobrem automaticamente toda missão em `MISSIONS` (ignorando `FUTURE_ROUTES`), integrando setores, ondas, suprimentos, minibosses e bosses à gameplay real e à timeline sem duplicação de listas.
+
+### Limitações conhecidas & Divergências documentadas
+- **Legado vs Arcade ativo:** A Bíblia histórica (`docs/archive/2026-11-11-biblia.md`) descrevia 15 fases + 2 secretas e cenas `PrototypeScene` (`src/game/systems/stageDirector.ts`), enquanto o fluxo ativo oficial em `ArcadeScene` + `ArcadeWorld` segue `docs/54_DIRECAO_ARCADE_APROVADA.md` (`MISSIONS`: Fenda Pelágica UP & Cidade Solar SIDE; rotas futuras isoladas em `FUTURE_ROUTES`). `PrototypeScene` legado não é exibido como rota jogável principal e foi preservado sem alterações.
+- **Reprodutibilidade:** `seed` configurável e inicialização determinística (`devJumpToCheckpoint` / `devRunStageEvent`) garantem condições iniciais idênticas; contudo, após o início, entradas manuais do jogador alteram dinamicamente a evolução da simulação (não há gravador/reprodutor automático de macros de teclado).
+- **Medição em Chrome Headless:** Execuções automatizadas sem GPU física refletem overhead de compositor/software (~50–55 FPS / 18–20 ms); medições oficiais de 60 FPS devem ser conferidas na máquina-alvo com aceleração WebGL ativa.
 
 ### Registrar um novo inimigo
 Adicione a família em `Family`, `FAMILY` e `ENEMY_SHOTS` em [content.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/game/arcade/content.ts). `createPlayableStageAdapters()` lê `Object.keys(FAMILY)` automaticamente, disponibilizando o inimigo no seletor da aba **INIMIGOS**. Se possuir torretas articuladas, registre em `MOUNT_SPECS` no [PelagicWeaponMounts.ts](file:///c:/Users/emers/PROJETOS/GAMES/BULLET_WAKE/src/game/arcade/PelagicWeaponMounts.ts) para aparecer automaticamente também no overlay de canhões.
@@ -137,7 +149,10 @@ npm test
 # Verificação ponta-a-ponta do Arco das Marés (PC Horizontal + Android Retrato + vídeo)
 node scripts/tide-arch-verify.mjs
 
-# Verificação ponta-a-ponta real em Chrome: DEV (npm run dev), BUILD (--mode development), e PREVIEW (vite preview)
+# Verificação ponta-a-ponta real em Chrome: Testes 1-7 (Checkpoint, Boss, Onda, Upgrades, Troca de Fases, Normal, Reinício), FPS e isolamento de produção
+node scripts/devtools-architectural-verify.mjs
+
+# Verificação ponta-a-ponta real em Chrome legado: DEV (npm run dev), BUILD (--mode development), e PREVIEW (vite preview)
 node scripts/devtools-browser-e2e.mjs
 
 # Build de produção e auditoria de gameplay (valida isolamento em dist/ + rotas completas em dev)

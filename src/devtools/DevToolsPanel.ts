@@ -1,7 +1,15 @@
 import type { ArcadeScene } from '../game/arcade/ArcadeScene';
+import {
+  buildMissionStageEvents,
+  type StageEventCategory,
+  type StageEventDef,
+  type StageEventStatus,
+} from '../game/arcade/ArcadeStageDirector';
+import { MISSIONS } from '../game/arcade/content';
 import { DevAnimationPreviewer, type DevAssetCategory } from './DevAnimationPreviewer';
 import { DevCollisionOverlay } from './DevCollisionOverlay';
 import { BOSS_RESISTANCE_PRESETS, DevCombatControls } from './DevCombatControls';
+import type { DevEventLogger } from './DevEventLogger';
 import { DevPerformanceMonitor } from './DevPerformanceMonitor';
 import { DevScenarioRegistry } from './DevScenarioRegistry';
 import { DevScenarioRunner } from './DevScenarioRunner';
@@ -101,6 +109,26 @@ const PANEL_CSS = `
 .bw-dev-canvas {
   width: 100%; height: 150px; border: 1px solid #334155; border-radius: 4px; background: #0f172a;
 }
+.bw-dev-timeline {
+  display: flex; flex-direction: column; gap: 4px; max-height: 210px; overflow-y: auto;
+  background: #09101d; border: 1px solid #1e293b; border-radius: 4px; padding: 5px;
+}
+.bw-dev-ev {
+  display: flex; flex-direction: column; gap: 2px; padding: 5px 6px; border-radius: 4px;
+  background: #111b2e; border: 1px solid #22304a; cursor: pointer; font-size: 10.5px;
+}
+.bw-dev-ev:hover { border-color: #38bdf8; }
+.bw-dev-ev.selected { border-color: #fbbf24; background: #16223a; }
+.bw-dev-ev-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.bw-dev-pill {
+  font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; text-transform: uppercase;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.bw-dev-pill.pending { background: #1e293b; color: #94a3b8; border-color: #334155; }
+.bw-dev-pill.active { background: rgba(14, 165, 233, 0.22); color: #38bdf8; border-color: #38bdf8; }
+.bw-dev-pill.completed { background: rgba(34, 197, 94, 0.2); color: #4ade80; border-color: #22c55e; }
+.bw-dev-pill.skipped { background: rgba(148, 163, 184, 0.14); color: #94a3b8; border-color: #475569; }
+.bw-dev-pill.blocked { background: rgba(244, 63, 94, 0.2); color: #fb7185; border-color: #f43f5e; }
 `;
 
 export interface DevToolsDeps {
@@ -111,6 +139,7 @@ export interface DevToolsDeps {
   runner: DevScenarioRunner;
   combat: DevCombatControls;
   collisions: DevCollisionOverlay;
+  logger: DevEventLogger;
   perf: DevPerformanceMonitor;
   previewer: DevAnimationPreviewer;
 }
@@ -139,6 +168,15 @@ export class DevToolsPanel {
   private bossTelemetryEl?: HTMLPreElement;
   private bossVerifyEl?: HTMLPreElement;
   private eventDirectorEl?: HTMLPreElement;
+  private eventTimelineEl?: HTMLDivElement;
+  private eventInspectorEl?: HTMLPreElement;
+  private collisionLogEl?: HTMLPreElement;
+  private lastLogSeq = -1;
+  private selectedEventId?: string;
+  private timelineSearch = '';
+  private timelineCategory: StageEventCategory | 'all' = 'all';
+  private timelineStatus: StageEventStatus | 'all' = 'all';
+  private lastTimelineKey = '';
   private perfLiveEl?: HTMLPreElement;
   private perfReportEl?: HTMLPreElement;
   private lastPerfReport?: DevPerfReport;
@@ -397,6 +435,11 @@ export class DevToolsPanel {
     this.bossTelemetryEl = undefined;
     this.bossVerifyEl = undefined;
     this.eventDirectorEl = undefined;
+    this.eventTimelineEl = undefined;
+    this.eventInspectorEl = undefined;
+    this.collisionLogEl = undefined;
+    this.lastLogSeq = -1;
+    this.lastTimelineKey = '';
     this.perfLiveEl = undefined;
     this.animCanvas = undefined;
     this.animMetaEl = undefined;
@@ -511,6 +554,63 @@ export class DevToolsPanel {
       ),
     );
 
+    const timeJumpIn = document.createElement('input');
+    timeJumpIn.className = 'bw-dev-input';
+    timeJumpIn.placeholder = 'Ex: 148 ou 02:28';
+    timeJumpIn.value = '02:28';
+    const jumpIsoChk = document.createElement('input');
+    jumpIsoChk.type = 'checkbox';
+    jumpIsoChk.checked = false;
+    const jumpIsoLabel = document.createElement('label');
+    jumpIsoLabel.className = 'bw-dev-chk';
+    jumpIsoLabel.append(jumpIsoChk, document.createTextNode('Pausar diretor ao saltar'));
+
+    const parseJumpSeconds = (raw: string): number | null => {
+      const txt = raw.trim();
+      if (/^\d{1,2}:\d{2}$/.test(txt)) {
+        const [m, sec] = txt.split(':').map(Number);
+        return Math.max(0, Math.min(300, m * 60 + sec));
+      }
+      const n = Number(txt);
+      return Number.isFinite(n) ? Math.max(0, Math.min(300, n)) : null;
+    };
+
+    const sJump = this.section('Stage Jump — Acesso Direto por Instante (mm:ss ou seg)');
+    sJump.add(
+      this.row(this.field('Momento da Fase (0s–300s)', timeJumpIn), jumpIsoLabel),
+      this.row(
+        this.btn('Saltar para Instante', () => {
+          const sc = this.requireScene();
+          if (!sc) return;
+          const sec = parseJumpSeconds(timeJumpIn.value);
+          if (sec === null) {
+            this.setStatus('Formato inválido. Use segundos (ex: 148) ou mm:ss (ex: 02:28).');
+            return;
+          }
+          const seed = this.deps.state.getPrefs().seed;
+          this.deps.state.beginTestSession(sc);
+          const execute = () => sc.devJumpToCheckpoint(adapter.missionIndex, sec, {
+            pauseDirector: jumpIsoChk.checked,
+            isolated: jumpIsoChk.checked,
+            seed,
+          });
+          execute();
+          this.deps.state.recordReplayAction(`Stage Jump ${adapter.name} @ ${sec}s`, execute);
+          this.setStatus(`Saltou para ${adapter.name} @ ${sec}s (seed=${seed}).`);
+        }, 'primary'),
+        this.btn('Alternar Próxima Fase', () => {
+          const sc = this.requireScene();
+          if (!sc || adapters.length < 2) return;
+          this.selectedMissionIdx = (this.selectedMissionIdx + 1) % adapters.length;
+          const next = adapters[this.selectedMissionIdx];
+          this.deps.state.beginTestSession(sc);
+          sc.devJumpToCheckpoint(next.missionIndex, 0, { seed: this.deps.state.getPrefs().seed });
+          this.renderActiveTab();
+          this.setStatus(`Fase alternada para ${next.name} com limpeza de estado.`);
+        }),
+      ),
+    );
+
     const s2 = this.section('Atalhos Rápidos de Checkpoints');
     const cpGrid = document.createElement('div');
     cpGrid.className = 'bw-dev-grid';
@@ -547,9 +647,9 @@ export class DevToolsPanel {
         );
       }
       s3.add(archGrid);
-      this.bodyEl.append(s1.details, s2.details, s3.details);
+      this.bodyEl.append(s1.details, sJump.details, s2.details, s3.details);
     } else {
-      this.bodyEl.append(s1.details, s2.details);
+      this.bodyEl.append(s1.details, sJump.details, s2.details);
     }
   }
 
@@ -984,15 +1084,62 @@ export class DevToolsPanel {
       ),
     );
 
-    this.bodyEl.append(s1.details, s2.details);
+    const tuning = this.deps.combat.getLiveTuning(sc);
+    const numInput = (val: number, min: number, max: number, step = 0.05) => {
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.className = 'bw-dev-input';
+      inp.min = String(min);
+      inp.max = String(max);
+      inp.step = String(step);
+      inp.value = String(val);
+      return inp;
+    };
+    const pSpdIn = numInput(tuning.playerSpeedScale, 0.35, 2.5);
+    const eSpdIn = numInput(tuning.enemySpeedScale, 0.25, 3);
+    const eFireIn = numInput(tuning.enemyFireRateScale, 0.25, 4);
+    const eShotIn = numInput(tuning.enemyShotSpeedScale, 0.25, 3);
+    const spDurIn = numInput(tuning.specialDurationScale, 0.3, 2.5);
+
+    const s3 = this.section('Live Tuning Temporário (Runtime DEV)');
+    s3.add(
+      this.row(this.field('Vel. Nave (x)', pSpdIn), this.field('Vel. Inimigos (x)', eSpdIn), this.field('Cadência Inimiga (x)', eFireIn)),
+      this.row(this.field('Vel. Tiros (x)', eShotIn), this.field('Duração Especial (x)', spDurIn)),
+      this.row(
+        this.btn('Aplicar Live Tuning', () => {
+          const s = this.requireScene();
+          if (!s) return;
+          this.deps.state.beginTestSession(s);
+          this.deps.combat.applyLiveTuning(s, {
+            playerSpeedScale: Number(pSpdIn.value) || 1,
+            enemySpeedScale: Number(eSpdIn.value) || 1,
+            enemyFireRateScale: Number(eFireIn.value) || 1,
+            enemyShotSpeedScale: Number(eShotIn.value) || 1,
+            specialDurationScale: Number(spDurIn.value) || 1,
+          });
+          this.setStatus('Live Tuning temporário aplicado (não altera constantes oficiais).');
+        }, 'primary'),
+        this.btn('Restaurar Padrões (1.0x)', () => {
+          const s = this.requireScene();
+          if (!s) return;
+          this.deps.combat.resetLiveTuning(s);
+          this.renderActiveTab();
+          this.setStatus('Live Tuning restaurado para 1.0x oficial.');
+        }, 'warn'),
+      ),
+    );
+
+    this.bodyEl.append(s1.details, s2.details, s3.details);
   }
 
   private renderCollisionsTab(): void {
     const flags = this.deps.collisions.getFlags();
-    const s1 = this.section('Visualizador de Colisões & Hitboxes Reais');
+    const s1 = this.section('Visualizador de Colisões, Sensores & Hitboxes Reais');
 
     const toggles: Array<{ key: keyof typeof flags; label: string }> = [
       { key: 'enabled', label: 'ATIVAR OVERLAY DE COLISÕES' },
+      { key: 'sensorsAndTriggers', label: 'Sensores, Arco das Marés & Triggers' },
+      { key: 'spawnZones', label: 'Zonas de Spawn & Lanes Laterais' },
       { key: 'player', label: 'Hitbox da RIVET + raio de coleta' },
       { key: 'enemies', label: 'Hitboxes inimigas + bounds reais' },
       { key: 'bullets', label: 'Hitboxes dos projéteis + rastro sweep' },
@@ -1023,7 +1170,8 @@ export class DevToolsPanel {
         this.btn('Ligar Tudo', () => {
           this.deps.collisions.setFlags({
             enabled: true, player: true, enemies: true, bullets: true, bulletVectors: true,
-            bosses: true, mounts: true, armorAndHull: true, obstaclesAndCargo: true, specialRadius: true,
+            bosses: true, mounts: true, armorAndHull: true, obstaclesAndCargo: true,
+            specialRadius: true, sensorsAndTriggers: true, spawnZones: true,
           });
           this.renderActiveTab();
         }, 'primary'),
@@ -1033,66 +1181,174 @@ export class DevToolsPanel {
         }),
       ),
     );
-    this.bodyEl.append(s1.details);
+
+    this.collisionLogEl = document.createElement('pre');
+    this.collisionLogEl.className = 'bw-dev-pre';
+    this.collisionLogEl.textContent = 'Aguardando eventos de sensor/colisão...';
+    const s2 = this.section('Log Deduplicado de Sensores, Triggers & Colisões');
+    s2.add(
+      this.row(
+        this.btn('Limpar Log', () => {
+          this.deps.logger.clear();
+          this.lastLogSeq = -1;
+          if (this.collisionLogEl) this.collisionLogEl.textContent = 'Log limpo.';
+        }),
+      ),
+      this.collisionLogEl,
+    );
+    this.bodyEl.append(s1.details, s2.details);
   }
 
   private renderEventsTab(): void {
     const adapters = this.deps.registry.getAdapters();
     if (this.selectedMissionIdx >= adapters.length) this.selectedMissionIdx = 0;
     const adapter = adapters[this.selectedMissionIdx];
+    const mission = MISSIONS[adapter.missionIndex] ?? MISSIONS[0];
+    const scLive = this.deps.getScene();
+    const liveSnap = scLive?.world && scLive.world.mission.id === adapter.stageId
+      ? scLive.world.stageDirector.snapshot(scLive.world.route, scLive.world.region)
+      : undefined;
+
+    const defs: readonly StageEventDef[] = liveSnap
+      ? liveSnap.entries
+      : buildMissionStageEvents(mission, adapter.missionIndex);
+
+    if (!this.selectedEventId || !defs.some((d) => d.id === this.selectedEventId)) {
+      this.selectedEventId = defs[0]?.id;
+    }
+
+    const isolated = Boolean(this.deps.state.getPrefs().sandboxIsolated ?? true);
 
     const stageSel = this.select(
-      adapters.map((a) => ({ value: String(a.missionIndex), label: `${a.name} (${a.perspective})` })),
+      adapters.map((a) => ({ value: String(a.missionIndex), label: `${a.stageId}. ${a.name} (${a.perspective})` })),
       String(this.selectedMissionIdx),
       (v) => {
         this.selectedMissionIdx = Number(v) || 0;
+        this.selectedEventId = undefined;
         this.renderActiveTab();
       },
     );
-    const evtSel = this.select(
-      adapter.events.map((ev) => ({ value: ev.id, label: `[${ev.atSeconds}s] ${ev.name}` })),
-      adapter.events[0]?.id ?? '',
-      () => {},
+
+    const searchIn = document.createElement('input');
+    searchIn.className = 'bw-dev-input';
+    searchIn.placeholder = 'Buscar ID, nome, inimigo...';
+    searchIn.value = this.timelineSearch;
+    searchIn.addEventListener('input', () => {
+      this.timelineSearch = searchIn.value;
+      this.refreshEventTimelineList();
+    });
+
+    const catSel = this.select(
+      [
+        { value: 'all', label: 'Categoria: Todas' },
+        { value: 'region', label: 'Setores / Checkpoints rota' },
+        { value: 'checkpoint', label: 'Checkpoints oficiais' },
+        { value: 'special-event', label: 'Especiais & Arco das Marés' },
+        { value: 'encounter', label: 'Ondas de Inimigos' },
+        { value: 'supply', label: 'Suprimentos' },
+        { value: 'miniboss', label: 'Minibosses' },
+        { value: 'boss', label: 'Bosses Finais' },
+      ],
+      this.timelineCategory,
+      (v) => {
+        this.timelineCategory = v as StageEventCategory | 'all';
+        this.refreshEventTimelineList();
+      },
     );
 
-    const s1 = this.section('Eventos & Diretor da Fase');
+    const statusSel = this.select(
+      [
+        { value: 'all', label: 'Estado: Todos' },
+        { value: 'pending', label: 'pending' },
+        { value: 'active', label: 'active' },
+        { value: 'completed', label: 'completed' },
+        { value: 'skipped', label: 'skipped' },
+        { value: 'blocked', label: 'blocked' },
+      ],
+      this.timelineStatus,
+      (v) => {
+        this.timelineStatus = v as StageEventStatus | 'all';
+        this.refreshEventTimelineList();
+      },
+    );
+
+    const isoChk = document.createElement('input');
+    isoChk.type = 'checkbox';
+    isoChk.checked = isolated;
+    isoChk.addEventListener('change', () => {
+      this.deps.state.updatePrefs({ sandboxIsolated: isoChk.checked });
+      this.setStatus(
+        isoChk.checked
+          ? 'Modo Sandbox: TESTE ISOLADO (ondas paralelas desativadas).'
+          : 'Modo Sandbox: TESTE INTEGRADO (progressão contínua da fase).',
+      );
+    });
+    const isoLabel = document.createElement('label');
+    isoLabel.className = 'bw-dev-chk';
+    isoLabel.append(isoChk, document.createTextNode('TESTE ISOLADO (desmarca = INTEGRADO)'));
+
+    this.eventTimelineEl = document.createElement('div');
+    this.eventTimelineEl.className = 'bw-dev-timeline';
+
+    this.eventInspectorEl = document.createElement('pre');
+    this.eventInspectorEl.className = 'bw-dev-pre';
+
+    const runAction = (action: 'go-to' | 'before' | 'run') => {
+      const sc = this.requireScene();
+      if (!sc || !this.selectedEventId) return;
+      const msg = this.deps.runner.runTimelineEvent(sc, adapter.missionIndex, this.selectedEventId, {
+        action,
+        isolated: isoChk.checked,
+        leadSeconds: 4,
+      });
+      this.setStatus(msg);
+      this.refreshEventTimelineList(true);
+    };
+
+    const s1 = this.section('Event Timeline & Sandbox (Stage Director Real)');
     s1.add(
-      this.field('Fase', stageSel),
-      this.field('Eventos registrados automaticamente', evtSel),
+      this.row(this.field('Fase', stageSel), this.field('Filtro de Categoria', catSel)),
+      this.row(this.field('Busca na Timeline', searchIn), this.field('Filtro de Estado', statusSel)),
+      isoLabel,
+      this.eventTimelineEl,
       this.row(
-        this.btn('Acionar Evento', () => {
+        this.btn('GO TO EVENT', () => runAction('go-to')),
+        this.btn('START BEFORE EVENT (-4s)', () => runAction('before'), 'primary'),
+        this.btn('RUN EVENT', () => runAction('run'), 'warn'),
+        this.btn('RESTART EVENT', () => {
           const sc = this.requireScene();
           if (!sc) return;
-          this.deps.state.beginTestSession(sc);
-          const ev = adapter.events.find((e) => e.id === evtSel.value);
-          if (ev) {
-            const msg = ev.trigger(sc);
-            this.deps.state.recordReplayAction(ev.name, () => ev.trigger(sc));
-            this.setStatus(msg);
-          }
-        }, 'primary'),
-        this.btn('Reiniciar Evento', () => {
-          const sc = this.requireScene();
-          if (sc) this.deps.state.replayLast(sc);
+          if (!this.deps.state.replayLast(sc)) runAction('run');
+          else this.setStatus('Evento reiniciado com contexto inicial restaurado.');
+          this.refreshEventTimelineList(true);
         }),
-        this.btn('Próximo Encontro do Diretor', () => {
+        this.btn('INSPECT EVENT', () => this.updateSelectedEventInspector(true)),
+      ),
+      this.eventInspectorEl,
+    );
+
+    this.eventDirectorEl = document.createElement('pre');
+    this.eventDirectorEl.className = 'bw-dev-pre';
+    this.eventDirectorEl.textContent = 'Aguardando fase em andamento...';
+    const s2 = this.section('Diretor em Tempo Real & Ferramentas');
+    s2.add(
+      this.row(
+        this.btn('Próximo Encontro', () => {
           const sc = this.requireScene();
           if (!sc?.world) return;
           const next = sc.world.devJumpNextEncounter();
           this.setStatus(next ? `Encontro @ ${next.at}s: ${next.family}` : 'Fim da lista de encontros.');
         }),
-      ),
-      this.row(
         this.btn('Limpar Projéteis', () => this.requireScene()?.world?.clearBullets()),
         this.btn('Limpar Inimigos', () => this.requireScene()?.world?.clearArenaEntities()),
-        this.btn('Fala do Bayek (Teste)', () => {
+        this.btn('Fala do Bayek', () => {
           const sc = this.requireScene();
           if (sc) {
             sc.devTriggerPilotComms('threat', 'heli_warhawk');
             this.setStatus('Mensagem do Bayek disparada no HUD.');
           }
         }),
-        this.btn('Debug Origem & Mira Canhões', () => {
+        this.btn('Debug Mira Canhões', () => {
           const sc = this.requireScene();
           if (sc) {
             const on = sc.toggleDevWeaponDebug();
@@ -1100,33 +1356,105 @@ export class DevToolsPanel {
           }
         }),
       ),
+      this.eventDirectorEl,
     );
 
-    this.eventDirectorEl = document.createElement('pre');
-    this.eventDirectorEl.className = 'bw-dev-pre';
-    this.eventDirectorEl.textContent = 'Aguardando fase em andamento...';
-    const s2 = this.section('Análise do Ritmo & Diretor Dinâmico');
-    const jumpRow = this.row(
-      ...[
-        ['Início (0s)', 0],
-        ['Costa (46s)', 46],
-        ['Patrulhas (90s)', 90],
-        ['Arco das Marés (148s)', 148],
-        ['Retorno (180s)', 180],
-        ['Escalada (255s)', 255],
-        ['Boss (300s)', 300],
-      ].map(([label, sec]) =>
-        this.btn(String(label), () => {
-          const sc = this.requireScene();
-          if (!sc) return;
-          this.deps.state.beginTestSession(sc);
-          sc.devJumpToCheckpoint(0, Number(sec));
-          this.setStatus(`Ritmo: saltou para ${label}.`);
-        }),
-      ),
-    );
-    s2.add(jumpRow, this.eventDirectorEl);
+    this.refreshEventTimelineList(true);
+    this.updateSelectedEventInspector();
     this.bodyEl.append(s1.details, s2.details);
+  }
+
+  private getTimelineEntries(): Array<StageEventDef & { status: StageEventStatus; activations: number; triggeredAtRoute?: number; note?: string }> {
+    const adapters = this.deps.registry.getAdapters();
+    const adapter = adapters[this.selectedMissionIdx] ?? adapters[0];
+    const mission = MISSIONS[adapter.missionIndex] ?? MISSIONS[0];
+    const sc = this.deps.getScene();
+    if (sc?.world && sc.world.mission.id === adapter.stageId) {
+      return sc.world.stageDirector.snapshot(sc.world.route, sc.world.region).entries;
+    }
+    return buildMissionStageEvents(mission, adapter.missionIndex).map((d) => ({
+      ...d,
+      status: 'pending' as StageEventStatus,
+      activations: 0,
+    }));
+  }
+
+  private refreshEventTimelineList(force = false): void {
+    if (!this.eventTimelineEl) return;
+    const all = this.getTimelineEntries();
+    const q = this.timelineSearch.trim().toLowerCase();
+    const filtered = all.filter((e) => {
+      if (this.timelineCategory !== 'all' && e.category !== this.timelineCategory) return false;
+      if (this.timelineStatus !== 'all' && e.status !== this.timelineStatus) return false;
+      if (!q) return true;
+      return (
+        e.id.toLowerCase().includes(q) ||
+        e.name.toLowerCase().includes(q) ||
+        e.conditionLabel.toLowerCase().includes(q) ||
+        e.entities.some((ent) => ent.toLowerCase().includes(q))
+      );
+    });
+
+    const sig = `${this.selectedMissionIdx}|${this.timelineSearch}|${this.timelineCategory}|${this.timelineStatus}|${this.selectedEventId}|` +
+      filtered.map((e) => `${e.id}:${e.status}`).join(',');
+    if (!force && sig === this.lastTimelineKey) return;
+    this.lastTimelineKey = sig;
+
+    this.eventTimelineEl.innerHTML = '';
+    if (!filtered.length) {
+      const empty = document.createElement('div');
+      empty.style.padding = '6px';
+      empty.style.color = '#94a3b8';
+      empty.textContent = 'Nenhum evento corresponde ao filtro.';
+      this.eventTimelineEl.appendChild(empty);
+      return;
+    }
+
+    for (const ev of filtered) {
+      const row = document.createElement('div');
+      row.className = `bw-dev-ev${ev.id === this.selectedEventId ? ' selected' : ''}`;
+      row.addEventListener('click', () => {
+        this.selectedEventId = ev.id;
+        this.refreshEventTimelineList(true);
+        this.updateSelectedEventInspector();
+      });
+
+      const top = document.createElement('div');
+      top.className = 'bw-dev-ev-top';
+      const title = document.createElement('strong');
+      const when = ev.triggerKind === 'timed' && ev.atSeconds !== undefined ? `@ ${ev.atSeconds}s` : '[Condicional]';
+      title.textContent = `${when} ${ev.name}`;
+      const pill = document.createElement('span');
+      pill.className = `bw-dev-pill ${ev.status}`;
+      pill.textContent = ev.status;
+      top.append(title, pill);
+
+      const meta = document.createElement('div');
+      meta.style.color = '#94a3b8';
+      meta.style.fontSize = '9.5px';
+      meta.textContent = `${ev.id} • ${ev.category} • ${ev.triggerKind === 'timed' ? 'temporal' : ev.conditionLabel}`;
+      row.append(top, meta);
+      this.eventTimelineEl.appendChild(row);
+    }
+  }
+
+  private updateSelectedEventInspector(notify = false): void {
+    if (!this.eventInspectorEl) return;
+    const all = this.getTimelineEntries();
+    const ev = all.find((e) => e.id === this.selectedEventId) ?? all[0];
+    if (!ev) {
+      this.eventInspectorEl.textContent = 'Selecione um evento da timeline.';
+      return;
+    }
+    this.eventInspectorEl.textContent =
+      `[INSPECT EVENT] ${ev.id}\n` +
+      `Nome: ${ev.name} | Categoria: ${ev.category} | Estado: ${ev.status} (ativações: ${ev.activations})\n` +
+      `Gatilho: ${ev.triggerKind === 'timed' ? `Temporal @ ${ev.atSeconds}s` : 'Condicional (sem horário fixo)'} | Pré-salto seguro: ${ev.preJumpSeconds}s\n` +
+      `Condição: ${ev.conditionLabel}\n` +
+      `Dependências: ${ev.dependencies.length ? ev.dependencies.join(', ') : 'nenhuma'} | Repetição: ${ev.repeatPolicy}\n` +
+      `Entidades: ${ev.entities.join(', ')}\n` +
+      `Detalhe: ${ev.description}${ev.note ? `\nNota: ${ev.note}` : ''}`;
+    if (notify) this.setStatus(`Inspecionando evento '${ev.id}'.`);
   }
 
   private renderPerformanceTab(): void {
@@ -1148,15 +1476,25 @@ export class DevToolsPanel {
       this.row(
         this.btn('Pausar Simulação', () => { this.requireScene()?.setDevSimulationPaused(true); this.setStatus('Simulação pausada.'); }),
         this.btn('Retomar', () => { this.requireScene()?.setDevSimulationPaused(false); this.setStatus('Simulação retomada.'); }, 'primary'),
+        this.btn('Passo 1/60s', () => {
+          const s = this.requireScene();
+          if (s) { s.setDevSimulationPaused(true); s.stepDevSimulation(1 / 60); this.setStatus('Avançou 1 frame (1/60s).'); }
+        }),
         this.btn('Passo 1/120s', () => {
           const s = this.requireScene();
-          if (s) { s.setDevSimulationPaused(true); s.stepDevSimulation(1 / 120); this.setStatus('Avançou 1 tick (1/120s).'); }
+          if (s) { s.setDevSimulationPaused(true); s.stepDevSimulation(1 / 120); this.setStatus('Avançou 1 sub-step (1/120s).'); }
         }),
+        this.btn('Reiniciar Último Teste', () => {
+          const s = this.requireScene();
+          if (s && this.deps.state.replayLast(s)) this.setStatus('Teste reiniciado com parâmetros iniciais.');
+        }, 'warn'),
       ),
       this.row(
-        this.btn('Vel. 100%', () => { this.requireScene()?.setDevTimeScale(1); this.setStatus('Velocidade 1.0x'); }),
-        this.btn('Vel. 50%', () => { this.requireScene()?.setDevTimeScale(0.5); this.setStatus('Velocidade 0.5x'); }),
-        this.btn('Vel. 25%', () => { this.requireScene()?.setDevTimeScale(0.25); this.setStatus('Velocidade 0.25x'); }),
+        this.btn('0.25x', () => { this.requireScene()?.setDevTimeScale(0.25); this.setStatus('Câmera lenta 0.25x'); }),
+        this.btn('0.5x', () => { this.requireScene()?.setDevTimeScale(0.5); this.setStatus('Câmera lenta 0.5x'); }),
+        this.btn('1.0x', () => { this.requireScene()?.setDevTimeScale(1); this.setStatus('Velocidade normal 1.0x'); }),
+        this.btn('2.0x', () => { this.requireScene()?.setDevTimeScale(2); this.setStatus('Aceleração controlada 2.0x'); }),
+        this.btn('4.0x', () => { this.requireScene()?.setDevTimeScale(4); this.setStatus('Aceleração controlada 4.0x'); }),
       ),
     );
 
@@ -1323,19 +1661,37 @@ export class DevToolsPanel {
       }
     }
 
+    if (tab === 'collisions' && this.collisionLogEl) {
+      const entries = this.deps.logger.getEntries();
+      const latestSeq = entries[entries.length - 1]?.seq ?? -1;
+      if (latestSeq !== this.lastLogSeq) {
+        this.lastLogSeq = latestSeq;
+        this.collisionLogEl.textContent = entries.length
+          ? entries.slice(-24).reverse().map((e) => `#${e.seq} @${e.routeSeconds}s [${e.kind}] ${e.source}: ${e.detail}`).join('\n')
+          : 'Aguardando eventos de sensor/colisão...';
+      }
+    }
+
+    if (tab === 'events') {
+      this.refreshEventTimelineList();
+      this.updateSelectedEventInspector();
+    }
+
     if (tab === 'events' && this.eventDirectorEl) {
       if (!w) {
         this.eventDirectorEl.textContent = 'Nenhuma missão em execução.';
       } else {
         const snap = w.devDirectorSnapshot();
+        const sd = snap.stageDirector;
         const p = snap.pacing;
+        const sensor = w.devSensorSnapshot();
         const recent = p.timelineLog.slice(-4).map((e) => `@${e.at}s[${e.kind}:${e.detail}]`).join(' ');
         this.eventDirectorEl.textContent =
-          `Fase: ${w.mission.name} (${w.hard && !w.isAssisted ? 'DIFÍCIL' : w.isAssisted ? 'ASSISTIDO' : 'NORMAL'}) | Rota: ${snap.route}s / 300s | Região #${snap.region + 1}: ${w.mission.regions[snap.region] ?? '-'}\n` +
-          `Diretor: encontro ${snap.waveIndex}/${snap.totalEncounters} | Próximo @ ${snap.nextEncounterAt ?? 'fim'}s | Supressão: ${p.suppressedReason ?? 'livre'}\n` +
-          `Presença: inimigo=${p.pctWithVisibleEnemy}% | ameaça=${p.pctWithThreat}% | MaxGap=${p.maxEnemyGapSeconds}s/${p.maxThreatGapSeconds}s | Gaps>2s:${p.idleGapsOver2s} >3s:${p.idleGapsOver3s}\n` +
-          `Cadência: ${p.enemyShotsPerMinute} tiros/min | Pico=${p.peakSimultaneousEnemies} inimigos / ${p.peakSimultaneousBullets} tiros | Antecip:${p.wavesAnticipated} Reforç:${p.reinforcementsSpawned}\n` +
-          `Boss: ${p.bossDurationSeconds}s | ${p.bossShotsPerMinute} tiros/min | Especiais: ${snap.triggeredEvents.length ? snap.triggeredEvents.join(', ') : 'nenhum'}\n` +
+          `Fase: ${w.mission.name} (${w.hard && !w.isAssisted ? 'DIFÍCIL' : w.isAssisted ? 'ASSISTIDO' : 'NORMAL'}) | Modo: ${w.devSandboxIsolated ? 'ISOLADO' : 'INTEGRADO'} | Seed: ${w.seed}\n` +
+          `Rota: ${snap.route}s / 300s | Região #${snap.region + 1}: ${w.mission.regions[snap.region] ?? '-'} | Sensor Arco: ${sensor.tideArchPhase} (alt=${sensor.altitude})\n` +
+          `StageDirector: pending=${sd.counts.pending} active=${sd.counts.active} completed=${sd.counts.completed} skipped=${sd.counts.skipped}\n` +
+          `Presença: inimigo=${p.pctWithVisibleEnemy}% | ameaça=${p.pctWithThreat}% | MaxGap=${p.maxEnemyGapSeconds}s/${p.maxThreatGapSeconds}s\n` +
+          `Cadência: ${p.enemyShotsPerMinute} tiros/min | Pico=${p.peakSimultaneousEnemies} inimigos / ${p.peakSimultaneousBullets} tiros | Especiais: ${snap.triggeredEvents.join(', ') || 'nenhum'}\n` +
           `Log: ${recent || 'aguardando eventos'}`;
       }
     }

@@ -10,6 +10,11 @@ import {
   SUB_SECTION_HEIGHT,
   subSectionCenterY,
 } from '../game/arcade/PelagicSubmarineBoss';
+import {
+  TIDE_ARCH_BRIDGE_ENTRY_HALF_H,
+  TIDE_ARCH_BRIDGE_EXIT_HALF_H,
+  computeArchOpening,
+} from '../game/arcade/PelagicTideArch';
 import type { DevCollisionFlags } from './types';
 
 export function defaultCollisionFlags(): DevCollisionFlags {
@@ -24,6 +29,8 @@ export function defaultCollisionFlags(): DevCollisionFlags {
     armorAndHull: true,
     obstaclesAndCargo: true,
     specialRadius: true,
+    sensorsAndTriggers: true,
+    spawnZones: false,
   };
 }
 
@@ -222,6 +229,47 @@ export class DevCollisionOverlay {
         w.bomb.y,
         w.bomb.phase === 'blast' ? Math.max(8, w.bomb.radius) : 14,
       );
+    }
+
+    // 7. Real Sensors, Tide Arch Passage Trigger & Checkpoint Zone (read-only over live sim bounds)
+    if (this.flags.sensorsAndTriggers && w.up && w.tideArch.isActive) {
+      const archY = w.tideArch.archScreenY(w.scroll);
+      const bandTop = Math.max(w.arena.top, archY - TIDE_ARCH_BRIDGE_ENTRY_HALF_H);
+      const bandBot = Math.min(w.arena.bottom, archY + TIDE_ARCH_BRIDGE_EXIT_HALF_H);
+      const opening = computeArchOpening(w.arena.left, w.arena.right);
+      if (bandBot > bandTop) {
+        const bandH = bandBot - bandTop;
+        const hazardActive = w.tideArch.isPillarCollisionActive(w.scroll, w.player.y);
+        // Safe center opening corridor
+        g.fillStyle(hazardActive ? 0x22d3ee : 0x38bdf8, 0.14).fillRect(opening.left, bandTop, opening.width, bandH);
+        g.lineStyle(1.6, 0x22d3ee, 0.92).strokeRect(opening.left, bandTop, opening.width, bandH);
+        // Flanking pier collision hazard walls
+        g.fillStyle(hazardActive ? 0xef4444 : 0xf97316, hazardActive ? 0.24 : 0.1).fillRect(
+          w.arena.left,
+          bandTop,
+          Math.max(0, opening.left - w.arena.left),
+          bandH,
+        );
+        g.fillRect(opening.right, bandTop, Math.max(0, w.arena.right - opening.right), bandH);
+        g.lineStyle(1.4, hazardActive ? 0xf87171 : 0xfb923c, 0.9).strokeRect(
+          w.arena.left,
+          bandTop,
+          Math.max(0, opening.left - w.arena.left),
+          bandH,
+        );
+        g.strokeRect(opening.right, bandTop, Math.max(0, w.arena.right - opening.right), bandH);
+      }
+    }
+
+    // 8. Spawn Zones / Entry Lanes
+    if (this.flags.spawnZones) {
+      const wSpan = w.arena.right - w.arena.left;
+      g.lineStyle(1, 0xa78bfa, 0.7).strokeRect(w.arena.left + 8, w.arena.top - 6, wSpan - 16, 22);
+      if (w.up) {
+        g.lineStyle(1, 0xc084fc, 0.55)
+          .strokeRect(w.arena.left - 14, w.arena.top + 38, 16, 130)
+          .strokeRect(w.arena.right - 2, w.arena.top + 38, 16, 130);
+      }
     }
   }
 }

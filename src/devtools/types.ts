@@ -1,4 +1,5 @@
 import type { ArcadeScene } from '../game/arcade/ArcadeScene';
+import type { StageEventCategory, StageEventRepeatPolicy, StageEventTriggerKind } from '../game/arcade/ArcadeStageDirector';
 import type { Encounter, EntrySide, Family, Formation, Motion, Perspective } from '../game/arcade/content';
 
 export type DevPanelTab =
@@ -77,10 +78,16 @@ export interface DevEventSpec {
   stageId: number;
   missionIndex: number;
   name: string;
-  atSeconds: number;
-  kind: 'special-event' | 'encounter' | 'supply' | 'region' | 'comms';
+  triggerKind: StageEventTriggerKind;
+  atSeconds?: number;
+  preJumpSeconds: number;
+  conditionLabel: string;
+  dependencies: readonly string[];
+  entities: readonly string[];
+  repeatPolicy: StageEventRepeatPolicy;
+  kind: StageEventCategory | 'special-event' | 'encounter' | 'supply' | 'region' | 'comms';
   description: string;
-  trigger(scene: ArcadeScene): string;
+  trigger(scene: ArcadeScene, opts?: { action?: 'go-to' | 'before' | 'run'; isolated?: boolean; leadSeconds?: number; seed?: number }): string;
 }
 
 export interface DevEnemySpawnConfig {
@@ -125,6 +132,8 @@ export interface DevCollisionFlags {
   armorAndHull: boolean;
   obstaclesAndCargo: boolean;
   specialRadius: boolean;
+  sensorsAndTriggers: boolean;
+  spawnZones: boolean;
 }
 
 export interface DevPerfReport {
@@ -157,6 +166,7 @@ export interface DevToolsPrefs {
   x: number;
   y: number;
   seed: number;
+  sandboxIsolated?: boolean;
 }
 
 export interface DevEnemyPreset {
