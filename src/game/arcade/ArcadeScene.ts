@@ -330,7 +330,7 @@ export class ArcadeScene extends Phaser.Scene {
       this.world.setArenaBounds(
         usePortraitPlay
           ? { left: 0, right: 384, top: 34, bottom: targetH - 14 }
-          : { left: 160, right: 608, top: 28, bottom: 420 },
+          : { left: 192, right: 576, top: 28, bottom: 420 },
       );
       this.lastHud = '';
     }
@@ -368,7 +368,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.pelagicDesktopHud.setVisible(showPcPanel); this.pelagicLevel.setVisible(stage1Hud);
     this.pelagicSpecialText?.setVisible(stage1Hud && this.portraitUpActive);
     this.pelagicAssistBadge.setVisible(stage1Hud && !!this.world?.isAssisted && !this.portraitUpActive);
-    if (this.world?.up && (showPcPanel || !['result', 'defeat'].includes(screen))) this.radio.setVisible(false);
+    if (!showPcPanel && !['result', 'defeat'].includes(screen) && this.world?.up) this.radio.setVisible(false);
     const showTitleScene = !game && screen === 'title';
     this.hero.setVisible(false);
     this.logo.setVisible(showTitleScene);
@@ -843,7 +843,7 @@ export class ArcadeScene extends Phaser.Scene {
     const portH = usePortrait ? this.portraitCanvasHeight() : 432;
     this.world = new ArcadeWorld(MISSIONS[index], carry, index === 0 ? {
       upLayout: usePortrait ? 'portrait' : 'pc',
-      arena: usePortrait ? { left: 0, right: 384, top: 34, bottom: portH - 14 } : { left: 160, right: 608, top: 28, bottom: 420 },
+      arena: usePortrait ? { left: 0, right: 384, top: 34, bottom: portH - 14 } : { left: 192, right: 576, top: 28, bottom: 420 },
     } : undefined);
     this.world.accessibility = settings.rapidFire;
     this.world.assisted = index === 0 && settings.assisted;
@@ -1118,7 +1118,7 @@ export class ArcadeScene extends Phaser.Scene {
     if (w.up) {
       if (w.state !== 'intro') {
         const comms = this.pelagicComms.current();
-        if (comms && !this.portraitUpActive && !this.pelagicDesktopHud.isVisible() && !['result', 'defeat'].includes(this.screen)) {
+        if (comms && !this.portraitUpActive && !['result', 'defeat'].includes(this.screen)) {
           this.radio.setOrigin(0, 0).setPosition(602, 281)
             .setStyle({
               fontFamily: FONT,
@@ -1234,9 +1234,8 @@ export class ArcadeScene extends Phaser.Scene {
         return;
       }
 
-      // HUD PC aprovada: missão/Bayek/rádio à esquerda; gameplay 160..608; RIVET/status à direita.
+      // PC Horizontal Layout: unified 3-region arcade HUD (Left 192u | Center 384u + Top Bar | Right 192u)
       this.hud.setVisible(false);
-      this.radio.setVisible(false); // O rádio desktop é desenhado no cartão à esquerda.
       this.pelagicSpecialText.setVisible(false);
       this.pelagicCheckpointBadge.setPosition(384, 44).setVisible(cpVisible);
       this.pelagicDesktopHud.draw(
@@ -1273,9 +1272,22 @@ export class ArcadeScene extends Phaser.Scene {
       }
     }
     if (w.state === 'intro' && w.up && !this.portraitUpActive) {
-      // A mensagem é persistente e paginada no cartão da esquerda.
-      this.pelagicDesktopHud.setRadioMessage('Entrando na Fenda Pelágica. Radar limpo por enquanto... Mas fiquem atentos, é uma rota instável!');
-      this.radio.setVisible(false);
+      this.radio
+        .setOrigin(0, 0)
+        .setStyle({
+          fontFamily: FONT,
+          fontSize: '9.5px',
+          fontStyle: 'bold italic',
+          color: '#eef8ff',
+          stroke: '#031029',
+          strokeThickness: 2,
+          lineSpacing: 2.5,
+          wordWrap: { width: 132 },
+          align: 'left',
+        })
+        .setText('Entrando na Fenda Pelágica. Radar limpo por enquanto... Mas fiquem atentos, é uma rota instável!')
+        .setPosition(606, 267)
+        .setVisible(true);
       this.messageUntil = this.clock + .5;
     } else if (w.state === 'intro' && !w.up) {
       g.fillStyle(0xffe77d, .95).fillRoundedRect(220, 170, 328, 75, 12);
@@ -1388,12 +1400,6 @@ export class ArcadeScene extends Phaser.Scene {
   private layeredExplosion(e: WorldEvent): void { const size = e.size ?? 1; this.explosion(e.x, e.y, 36 * size, .46); if (size > 1) for (let i = 0; i < 3 + this.quality; i++)this.explosion(e.x + Math.cos(i * 2.4) * size * 13, e.y + Math.sin(i * 2.4) * size * 13, 22 * size, .3 + i * .055, Math.cos(i) * 16, Math.sin(i) * 16); }
   private message(text: string): void {
     const up = !!this.world?.up;
-    if (up && !this.portraitUpActive && this.pelagicDesktopHud.isVisible()) {
-      this.pelagicDesktopHud.setRadioMessage(text);
-      this.radio.setVisible(false);
-      this.messageUntil = this.clock + 6;
-      return;
-    }
     this.radio.setOrigin(up ? 0 : .5, up ? 0 : .5).setText(text)
       .setPosition(up ? 602 : 384, up ? 281 : 65).setVisible(true);
     this.messageUntil = this.clock + (up ? 6 : 3.3);
@@ -1438,20 +1444,18 @@ export class ArcadeScene extends Phaser.Scene {
     const isDesktopPelagic = !!this.world.up && !this.touchShown && !this.portraitUpActive;
     const container = this.add.container(0, 0).setDepth(68);
     if (isDesktopPelagic) {
-      // Pausa discreta no topo direito, integrada às bordas da HUD.
-      container.setPosition(739, 14).setSize(40, 26);
+      // Top-right Pause arcade badge inside right panel header (`y = 0..32`, above ROTA 01)
+      container.setPosition(739, 16).setSize(40, 26);
       const bg = this.add.graphics();
       const drawCompactPc = (focused: boolean) => {
-        bg.clear();
-        bg.fillStyle(focused ? 0x0e4277 : 0x061c40, 0.98)
-          .fillRoundedRect(-17, -10, 34, 20, 5)
-          .lineStyle(1.1, focused ? 0xffdf49 : 0x41e4ff, 0.95)
-          .strokeRoundedRect(-17, -10, 34, 20, 5)
-          .lineStyle(0.5, 0xbdfaff, 0.4)
-          .strokeRoundedRect(-14.5, -7.5, 29, 15, 3.8)
-          .fillStyle(focused ? 0xfff5bd : 0xffd933, 1)
-          .fillRoundedRect(-5, -5, 3.2, 10, 0.7)
-          .fillRoundedRect(1.8, -5, 3.2, 10, 0.7);
+        bg.clear()
+          .fillStyle(focused ? 0x10407c : 0x061e4a, .96)
+          .fillRoundedRect(-15, -10.5, 30, 21, 10)
+          .lineStyle(1.6, focused ? 0xffe46b : 0x3ce5ff, .98)
+          .strokeRoundedRect(-15, -10.5, 30, 21, 10)
+          .fillStyle(focused ? 0xffffff : 0xffe033, 1)
+          .fillRoundedRect(-5, -5, 3.2, 10, 1)
+          .fillRoundedRect(1.8, -5, 3.2, 10, 1);
       };
       drawCompactPc(false);
       container.add(bg);
@@ -1709,10 +1713,7 @@ export class ArcadeScene extends Phaser.Scene {
     if (!this.world?.up) return;
     this.pelagicComms.trigger({ category, detail, text });
     const cur = this.pelagicComms.current();
-    if (cur && !this.portraitUpActive && this.pelagicDesktopHud.isVisible()) {
-      this.pelagicDesktopHud.setRadioMessage(cur.text);
-      this.radio.setVisible(false);
-    } else if (cur && !this.portraitUpActive) {
+    if (cur && !this.portraitUpActive) {
       this.radio
         .setOrigin(0, 0)
         .setStyle({
