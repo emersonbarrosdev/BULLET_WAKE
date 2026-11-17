@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import bayekHudHdUrl from '../../../scripts/assets/hud-v27/bayek-portrait-hd.jpg?url';
 
 export const UI_FONT = 'Oxanium, Arial, sans-serif';
 
@@ -25,7 +24,6 @@ export const UI_TEX = {
     routePelagic: 'ui-route-pelagic',
     hudRoutePelagic: 'ui-hud-route-pelagic',
     hudPelagicSky: 'ui-hud-pelagic-sky',
-    hudBayekHd: 'ui-hud-bayek-hd',
     hudPelagicChassis: 'ui-hud-pelagic-chassis',
     rivetProfile: 'ui-rivet-profile',
     rivetCruise: 'ui-rivet-cruise',
@@ -79,8 +77,6 @@ export function preloadMenuAssets(scene: Phaser.Scene, base: string): void {
     scene.load.image(UI_TEX.routePelagic, `${p}route-pelagic.webp`);
     scene.load.image(UI_TEX.hudRoutePelagic, `${p}hud-route-pelagic.webp`);
     scene.load.image(UI_TEX.hudPelagicSky, `${p}hud-pelagic-sky.webp`);
-    // Asset original HD do repositório: o Vite incorpora a imagem na build.
-    scene.load.image(UI_TEX.hudBayekHd, bayekHudHdUrl);
     scene.load.image(UI_TEX.hudPelagicChassis, `${p}hud-pelagic-chassis.webp`);
     scene.load.image(UI_TEX.rivetProfile, `${p}rivet-profile.webp`);
     scene.load.spritesheet(UI_TEX.rivetCruise, `${p}rivet-cruise.webp`, { frameWidth: 256, frameHeight: 256 });
