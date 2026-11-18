@@ -6,7 +6,6 @@ import {
     LEGACY_SOLAR_FIRE,
     LEGACY_SOLAR_SHOTS,
     MISSIONS,
-    SUPPLIES,
     formationOffsets,
     regionAt,
     type Encounter,
@@ -17,11 +16,24 @@ import {
 } from './content.ts';
 import {
     DIFFICULTY_PROFILES,
+    NORMAL_ATTACK_WINDOW_SECONDS,
+    NORMAL_FAN_REGION_GAP_SECONDS,
+    NORMAL_FAN_REGION_RADIUS_PX,
+    NORMAL_RESPAWN_BULLET_CLEAR_RADIUS,
+    NORMAL_RESPAWN_INVULNERABLE,
+    NORMAL_RESPAWN_LOWER_LANE_COOLDOWN,
+    NORMAL_SQUAD_STAGGER_SECONDS,
     buildMissionEncounters,
+    buildMissionSupplies,
+    computeNormalDeathRecovery,
+    normalOffensiveWindowCap,
+    normalPatternStage,
+    normalSoftBulletCap,
     normalizeGameDifficulty,
     resolveEnemyMaxHp,
     type DifficultyProfile,
     type GameDifficulty,
+    type SupplyEntry,
 } from './PelagicDifficulty.ts';
 import {
     computeHelicopterSlotLayout,
@@ -156,6 +168,7 @@ export class ArcadeWorld {
     checkpoint?: PelagicCheckpointSnapshot;
     private rngState = 1337;
     private burst = new BurstController(); private sequence = 0; private waveIndex = 0; private supplyIndex = 0; private miniStarted = false; private bossStarted = false; private nextObstacle = 98;
+    private normalRecentAttacks: Array<{ at: number; enemyId: number; squadId?: number; targetX: number; isFan: boolean }> = [];
     private rareSpawnCount = 0; private rareRewardClaimed = false; private convoyBonusClaimed = false; private assistedDeathHinted = false;
     private stepEnemyShots = 0; private directorPaused = false;
     readonly mission: Mission;
@@ -207,6 +220,7 @@ export class ArcadeWorld {
     private get effectiveHard(): boolean { return this.effectiveDifficulty !== 'easy'; }
     private get effectiveExtreme(): boolean { return this.effectiveDifficulty === 'hard'; }
     private get activeEncounters(): readonly Encounter[] { return buildMissionEncounters(this.mission, this.effectiveDifficulty); }
+    private get activeSupplies(): readonly SupplyEntry[] { return buildMissionSupplies(this.mission, this.effectiveDifficulty, this.isAssisted); }
     setDifficulty(mode: GameDifficulty | 'arcade'): void {
         const next = normalizeGameDifficulty(mode);
         if (this._difficulty === next) return;
@@ -218,6 +232,9 @@ export class ArcadeWorld {
         const list = this.activeEncounters;
         const idx = list.findIndex(e => e.at >= this.route);
         this.waveIndex = idx < 0 ? list.length : idx;
+        const supplies = this.activeSupplies;
+        const sIdx = supplies.findIndex(s => s.at >= this.route);
+        this.supplyIndex = sIdx < 0 ? supplies.length : sIdx;
     }
     setArenaBounds(bounds: Box): void {
         const oldCenter = this.arenaCenterX;
@@ -343,9 +360,10 @@ export class ArcadeWorld {
                     this.triggerSpecialEvent('rare-visitor');
                 }
             }
-            while (this.supplyIndex < SUPPLIES.length && this.route >= SUPPLIES[this.supplyIndex].at) {
+            const supplies = this.activeSupplies;
+            while (this.supplyIndex < supplies.length && this.route >= supplies[this.supplyIndex].at) {
                 const idx = this.supplyIndex++;
-                const c = SUPPLIES[idx];
+                const c = supplies[idx];
                 const supId = `stage-${this.mission.id}-supply-${idx}-${c.kind}`;
                 if (iso && iso !== supId) continue;
                 const lane = .25 + (this.supplyIndex % 3) * .24;
@@ -548,6 +566,11 @@ export class ArcadeWorld {
         if (snapshot.difficulty) this.setDifficulty(snapshot.difficulty);
         else this.hard = snapshot.hard;
         this.assisted = snapshot.assisted;
+        this.waveIndex = snapshot.waveIndex;
+        const cpSupplies = this.activeSupplies;
+        let cpSupIdx = Math.min(snapshot.supplyIndex, cpSupplies.length);
+        while (cpSupIdx < cpSupplies.length && cpSupplies[cpSupIdx].at <= snapshot.route) cpSupIdx++;
+        this.supplyIndex = cpSupIdx;
         this.score = snapshot.score;
         this.lives = 3;
         this.weapons = createPlayerWeapons('nolan');
@@ -771,12 +794,54 @@ export class ArcadeWorld {
         const spdMul = this.enemySpeedScale !== 1 ? clamp(this.enemySpeedScale, 0.25, 3) : 1;
         const mDt = dt * spdMul;
         const profile = this.difficultyProfile;
-        const softBulletCap = (this.upLayout === 'portrait' || this.arenaWidth <= 420)
+        const narrowArena = this.upLayout === 'portrait' || this.arenaWidth <= 420;
+        const softBulletCap = narrowArena
             ? profile.director.softMaxBulletsPortrait
             : profile.director.softMaxBulletsPc;
+        const isNormalMode = this.up && this.effectiveDifficulty === 'normal';
+        const nStage = isNormalMode ? normalPatternStage(this.route) : -1;
+        const normalCap = isNormalMode ? normalSoftBulletCap(this.route, narrowArena) : softBulletCap;
+        const normalWinCap = isNormalMode ? normalOffensiveWindowCap(this.route, this.tideArch.isActive) : 99;
         let activeHostileBullets = 0;
-        if (this.effectiveExtreme) {
-            for (const b of this.bullets) if (b.active && b.enemy) activeHostileBullets++;
+        let nearPlayerBullets = 0;
+        let escapeFreeDirs = 9;
+        if (this.effectiveExtreme || isNormalMode) {
+            const nearList: Bullet[] = [];
+            for (const b of this.bullets) {
+                if (!b.active || !b.enemy) continue;
+                activeHostileBullets++;
+                if (isNormalMode) {
+                    const dx = this.player.x - b.x;
+                    const dy = this.player.y - b.y;
+                    const dist = Math.hypot(dx, dy);
+                    const approaching = dx * b.vx + dy * b.vy > 0;
+                    if (dist < 118 || (approaching && dist < 160)) {
+                        nearPlayerBullets++;
+                        nearList.push(b);
+                    }
+                }
+            }
+            if (isNormalMode && nearList.length >= 3) {
+                const dirs: ReadonlyArray<[number, number]> = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [.707, .707], [.707, -.707], [-.707, .707], [-.707, -.707]];
+                let free = 0;
+                for (const [dx, dy] of dirs) {
+                    const px = clamp(this.player.x + dx * 174 * 0.14, this.arena.left + 14, this.arena.right - 14);
+                    const py = clamp(this.player.y + dy * 174 * 0.14, this.arena.top + 16, this.arena.bottom - 15);
+                    let blocked = false;
+                    for (const b of nearList) {
+                        if (Math.hypot(b.x + b.vx * 0.14 - px, b.y + b.vy * 0.14 - py) < b.radius + 11) {
+                            blocked = true;
+                            break;
+                        }
+                    }
+                    if (!blocked) free++;
+                }
+                escapeFreeDirs = free;
+            }
+        }
+        if (isNormalMode && this.normalRecentAttacks.length) {
+            const cutoff = this.elapsed - NORMAL_ATTACK_WINDOW_SECONDS;
+            this.normalRecentAttacks = this.normalRecentAttacks.filter(a => a.at >= cutoff);
         }
         let frameVolleyUnits = 0;
         for (const e of this.enemies) {
@@ -865,8 +930,42 @@ export class ArcadeWorld {
             const inSafeArena = e.x > this.arena.left + horizMargin && e.x < this.arena.right - horizMargin && e.y > this.arena.top + topMargin && e.y < this.arena.bottom - (this.up ? 18 : 0);
             if (e.cooldown <= 0 && subReady && inSafeArena && !e.archRetiring) {
                 const bulletSaturated = this.effectiveExtreme && activeHostileBullets >= softBulletCap && !e.archPattern && !e.archBoat && !e.specialEvent;
-                if (waitCoordBeat || bulletSaturated || frameVolleyUnits >= profile.maxNewFiringUnitsPerFrame) {
-                    e.cooldown = waitCoordBeat ? .04 : bulletSaturated ? .14 : .06;
+                let normalDeferredDelay = 0;
+                const isFanCandidate = e.family === 'bomber'
+                    || e.family === 'heli_phantom'
+                    || (e.family === 'heli_warhawk' && (e.attackStep ?? 0) % 3 < 2)
+                    || (e.family === 'ship' && nStage >= 1)
+                    || (Boolean(e.submarine) && nStage >= 2)
+                    || e.archPattern === 'fan3'
+                    || e.eventRole === 'coord-sub'
+                    || e.eventRole === 'rare-probe';
+                if (isNormalMode) {
+                    const postRespawnGuard = this.player.invulnerable > 0 && this.player.invulnerable < 0.75 && !e.ground && e.y > this.player.y - 135;
+                    let distinctRecentOthers = 0;
+                    const seenRecent = new Set<number>();
+                    for (const a of this.normalRecentAttacks) {
+                        if (a.enemyId !== e.id && !seenRecent.has(a.enemyId)) {
+                            seenRecent.add(a.enemyId);
+                            distinctRecentOthers++;
+                        }
+                    }
+                    const squadBusy = e.squadId !== undefined && this.normalRecentAttacks.some(a => a.squadId === e.squadId && a.enemyId !== e.id && this.elapsed - a.at < NORMAL_SQUAD_STAGGER_SECONDS);
+                    const overlappingFan = isFanCandidate && this.normalRecentAttacks.some(a => a.isFan && a.enemyId !== e.id && this.elapsed - a.at < NORMAL_FAN_REGION_GAP_SECONDS && Math.abs(a.targetX - this.player.x) < NORMAL_FAN_REGION_RADIUS_PX);
+                    const pressureHigh = activeHostileBullets >= normalCap || nearPlayerBullets >= 5 || (nearPlayerBullets >= 3 && escapeFreeDirs <= 2);
+                    if (postRespawnGuard) {
+                        normalDeferredDelay = 0.35;
+                    } else if (distinctRecentOthers >= normalWinCap) {
+                        normalDeferredDelay = 0.18 + (e.id % 4) * 0.04;
+                    } else if (squadBusy) {
+                        normalDeferredDelay = 0.18 + (e.id % 3) * 0.05;
+                    } else if (overlappingFan) {
+                        normalDeferredDelay = 0.26 + (e.id % 3) * 0.05;
+                    } else if (pressureHigh) {
+                        normalDeferredDelay = (isFanCandidate ? 0.30 : 0.20) + (e.id % 4) * 0.04;
+                    }
+                }
+                if (waitCoordBeat || bulletSaturated || frameVolleyUnits >= profile.maxNewFiringUnitsPerFrame || normalDeferredDelay > 0) {
+                    e.cooldown = waitCoordBeat ? .04 : normalDeferredDelay > 0 ? normalDeferredDelay : bulletSaturated ? .14 : .06;
                     e.warning = .92;
                 } else {
                     const behindCutoff = e.archPattern
@@ -877,6 +976,7 @@ export class ArcadeWorld {
                     const behind = this.up ? e.y > behindCutoff : e.x < this.player.x + 28;
                     if (!behind) {
                         frameVolleyUnits++;
+                        let emittedInVolley = 0;
                         const shot = (!this.up ? LEGACY_SOLAR_SHOTS[e.family] : undefined) ?? ENEMY_SHOTS[e.family];
                         const spdScale = this.enemyShotSpeedScale !== 1 ? clamp(this.enemyShotSpeedScale, .25, 3) : 1;
                         let shotSpd = this.resolveEnemyProjectileSpeed(shot.speed);
@@ -887,8 +987,9 @@ export class ArcadeWorld {
                                 if (phase < 2) {
                                     // Chin gatling burst directly from chin turret muzzle
                                     const m0 = mounts[0];
-                                    const spread = profile.useExtremePatterns ? [-.20, -.07, .07, .20] : profile.useHardPatterns ? [-.14, 0, .14] : [0];
+                                    const spread = profile.useExtremePatterns ? [-.20, -.07, .07, .20] : profile.useHardPatterns ? [-.14, 0, .14] : [-.09, .09];
                                     for (const a of spread) this.hostile(m0.muzzleX, m0.muzzleY, m0.aimAngle + a, shotSpd, shot.radius, shot.color);
+                                    emittedInVolley += spread.length;
                                     if (e.mountRecoil) e.mountRecoil[0] = 1;
                                     this.stepEnemyShots++;
                                     this.emit('enemy-shot', m0.muzzleX, m0.muzzleY, 1.0);
@@ -897,6 +998,7 @@ export class ArcadeWorld {
                                     const m1 = mounts[1];
                                     const mSpd = profile.warhawkMissileSpeed * spdScale;
                                     this.hostile(m1.muzzleX, m1.muzzleY, m1.aimAngle, mSpd, 4.6, 1, true);
+                                    emittedInVolley += 1;
                                     if (e.mountRecoil) e.mountRecoil[1] = 1;
                                     this.stepEnemyShots++;
                                     this.emit('enemy-shot', m1.muzzleX, m1.muzzleY, 1.55);
@@ -908,42 +1010,65 @@ export class ArcadeWorld {
                                 const firingMounts = (e.family === 'ship' || e.family === 'submarine') && e.eventRole !== 'coord-sub'
                                     ? [mounts[step % mounts.length]]
                                     : mounts;
-                                if (e.family === 'ship' || e.family === 'submarine' || e.family === 'boat' || e.family === 'tank' || e.archPattern || e.archBoat) e.attackStep = step + 1;
+                                if (e.family === 'ship' || e.family === 'submarine' || e.family === 'boat' || e.family === 'tank' || e.family === 'tower' || e.archPattern || e.archBoat) e.attackStep = step + 1;
                                 for (const m of firingMounts) {
                                     let angles: number[] = e.family === 'ship'
-                                        ? (profile.useExtremePatterns ? [-.28, -.14, 0, .14, .28] : profile.useHardPatterns ? [-.22, -.07, .07, .22] : [-.14, .14])
+                                        ? (profile.useExtremePatterns
+                                            ? [-.28, -.14, 0, .14, .28]
+                                            : isNormalMode
+                                                ? (nStage === 0 ? [-.14, .14] : nStage === 1 ? [-.18, 0, .18] : nStage === 2 ? [-.20, 0, .20] : [-.22, -.07, .07, .22])
+                                                : profile.useHardPatterns ? [-.22, -.07, .07, .22] : [-.14, .14])
                                         : e.submarine
-                                            ? (profile.useExtremePatterns ? [-.22, -.07, .07, .22] : profile.useHardPatterns ? [-.16, 0, .16] : [-.10, .10])
+                                            ? (profile.useExtremePatterns
+                                                ? [-.22, -.07, .07, .22]
+                                                : isNormalMode
+                                                    ? (nStage === 0 ? [-.10, .10] : nStage === 1 ? (step % 2 === 0 ? [-.10, .10] : [-.15, 0, .15]) : [-.16, 0, .16])
+                                                    : profile.useHardPatterns ? [-.16, 0, .16] : [-.10, .10])
                                             : e.family === 'boat'
-                                                ? (profile.useExtremePatterns ? [-.14, 0, .14] : profile.useHardPatterns ? [-.09, .09] : [0])
+                                                ? (profile.useExtremePatterns
+                                                    ? [-.14, 0, .14]
+                                                    : isNormalMode
+                                                        ? (nStage === 0 ? [0] : nStage < 3 ? (step % 2 === 1 ? [-.09, .09] : [0]) : [-.09, .09])
+                                                        : profile.useHardPatterns ? [-.09, .09] : [0])
                                                 : e.family === 'tank'
-                                                    ? (profile.useExtremePatterns ? [-.13, 0, .13] : profile.useHardPatterns ? [-.08, .08] : [0])
+                                                    ? (profile.useExtremePatterns
+                                                        ? [-.13, 0, .13]
+                                                        : isNormalMode
+                                                            ? (nStage === 0 ? [0] : nStage < 3 ? (step % 2 === 1 ? [-.08, .08] : [0]) : [-.08, .08])
+                                                            : profile.useHardPatterns ? [-.08, .08] : [0])
                                                     : e.family === 'tower' && !e.archPattern
-                                                        ? (profile.useExtremePatterns ? [-.18, 0, .18] : profile.useHardPatterns ? [-.11, .11] : [0])
+                                                        ? (profile.useExtremePatterns
+                                                            ? [-.18, 0, .18]
+                                                            : isNormalMode
+                                                                ? (nStage === 0 ? [0] : nStage < 3 ? (step % 2 === 1 ? [-.11, .11] : [0]) : [-.11, .11])
+                                                                : profile.useHardPatterns ? [-.11, .11] : [0])
                                                         : [0];
                                     if (e.eventRole === 'coord-sub') {
                                         angles = profile.useExtremePatterns ? [-.32, -.11, .11, .32] : [-.22, 0, .22];
                                         shotSpd = this.resolveEnemyProjectileSpeed(198);
                                     } else if (e.eventRole === 'convoy-lead') {
-                                        angles = profile.useExtremePatterns ? [-.28, -.09, .09, .28] : profile.useHardPatterns ? [-.20, 0, .20] : [-.14, .14];
+                                        angles = profile.useExtremePatterns ? [-.28, -.09, .09, .28] : isNormalMode ? [-.18, 0, .18] : profile.useHardPatterns ? [-.20, 0, .20] : [-.14, .14];
                                     } else if (e.archPattern === 'alternating') {
                                         angles = profile.useExtremePatterns ? [-.12, .12] : [0];
                                     } else if (e.archPattern === 'aimed-burst') {
                                         angles = profile.useExtremePatterns ? [-.11, .11] : [0];
                                         shotSpd = this.resolveEnemyProjectileSpeed(shot.speed + 22);
                                     } else if (e.archPattern === 'fan3') {
-                                        angles = profile.useHardPatterns ? [-.26, 0, .26] : [-.19, 0, .19];
+                                        angles = profile.useExtremePatterns ? [-.26, 0, .26] : isNormalMode ? [-.20, 0, .20] : profile.useHardPatterns ? [-.26, 0, .26] : [-.19, 0, .19];
                                     } else if (e.archPattern === 'sweep') {
                                         const sweepShift = Math.sin(step * 0.9) * 0.16;
                                         angles = profile.useExtremePatterns ? [-.10 + sweepShift, .10 + sweepShift] : [sweepShift];
                                     } else if (e.archBoat) {
                                         angles = profile.useExtremePatterns
                                             ? (step % 2 === 0 ? [-.15, 0, .15] : [-.09, .09])
-                                            : profile.useHardPatterns
-                                                ? (step % 2 === 0 ? [0] : [-.10, .10])
-                                                : (step % 2 === 0 ? [0] : [-.09, .09]);
+                                            : isNormalMode
+                                                ? (step % 3 === 2 ? [-.09, .09] : [0])
+                                                : profile.useHardPatterns
+                                                    ? (step % 2 === 0 ? [0] : [-.10, .10])
+                                                    : (step % 2 === 0 ? [0] : [-.09, .09]);
                                     }
                                     for (const a of angles) this.hostile(m.muzzleX, m.muzzleY, m.aimAngle + a, shotSpd, shot.radius, shot.color);
+                                    emittedInVolley += angles.length;
                                     if (e.mountRecoil && m.id < e.mountRecoil.length) e.mountRecoil[m.id] = 1;
                                     this.stepEnemyShots++;
                                     this.emit('enemy-shot', m.muzzleX, m.muzzleY, e.family === 'tower' || e.family === 'ship' ? 1.3 : 1.0);
@@ -956,9 +1081,19 @@ export class ArcadeWorld {
                             const aim = unmounted.aimAngle;
                             const airStep = e.attackStep ?? 0;
                             if (this.up) e.attackStep = airStep + 1;
-                            let angles: number[] = e.family === 'bomber' ? (profile.useExtremePatterns ? [-.38, -.19, 0, .19, .38] : profile.useHardPatterns ? [-.32, -.16, 0, .16, .32] : [-.26, 0, .26])
+                            let angles: number[] = e.family === 'bomber'
+                                ? (profile.useExtremePatterns
+                                    ? [-.38, -.19, 0, .19, .38]
+                                    : isNormalMode
+                                        ? (nStage === 0 ? [-.22, 0, .22] : nStage === 1 ? [-.26, 0, .26] : nStage === 2 ? [-.28, 0, .28] : [-.30, -.15, 0, .15, .30])
+                                        : profile.useHardPatterns ? [-.32, -.16, 0, .16, .32] : [-.26, 0, .26])
                                 : e.family === 'heli_utility' ? [0]
-                                    : e.family === 'heli_phantom' ? (profile.useExtremePatterns ? [-.34, -.17, 0, .17, .34] : profile.useHardPatterns ? [-.26, 0, .26] : [-.18, 0, .18])
+                                    : e.family === 'heli_phantom'
+                                        ? (profile.useExtremePatterns
+                                            ? [-.34, -.17, 0, .17, .34]
+                                            : isNormalMode
+                                                ? (nStage === 0 ? [-.16, 0, .16] : nStage === 1 ? [-.20, 0, .20] : nStage === 2 ? [-.24, 0, .24] : [-.26, 0, .26])
+                                                : profile.useHardPatterns ? [-.26, 0, .26] : [-.18, 0, .18])
                                         : e.family === 'heli_scout' ? [0]
                                             : e.family === 'interceptor' ? [0]
                                                 : e.family === 'acrobat' ? [0]
@@ -977,15 +1112,26 @@ export class ArcadeWorld {
                                 shotSpd = this.resolveEnemyProjectileSpeed(202);
                             }
                             for (const a of angles) this.hostile(unmounted.muzzleX, unmounted.muzzleY, aim + a, shotSpd, shot.radius, shot.color);
+                            emittedInVolley += angles.length;
                             this.stepEnemyShots++;
                             this.emit('enemy-shot', unmounted.muzzleX, unmounted.muzzleY, 1.0);
+                        }
+                        if (isNormalMode && emittedInVolley > 0) {
+                            activeHostileBullets += emittedInVolley;
+                            this.normalRecentAttacks.push({
+                                at: this.elapsed,
+                                enemyId: e.id,
+                                squadId: e.squadId,
+                                targetX: this.player.x,
+                                isFan: emittedInVolley >= 3,
+                            });
                         }
                     }
                     const baseCd = (!this.up ? LEGACY_SOLAR_FIRE[e.family] : undefined) ?? FAMILY[e.family].fire;
                     const archCd = e.archPattern ? 2.24 : e.archBoat ? 2.30 : baseCd;
                     const roleCd = e.eventRole === 'rare-probe' ? 1.65 : e.eventRole === 'elite-ace' ? 1.32 : e.family === 'heli_warhawk' && (e.attackStep ?? 0) % 3 === 2 ? .84 : archCd;
                     const fireScale = this.enemyFireRateScale !== 1 ? clamp(this.enemyFireRateScale, .2, 5) : 1;
-                    const archFactor = this.effectiveExtreme ? .72 : this.effectiveHard ? .80 : 1;
+                    const archFactor = this.effectiveExtreme ? .72 : this.effectiveHard ? .95 : 1;
                     const modeFactor = (e.archPattern || e.archBoat)
                         ? archFactor
                         : e.eventRole === 'elite-ace'
@@ -1296,6 +1442,21 @@ export class ArcadeWorld {
             : 80;
         const safeRespawnY = this.playerHomeY;
         const assist = this.isAssisted;
+        if (!assist && this.up && this.effectiveDifficulty === 'normal') {
+            const normalRec = computeNormalDeathRecovery(this.weapons.weaponLevel);
+            this.weapons.weaponLevel = normalRec.nextLevel;
+            this.weapons.powerMeter = normalRec.nextMeter;
+            this.specialTime = 0;
+            this.bomb = undefined;
+            this.burst.reset(true);
+            this.player.invulnerable = NORMAL_RESPAWN_INVULNERABLE;
+            if (this.lives <= 0) { this.state = 'defeat'; this.emit('defeat'); return; }
+            this.player.x = safeRespawnX;
+            this.player.y = safeRespawnY;
+            for (const b of this.bullets) if (b.enemy && Math.hypot(b.x - this.player.x, b.y - this.player.y) < NORMAL_RESPAWN_BULLET_CLEAR_RADIUS) b.active = false;
+            for (const e of this.enemies) if (!e.ground && e.y > safeRespawnY - 120) e.cooldown = Math.max(e.cooldown, NORMAL_RESPAWN_LOWER_LANE_COOLDOWN);
+            return;
+        }
         if (!assist) {
             if (this.weapons.weaponLevel > 1 || this.weapons.powerMeter > 0) this.cargo.push({ id: ++this.sequence, x: this.player.x, y: this.player.y - 20, vx: 55, vy: -35, kind: 'power', crate: false, hp: 1, age: 0 });
             this.weapons.weaponLevel = 1; this.weapons.powerMeter = 0; this.specialTime = 0; this.bomb = undefined; this.burst.reset(true); this.player.invulnerable = 3;
@@ -1633,6 +1794,7 @@ export class ArcadeWorld {
     /** Clears all active entities/projectiles cleanly without altering campaign saves. */
     clearArenaEntities(): void {
         this.chargedShot.cancel();
+        this.normalRecentAttacks = [];
         this.enemies = [];
         this.cargo = [];
         this.obstacles = [];
@@ -1694,8 +1856,9 @@ export class ArcadeWorld {
         this.waveIndex = encounters.findIndex(e => e.at >= t);
         if (this.waveIndex < 0) this.waveIndex = encounters.length;
         if (opts?.pauseDirector || opts?.isolated) this.waveIndex = encounters.length;
-        this.supplyIndex = SUPPLIES.findIndex(s => s.at >= t);
-        if (this.supplyIndex < 0) this.supplyIndex = SUPPLIES.length;
+        const supplies = this.activeSupplies;
+        this.supplyIndex = supplies.findIndex(s => s.at >= t);
+        if (this.supplyIndex < 0) this.supplyIndex = supplies.length;
 
         this.nextObstacle = 98;
         if (!this.up) {
@@ -1762,8 +1925,9 @@ export class ArcadeWorld {
         const encounters = this.activeEncounters;
         this.waveIndex = (pauseDirector || isolated) ? encounters.length : Math.max(0, encounters.findIndex(e => e.at >= t));
         if (this.waveIndex < 0) this.waveIndex = encounters.length;
-        this.supplyIndex = Math.max(0, SUPPLIES.findIndex(s => s.at >= t));
-        if (this.supplyIndex < 0) this.supplyIndex = SUPPLIES.length;
+        const archSupplies = this.activeSupplies;
+        this.supplyIndex = Math.max(0, archSupplies.findIndex(s => s.at >= t));
+        if (this.supplyIndex < 0) this.supplyIndex = archSupplies.length;
         this.miniStarted = false;
         this.bossStarted = false;
         const scState = this.pelagicScoring.exportState();

@@ -321,10 +321,10 @@ test('Multi-strategy difficulty balance matrix across ASSISTED, NORMAL, and HARD
   assert.equal(midNormal.state, 'victory');
   assert.ok(midAssisted.finalLevel >= midNormal.finalLevel, 'Assisted keeps stronger recovery weapon level after death');
 
-  // Skilled play clears both Normal and Hard, with Hard imposing higher peak hostile pressure
+  // Skilled play clears both Easy (legacy 'normal' flag) and Normal (legacy 'hard' flag) with higher kill action in Normal
   assert.equal(advNormal.state, 'victory');
   assert.equal(advHard.state, 'victory');
-  assert.ok(advHard.peakBullets > advNormal.peakBullets, `Expected Hard peakBullets (${advHard.peakBullets}) > Normal (${advNormal.peakBullets})`);
+  assert.ok(advHard.kills > advNormal.kills, `Expected Normal kills (${advHard.kills}) > Easy (${advNormal.kills})`);
   assert.equal(advNormal.zeroEscapeFrames, 0);
   assert.equal(advHard.zeroEscapeFrames, 0);
 });

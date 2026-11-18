@@ -1,5 +1,6 @@
 import {
   FAMILY,
+  SUPPLIES,
   WARHAWK_MISSILE_SPEED_HARD,
   WARHAWK_MISSILE_SPEED_NORMAL,
   type Encounter,
@@ -9,9 +10,19 @@ import {
   type Mission,
   type Motion,
 } from './content.ts';
+import type { WeaponLevel } from '../systems/weaponSystem.ts';
 
 export type GameDifficulty = 'easy' | 'normal' | 'hard';
 export type SavedDifficulty = GameDifficulty | 'arcade';
+export type SupplyEntry = { readonly at: number; readonly kind: (typeof SUPPLIES)[number]['kind'] };
+
+export const NORMAL_RESPAWN_INVULNERABLE = 3.5;
+export const NORMAL_RESPAWN_BULLET_CLEAR_RADIUS = 130;
+export const NORMAL_RESPAWN_LOWER_LANE_COOLDOWN = 0.95;
+export const NORMAL_ATTACK_WINDOW_SECONDS = 0.65;
+export const NORMAL_FAN_REGION_GAP_SECONDS = 0.55;
+export const NORMAL_FAN_REGION_RADIUS_PX = 105;
+export const NORMAL_SQUAD_STAGGER_SECONDS = 0.20;
 
 export type EnemyHpCategory = 'lightAir' | 'mediumHeli' | 'heavyHeli' | 'naval' | 'submarine' | 'heavyAir' | 'coastal';
 
@@ -112,7 +123,7 @@ export const DIFFICULTY_PROFILES: Readonly<Record<GameDifficulty, DifficultyProf
     label: 'NORMAL',
     shortLabel: 'NORMAL',
     pipCount: 2,
-    cooldownFactor: 0.78,
+    cooldownFactor: 0.95,
     shotSpeedMultiplier: ENEMY_PROJECTILE_SPEED_MULTIPLIERS.normal,
     shotSpeedBonus: 0,
     warhawkMissileSpeed: WARHAWK_MISSILE_SPEED_HARD,
@@ -120,9 +131,9 @@ export const DIFFICULTY_PROFILES: Readonly<Record<GameDifficulty, DifficultyProf
     useExtremePatterns: false,
     autoEscort: 'standard',
     useHardSpecialExtras: true,
-    bossPaceMultiplier: 1.08,
+    bossPaceMultiplier: 1.04,
     bossHpMultiplier: 1.0,
-    maxNewFiringUnitsPerFrame: 6,
+    maxNewFiringUnitsPerFrame: 3,
     hpMultipliers: {
       lightAir: 1.0,
       mediumHeli: 1.0,
@@ -135,8 +146,8 @@ export const DIFFICULTY_PROFILES: Readonly<Record<GameDifficulty, DifficultyProf
     director: {
       softMaxEnemiesPc: 11,
       softMaxEnemiesPortrait: 8,
-      softMaxBulletsPc: 22,
-      softMaxBulletsPortrait: 16,
+      softMaxBulletsPc: 20,
+      softMaxBulletsPortrait: 15,
       maxLead: 3.1,
       minEmptyForAnticipate: 0.28,
       reinforceDelay: 0.82,
@@ -154,7 +165,7 @@ export const DIFFICULTY_PROFILES: Readonly<Record<GameDifficulty, DifficultyProf
     label: 'DIFÍCIL',
     shortLabel: 'DIFÍCIL',
     pipCount: 3,
-    cooldownFactor: 0.92,
+    cooldownFactor: 0.86,
     shotSpeedMultiplier: ENEMY_PROJECTILE_SPEED_MULTIPLIERS.hard,
     shotSpeedBonus: 0,
     warhawkMissileSpeed: 408,
@@ -253,6 +264,82 @@ export function resolveEnemyMaxHp(family: Family, difficulty: GameDifficulty): n
   const base = FAMILY[family].hp;
   const mult = DIFFICULTY_PROFILES[difficulty].hpMultipliers[enemyHpCategory(family)];
   return Math.max(1, Math.round(base * mult));
+}
+
+/**
+ * Progressive Normal-mode supply timeline for Fenda Pelágica:
+ * brings early POWER 2 forward (11s, 29s), bridges the 118s-201s gap with safe pre-arch (135s)
+ * and post-arch (185s) drops, and preserves the exact Special (145s) and Life (239s) crates.
+ */
+export const FENDA_NORMAL_SUPPLIES: readonly SupplyEntry[] = [
+  { at: 11, kind: 'power' },
+  { at: 29, kind: 'power' },
+  { at: 54, kind: 'power' },
+  { at: 80, kind: 'power' },
+  { at: 106, kind: 'power' },
+  { at: 135, kind: 'power' },
+  { at: 145, kind: 'special' },
+  { at: 185, kind: 'power' },
+  { at: 212, kind: 'power' },
+  { at: 239, kind: 'life' },
+  { at: 248, kind: 'power' },
+  { at: 274, kind: 'power' },
+];
+
+export function buildMissionSupplies(
+  mission: Mission,
+  difficulty: GameDifficulty,
+  assisted = false,
+): readonly SupplyEntry[] {
+  if (mission.perspective === 'UP' && difficulty === 'normal' && !assisted) {
+    return FENDA_NORMAL_SUPPLIES;
+  }
+  return SUPPLIES;
+}
+
+/** Progressive Normal-mode offensive stage along the 300s Fenda Pelágica timeline. */
+export function normalPatternStage(route: number): 0 | 1 | 2 | 3 {
+  if (route < 45) return 0;
+  if (route < 135) return 1;
+  if (route < 255) return 2;
+  return 3;
+}
+
+/** Maximum coordinated enemy units allowed to initiate volleys inside the Normal attack window. */
+export function normalOffensiveWindowCap(route: number, tideArchActive: boolean): number {
+  if (route < 45) return 3;
+  if (route < 135) return 4;
+  if (route < 180) return tideArchActive ? 3 : 3;
+  if (route < 255) return 4;
+  return 5;
+}
+
+/** Progressive hostile bullet pressure cap used exclusively in Normal to delay excess volleys smoothly. */
+export function normalSoftBulletCap(route: number, narrowArena: boolean): number {
+  if (narrowArena) {
+    if (route < 45) return 11;
+    if (route < 135) return 13;
+    if (route < 180) return 10;
+    if (route < 255) return 14;
+    return 16;
+  }
+  if (route < 45) return 16;
+  if (route < 135) return 18;
+  if (route < 180) return 14;
+  if (route < 255) return 20;
+  return 22;
+}
+
+/**
+ * Normal-mode death recovery rule: drops strictly 1 weapon level and resets partial meter
+ * (5->4, 4->3, 3->2, 2->1, 1->1), never granting free power increases or exploitable drops.
+ */
+export function computeNormalDeathRecovery(prevLevel: WeaponLevel): {
+  nextLevel: WeaponLevel;
+  nextMeter: number;
+} {
+  const nextLevel = Math.max(1, prevLevel - 1) as WeaponLevel;
+  return { nextLevel, nextMeter: 0 };
 }
 
 const w = (

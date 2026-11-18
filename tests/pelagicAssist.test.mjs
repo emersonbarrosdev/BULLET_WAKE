@@ -132,16 +132,21 @@ test('Game Over and fresh sortie restart clear Assisted state and preserve suppl
     assert.equal(fresh.cargo.length, 0);
 });
 
-test('Comparison across Assisted, Normal, Hard, and Cidade Solar confirms exact isolation', () => {
+test('Comparison across Assisted, Easy, Normal, Hard, and Cidade Solar confirms exact isolation', () => {
     const assist = liveStage(0, { assisted: true, hard: true });
     assist.weapons.weaponLevel = 5;
     assist.hurtPlayer();
 
-    const normal = liveStage(0, { assisted: false, hard: false });
+    const easy = liveStage(0, { assisted: false, hard: false });
+    easy.weapons.weaponLevel = 5;
+    easy.hurtPlayer();
+
+    const normal = liveStage(0, { assisted: false, hard: true });
     normal.weapons.weaponLevel = 5;
     normal.hurtPlayer();
 
     const hard = liveStage(0, { assisted: false, hard: true });
+    hard.setDifficulty('hard');
     hard.weapons.weaponLevel = 5;
     hard.hurtPlayer();
 
@@ -153,10 +158,17 @@ test('Comparison across Assisted, Normal, Hard, and Cidade Solar confirms exact 
     assert.equal(assist.cargo[0].recoveryP, 2);
     assert.equal(assist.player.invulnerable, 4.2);
 
-    assert.equal(normal.weapons.weaponLevel, 1);
-    assert.equal(normal.cargo[0].recoveryP, undefined);
-    assert.equal(normal.player.invulnerable, 3);
+    assert.equal(easy.weapons.weaponLevel, 1);
+    assert.equal(easy.cargo[0].recoveryP, undefined);
+    assert.equal(easy.player.invulnerable, 3);
 
+    // Rebalanced Normal: drops strictly 1 level (5 -> 4), 3.5s invulnerability, no exploitable extra P drop
+    assert.equal(normal.weapons.weaponLevel, 4);
+    assert.equal(normal.weapons.powerMeter, 0);
+    assert.equal(normal.cargo.length, 0);
+    assert.equal(normal.player.invulnerable, 3.5);
+
+    // Hard keeps strict classic arcade penalty (5 -> 1, 3.0s invulnerability)
     assert.equal(hard.weapons.weaponLevel, 1);
     assert.equal(hard.cargo[0].recoveryP, undefined);
     assert.equal(hard.player.invulnerable, 3);
