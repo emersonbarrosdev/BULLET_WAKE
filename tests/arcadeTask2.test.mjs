@@ -50,7 +50,8 @@ test('aircraft keep a fixed bullet size and family color across repeated volleys
         w.updateEnemies(.01); const first = w.bullets.filter(b => b.active && b.enemy).map(b => ({ ...b }));
         assert(first.length > 0); w.bullets.forEach(b => b.active = false); e.cooldown = 0; w.updateEnemies(.01);
         const second = w.bullets.filter(b => b.active && b.enemy), spec = ENEMY_SHOTS[family];
-        for (const b of [...first, ...second]) { assert.equal(b.radius, spec.radius); assert.equal(b.color, spec.color); assert(Math.abs(Math.hypot(b.vx, b.vy) - spec.speed) < 1e-8); }
+        const expectedSpeed = spec.speed * w.difficultyProfile.shotSpeedMultiplier;
+        for (const b of [...first, ...second]) { assert.equal(b.radius, spec.radius); assert.equal(b.color, spec.color); assert(Math.abs(Math.hypot(b.vx, b.vy) - expectedSpeed) < 1e-8); }
     }
     assert(ENEMY_SHOTS.fighter.radius < ENEMY_SHOTS.bomber.radius);
     assert(new Set(['fighter', 'interceptor', 'acrobat'].map(f => ENEMY_SHOTS[f].color)).size === 3);

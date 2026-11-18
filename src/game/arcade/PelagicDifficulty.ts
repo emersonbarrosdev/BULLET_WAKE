@@ -32,12 +32,23 @@ export interface DifficultyDirectorConfig {
   readonly maxArchBoats: number;
 }
 
+/**
+ * Configurable relative speed multipliers for conventional enemy projectiles (0.75x Easy, 1.00x Normal reference, 1.30x Hard).
+ * Normal serves as the classic Sonic Wings-inspired baseline; Easy and Hard scale cleanly without stacked bonuses.
+ */
+export const ENEMY_PROJECTILE_SPEED_MULTIPLIERS: Readonly<Record<GameDifficulty, number>> = {
+  easy: 0.75,
+  normal: 1.00,
+  hard: 1.30,
+};
+
 export interface DifficultyProfile {
   readonly id: GameDifficulty;
   readonly label: string;
   readonly shortLabel: string;
   readonly pipCount: number;
   readonly cooldownFactor: number;
+  readonly shotSpeedMultiplier: number;
   readonly shotSpeedBonus: number;
   readonly warhawkMissileSpeed: number;
   readonly useHardPatterns: boolean;
@@ -60,6 +71,7 @@ export const DIFFICULTY_PROFILES: Readonly<Record<GameDifficulty, DifficultyProf
     shortLabel: 'FÁCIL',
     pipCount: 1,
     cooldownFactor: 1.0,
+    shotSpeedMultiplier: ENEMY_PROJECTILE_SPEED_MULTIPLIERS.easy,
     shotSpeedBonus: 0,
     warhawkMissileSpeed: WARHAWK_MISSILE_SPEED_NORMAL,
     useHardPatterns: false,
@@ -101,7 +113,8 @@ export const DIFFICULTY_PROFILES: Readonly<Record<GameDifficulty, DifficultyProf
     shortLabel: 'NORMAL',
     pipCount: 2,
     cooldownFactor: 0.78,
-    shotSpeedBonus: 26,
+    shotSpeedMultiplier: ENEMY_PROJECTILE_SPEED_MULTIPLIERS.normal,
+    shotSpeedBonus: 0,
     warhawkMissileSpeed: WARHAWK_MISSILE_SPEED_HARD,
     useHardPatterns: true,
     useExtremePatterns: false,
@@ -142,7 +155,8 @@ export const DIFFICULTY_PROFILES: Readonly<Record<GameDifficulty, DifficultyProf
     shortLabel: 'DIFÍCIL',
     pipCount: 3,
     cooldownFactor: 0.92,
-    shotSpeedBonus: 8,
+    shotSpeedMultiplier: ENEMY_PROJECTILE_SPEED_MULTIPLIERS.hard,
+    shotSpeedBonus: 0,
     warhawkMissileSpeed: 408,
     useHardPatterns: true,
     useExtremePatterns: true,

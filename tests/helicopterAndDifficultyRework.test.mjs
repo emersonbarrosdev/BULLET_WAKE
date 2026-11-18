@@ -248,6 +248,7 @@ const BOT_DIRS = [
 ];
 
 function twoPlyAceBot(w) {
+  const isHard = w.difficulty === 'hard';
   const archOpening = w.up && w.tideArch?.isActive ? computeArchOpening(w.arena.left, w.arena.right) : null;
   const minSafeX = archOpening ? archOpening.left + 22 : w.arena.left + 24;
   const maxSafeX = archOpening ? archOpening.right - 22 : w.arena.right - 24;
@@ -289,6 +290,16 @@ function twoPlyAceBot(w) {
 
   const evalLeg = (x0, y0, dx, dy, tStart, tSteps) => {
     let cost = 0;
+    if (isHard && tStart === 0) {
+      for (const tImm of [1 / 120, 2 / 120]) {
+        const px = clx(x0 + dx * 174 * tImm);
+        const py = cly(y0 + dy * 174 * tImm);
+        for (const bullet of nearBullets) {
+          const d = Math.hypot(bullet.x + bullet.vx * tImm - px, bullet.y + bullet.vy * tImm - py);
+          if (d < bullet.radius + 7.2) cost += 50000 / (d + 0.1);
+        }
+      }
+    }
     for (const tRel of tSteps) {
       const t = tStart + tRel;
       const px = clx(x0 + dx * 174 * tRel);
@@ -321,7 +332,13 @@ function twoPlyAceBot(w) {
       let c2 = evalLeg(x1, y1, dx2, dy2, h1, [0.04, 0.09, 0.14]);
       c2 += Math.hypot(x2 - tx, y2 - ty) * (openPickup ? 0.55 : 0.25);
       const edgeDist = Math.min(x2 - w.arena.left, w.arena.right - x2);
-      if (edgeDist < 42) c2 += (42 - edgeDist) * 2.5;
+      if (isHard) {
+        if (edgeDist < 46) c2 += (46 - edgeDist) * 4.0;
+        const botDist = w.arena.bottom - y2;
+        if (botDist < 28) c2 += (28 - botDist) * 3.5;
+      } else if (edgeDist < 42) {
+        c2 += (42 - edgeDist) * 2.5;
+      }
       if (y2 < 290) c2 += (290 - y2) * 1.5;
       if (c2 < minC2) minC2 = c2;
     }
@@ -332,13 +349,14 @@ function twoPlyAceBot(w) {
     }
   }
   const danger = nearBullets.filter(bl => Math.hypot(bl.x - p.x, bl.y - p.y) < 38).length;
+  const spTrigger = isHard ? (danger >= 2 && bestCost > 3000) : (danger >= 4);
   return {
     ...best,
     fire: true,
     special:
       w.specialTime <= 0 &&
       w.weapons.specialCharges > 0 &&
-      (danger >= 4 || (b?.sub?.phase === 'fight' && w.boss.parts.filter(pt => pt.hp > 0).length >= 3)),
+      (spTrigger || (b?.sub?.phase === 'fight' && w.boss.parts.filter(pt => pt.hp > 0).length >= 3)),
   };
 }
 

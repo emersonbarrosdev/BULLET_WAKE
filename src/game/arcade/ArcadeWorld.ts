@@ -909,7 +909,7 @@ export class ArcadeWorld {
                         frameVolleyUnits++;
                         const shot = (!this.up ? LEGACY_SOLAR_SHOTS[e.family] : undefined) ?? ENEMY_SHOTS[e.family];
                         const spdScale = this.enemyShotSpeedScale !== 1 ? clamp(this.enemyShotSpeedScale, .25, 3) : 1;
-                        let shotSpd = (shot.speed + profile.shotSpeedBonus) * spdScale;
+                        let shotSpd = this.resolveEnemyProjectileSpeed(shot.speed);
                         if (this.up && hasArticulatedMounts(e.family)) {
                             const mounts = resolveActorMounts(e, this.player.x, this.player.y, this.elapsed);
                             if (e.family === 'heli_warhawk') {
@@ -953,14 +953,14 @@ export class ArcadeWorld {
                                                         : [0];
                                     if (e.eventRole === 'coord-sub') {
                                         angles = profile.useExtremePatterns ? [-.32, -.11, .11, .32] : [-.22, 0, .22];
-                                        shotSpd = 172 + profile.shotSpeedBonus;
+                                        shotSpd = this.resolveEnemyProjectileSpeed(198);
                                     } else if (e.eventRole === 'convoy-lead') {
                                         angles = profile.useExtremePatterns ? [-.28, -.09, .09, .28] : profile.useHardPatterns ? [-.20, 0, .20] : [-.14, .14];
                                     } else if (e.archPattern === 'alternating') {
                                         angles = profile.useExtremePatterns ? [-.12, .12] : [0];
                                     } else if (e.archPattern === 'aimed-burst') {
                                         angles = profile.useExtremePatterns ? [-.11, .11] : [0];
-                                        shotSpd = (shot.speed + (profile.useExtremePatterns ? 34 : profile.useHardPatterns ? 22 : 12)) * spdScale;
+                                        shotSpd = this.resolveEnemyProjectileSpeed(shot.speed + 22);
                                     } else if (e.archPattern === 'fan3') {
                                         angles = profile.useHardPatterns ? [-.26, 0, .26] : [-.19, 0, .19];
                                     } else if (e.archPattern === 'sweep') {
@@ -997,14 +997,14 @@ export class ArcadeWorld {
                                                             : [0];
                             if (e.eventRole === 'elite-ace') {
                                 angles = profile.useHardPatterns && e.offset === 0 ? [-.12, 0, .12] : [-.08, .08];
-                                shotSpd = 212 + profile.shotSpeedBonus;
+                                shotSpd = this.resolveEnemyProjectileSpeed(238);
                             } else if (e.eventRole === 'coord-wing') {
                                 angles = e.family === 'acrobat' ? [-.12, .12] : [0];
                             } else if (e.eventRole === 'convoy-escort') {
                                 angles = [-.06, .06];
                             } else if (e.eventRole === 'rare-probe') {
                                 angles = [-.42, -.14, .14, .42];
-                                shotSpd = 178 + (profile.useHardPatterns ? 24 : 0);
+                                shotSpd = this.resolveEnemyProjectileSpeed(202);
                             }
                             for (const a of angles) this.hostile(unmounted.muzzleX, unmounted.muzzleY, aim + a, shotSpd, shot.radius, shot.color);
                             this.stepEnemyShots++;
@@ -1077,6 +1077,11 @@ export class ArcadeWorld {
             pierceRemaining: spec.pierceCount,
         });
         this.emit('charged-shot', ox, oy, spec.effectIntensity, spec.label);
+    }
+    resolveEnemyProjectileSpeed(baseNormalSpeed: number): number {
+        const diffMult = this.up ? this.difficultyProfile.shotSpeedMultiplier : 1;
+        const spdScale = this.enemyShotSpeedScale !== 1 ? clamp(this.enemyShotSpeedScale, .25, 3) : 1;
+        return baseNormalSpeed * diffMult * spdScale;
     }
     private fireMissiles(): void { for (const p of getSecondaryProjectiles('nolan', 0, 0, this.weapons.weaponLevel)) this.bullet(this.player.x + (this.up ? p.x : -p.y), this.player.y + (this.up ? p.y : p.x), this.up ? p.velocityX : -p.velocityY, this.up ? p.velocityY : p.velocityX, p.damage, p.hitRadius, false, true, p.scale, p.homing); this.emit('missile'); }
     private hostile(x: number, y: number, angle: number, speed: number, radius: number, color?: number, enemyMissile = false): void { this.bullet(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed, 1, radius, true, false, 1, false, color, enemyMissile); }
@@ -1453,25 +1458,24 @@ export class ArcadeWorld {
         parts.forEach((p, i) => {
             if (i % 2 !== b.attack % 2 && parts.length > 2 && pattern !== 3) return;
             const aim = Math.atan2(b.aimY - p.y, b.aimX - p.x), mx = p.x + Math.cos(pattern === 0 ? forward : aim) * p.radius * 1.1, my = p.y + Math.sin(pattern === 0 ? forward : aim) * p.radius * 1.1;
-            const speedBoost = this.effectiveExtreme ? 28 : this.effectiveHard ? 20 : 0;
             if (!this.up) {
                 // Giro builds moving horizontal lanes; Pula-Onda owns the radial naval pattern below.
-                if (pattern === 0) for (const a of [-.32, 0, .32]) this.hostile(mx, my, forward + a + (volley - 1) * .08, 102 + speedBoost, 3.1);
-                else if (pattern === 1) for (const a of [-.13, .13]) this.hostile(mx, my, aim + a, 145 + volley * 12 + (this.effectiveExtreme ? 12 : 0), 2.7);
-                else if (pattern === 2) for (const a of [-.09, .09]) this.hostile(mx, my, aim + Math.sin(volley * 1.7) * .24 + a, 170 + (this.effectiveExtreme ? 12 : 0), 2.4);
-                else if (i === b.attack % parts.length) for (const a of [-.28, 0, .28]) this.hostile(mx, my, aim + a, 88 + volley * 8, 7.5);
+                if (pattern === 0) for (const a of [-.32, 0, .32]) this.hostile(mx, my, forward + a + (volley - 1) * .08, this.resolveEnemyProjectileSpeed(122), 3.1);
+                else if (pattern === 1) for (const a of [-.13, .13]) this.hostile(mx, my, aim + a, this.resolveEnemyProjectileSpeed(145 + volley * 12), 2.7);
+                else if (pattern === 2) for (const a of [-.09, .09]) this.hostile(mx, my, aim + Math.sin(volley * 1.7) * .24 + a, this.resolveEnemyProjectileSpeed(170), 2.4);
+                else if (i === b.attack % parts.length) for (const a of [-.28, 0, .28]) this.hostile(mx, my, aim + a, this.resolveEnemyProjectileSpeed(88 + volley * 8), 7.5);
                 return;
             }
             if (pattern === 0) {
                 const fan = this.effectiveExtreme ? [-.58, -.36, -.16, 0, .16, .36, .58] : [-.48, -.24, 0, .24, .48];
-                for (const a of fan) this.hostile(mx, my, forward + a, 125 + speedBoost, 3.1);
+                for (const a of fan) this.hostile(mx, my, forward + a, this.resolveEnemyProjectileSpeed(145), 3.1);
             } else if (pattern === 1) {
                 const aimFan = this.effectiveExtreme ? [-.16, 0, .16] : [-.10, .10];
-                for (const a of aimFan) this.hostile(mx, my, aim + a, 155 + (this.effectiveExtreme ? 30 : this.effectiveHard ? 25 : 0), 2.7);
-            } else if (pattern === 2) this.hostile(mx, my, aim + (volley - 1) * .16, 180 + (this.effectiveExtreme ? 16 : 0), 2.4);
+                for (const a of aimFan) this.hostile(mx, my, aim + a, this.resolveEnemyProjectileSpeed(180), 2.7);
+            } else if (pattern === 2) this.hostile(mx, my, aim + (volley - 1) * .16, this.resolveEnemyProjectileSpeed(180), 2.4);
             else if (i === b.attack % parts.length) {
                 const n = this.effectiveExtreme ? 14 : 12;
-                for (let j = 0; j < n; j++) this.hostile(mx, my, TAU * j / n + volley * .14, 105 + (this.effectiveExtreme ? 8 : 0), 7.4);
+                for (let j = 0; j < n; j++) this.hostile(mx, my, TAU * j / n + volley * .14, this.resolveEnemyProjectileSpeed(105), 7.4);
             }
         }); this.emit('enemy-shot', b.x, b.y);
     }
@@ -1583,10 +1587,9 @@ export class ArcadeWorld {
         const aim = Math.atan2(this.player.y - p.y, this.player.x - p.x);
         const muzzle = p.radius * .95;
         const mx = p.x + Math.cos(aim) * muzzle, my = p.y + Math.sin(aim) * muzzle;
-        const hardBoost = this.effectiveExtreme ? 20 : this.effectiveHard ? 12 : 0;
         switch (p.kind) {
             case 'turret': {
-                const spd = 142 + sec.index * 7 + hardBoost;
+                const spd = this.resolveEnemyProjectileSpeed(154 + sec.index * 7);
                 const offsets = this.effectiveExtreme
                     ? [-.26, -.09, .09, .26]
                     : (sec.index >= 3 && Math.abs(p.dx) < 8)
@@ -1598,7 +1601,7 @@ export class ArcadeWorld {
                 break;
             }
             case 'launcher': {
-                const spd = 118 + hardBoost;
+                const spd = this.resolveEnemyProjectileSpeed(130);
                 const fan = this.effectiveExtreme
                     ? [-.72, -.48, -.24, 0, .24, .48, .72]
                     : this.effectiveHard
@@ -1608,7 +1611,7 @@ export class ArcadeWorld {
                 break;
             }
             case 'armor': {
-                const spd = 110 + hardBoost;
+                const spd = this.resolveEnemyProjectileSpeed(122);
                 const angles = this.effectiveExtreme
                     ? [.82, 1.06, 1.32, 1.57, 1.82, 2.08, 2.32]
                     : this.effectiveHard
@@ -1618,7 +1621,7 @@ export class ArcadeWorld {
                 break;
             }
             case 'bridge': {
-                const spd = 124 + hardBoost;
+                const spd = this.resolveEnemyProjectileSpeed(136);
                 const count = this.effectiveExtreme ? 10 : this.effectiveHard ? 8 : 6;
                 const phase = Math.sin(sub.age * 1.9) * .18;
                 for (let i = 0; i < count; i++) {
@@ -1628,7 +1631,7 @@ export class ArcadeWorld {
                 break;
             }
             case 'propeller': {
-                const spd = 102 + hardBoost;
+                const spd = this.resolveEnemyProjectileSpeed(114);
                 const offsets = this.effectiveExtreme
                     ? [-.52, -.26, -.09, .09, .26, .52]
                     : this.effectiveHard
@@ -1638,7 +1641,7 @@ export class ArcadeWorld {
                 break;
             }
             case 'reactor': {
-                const spd = 100 + hardBoost;
+                const spd = this.resolveEnemyProjectileSpeed(112);
                 const n = this.effectiveExtreme ? 14 : this.effectiveHard ? 12 : 10;
                 const spin = sub.age * .55;
                 for (let j = 0; j < n; j++)this.hostile(p.x, p.y, TAU * j / n + spin, spd, 3.4, 2);

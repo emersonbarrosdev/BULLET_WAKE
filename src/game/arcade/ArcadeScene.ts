@@ -222,17 +222,44 @@ export class ArcadeScene extends Phaser.Scene {
     });
   }
   private makeOrbTextures(): void {
+    // Sonic Wings-inspired circular orange-red energy orbs with hot yellow-white core, sharp dark-red rim, and subtle halo
+    const size = 64;
+    const mid = size * 0.5;
     for (const i of [0, 1, 2]) {
-      const tex = this.textures.createCanvas('arc-orb-' + i, 32, 32)!, c = tex.context;
-      // Illustrated cel-shaded coral-ruby orb matching aircraft line art (#182948) and sunlit sea/sky scenery
-      c.fillStyle = '#182948'; c.beginPath(); c.arc(16, 16, 14.8, 0, Math.PI * 2); c.fill();
-      c.fillStyle = '#ffe8e2'; c.beginPath(); c.arc(16, 16, 13.1, 0, Math.PI * 2); c.fill();
-      const body = c.createRadialGradient(13.5, 13, 1, 16, 16, 11.6);
-      body.addColorStop(0, '#ff665e');
-      body.addColorStop(.45, '#f43542');
-      body.addColorStop(1, '#ce1b2e');
-      c.fillStyle = body; c.beginPath(); c.arc(16, 16, 11.6, 0, Math.PI * 2); c.fill();
-      c.fillStyle = '#fff6ea'; c.beginPath(); c.arc(13, 12.5, 3.2, 0, Math.PI * 2); c.fill();
+      const tex = this.textures.createCanvas('arc-orb-' + i, size, size)!;
+      const c = tex.context;
+      c.clearRect(0, 0, size, size);
+
+      // 1. Subtle outer thermal glow (does not inflate gameplay hitbox)
+      const halo = c.createRadialGradient(mid, mid, 21.5, mid, mid, 31.2);
+      halo.addColorStop(0, 'rgba(255, 86, 18, 0.40)');
+      halo.addColorStop(0.52, 'rgba(255, 52, 8, 0.16)');
+      halo.addColorStop(1, 'rgba(200, 18, 0, 0)');
+      c.fillStyle = halo;
+      c.beginPath();
+      c.arc(mid, mid, 31.2, 0, Math.PI * 2);
+      c.fill();
+
+      // 2. Crisp dark-crimson outline ring for immediate contrast over blue ocean, foam, islands & explosions
+      c.fillStyle = '#5c0602';
+      c.beginPath();
+      c.arc(mid, mid, 24.4, 0, Math.PI * 2);
+      c.fill();
+
+      // 3. Spherical orange-red energy core smoothly radiating from bright near-white yellow center
+      const coreTint = i === 2 ? '#ffe96b' : i === 1 ? '#fff294' : '#fff7ae';
+      const midOrange = i === 2 ? '#ff640c' : i === 1 ? '#ff7c10' : '#ff8c14';
+      const body = c.createRadialGradient(mid, mid, 0.8, mid, mid, 22.8);
+      body.addColorStop(0, '#ffffff');
+      body.addColorStop(0.24, coreTint);
+      body.addColorStop(0.50, midOrange);
+      body.addColorStop(0.80, '#ea2b08');
+      body.addColorStop(1, '#8c0d04');
+      c.fillStyle = body;
+      c.beginPath();
+      c.arc(mid, mid, 22.8, 0, Math.PI * 2);
+      c.fill();
+
       tex.refresh();
     }
   }
@@ -1228,7 +1255,7 @@ export class ArcadeScene extends Phaser.Scene {
       if (b.enemy && b.enemyMissile && this.textures.exists(PELAGIC_ENEMY_MISSILE_SHEET)) {
         s.clearTint().setTexture(PELAGIC_ENEMY_MISSILE_SHEET, Math.floor(b.age * 18) % 4).setDisplaySize(18, 28).setRotation(Math.atan2(b.vy, b.vx) - Math.PI / 2);
       } else if (b.enemy) {
-        s.clearTint().setTexture('arc-orb-' + b.color).setDisplaySize(b.radius * 2 + 1.2, b.radius * 2 + 1.2).setRotation(0);
+        s.clearTint().setTexture('arc-orb-' + b.color).setDisplaySize(b.radius * 2 + 2.0, b.radius * 2 + 2.0).setRotation(0);
       } else if (b.charged) {
         const isFull = b.chargeTier === 'full';
         const art = w.up ? pelagicShotSize(w.weapons.weaponLevel) : rivetShotPresentation(w.weapons.weaponLevel);

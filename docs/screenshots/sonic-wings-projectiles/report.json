@@ -1,0 +1,348 @@
+{
+  "orbTextureAudit": {
+    "arc-orb-0": {
+      "width": 64,
+      "height": 64,
+      "cornerAlpha": 0,
+      "center": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "innerOrange": {
+        "r": 252,
+        "g": 129,
+        "b": 18,
+        "a": 255
+      },
+      "crimsonRim": {
+        "r": 92,
+        "g": 6,
+        "b": 2,
+        "a": 255
+      }
+    },
+    "arc-orb-1": {
+      "width": 64,
+      "height": 64,
+      "cornerAlpha": 0,
+      "center": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "innerOrange": {
+        "r": 252,
+        "g": 115,
+        "b": 15,
+        "a": 255
+      },
+      "crimsonRim": {
+        "r": 92,
+        "g": 6,
+        "b": 2,
+        "a": 255
+      }
+    },
+    "arc-orb-2": {
+      "width": 64,
+      "height": 64,
+      "cornerAlpha": 0,
+      "center": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "innerOrange": {
+        "r": 252,
+        "g": 93,
+        "b": 11,
+        "a": 255
+      },
+      "crimsonRim": {
+        "r": 92,
+        "g": 6,
+        "b": 2,
+        "a": 255
+      }
+    }
+  },
+  "speedTable": [
+    {
+      "family": "fighter",
+      "easy": {
+        "radius": 2.2,
+        "speedPxPerSec": 147,
+        "time300PxSec": 2.042
+      },
+      "normal": {
+        "radius": 2.2,
+        "speedPxPerSec": 196,
+        "time300PxSec": 1.533
+      },
+      "hard": {
+        "radius": 2.2,
+        "speedPxPerSec": 254.8,
+        "time300PxSec": 1.183
+      }
+    },
+    {
+      "family": "interceptor",
+      "easy": {
+        "radius": 2.3,
+        "speedPxPerSec": 183,
+        "time300PxSec": 1.642
+      },
+      "normal": {
+        "radius": 2.3,
+        "speedPxPerSec": 244,
+        "time300PxSec": 1.233
+      },
+      "hard": {
+        "radius": 2.3,
+        "speedPxPerSec": 317.2,
+        "time300PxSec": 0.95
+      }
+    },
+    {
+      "family": "bomber",
+      "easy": {
+        "radius": 3.1,
+        "speedPxPerSec": 124.5,
+        "time300PxSec": 2.417
+      },
+      "normal": {
+        "radius": 3.1,
+        "speedPxPerSec": 166,
+        "time300PxSec": 1.808
+      },
+      "hard": {
+        "radius": 3.1,
+        "speedPxPerSec": 215.8,
+        "time300PxSec": 1.392
+      }
+    },
+    {
+      "family": "heli_scout",
+      "easy": {
+        "radius": 2.3,
+        "speedPxPerSec": 156,
+        "time300PxSec": 1.925
+      },
+      "normal": {
+        "radius": 2.3,
+        "speedPxPerSec": 208,
+        "time300PxSec": 1.45
+      },
+      "hard": {
+        "radius": 2.3,
+        "speedPxPerSec": 270.4,
+        "time300PxSec": 1.117
+      }
+    },
+    {
+      "family": "heli_utility",
+      "easy": {
+        "radius": 2.8,
+        "speedPxPerSec": 133.5,
+        "time300PxSec": 2.25
+      },
+      "normal": {
+        "radius": 2.8,
+        "speedPxPerSec": 178,
+        "time300PxSec": 1.692
+      },
+      "hard": {
+        "radius": 2.8,
+        "speedPxPerSec": 231.4,
+        "time300PxSec": 1.3
+      }
+    },
+    {
+      "family": "heli_phantom",
+      "easy": {
+        "radius": 2.5,
+        "speedPxPerSec": 151.5,
+        "time300PxSec": 1.983
+      },
+      "normal": {
+        "radius": 2.5,
+        "speedPxPerSec": 202,
+        "time300PxSec": 1.492
+      },
+      "hard": {
+        "radius": 2.5,
+        "speedPxPerSec": 262.6,
+        "time300PxSec": 1.15
+      }
+    },
+    {
+      "family": "heli_warhawk",
+      "easy": {
+        "radius": 2.9,
+        "speedPxPerSec": 147,
+        "time300PxSec": 2.042
+      },
+      "normal": {
+        "radius": 2.9,
+        "speedPxPerSec": 196,
+        "time300PxSec": 1.533
+      },
+      "hard": {
+        "radius": 2.9,
+        "speedPxPerSec": 254.8,
+        "time300PxSec": 1.183
+      }
+    },
+    {
+      "family": "boat",
+      "easy": {
+        "radius": 2.9,
+        "speedPxPerSec": 138,
+        "time300PxSec": 2.175
+      },
+      "normal": {
+        "radius": 2.9,
+        "speedPxPerSec": 184,
+        "time300PxSec": 1.633
+      },
+      "hard": {
+        "radius": 2.9,
+        "speedPxPerSec": 239.2,
+        "time300PxSec": 1.258
+      }
+    },
+    {
+      "family": "ship",
+      "easy": {
+        "radius": 3.3,
+        "speedPxPerSec": 141,
+        "time300PxSec": 2.133
+      },
+      "normal": {
+        "radius": 3.3,
+        "speedPxPerSec": 188,
+        "time300PxSec": 1.6
+      },
+      "hard": {
+        "radius": 3.3,
+        "speedPxPerSec": 244.4,
+        "time300PxSec": 1.233
+      }
+    },
+    {
+      "family": "submarine",
+      "easy": {
+        "radius": 3.2,
+        "speedPxPerSec": 145.5,
+        "time300PxSec": 2.067
+      },
+      "normal": {
+        "radius": 3.2,
+        "speedPxPerSec": 194,
+        "time300PxSec": 1.55
+      },
+      "hard": {
+        "radius": 3.2,
+        "speedPxPerSec": 252.2,
+        "time300PxSec": 1.192
+      }
+    },
+    {
+      "family": "tower",
+      "easy": {
+        "radius": 3.2,
+        "speedPxPerSec": 144,
+        "time300PxSec": 2.092
+      },
+      "normal": {
+        "radius": 3.2,
+        "speedPxPerSec": 192,
+        "time300PxSec": 1.567
+      },
+      "hard": {
+        "radius": 3.2,
+        "speedPxPerSec": 249.6,
+        "time300PxSec": 1.208
+      }
+    }
+  ],
+  "bossAndSizes": {
+    "bulletCount": 18,
+    "radii": [
+      2.8,
+      3.1
+    ],
+    "speeds": [
+      130,
+      136,
+      168
+    ]
+  },
+  "fpsBenchmark": {
+    "samples": 90,
+    "avgFrameMs": 16.69,
+    "avgFps": 59.9
+  },
+  "screenshots": {
+    "01-facil": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\sonic-wings-projectiles\\01-facil.png",
+    "02-normal": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\sonic-wings-projectiles\\02-normal.png",
+    "03-dificil": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\sonic-wings-projectiles\\03-dificil.png",
+    "04-boss-and-sizes": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\sonic-wings-projectiles\\04-boss-and-sizes.png"
+  },
+  "errors": [],
+  "easy": {
+    "difficulty": "easy",
+    "label": "FÁCIL",
+    "multiplier": 0.75,
+    "orbCount": 7,
+    "radii": [
+      2.2,
+      2.8,
+      3.1
+    ],
+    "textures": [
+      "arc-orb-0",
+      "arc-orb-1"
+    ],
+    "fighterSpeed": 147,
+    "bomberSpeed": 124.5
+  },
+  "normal": {
+    "difficulty": "normal",
+    "label": "NORMAL",
+    "multiplier": 1,
+    "orbCount": 12,
+    "radii": [
+      2.2,
+      2.8,
+      3.1
+    ],
+    "textures": [
+      "arc-orb-0",
+      "arc-orb-1"
+    ],
+    "fighterSpeed": 196,
+    "bomberSpeed": 166
+  },
+  "hard": {
+    "difficulty": "hard",
+    "label": "DIFÍCIL",
+    "multiplier": 1.3,
+    "orbCount": 11,
+    "radii": [
+      2.2,
+      2.8,
+      3.1
+    ],
+    "textures": [
+      "arc-orb-0",
+      "arc-orb-1"
+    ],
+    "fighterSpeed": 254.8,
+    "bomberSpeed": 215.8
+  }
+}
