@@ -1,5 +1,6 @@
 import { clamp } from './geometry.ts';
 import type { PelagicSpecialEventId } from './PelagicSpecialEvents.ts';
+import type { GameDifficulty } from './PelagicDifficulty.ts';
 import type { WeaponLevel } from '../systems/weaponSystem.ts';
 
 export type TideArchPhase =
@@ -59,6 +60,7 @@ export interface PelagicCheckpointSnapshot {
     powerMeter: number;
     specialCharges: number;
     hard: boolean;
+    difficulty?: GameDifficulty;
     assisted: boolean;
     tideArchCompleted: true;
     scoringState: {

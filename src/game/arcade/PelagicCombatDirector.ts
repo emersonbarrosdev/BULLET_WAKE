@@ -1,4 +1,5 @@
 import type { Encounter, EntrySide } from './content.ts';
+import { DIFFICULTY_PROFILES, type GameDifficulty } from './PelagicDifficulty.ts';
 import type { UpLayoutMode } from './ArcadeWorld.ts';
 
 export interface DirectorLogEntry {
@@ -45,6 +46,7 @@ export interface DirectorContext {
     region: number;
     upLayout: UpLayoutMode;
     arenaWidth: number;
+    difficulty?: GameDifficulty;
     effectiveHard: boolean;
     isAssisted: boolean;
     inBossFight: boolean;
@@ -194,16 +196,19 @@ export class PelagicCombatDirector {
             return { kind: 'none', reason: 'post-death-recovery' };
         }
 
-        // During Tide Arch, aircraft stay grounded; allow up to 2 spaced patrol boats ONLY if fast-clearing empties the canal
+        const diff: GameDifficulty = ctx.isAssisted ? 'easy' : (ctx.difficulty ?? (ctx.effectiveHard ? 'normal' : 'easy'));
+        const cfg = DIFFICULTY_PROFILES[diff].director;
+
+        // During Tide Arch, aircraft stay grounded; allow spaced patrol boats when canal clears
         if (ctx.tideArchActive) {
             if (
-                this.archBoatsInjected < 2 &&
-                ctx.route - this.lastArchBoatAt >= 4.0 &&
+                this.archBoatsInjected < cfg.maxArchBoats &&
+                ctx.route - this.lastArchBoatAt >= (diff === 'hard' ? 3.2 : 4.0) &&
                 (ctx.tideArchPhase === 'descent' || ctx.tideArchPhase === 'low-flight' || ctx.tideArchPhase === 'under-arch' || ctx.tideArchPhase === 'ascent') &&
-                ctx.visibleEnemies === 0 &&
+                ctx.visibleEnemies <= (diff === 'hard' ? 1 : 0) &&
                 ctx.approachingEnemies === 0 &&
-                ctx.activeEnemyBullets <= 1 &&
-                this.emptySeconds >= 1.5
+                ctx.activeEnemyBullets <= (diff === 'hard' ? 4 : 1) &&
+                (diff === 'hard' || this.emptySeconds >= 1.5)
             ) {
                 this.archBoatsInjected++;
                 this.lastArchBoatAt = ctx.route;
@@ -222,36 +227,34 @@ export class PelagicCombatDirector {
         }
 
         const narrowArena = ctx.upLayout === 'portrait' || ctx.arenaWidth <= 420;
-        const softMaxEnemies = ctx.effectiveHard ? (narrowArena ? 8 : 12) : narrowArena ? 7 : 9;
-        const softMaxBullets = ctx.effectiveHard ? (narrowArena ? 18 : 26) : narrowArena ? 13 : 18;
+        const softMaxEnemies = narrowArena ? cfg.softMaxEnemiesPortrait : cfg.softMaxEnemiesPc;
+        const softMaxBullets = narrowArena ? cfg.softMaxBulletsPortrait : cfg.softMaxBulletsPc;
         if (ctx.visibleEnemies + ctx.approachingEnemies >= softMaxEnemies || ctx.activeEnemyBullets >= softMaxBullets) {
             this.logSuppression(ctx.route, ctx.region, 'high-density');
             return { kind: 'none', reason: 'high-density' };
         }
 
-        if (ctx.specialEventActive && ctx.visibleEnemies >= 2) {
+        if (ctx.specialEventActive && ctx.visibleEnemies >= (diff === 'hard' ? 10 : 2)) {
             this.suppressedReason = 'special-event';
             return { kind: 'none', reason: 'special-event' };
         }
 
         // Priority 1: Smoothly pull forward the next authored encounter only by a short window
-        // (prevents compressing a 45s sector into 15s and starving later waves).
         const next = ctx.nextEncounter;
         if (next && next.at < 300) {
             const lead = next.at - ctx.route;
             const crossesArchBoundary = ctx.route < 148 && next.at >= 148;
             const crossesBossBoundary = ctx.route < 296 && next.at >= 296;
-            const maxLead = ctx.effectiveHard ? 3.2 : 2.6;
-            const minEmptyForAnticipate = ctx.effectiveHard ? 0.25 : 0.40;
+            const lowPressureForAnticipate = diff === 'hard'
+                ? ctx.visibleEnemies <= (narrowArena ? 3 : 4)
+                : ctx.visibleEnemies === 0 && ctx.approachingEnemies === 0 && this.emptySeconds >= cfg.minEmptyForAnticipate;
             if (
                 !crossesArchBoundary &&
                 !crossesBossBoundary &&
                 lead > 0 &&
-                lead <= maxLead &&
-                ctx.visibleEnemies === 0 &&
-                ctx.approachingEnemies === 0 &&
-                ctx.activeEnemyBullets <= 2 &&
-                this.emptySeconds >= minEmptyForAnticipate
+                lead <= cfg.maxLead &&
+                lowPressureForAnticipate &&
+                ctx.activeEnemyBullets <= (diff === 'hard' ? 14 : 2)
             ) {
                 this.wavesAnticipated++;
                 this.suppressedReason = null;
@@ -260,27 +263,31 @@ export class PelagicCombatDirector {
             }
         }
 
-        // Priority 2: Light tactical reinforcement per-sector (strictly capped per sector, never starves late sectors)
-        const reinforceDelay = ctx.effectiveHard ? 0.75 : 1.05;
+        // Priority 2: Difficulty-scaled tactical reinforcements to eliminate dead air and sustain intended pressure
         const sectorUsed = this.sectorReinforcements.get(ctx.region) ?? 0;
-        const sectorCap = ctx.region === 3 ? 2 : ctx.region === 4 ? (ctx.effectiveHard ? 3 : 2) : ctx.effectiveHard ? 5 : 4;
-        const minSpacing = ctx.effectiveHard ? 3.0 : 3.6;
-        const nextFarEnough = !next || next.at - ctx.route > (ctx.effectiveHard ? 1.3 : 1.5);
+        const sectorCap = ctx.region === 3 ? cfg.region3Cap : ctx.region === 4 ? cfg.region4Cap : cfg.sectorCap;
+        const rawMinTrigger = narrowArena ? cfg.minEnemiesForReinforcePortrait : cfg.minEnemiesForReinforcePc;
+        const minEnemiesTrigger = ctx.route < 28 ? Math.min(2, rawMinTrigger) : rawMinTrigger;
+        const maxApproaching = diff === 'hard' ? 3 : 0;
+        const needsDensity = diff === 'hard'
+            ? (ctx.visibleEnemies === 0 && this.emptySeconds >= cfg.reinforceDelay) ||
+            (ctx.visibleEnemies <= minEnemiesTrigger && ctx.route - this.lastReinforceAt >= cfg.minSpacing)
+            : (ctx.visibleEnemies === 0 && this.emptySeconds >= cfg.reinforceDelay);
+        const nextFarEnough = !next || next.at - ctx.route > (diff === 'hard' ? 0.55 : diff === 'normal' ? 0.95 : 1.5);
 
         if (
-            ctx.visibleEnemies === 0 &&
-            ctx.approachingEnemies === 0 &&
-            ctx.activeEnemyBullets <= 1 &&
-            this.emptySeconds >= reinforceDelay &&
+            needsDensity &&
+            ctx.approachingEnemies <= maxApproaching &&
+            ctx.activeEnemyBullets <= (diff === 'hard' ? softMaxBullets * 0.65 : 4) &&
             sectorUsed < sectorCap &&
-            ctx.route - this.lastReinforceAt >= minSpacing &&
-            !(ctx.region === 3 && ctx.route >= 144.8) &&
+            ctx.route - this.lastReinforceAt >= cfg.minSpacing &&
+            !(ctx.region === 3 && ctx.route >= (diff === 'hard' ? 143.5 : 144.8)) &&
             nextFarEnough
         ) {
             this.reinforcementsSpawned++;
             this.sectorReinforcements.set(ctx.region, sectorUsed + 1);
             this.lastReinforceAt = ctx.route;
-            const encounter = this.buildReinforcement(ctx.region, ctx.effectiveHard, ctx.playerX, ctx.arenaCenterX);
+            const encounter = this.buildReinforcement(ctx.region, diff, ctx.playerX, ctx.arenaCenterX);
             this.suppressedReason = null;
             this.logEvent(ctx.route, ctx.region, 'reinforce', `${encounter.family}/${encounter.formation}/${encounter.motion}`);
             return { kind: 'reinforce', reason: 'prolonged-idle-fill', encounter };
@@ -290,7 +297,9 @@ export class PelagicCombatDirector {
         return { kind: 'none', reason: 'steady-flow' };
     }
 
-    private buildReinforcement(region: number, hard: boolean, playerX: number, arenaCenterX: number): Omit<Encounter, 'at'> {
+    private buildReinforcement(region: number, diff: GameDifficulty, playerX: number, arenaCenterX: number): Omit<Encounter, 'at'> {
+        const hard = diff !== 'easy';
+        const extreme = diff === 'hard';
         const entry: EntrySide = this.reinforceSideToggle;
         this.reinforceSideToggle = entry === 'left' ? 'right' : 'left';
         const v = this.reinforceVariant++;
@@ -298,37 +307,40 @@ export class PelagicCombatDirector {
 
         if (region === 0) {
             const opts: Omit<Encounter, 'at'>[] = [
-                { family: 'fighter', formation: hard ? 'trio' : 'pair', motion: 'side-curve', lane: 0.24, speed: 122, entry },
-                { family: 'interceptor', formation: hard ? 'pair' : 'solo', motion: 'side-cross', lane: 0.20, speed: 162, entry },
-                { family: 'acrobat', formation: 'pair', motion: 'diagonal', lane: awayLane, speed: 112 },
+                { family: 'fighter', formation: extreme ? 'v' : hard ? 'trio' : 'pair', motion: 'side-curve', lane: 0.24, speed: 122, entry },
+                { family: 'interceptor', formation: extreme ? 'trio' : hard ? 'pair' : 'solo', motion: 'side-cross', lane: 0.20, speed: 162, entry },
+                { family: 'acrobat', formation: extreme ? 'quartet' : 'pair', motion: 'diagonal', lane: awayLane, speed: 112 },
+                ...(extreme ? [{ family: 'heli_scout' as const, formation: 'pair' as const, motion: 'side-curve' as const, lane: 0.24, speed: 120, entry }] : []),
             ];
             return opts[v % opts.length];
         }
         if (region === 1 || region === 2) {
             const opts: Omit<Encounter, 'at'>[] = [
-                { family: 'heli_scout', formation: 'pair', motion: 'side-curve', lane: 0.24, speed: 116, entry },
-                { family: 'interceptor', formation: 'pair', motion: 'side-cross', lane: 0.20, speed: 166, entry },
-                { family: 'fighter', formation: hard ? 'trio' : 'pair', motion: 'curve', lane: awayLane, speed: 112 },
-                { family: 'boat', formation: 'solo', motion: 'stationary', lane: awayLane > 0.5 ? 0.72 : 0.34 },
+                { family: 'heli_scout', formation: extreme ? 'trio' : 'pair', motion: 'side-curve', lane: 0.24, speed: 118, entry },
+                { family: 'interceptor', formation: extreme ? 'trio' : 'pair', motion: 'side-cross', lane: 0.20, speed: 166, entry },
+                { family: 'fighter', formation: extreme ? 'horde' : hard ? 'trio' : 'pair', motion: 'curve', lane: awayLane, speed: 114 },
+                { family: 'boat', formation: extreme ? 'pair' : 'solo', motion: 'stationary', lane: awayLane > 0.5 ? 0.72 : 0.34 },
+                ...(extreme ? [{ family: 'heli_utility' as const, formation: 'pair' as const, motion: 'stationary' as const, lane: 0.5, speed: 76 }] : []),
             ];
             return opts[v % opts.length];
         }
         if (region === 3) {
-            return { family: 'interceptor', formation: 'solo', motion: 'side-cross', lane: 0.22, speed: 168, entry };
+            return { family: 'interceptor', formation: extreme ? 'pair' : 'solo', motion: 'side-cross', lane: 0.22, speed: 168, entry };
         }
         if (region === 4 || region === 5) {
             const opts: Omit<Encounter, 'at'>[] = [
-                { family: 'fighter', formation: hard ? 'trio' : 'pair', motion: 'side-curve', lane: 0.24, speed: 124, entry },
-                { family: 'heli_scout', formation: 'pair', motion: 'sine', lane: awayLane, speed: 118 },
-                { family: 'interceptor', formation: 'pair', motion: 'diagonal', lane: awayLane, speed: 158 },
-                { family: 'acrobat', formation: hard ? 'trio' : 'pair', motion: 'side-cross', lane: 0.22, speed: 128, entry },
+                { family: 'fighter', formation: extreme ? 'v' : hard ? 'trio' : 'pair', motion: 'side-curve', lane: 0.24, speed: 124, entry },
+                { family: 'heli_scout', formation: extreme ? 'trio' : 'pair', motion: 'sine', lane: awayLane, speed: 118 },
+                { family: 'interceptor', formation: extreme ? 'trio' : 'pair', motion: 'diagonal', lane: awayLane, speed: 158 },
+                { family: 'acrobat', formation: extreme ? 'quartet' : hard ? 'trio' : 'pair', motion: 'side-cross', lane: 0.22, speed: 128, entry },
+                ...(extreme ? [{ family: 'heli_phantom' as const, formation: 'pair' as const, motion: 'side-curve' as const, lane: 0.24, speed: 132, entry }] : []),
             ];
             return opts[v % opts.length];
         }
         const lateOpts: Omit<Encounter, 'at'>[] = [
-            { family: 'interceptor', formation: hard ? 'trio' : 'pair', motion: 'side-cross', lane: 0.22, speed: 170, entry },
-            { family: 'heli_phantom', formation: 'solo', motion: 'side-curve', lane: 0.24, speed: 128, entry },
-            { family: 'fighter', formation: 'trio', motion: 'accelerate', lane: awayLane, speed: 120 },
+            { family: 'interceptor', formation: extreme ? 'quartet' : hard ? 'trio' : 'pair', motion: 'side-cross', lane: 0.22, speed: 170, entry },
+            { family: 'heli_phantom', formation: extreme ? 'trio' : hard ? 'pair' : 'solo', motion: 'side-curve', lane: 0.24, speed: 128, entry },
+            { family: 'fighter', formation: extreme ? 'v' : 'trio', motion: 'accelerate', lane: awayLane, speed: 120 },
         ];
         return lateOpts[v % lateOpts.length];
     }

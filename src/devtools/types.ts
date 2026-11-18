@@ -1,5 +1,6 @@
 import type { ArcadeScene } from '../game/arcade/ArcadeScene';
 import type { StageEventCategory, StageEventRepeatPolicy, StageEventTriggerKind } from '../game/arcade/ArcadeStageDirector';
+import type { GameDifficulty } from '../game/arcade/PelagicDifficulty';
 import type { Encounter, EntrySide, Family, Formation, Motion, Perspective } from '../game/arcade/content';
 
 export type DevPanelTab =
@@ -24,7 +25,7 @@ export type DevScenarioCategory =
 
 export interface DevScenarioOptions {
   seed?: number;
-  difficulty?: 'normal' | 'hard' | 'arcade';
+  difficulty?: GameDifficulty | 'arcade';
   assisted?: boolean;
   rapidFire?: boolean;
   weaponLevel?: number;
@@ -103,7 +104,7 @@ export interface DevEnemySpawnConfig {
   spawnY?: number;
   fireRateScale: number;
   shotSpeedScale: number;
-  difficulty: 'normal' | 'hard';
+  difficulty: GameDifficulty;
   keepExisting: boolean;
 }
 

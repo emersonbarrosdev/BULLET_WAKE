@@ -473,10 +473,18 @@ export class PelagicActorAnims {
         const invDt = 1 / Math.max(dt, 1 / 240);
         const vx = e.vx !== undefined ? e.vx : (e.x - tr.x) * invDt;
         const vy = e.vy !== undefined ? e.vy : (e.y - tr.y) * invDt;
+        const isHeliUnit = isHelicopterFamily(e.family);
         if (Math.hypot(e.x - tr.x, e.y - tr.y) < 95) {
-          tr.vx = vx; tr.vy = vy;
-          const targetBank = clamp(vx / (e.family === 'bomber' ? 55 : 82), -1, 1);
-          const bankRate = e.family === 'bomber' ? 5.5 : e.family === 'acrobat' ? 13 : 9.5;
+          if (isHeliUnit) {
+            const velLerp = Math.min(1, dt * 8.5);
+            tr.vx += (vx - tr.vx) * velLerp;
+            tr.vy += (vy - tr.vy) * velLerp;
+          } else {
+            tr.vx = vx; tr.vy = vy;
+          }
+          const bankDivisor = e.family === 'bomber' ? 55 : isHeliUnit ? (e.family === 'heli_warhawk' ? 105 : 96) : 82;
+          const targetBank = clamp(tr.vx / bankDivisor, -1, 1);
+          const bankRate = e.family === 'bomber' ? 5.5 : e.family === 'acrobat' ? 13 : isHeliUnit ? 6.5 : 9.5;
           tr.smoothBank += (targetBank - tr.smoothBank) * Math.min(1, dt * bankRate);
         }
         if (e.cooldown > tr.cooldown + .22) { tr.shotFlash = .13; tr.recoil = 1; }
@@ -490,7 +498,7 @@ export class PelagicActorAnims {
 
       const isAir = !e.ground;
       const isHeli = isHelicopterFamily(e.family);
-      const hull = resolveHullVisualTransform(e, time);
+      const hull = resolveHullVisualTransform(isHeli ? { ...e, vx: tr.vx, vy: tr.vy } : e, time);
 
       if (isHeli && this.scene.textures.exists(PELAGIC_HELI_SHEET)) {
         let bankEff = tr.smoothBank;

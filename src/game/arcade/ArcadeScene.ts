@@ -28,6 +28,7 @@ import {
 } from './PelagicWeaponMounts';
 import { PelagicComms } from './PelagicComms';
 import { PelagicDesktopHud } from './PelagicDesktopHud';
+import { DIFFICULTY_PROFILES, normalizeGameDifficulty, stepGameDifficulty } from './PelagicDifficulty';
 import {
   TouchInputController,
   computeWorldSafeInsets,
@@ -200,7 +201,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.pelagicSpecialText = this.add.text(224, 15, '', { fontFamily: FONT, fontSize: '10px', fontStyle: 'bold', color: '#ffe159', stroke: '#041430', strokeThickness: 2 }).setResolution(2).setOrigin(0, .5).setDepth(46).setVisible(false);
     this.bossHudLabel = this.add.text(207, 16, '', { fontFamily: FONT, fontSize: '9.5px', fontStyle: 'bold', color: '#ffe654', stroke: '#041430', strokeThickness: 2 }).setResolution(2).setOrigin(0, .5).setDepth(46).setVisible(false);
     this.radio = this.add.text(384, 66, '', { fontFamily: FONT, fontSize: '12px', color: '#16385b', backgroundColor: '#fff7cb', padding: { x: 8, y: 5 }, wordWrap: { width: 280 }, align: 'center' }).setResolution(2).setOrigin(.5).setDepth(48).setVisible(false);
-    for (let i = 0; i < 640; i++)this.bulletSprites.push(this.add.sprite(0, 0, 'arc-red').setVisible(false).setDepth(19.5));
+    for (let i = 0; i < 960; i++)this.bulletSprites.push(this.add.sprite(0, 0, 'arc-red').setVisible(false).setDepth(19.5));
     this.makeOrbTextures(); this.installTouch(); this.show('loading');
     const blur = () => { this.touchController.clearAll(); this.input.keyboard?.resetKeys(); this.renderTouchOverlay(); if (this.screen === 'play') this.show('pause'); };
     const onResize = () => { this.touchController.clearAll(); this.syncResponsiveViewport(); this.refreshTouchLayout(); };
@@ -479,8 +480,9 @@ export class ArcadeScene extends Phaser.Scene {
         this.text(cx + 62, 202, avail ? `RECORDE\n${best}` : 'CONCLUA A\nROTA 01 ANTES', 10, avail ? UI.white : UI.crimsonHex, { wrap: 156 });
         if (i === 0) {
           const st = globalSave.getSettings();
-          const modeLabel = st.assisted ? 'MODO ASSISTIDO ATIVO' : st.difficulty !== 'normal' ? 'MODO DIFÍCIL' : 'MODO NORMAL';
-          const modeCol = st.assisted ? '#88fff2' : st.difficulty !== 'normal' ? UI.goldHex : UI.silver;
+          const diff = normalizeGameDifficulty(st.difficulty);
+          const modeLabel = st.assisted ? 'MODO ASSISTIDO ATIVO' : `MODO ${DIFFICULTY_PROFILES[diff].label}`;
+          const modeCol = st.assisted ? '#88fff2' : diff === 'hard' ? UI.goldHex : diff === 'normal' ? UI.cyanHex : UI.silver;
           this.text(cx, 266, modeLabel, 9.5, modeCol);
         }
         this.button(cx, 304, avail ? 'INICIAR MISSÃO' : 'BLOQUEADA', () => { if (!avail) return; const carry = i ? prog.flights[1] : undefined; this.begin(i, carry); }, 264, 38, { fontSize: 13 });
@@ -507,7 +509,7 @@ export class ArcadeScene extends Phaser.Scene {
       const w = this.world;
       if (w) {
         makeGaugeMeter(this, 384, 110, 322, 26, 0, 0, UI_PIP.cyan, this.ui);
-        const modeTag = w.up ? (w.isAssisted ? '  •  ASSISTIDO' : w.hard ? '  •  DIFÍCIL' : '') : '';
+        const modeTag = w.up ? (w.isAssisted ? '  •  ASSISTIDO' : `  •  ${w.difficultyProfile.label}`) : '';
         this.text(384, 110, `ROTA 0${this.currentMission + 1}${modeTag}  •  ${w.score} PTS  •  NV ${w.weapons.weaponLevel}`, 10, UI.cyanHex);
       }
       this.button(384, 162, 'CONTINUAR', () => this.show('play'), 266, 38);
@@ -689,7 +691,7 @@ export class ArcadeScene extends Phaser.Scene {
         if (!this.world) return;
         const cur = globalSave.getSettings();
         this.world.assisted = this.currentMission === 0 && cur.assisted;
-        this.world.hard = (this.currentMission > 0 || !cur.assisted) && cur.difficulty !== 'normal';
+        this.world.setDifficulty(cur.difficulty);
         this.pelagicAssistBadge.setVisible(!!this.world.up && this.world.isAssisted);
       };
       const addVolumeRow = (y: number, iconFrame: number, label: string, isMusic: boolean) => {
@@ -731,16 +733,22 @@ export class ArcadeScene extends Phaser.Scene {
       addToggleRow(172, UI_ICON.lightning, 'DISPARO ACESSÍVEL', 2, UI_PIP.green, () => {
         const on = globalSave.getSettings().rapidFire; return { text: on ? 'ATIVADO' : 'DESATIVADO', filled: on ? 2 : 0 };
       }, () => { const next = !globalSave.getSettings().rapidFire; globalSave.updateSettings({ rapidFire: next }); if (this.world) this.world.accessibility = next; });
-      addToggleRow(212, UI_ICON.crown, 'DIFICULDADE', 2, UI_PIP.gold, () => {
-        const hard = globalSave.getSettings().difficulty !== 'normal'; return { text: hard ? 'DIFÍCIL' : 'NORMAL', filled: hard ? 2 : 1 };
-      }, () => { const next = globalSave.getSettings().difficulty === 'normal' ? 'hard' : 'normal'; globalSave.updateSettings({ difficulty: next }); syncWorldDifficulty(); });
+      addToggleRow(212, UI_ICON.crown, 'DIFICULDADE', 3, UI_PIP.gold, () => {
+        const diff = normalizeGameDifficulty(globalSave.getSettings().difficulty);
+        const filled = diff === 'hard' ? 3 : diff === 'normal' ? 2 : 1;
+        return { text: DIFFICULTY_PROFILES[diff].label, filled };
+      }, () => {
+        const next = stepGameDifficulty(globalSave.getSettings().difficulty, 1);
+        globalSave.updateSettings({ difficulty: next });
+        syncWorldDifficulty();
+      });
       addToggleRow(252, UI_ICON.botan, 'MODO ASSISTIDO', 2, UI_PIP.cyan, () => {
         const on = globalSave.getSettings().assisted; return { text: on ? 'ATIVADO' : 'DESATIVADO', filled: on ? 2 : 0 };
       }, () => { const next = !globalSave.getSettings().assisted; globalSave.updateSettings({ assisted: next }); syncWorldDifficulty(); });
       addToggleRow(292, UI_ICON.radar, 'QUALIDADE VISUAL', 3, UI_PIP.cyan, () => {
         return { text: ['BAIXA', 'MÉDIA', 'ALTA'][this.quality], filled: this.quality + 1 };
       }, (dir) => { this.quality = (this.quality + (dir < 0 ? 2 : 1)) % 3; try { localStorage.setItem('bullet_wake_visual', String(this.quality)); } catch {/* Optional */ } });
-      this.text(384, 326, 'Modo Assistido (Rota 01): recuperação facilitada sem alterar Normal/Difícil.', 9, UI.silver);
+      this.text(384, 326, 'Modo Assistido (Rota 01): recuperação facilitada sem alterar Fácil/Normal/Difícil.', 9, UI.silver);
       this.button(262, 362, 'CONTROLES TOUCH', () => this.show('touch-settings'), 228, 36, { fontSize: 12.5 });
       this.button(506, 362, 'VOLTAR', () => this.show(this.pauseOrigin), 214, 36);
     } else if (screen === 'touch-settings') {
@@ -922,7 +930,7 @@ export class ArcadeScene extends Phaser.Scene {
     } : undefined);
     this.world.accessibility = settings.rapidFire;
     this.world.assisted = index === 0 && settings.assisted;
-    this.world.hard = (index > 0 || !settings.assisted) && settings.difficulty !== 'normal';
+    this.world.setDifficulty(settings.difficulty);
     this.accumulator = 0;
     this.world.bossContact = (_boss, ax, ay, bx, by, radius) => spriteContact(this.bossSprite, ax, ay, bx, by, radius);
     this.world.subHullContact = (_sub, secIdx, ax, ay, bx, by, radius) => this.subBossArt.hullContact(secIdx, ax, ay, bx, by, radius);

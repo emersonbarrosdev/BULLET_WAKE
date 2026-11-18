@@ -4,6 +4,7 @@ import Phaser from 'phaser';
 import '../../title-screen.css';
 import { GAME_BACKGROUND } from '../constants';
 import { saveSystem } from '../systems/saveSystem.ts';
+import { DIFFICULTY_PROFILES, normalizeGameDifficulty, stepGameDifficulty } from '../arcade/PelagicDifficulty.ts';
 import { globalAudio } from '../audio/audioSystem.ts';
 import { NORMAL_GUIDE_ITEMS, PICKUP_GUIDE } from '../data/pickupGuide';
 
@@ -167,7 +168,7 @@ export class TitleScene extends Phaser.Scene {
       return [
         this.actionButton('music', 'MÚSICA', settings.musicVolume > 0 ? 'LIGADA' : 'DESLIGADA', 0),
         this.actionButton('effects', 'EFEITOS', settings.sfxVolume > 0 ? 'LIGADOS' : 'DESLIGADOS', 1),
-        this.actionButton('difficulty', 'DIFICULDADE', 'NORMAL · EM AJUSTE', 2),
+        this.actionButton('difficulty', 'DIFICULDADE', DIFFICULTY_PROFILES[normalizeGameDifficulty(settings.difficulty)].label, 2),
         this.actionButton('controls', 'CONTROLES', '', 3),
         this.actionButton('guide', 'GUIA DE ITENS E ARMAS', '', 4),
         this.actionButton('back', 'VOLTAR', '', 5),
@@ -263,7 +264,8 @@ export class TitleScene extends Phaser.Scene {
         break;
       }
       case 'difficulty': {
-        saveSystem.updateSettings({ difficulty: 'normal' });
+        const next = stepGameDifficulty(saveSystem.getSettings().difficulty, 1);
+        saveSystem.updateSettings({ difficulty: next });
         break;
       }
       case 'rapid': {

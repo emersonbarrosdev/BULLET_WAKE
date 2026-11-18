@@ -6,6 +6,7 @@ import {
   type StageEventStatus,
 } from '../game/arcade/ArcadeStageDirector';
 import { MISSIONS } from '../game/arcade/content';
+import type { GameDifficulty } from '../game/arcade/PelagicDifficulty';
 import { DevAnimationPreviewer, type DevAssetCategory } from './DevAnimationPreviewer';
 import { DevCollisionOverlay } from './DevCollisionOverlay';
 import { BOSS_RESISTANCE_PRESETS, DevCombatControls } from './DevCombatControls';
@@ -680,6 +681,7 @@ export class DevToolsPanel {
     );
     const diffSel = this.select(
       [
+        { value: 'easy', label: 'Fácil' },
         { value: 'normal', label: 'Normal' },
         { value: 'hard', label: 'Difícil' },
       ],
@@ -697,7 +699,7 @@ export class DevToolsPanel {
     invLbl.append(invChk, document.createTextNode('Invencibilidade Debug (apenas RIVET)'));
 
     const readOpts = () => ({
-      difficulty: diffSel.value as 'normal' | 'hard',
+      difficulty: diffSel.value as GameDifficulty,
       weaponLevel: Number(lvlIn.value),
       lives: Number(livesIn.value),
       specialCharges: Number(espIn.value),
@@ -881,7 +883,15 @@ export class DevToolsPanel {
       entry,
       (v) => { entry = v as typeof entry; },
     );
-    const diffSel = this.select([{ value: 'normal', label: 'Normal' }, { value: 'hard', label: 'Difícil' }], 'normal', () => {});
+    const diffSel = this.select(
+      [
+        { value: 'easy', label: 'Fácil' },
+        { value: 'normal', label: 'Normal' },
+        { value: 'hard', label: 'Difícil' },
+      ],
+      'normal',
+      () => {},
+    );
 
     const qtyIn = this.numInput(1, 1, 24);
     const laneIn = this.numInput(0.5, 0.1, 0.9, 0.05);
@@ -916,7 +926,7 @@ export class DevToolsPanel {
         spawnY: sy > 0 ? sy : undefined,
         fireRateScale: Number(fireRateIn.value),
         shotSpeedScale: Number(shotSpdIn.value),
-        difficulty: diffSel.value as 'normal' | 'hard',
+        difficulty: diffSel.value as GameDifficulty,
         keepExisting: keepChk.checked,
         ...override,
       };
@@ -953,9 +963,13 @@ export class DevToolsPanel {
     s2.add(
       this.row(
         this.btn('1 Helicóptero Scout', () => spawnNow({ missionIndex: 0, family: 'heli_scout', quantity: 1, formation: 'solo', motion: 'sine', spawnY: 110 })),
+        this.btn('Par Scout (Curva)', () => spawnNow({ missionIndex: 0, family: 'heli_scout', quantity: 2, formation: 'pair', motion: 'curve', lane: 0.48 })),
         this.btn('Utility (Twin Rotor)', () => spawnNow({ missionIndex: 0, family: 'heli_utility', quantity: 1, formation: 'solo', motion: 'stationary' })),
+        this.btn('Par Utility (Lateral)', () => spawnNow({ missionIndex: 0, family: 'heli_utility', quantity: 2, formation: 'pair', motion: 'side-curve', entry: 'left', lane: 0.34 })),
         this.btn('Phantom (Furtivo)', () => spawnNow({ missionIndex: 0, family: 'heli_phantom', quantity: 1, formation: 'solo', motion: 'side-curve', entry: 'left' })),
+        this.btn('Trio Phantom (Varredura)', () => spawnNow({ missionIndex: 0, family: 'heli_phantom', quantity: 3, formation: 'trio', motion: 'side-curve', entry: 'right', lane: 0.32 })),
         this.btn('Warhawk (Míssil)', () => spawnNow({ missionIndex: 0, family: 'heli_warhawk', quantity: 1, formation: 'solo', motion: 'stationary', spawnY: 110 })),
+        this.btn('Par Warhawk (Hover)', () => spawnNow({ missionIndex: 0, family: 'heli_warhawk', quantity: 2, formation: 'pair', motion: 'stationary', spawnY: 112 })),
         this.btn('10 Caças', () => spawnNow({ missionIndex: 0, family: 'fighter', quantity: 10, formation: 'solo', motion: 'sine' })),
         this.btn('Formação em V', () => spawnNow({ missionIndex: 0, family: 'fighter', quantity: 5, formation: 'v', motion: 'straight' })),
         this.btn('Entradas Laterais', () => {
@@ -998,8 +1012,12 @@ export class DevToolsPanel {
     const espIn = this.numInput(w?.weapons.specialCharges ?? 2, 0, 5);
     const scoreIn = this.numInput(w?.score ?? 0, 0, 9999999, 100);
     const diffSel = this.select(
-      [{ value: 'normal', label: 'Normal' }, { value: 'hard', label: 'Difícil' }],
-      w?.hard ? 'hard' : 'normal',
+      [
+        { value: 'easy', label: 'Fácil' },
+        { value: 'normal', label: 'Normal' },
+        { value: 'hard', label: 'Difícil' },
+      ],
+      w?.difficulty ?? 'normal',
       () => {},
     );
     const rapidChk = document.createElement('input');
@@ -1032,7 +1050,7 @@ export class DevToolsPanel {
         lives: Number(livesIn.value),
         specialCharges: Number(espIn.value),
         score: Number(scoreIn.value),
-        difficulty: diffSel.value as 'normal' | 'hard',
+        difficulty: diffSel.value as GameDifficulty,
         rapidFire: rapidChk.checked,
         assisted: assistChk.checked,
         devInvincible: invChk.checked,
@@ -1687,7 +1705,7 @@ export class DevToolsPanel {
         const sensor = w.devSensorSnapshot();
         const recent = p.timelineLog.slice(-4).map((e) => `@${e.at}s[${e.kind}:${e.detail}]`).join(' ');
         this.eventDirectorEl.textContent =
-          `Fase: ${w.mission.name} (${w.hard && !w.isAssisted ? 'DIFÍCIL' : w.isAssisted ? 'ASSISTIDO' : 'NORMAL'}) | Modo: ${w.devSandboxIsolated ? 'ISOLADO' : 'INTEGRADO'} | Seed: ${w.seed}\n` +
+          `Fase: ${w.mission.name} (${w.isAssisted ? 'ASSISTIDO' : w.difficultyProfile.label}) | Modo: ${w.devSandboxIsolated ? 'ISOLADO' : 'INTEGRADO'} | Seed: ${w.seed}\n` +
           `Rota: ${snap.route}s / 300s | Região #${snap.region + 1}: ${w.mission.regions[snap.region] ?? '-'} | Sensor Arco: ${sensor.tideArchPhase} (alt=${sensor.altitude})\n` +
           `StageDirector: pending=${sd.counts.pending} active=${sd.counts.active} completed=${sd.counts.completed} skipped=${sd.counts.skipped}\n` +
           `Presença: inimigo=${p.pctWithVisibleEnemy}% | ameaça=${p.pctWithThreat}% | MaxGap=${p.maxEnemyGapSeconds}s/${p.maxThreatGapSeconds}s\n` +

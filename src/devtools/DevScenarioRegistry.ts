@@ -6,7 +6,7 @@ import type { DevScenario, DevScenarioOptions, DevStageAdapter } from './types.t
 function applyScenarioOptions(scene: ArcadeScene, options?: DevScenarioOptions): void {
   const w = scene.world;
   if (!w) return;
-  if (options?.difficulty !== undefined) w.hard = options.difficulty !== 'normal';
+  if (options?.difficulty !== undefined) w.setDifficulty(options.difficulty);
   if (options?.assisted !== undefined) w.assisted = w.up && options.assisted;
   if (options?.rapidFire !== undefined) w.accessibility = options.rapidFire;
   if (options?.weaponLevel !== undefined) w.weapons.weaponLevel = Math.max(1, Math.min(5, Math.round(options.weaponLevel))) as WeaponLevel;

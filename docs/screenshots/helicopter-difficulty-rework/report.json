@@ -1,0 +1,105 @@
+{
+  "menuCheck": {
+    "initialAndCycled": [
+      "NORMAL",
+      "DIFÍCIL",
+      "FÁCIL",
+      "NORMAL"
+    ],
+    "finalLabel": "DIFÍCIL"
+  },
+  "formations": {
+    "heli_scout_pair_curve": {
+      "spawned": 2,
+      "crossings": 0,
+      "minDist": 65,
+      "finalUnits": [
+        {
+          "id": 1,
+          "x": 318,
+          "y": 224,
+          "rotDeg": 160.5,
+          "visible": true
+        },
+        {
+          "id": 2,
+          "x": 382,
+          "y": 214,
+          "rotDeg": 160.5,
+          "visible": true
+        }
+      ]
+    },
+    "heli_utility_pair_hover": {
+      "spawned": 2,
+      "crossings": 0,
+      "minDist": 71,
+      "finalUnits": [
+        {
+          "id": 1,
+          "x": 383,
+          "y": 97,
+          "rotDeg": -168.7,
+          "visible": true
+        },
+        {
+          "id": 2,
+          "x": 454,
+          "y": 92,
+          "rotDeg": -168.7,
+          "visible": true
+        }
+      ]
+    },
+    "heli_phantom_trio_sweep": {
+      "spawned": 3,
+      "crossings": 0,
+      "minDist": 31,
+      "finalUnits": [
+        {
+          "id": 1,
+          "x": 209,
+          "y": 106,
+          "rotDeg": 160.5,
+          "visible": true
+        },
+        {
+          "id": 2,
+          "x": 276,
+          "y": 118,
+          "rotDeg": 160.5,
+          "visible": true
+        },
+        {
+          "id": 3,
+          "x": 342,
+          "y": 106,
+          "rotDeg": 160.5,
+          "visible": true
+        }
+      ]
+    }
+  },
+  "hardCombat": {
+    "difficulty": "hard",
+    "label": "DIFÍCIL",
+    "route": 98.7,
+    "activeEnemies": 10,
+    "activeEnemyBullets": 26,
+    "weaponLevel": 4,
+    "playerVisible": true
+  },
+  "fpsBenchmark": {
+    "samples": 90,
+    "avgFrameMs": 16.89,
+    "avgFps": 59.2
+  },
+  "screenshots": {
+    "01-difficulty-menu": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\helicopter-difficulty-rework\\01-difficulty-menu.png",
+    "02-heli-scout-pair-curve": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\helicopter-difficulty-rework\\02-heli-scout-pair-curve.png",
+    "03-heli-utility-pair-hover": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\helicopter-difficulty-rework\\03-heli-utility-pair-hover.png",
+    "04-heli-phantom-trio-sweep": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\helicopter-difficulty-rework\\04-heli-phantom-trio-sweep.png",
+    "05-hard-mode-combat": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\helicopter-difficulty-rework\\05-hard-mode-combat.png"
+  },
+  "errors": []
+}

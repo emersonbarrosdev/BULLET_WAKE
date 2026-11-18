@@ -7,8 +7,6 @@ import {
     LEGACY_SOLAR_SHOTS,
     MISSIONS,
     SUPPLIES,
-    WARHAWK_MISSILE_SPEED_HARD,
-    WARHAWK_MISSILE_SPEED_NORMAL,
     formationOffsets,
     regionAt,
     type Encounter,
@@ -17,6 +15,21 @@ import {
     type Mission,
     type Motion,
 } from './content.ts';
+import {
+    DIFFICULTY_PROFILES,
+    buildMissionEncounters,
+    normalizeGameDifficulty,
+    resolveEnemyMaxHp,
+    type DifficultyProfile,
+    type GameDifficulty,
+} from './PelagicDifficulty.ts';
+import {
+    computeHelicopterSlotLayout,
+    enforceHelicopterSeparation,
+    isHelicopter,
+    stepHelicopterActor,
+    type HelicopterFormationState,
+} from './PelagicHelicopterMovement.ts';
 import {
     ArcadeStageDirector,
     type StageDirectorSnapshot,
@@ -98,7 +111,8 @@ export interface Actor {
     entry?: EntrySide; vx?: number; vy?: number;
     mountAngles?: number[]; mountRecoil?: number[]; attackStep?: number; altitude?: number;
     archPattern?: ArchCannonPattern; archSide?: -1 | 1; archBoat?: boolean; archRetiring?: boolean;
-    squadId?: number; navigation?: SurfaceRoute; submarine?: SubmarineState; specialEvent?: PelagicSpecialEventId; eventRole?: PelagicEventRole;
+    squadId?: number; navigation?: SurfaceRoute; submarine?: SubmarineState; heliNav?: HelicopterFormationState;
+    specialEvent?: PelagicSpecialEventId; eventRole?: PelagicEventRole;
 }
 export interface ArcadeBomb { id: number; x: number; y: number; age: number; phase: 'flight' | 'blast'; radius: number; }
 export interface Bullet { active: boolean; x: number; y: number; px: number; py: number; vx: number; vy: number; damage: number; radius: number; enemy: boolean; missile: boolean; enemyMissile?: boolean; homing: boolean; age: number; scale: number; color: number; charged?: boolean; chargeTier?: 'partial' | 'full'; pierceRemaining?: number; hitTargetIds?: Set<number>; }
@@ -120,14 +134,16 @@ export interface ArcadeWorldOptions {
     upLayout?: UpLayoutMode;
     arena?: Box;
     seed?: number;
+    difficulty?: GameDifficulty | 'arcade';
 }
 
 export class ArcadeWorld {
-    readonly arena: Box; readonly bullets: Bullet[] = Array.from({ length: 640 }, () => ({ active: false, x: 0, y: 0, px: 0, py: 0, vx: 0, vy: 0, damage: 0, radius: 0, enemy: false, missile: false, enemyMissile: false, homing: false, age: 0, scale: 1, color: 0 }));
+    readonly arena: Box; readonly bullets: Bullet[] = Array.from({ length: 960 }, () => ({ active: false, x: 0, y: 0, px: 0, py: 0, vx: 0, vy: 0, damage: 0, radius: 0, enemy: false, missile: false, enemyMissile: false, homing: false, age: 0, scale: 1, color: 0 }));
     enemies: Actor[] = []; cargo: Cargo[] = []; obstacles: Obstacle[] = []; wrecks: CoastalWreck[] = []; boss?: Boss; bomb?: ArcadeBomb; events: WorldEvent[] = [];
     weapons: PlayerWeaponsState = createPlayerWeapons('nolan'); lives = 3; score = 0; kills = 0; deaths = 0; collected = 0; elapsed = 0; route = 0; scroll = 0; scrollSpeed = 38; region = 0; player = { x: 384, y: 368, invulnerable: 2.5, bank: 0, altitude: 1 };
     state: 'intro' | 'play' | 'exit' | 'victory' | 'defeat' = 'intro'; introTime = 2.2; exitTime = 0; specialTime = 0; missileTime = 0; specialEdge = false; specialImpact?: { x: number; y: number };
-    contact?: ContactQuery; bossContact?: BossContactQuery; subHullContact?: SubHullContactQuery; accessibility = false; hard = false; assisted = false;
+    contact?: ContactQuery; bossContact?: BossContactQuery; subHullContact?: SubHullContactQuery; accessibility = false; assisted = false;
+    private _difficulty: GameDifficulty = 'easy';
     devInvincible = false; devSandboxIsolated = false; devIsolatedEventId?: string; enemyFireRateScale = 1; enemyShotSpeedScale = 1; enemySpeedScale = 1; playerSpeedScale = 1; specialDurationScale = 1;
     seed = 1337;
     readonly specialEventsTriggered = new Set<PelagicSpecialEventId>();
@@ -148,6 +164,7 @@ export class ArcadeWorld {
         const mIdx = Math.max(0, MISSIONS.indexOf(mission));
         this.stageDirector = new ArcadeStageDirector(mission, mIdx);
         this.setSeed(options?.seed ?? 1337);
+        if (options?.difficulty) this._difficulty = normalizeGameDifficulty(options.difficulty);
         this.upLayout = options?.upLayout ?? 'classic';
         if (options?.arena) {
             this.arena = { ...options.arena };
@@ -180,7 +197,27 @@ export class ArcadeWorld {
     get playerHomeY(): number { return this.up ? this.arena.bottom - 52 : 228; }
     get hasActiveCheckpoint(): boolean { return !!this.checkpoint; }
     get isAssisted(): boolean { return this.up && this.assisted; }
-    private get effectiveHard(): boolean { return this.hard && !this.isAssisted; }
+    get difficulty(): GameDifficulty { return this._difficulty; }
+    set difficulty(mode: GameDifficulty) { this.setDifficulty(mode); }
+    get hard(): boolean { return this._difficulty !== 'easy'; }
+    set hard(val: boolean) { this.setDifficulty(val ? 'normal' : 'easy'); }
+    get effectiveDifficulty(): GameDifficulty { return this.isAssisted ? 'easy' : this._difficulty; }
+    get difficultyProfile(): DifficultyProfile { return DIFFICULTY_PROFILES[this.effectiveDifficulty]; }
+    private get effectiveHard(): boolean { return this.effectiveDifficulty !== 'easy'; }
+    private get effectiveExtreme(): boolean { return this.effectiveDifficulty === 'hard'; }
+    private get activeEncounters(): readonly Encounter[] { return buildMissionEncounters(this.mission, this.effectiveDifficulty); }
+    setDifficulty(mode: GameDifficulty | 'arcade'): void {
+        const next = normalizeGameDifficulty(mode);
+        if (this._difficulty === next) return;
+        this._difficulty = next;
+        this.syncWaveIndexToRoute();
+    }
+    private syncWaveIndexToRoute(): void {
+        if (this.waveIndex === 0 && this.route <= 0.01) return;
+        const list = this.activeEncounters;
+        const idx = list.findIndex(e => e.at >= this.route);
+        this.waveIndex = idx < 0 ? list.length : idx;
+    }
     setArenaBounds(bounds: Box): void {
         const oldCenter = this.arenaCenterX;
         const oldW = Math.max(1, this.arenaWidth);
@@ -276,20 +313,22 @@ export class ArcadeWorld {
         }
         if (!this.directorPaused) {
             const iso = this.devSandboxIsolated ? this.devIsolatedEventId : undefined;
-            while (this.waveIndex < this.mission.encounters.length && this.route >= this.mission.encounters[this.waveIndex].at) {
+            const encounters = this.activeEncounters;
+            while (this.waveIndex < encounters.length && this.route >= encounters[this.waveIndex].at) {
                 const idx = this.waveIndex++;
-                const e = this.mission.encounters[idx];
-                const encId = `stage-${this.mission.id}-enc-${idx}`;
+                const e = encounters[idx];
+                const baseIdx = this.mission.encounters.indexOf(e);
+                const encId = baseIdx >= 0 ? `stage-${this.mission.id}-enc-${baseIdx}` : undefined;
                 if (iso && iso !== encId) continue;
                 if (this.up && (e.at === 155 || this.tideArch.airSpawnsBlocked)) {
-                    this.stageDirector.markEncounterSkipped(idx, e.at === 155 ? 'Substituído pelo Arco das Marés' : 'Bloqueado pelo Arco das Marés');
+                    if (baseIdx >= 0) this.stageDirector.markEncounterSkipped(baseIdx, e.at === 155 ? 'Substituído pelo Arco das Marés' : 'Bloqueado pelo Arco das Marés');
                     continue;
                 }
                 if (!this.up && e.at === 155) {
-                    this.stageDirector.markEncounterSkipped(idx, 'Substituído pelo Miniboss');
+                    if (baseIdx >= 0) this.stageDirector.markEncounterSkipped(baseIdx, 'Substituído pelo Miniboss');
                     continue;
                 }
-                this.stageDirector.markEncounterTriggered(idx, this.route);
+                if (baseIdx >= 0) this.stageDirector.markEncounterTriggered(baseIdx, this.route);
                 this.dispatchScriptedEncounter(e);
             }
             if (this.up && !this.boss && !this.tideArch.airSpawnsBlocked) {
@@ -352,7 +391,7 @@ export class ArcadeWorld {
         this.specialEventsTriggered.add(id);
         this.stageDirector.markSpecialTriggered(id, this.route);
         this.emit('radio', 0, 0, 1, spec.radio);
-        const roster = this.effectiveHard && spec.hardExtra ? [...spec.members, ...spec.hardExtra] : spec.members;
+        const roster = this.difficultyProfile.useHardSpecialExtras && spec.hardExtra ? [...spec.members, ...spec.hardExtra] : spec.members;
         for (const member of roster) {
             this.spawnEncounter(member, { specialEvent: id, eventRole: member.role, cooldown: member.cooldown });
         }
@@ -362,6 +401,7 @@ export class ArcadeWorld {
     private spawnArchCannon(spec: TideArchCannonSpec): void {
         if (!this.up) return;
         const def = FAMILY.tower;
+        const maxHp = resolveEnemyMaxHp('tower', this.effectiveDifficulty);
         const opening = computeArchOpening(this.arena.left, this.arena.right);
         const outerX = spec.side < 0 ? this.arena.left : this.arena.right;
         const edgeX = spec.side < 0 ? opening.left : opening.right;
@@ -373,8 +413,8 @@ export class ArcadeWorld {
             x: anchorX,
             y: worldY + this.scroll,
             size: def.size,
-            hp: def.hp,
-            maxHp: def.hp,
+            hp: maxHp,
+            maxHp,
             age: 0,
             flash: 0,
             family: 'tower',
@@ -410,6 +450,7 @@ export class ArcadeWorld {
     private spawnArchBoat(spec: TideArchBoatSpec): void {
         if (!this.up) return;
         const def = FAMILY.boat;
+        const maxHp = resolveEnemyMaxHp('boat', this.effectiveDifficulty);
         const opening = computeArchOpening(this.arena.left, this.arena.right);
         const pad = def.size * 0.65;
         const laneX = clamp(opening.left + (opening.width) * spec.laneFrac, opening.left + pad, opening.right - pad);
@@ -421,8 +462,8 @@ export class ArcadeWorld {
             x: laneX,
             y: startY,
             size: def.size,
-            hp: def.hp,
-            maxHp: def.hp,
+            hp: maxHp,
+            maxHp,
             age: 0,
             flash: 0,
             family: 'boat',
@@ -478,6 +519,7 @@ export class ArcadeWorld {
             powerMeter: this.weapons.powerMeter,
             specialCharges: Math.min(2, this.weapons.specialCharges),
             hard: this.hard,
+            difficulty: this._difficulty,
             assisted: this.assisted,
             tideArchCompleted: true,
             scoringState: this.pelagicScoring.exportState(),
@@ -504,7 +546,8 @@ export class ArcadeWorld {
         this.specialEventsTriggered.clear();
         for (const id of snapshot.specialEventsTriggered) this.specialEventsTriggered.add(id);
         this.rareSpawnCount = snapshot.rareSpawnCount;
-        this.hard = snapshot.hard;
+        if (snapshot.difficulty) this.setDifficulty(snapshot.difficulty);
+        else this.hard = snapshot.hard;
         this.assisted = snapshot.assisted;
         this.score = snapshot.score;
         this.lives = 3;
@@ -528,13 +571,20 @@ export class ArcadeWorld {
 
     private dispatchScriptedEncounter(e: Encounter): void {
         this.spawnEncounter(e);
-        const autoEscortEligible = !this.up || e.family === 'ship' || e.family === 'bomber' || e.family === 'heli_utility';
-        if (this.effectiveHard && e.formation === 'solo' && e.family !== 'tower' && autoEscortEligible && (!this.up || this.enemies.length <= 5 || e.family === 'ship')) {
+        const escMode = this.difficultyProfile.autoEscort;
+        if (escMode === 'none') return;
+        const autoEscortEligible = !this.up || e.family === 'ship' || e.family === 'bomber' || e.family === 'heli_utility' || (escMode === 'heavy' && e.family === 'heli_warhawk');
+        const maxExisting = escMode === 'heavy' ? 18 : 5;
+        if (e.formation === 'solo' && e.family !== 'tower' && autoEscortEligible && (!this.up || this.enemies.length <= maxExisting || e.family === 'ship')) {
             if (this.up) {
                 const naval = e.family === 'boat' || e.family === 'ship' || e.family === 'submarine';
                 const escortFamily = naval ? 'fighter' : 'interceptor';
-                const escortFormation = e.family === 'ship' || (this.region === 0 && !naval) ? 'solo' : this.region >= 5 && !naval ? 'pincer' : 'pair';
-                const escortMotion = this.region === 0 && !naval ? 'diagonal' : escortFormation === 'pincer' ? 'diagonal' : 'curve';
+                const escortFormation = e.family === 'ship' && escMode === 'standard'
+                    ? 'solo'
+                    : escMode === 'heavy'
+                        ? 'trio'
+                        : this.region === 0 && !naval ? 'solo' : this.region >= 5 && !naval ? 'pincer' : 'pair';
+                const escortMotion = this.region === 0 && !naval && escMode === 'standard' ? 'diagonal' : escortFormation === 'pincer' ? 'diagonal' : 'curve';
                 const escortLane = escortFormation === 'pincer' ? .5 : clamp(1 - e.lane, .22, .78);
                 this.spawnEncounter({ ...e, family: escortFamily, formation: escortFormation, motion: escortMotion, lane: escortLane });
             } else {
@@ -561,7 +611,8 @@ export class ArcadeWorld {
         }
         let activeEnemyBullets = 0;
         for (const b of this.bullets) if (b.active && b.enemy) activeEnemyBullets++;
-        const nextEncounter = this.waveIndex < this.mission.encounters.length ? this.mission.encounters[this.waveIndex] : undefined;
+        const encounters = this.activeEncounters;
+        const nextEncounter = this.waveIndex < encounters.length ? encounters[this.waveIndex] : undefined;
         const decision = this.pacingDirector.evaluate({
             up: this.up,
             dt,
@@ -569,6 +620,7 @@ export class ArcadeWorld {
             region: this.region,
             upLayout: this.upLayout,
             arenaWidth: this.arenaWidth,
+            difficulty: this.effectiveDifficulty,
             effectiveHard: this.effectiveHard,
             isAssisted: this.isAssisted,
             inBossFight: !!this.boss,
@@ -585,8 +637,8 @@ export class ArcadeWorld {
             nextEncounter,
             specialEventActive,
         });
-        if (decision.kind === 'anticipate' && this.waveIndex < this.mission.encounters.length) {
-            const e = this.mission.encounters[this.waveIndex++];
+        if (decision.kind === 'anticipate' && this.waveIndex < encounters.length) {
+            const e = encounters[this.waveIndex++];
             if (e.at !== 155 && !this.tideArch.airSpawnsBlocked) {
                 this.dispatchScriptedEncounter(e);
             }
@@ -606,7 +658,7 @@ export class ArcadeWorld {
         offsets.forEach(([offset, delay], i) => {
             const family = e.formation === 'escort' && i > 0 ? 'fighter' : e.family; const def = FAMILY[family];
             const ground = (this.up ? ['boat', 'ship', 'tank', 'tower', 'submarine'] : ['tank', 'tower']).includes(family);
-            const isHeli = family.startsWith('heli_');
+            const isHeli = isHelicopter(family);
             const isSideEntry = this.up && !ground && (e.entry === 'left' || e.entry === 'right' || e.motion === 'side-cross' || e.motion === 'side-curve');
             const entry: EntrySide | undefined = isSideEntry ? (e.entry === 'left' || e.entry === 'right' ? e.entry : e.lane < .5 ? 'left' : 'right') : undefined;
             const lane = clamp(e.lane + offset, .09, .91);
@@ -616,14 +668,33 @@ export class ArcadeWorld {
             let spawnX = this.up ? cross : 800 - delay * 220;
             let spawnY = this.up ? -30 + delay * 220 : cross;
             let laneRef = cross;
+            let bandY = clamp(this.arena.top + 28 + clamp(e.lane, .06, .82) * 110 + (i % 4) * 20, this.arena.top + 24, 178);
             if (isSideEntry && entry) {
                 const sideDir = entry === 'left' ? 1 : -1;
-                const bandY = clamp(this.arena.top + 28 + clamp(e.lane, .06, .82) * 110 + (i % 4) * 20, this.arena.top + 24, 178);
                 spawnX = entry === 'left' ? this.arena.left - 34 - i * 28 : this.arena.right + 34 + i * 28;
                 spawnY = bandY;
                 laneRef = bandY;
                 if (sideDir < 0) spawnX = Math.max(spawnX, this.arena.right + 34);
             }
+            const heliLayout = this.up && isHeli
+                ? computeHelicopterSlotLayout(
+                    family,
+                    e.formation,
+                    offsets.length,
+                    i,
+                    this.arena,
+                    this.arena.left + clamp(e.lane, .14, .86) * this.arenaWidth,
+                    entry,
+                )
+                : undefined;
+            if (heliLayout) {
+                spawnX = heliLayout.spawnX;
+                spawnY = isSideEntry
+                    ? clamp(bandY + heliLayout.spawnYOffset * 0.55, this.arena.top + 24, 178)
+                    : -32 + heliLayout.spawnYOffset;
+                laneRef = heliLayout.state.refX;
+            }
+            const resolvedHp = this.up ? resolveEnemyMaxHp(family, this.effectiveDifficulty) : def.hp;
             const initCooldown = special?.cooldown !== undefined
                 ? special.cooldown + i * .22
                 : this.up
@@ -635,22 +706,23 @@ export class ArcadeWorld {
                 x: spawnX,
                 y: spawnY,
                 size: def.size,
-                hp: def.hp,
-                maxHp: def.hp,
+                hp: resolvedHp,
+                maxHp: resolvedHp,
                 age: 0,
                 flash: 0,
                 family,
                 motion: e.motion,
                 lane: laneRef,
-                offset: i * .7,
+                offset: isHeli ? i * .12 : i * .7,
                 speed: spd,
                 cooldown: initCooldown,
                 warning: 0,
                 ground,
-                vx: isSideEntry ? (entry === 'left' ? spd : -spd) : this.up ? 0 : -spd,
-                vy: isSideEntry ? 24 : this.up ? spd : 0,
+                vx: heliLayout ? heliLayout.state.smoothVx : isSideEntry ? (entry === 'left' ? spd : -spd) : this.up ? 0 : -spd,
+                vy: heliLayout ? heliLayout.state.smoothVy : isSideEntry ? 24 : this.up ? spd : 0,
                 ...(entry ? { entry } : {}),
                 ...(isHeli ? { altitude: family === 'heli_warhawk' ? .96 : family === 'heli_utility' ? .92 : .85 } : {}),
+                ...(heliLayout ? { heliNav: heliLayout.state } : {}),
                 ...(mountCount > 0 ? { mountAngles: Array(mountCount).fill(Math.PI / 2), mountRecoil: Array(mountCount).fill(0), attackStep: 0 } : {}),
                 ...(squadId !== undefined ? { squadId } : {}),
                 ...(special ? { specialEvent: special.specialEvent, eventRole: special.eventRole } : {}),
@@ -699,6 +771,15 @@ export class ArcadeWorld {
     private updateEnemies(dt: number): void {
         const spdMul = this.enemySpeedScale !== 1 ? clamp(this.enemySpeedScale, 0.25, 3) : 1;
         const mDt = dt * spdMul;
+        const profile = this.difficultyProfile;
+        const softBulletCap = (this.upLayout === 'portrait' || this.arenaWidth <= 420)
+            ? profile.director.softMaxBulletsPortrait
+            : profile.director.softMaxBulletsPc;
+        let activeHostileBullets = 0;
+        if (this.effectiveExtreme) {
+            for (const b of this.bullets) if (b.active && b.enemy) activeHostileBullets++;
+        }
+        let frameVolleyUnits = 0;
         for (const e of this.enemies) {
             if (e.hp <= 0) continue;
             const prevX = e.x, prevY = e.y;
@@ -736,67 +817,8 @@ export class ArcadeWorld {
             } else if (this.up && e.ground) {
                 const archClamp = e.archBoat ? computeArchOpening(this.arena.left, this.arena.right) : undefined;
                 moveSurface(e, this.scroll, mDt, this.arena.left, this.arenaWidth, archClamp);
-            } else if (this.up && e.family === 'heli_utility') {
-                e.altitude = .88 + Math.sin(t * 2.2 + e.offset) * .16;
-                if (t < 1.25) {
-                    e.y += (e.speed + 26) * mDt;
-                    e.x = clamp(e.lane + Math.sin(t * 1.4 + e.offset) * 18, this.arena.left + 26, this.arena.right - 26);
-                } else if (t < 6.0) {
-                    const hoverY = clamp(96 + (e.offset % 2) * 24 + Math.sin(t * 2.0 + e.offset) * 8, this.arena.top + 26, 168);
-                    e.y += (hoverY - e.y) * Math.min(1, mDt * 3.5);
-                    e.x = clamp(e.lane + Math.sin((t - 1.25) * 1.25 + e.offset) * 48, this.arena.left + 26, this.arena.right - 26);
-                } else {
-                    e.y += Math.max(this.scrollSpeed + 28, e.speed * 1.05) * mDt;
-                    e.x = clamp(e.x + (e.x < this.arenaCenterX ? -32 : 32) * mDt, this.arena.left + 20, this.arena.right - 20);
-                }
-            } else if (this.up && e.family === 'heli_phantom') {
-                e.altitude = .82 + Math.sin(t * 3.6 + e.offset) * .12;
-                const dir = e.entry === 'right' ? -1 : 1;
-                if (t < 1.1) {
-                    if (e.entry === 'left' || e.entry === 'right') {
-                        e.x += dir * (e.speed * 1.15) * mDt;
-                        e.y = clamp(e.y + 42 * mDt, this.arena.top + 22, 165);
-                    } else {
-                        e.y += (e.speed * 1.02) * mDt;
-                        e.x = clamp(e.lane + Math.sin(t * 3 + e.offset) * 32, this.arena.left + 24, this.arena.right - 24);
-                    }
-                } else if (t < 6.4) {
-                    const phase = (t - 1.1) % 1.95;
-                    if (phase < 1.05) {
-                        // Fast lateral-diagonal stealth dash
-                        const dSign = Math.floor((t - 1.1) / 1.95) % 2 === 0 ? dir : -dir;
-                        e.x = clamp(e.x + dSign * (e.speed * 1.38) * mDt, this.arena.left + 24, this.arena.right - 24);
-                        e.y = clamp(e.y + Math.sin(t * 3.2) * 26 * mDt, this.arena.top + 24, 175);
-                    } else {
-                        // Brief stabilized lock window to align 3-way fan
-                        e.y = clamp(e.y + Math.sin(t * 2.4) * 10 * mDt, this.arena.top + 24, 175);
-                    }
-                } else {
-                    e.y += (e.speed * 1.2) * mDt;
-                }
-            } else if (this.up && e.family === 'heli_warhawk') {
-                e.altitude = .94 + Math.sin(t * 1.8) * .08;
-                if (t < 1.35) {
-                    e.y += 96 * mDt;
-                    e.x = clamp(e.x + (this.arenaCenterX - e.x) * mDt * .9, this.arena.left + 36, this.arena.right - 36);
-                } else if (t < 11.2) {
-                    const stationY = clamp(98 + Math.sin(t * 1.35) * 14, this.arena.top + 32, 152);
-                    e.y += (stationY - e.y) * Math.min(1, mDt * 3.2);
-                    e.x = clamp(this.arenaCenterX + Math.sin((t - 1.35) * 0.92 + e.offset) * 92, this.arena.left + 38, this.arena.right - 38);
-                } else {
-                    e.y += 108 * mDt;
-                }
-            } else if (this.up && e.family === 'heli_scout') {
-                e.altitude = .85 + Math.sin(t * 4.2 + e.offset) * .10;
-                if (e.entry === 'left' || e.entry === 'right') {
-                    const dir = e.entry === 'left' ? 1 : -1;
-                    const curveTurn = clamp((t - .9) / 1.3, 0, 1);
-                    e.x = clamp(e.x + dir * (e.speed * (1.15 - curveTurn * .65) + Math.sin(t * 4.2 + e.offset) * 32) * mDt, this.arena.left - 120, this.arena.right + 120);
-                    e.y += Math.max(this.scrollSpeed + 18, 34 + curveTurn * (e.speed * .85)) * mDt;
-                } else {
-                    e.y += Math.max(this.scrollSpeed + 20, e.speed * .82) * mDt;
-                    e.x = clamp(e.lane + Math.sin(t * 3.6 + e.offset) * 74, this.arena.left + 20, this.arena.right - 20);
-                }
+            } else if (this.up && isHelicopter(e.family)) {
+                stepHelicopterActor(e, this.arena, this.scrollSpeed, mDt);
             } else if (this.up && (e.entry === 'left' || e.entry === 'right' || e.motion === 'side-cross' || e.motion === 'side-curve')) {
                 const dir = e.entry === 'right' ? -1 : 1;
                 if (e.motion === 'side-cross') {
@@ -843,15 +865,22 @@ export class ArcadeWorld {
             const topMargin = this.up ? (e.ground ? 8 : 18) : 0;
             const inSafeArena = e.x > this.arena.left + horizMargin && e.x < this.arena.right - horizMargin && e.y > this.arena.top + topMargin && e.y < this.arena.bottom - (this.up ? 18 : 0);
             if (e.cooldown <= 0 && subReady && inSafeArena && !e.archRetiring) {
-                if (waitCoordBeat) {
-                    e.cooldown = .04;
+                const bulletSaturated = this.effectiveExtreme && activeHostileBullets >= softBulletCap && !e.archPattern && !e.archBoat && !e.specialEvent;
+                if (waitCoordBeat || bulletSaturated || frameVolleyUnits >= profile.maxNewFiringUnitsPerFrame) {
+                    e.cooldown = waitCoordBeat ? .04 : bulletSaturated ? .14 : .06;
                     e.warning = .92;
                 } else {
-                    const behind = this.up ? e.y > this.player.y - 44 : e.x < this.player.x + 28;
+                    const behindCutoff = e.archPattern
+                        ? (this.effectiveExtreme ? 195 : 255)
+                        : e.archBoat
+                            ? (this.effectiveExtreme ? 210 : 265)
+                            : this.player.y - (this.effectiveExtreme ? 68 : 48);
+                    const behind = this.up ? e.y > behindCutoff : e.x < this.player.x + 28;
                     if (!behind) {
+                        frameVolleyUnits++;
                         const shot = (!this.up ? LEGACY_SOLAR_SHOTS[e.family] : undefined) ?? ENEMY_SHOTS[e.family];
                         const spdScale = this.enemyShotSpeedScale !== 1 ? clamp(this.enemyShotSpeedScale, .25, 3) : 1;
-                        let shotSpd = (shot.speed + (this.effectiveHard ? 26 : 0)) * spdScale;
+                        let shotSpd = (shot.speed + profile.shotSpeedBonus) * spdScale;
                         if (this.up && hasArticulatedMounts(e.family)) {
                             const mounts = resolveActorMounts(e, this.player.x, this.player.y, this.elapsed);
                             if (e.family === 'heli_warhawk') {
@@ -859,7 +888,7 @@ export class ArcadeWorld {
                                 if (phase < 2) {
                                     // Chin gatling burst directly from chin turret muzzle
                                     const m0 = mounts[0];
-                                    const spread = this.effectiveHard ? [-.14, 0, .14] : [-.09, .09];
+                                    const spread = profile.useExtremePatterns ? [-.20, -.07, .07, .20] : profile.useHardPatterns ? [-.14, 0, .14] : [-.09, .09];
                                     for (const a of spread) this.hostile(m0.muzzleX, m0.muzzleY, m0.aimAngle + a, shotSpd, shot.radius, shot.color);
                                     if (e.mountRecoil) e.mountRecoil[0] = 1;
                                     this.stepEnemyShots++;
@@ -867,7 +896,7 @@ export class ArcadeWorld {
                                 } else {
                                     // Single straight unguided fast missile from right-wing pod muzzle
                                     const m1 = mounts[1];
-                                    const mSpd = (this.effectiveHard ? WARHAWK_MISSILE_SPEED_HARD : WARHAWK_MISSILE_SPEED_NORMAL) * spdScale;
+                                    const mSpd = profile.warhawkMissileSpeed * spdScale;
                                     this.hostile(m1.muzzleX, m1.muzzleY, m1.aimAngle, mSpd, 4.6, 1, true);
                                     if (e.mountRecoil) e.mountRecoil[1] = 1;
                                     this.stepEnemyShots++;
@@ -883,35 +912,37 @@ export class ArcadeWorld {
                                 if (e.family === 'ship' || e.family === 'submarine' || e.family === 'boat' || e.family === 'tank' || e.archPattern || e.archBoat) e.attackStep = step + 1;
                                 for (const m of firingMounts) {
                                     let angles: number[] = e.family === 'ship'
-                                        ? (this.effectiveHard ? [-.22, -.07, .07, .22] : [-.14, .14])
+                                        ? (profile.useExtremePatterns ? [-.28, -.14, 0, .14, .28] : profile.useHardPatterns ? [-.22, -.07, .07, .22] : [-.14, .14])
                                         : e.submarine
-                                            ? (this.effectiveHard ? [-.16, 0, .16] : [-.10, .10])
+                                            ? (profile.useExtremePatterns ? [-.22, -.07, .07, .22] : profile.useHardPatterns ? [-.16, 0, .16] : [-.10, .10])
                                             : e.family === 'boat'
-                                                ? (this.effectiveHard ? [-.09, .09] : [0])
+                                                ? (profile.useExtremePatterns ? [-.14, 0, .14] : profile.useHardPatterns ? [-.09, .09] : [0])
                                                 : e.family === 'tank'
-                                                    ? (this.effectiveHard ? [-.08, .08] : [0])
+                                                    ? (profile.useExtremePatterns ? [-.13, 0, .13] : profile.useHardPatterns ? [-.08, .08] : [0])
                                                     : e.family === 'tower' && !e.archPattern
-                                                        ? (this.effectiveHard ? [-.11, .11] : [0])
+                                                        ? (profile.useExtremePatterns ? [-.18, 0, .18] : profile.useHardPatterns ? [-.11, .11] : [0])
                                                         : [0];
                                     if (e.eventRole === 'coord-sub') {
-                                        angles = [-.22, 0, .22];
-                                        shotSpd = 172 + (this.effectiveHard ? 28 : 0);
+                                        angles = profile.useExtremePatterns ? [-.32, -.11, .11, .32] : [-.22, 0, .22];
+                                        shotSpd = 172 + profile.shotSpeedBonus;
                                     } else if (e.eventRole === 'convoy-lead') {
-                                        angles = this.effectiveHard ? [-.20, 0, .20] : [-.14, .14];
+                                        angles = profile.useExtremePatterns ? [-.28, -.09, .09, .28] : profile.useHardPatterns ? [-.20, 0, .20] : [-.14, .14];
                                     } else if (e.archPattern === 'alternating') {
-                                        angles = this.effectiveHard ? [-.12, .12] : [0];
+                                        angles = profile.useExtremePatterns ? [-.12, .12] : [0];
                                     } else if (e.archPattern === 'aimed-burst') {
-                                        angles = this.effectiveHard ? [-.11, .11] : [0];
-                                        shotSpd = (shot.speed + (this.effectiveHard ? 28 : 12)) * spdScale;
+                                        angles = profile.useExtremePatterns ? [-.11, .11] : [0];
+                                        shotSpd = (shot.speed + (profile.useExtremePatterns ? 34 : profile.useHardPatterns ? 22 : 12)) * spdScale;
                                     } else if (e.archPattern === 'fan3') {
-                                        angles = this.effectiveHard ? [-.26, 0, .26] : [-.19, 0, .19];
+                                        angles = profile.useHardPatterns ? [-.26, 0, .26] : [-.19, 0, .19];
                                     } else if (e.archPattern === 'sweep') {
                                         const sweepShift = Math.sin(step * 0.9) * 0.16;
-                                        angles = this.effectiveHard ? [-.10 + sweepShift, .10 + sweepShift] : [sweepShift];
+                                        angles = profile.useExtremePatterns ? [-.10 + sweepShift, .10 + sweepShift] : [sweepShift];
                                     } else if (e.archBoat) {
-                                        angles = this.effectiveHard
+                                        angles = profile.useExtremePatterns
                                             ? (step % 2 === 0 ? [-.15, 0, .15] : [-.09, .09])
-                                            : (step % 2 === 0 ? [0] : [-.09, .09]);
+                                            : profile.useHardPatterns
+                                                ? (step % 2 === 0 ? [0] : [-.10, .10])
+                                                : (step % 2 === 0 ? [0] : [-.09, .09]);
                                     }
                                     for (const a of angles) this.hostile(m.muzzleX, m.muzzleY, m.aimAngle + a, shotSpd, shot.radius, shot.color);
                                     if (e.mountRecoil && m.id < e.mountRecoil.length) e.mountRecoil[m.id] = 1;
@@ -926,25 +957,25 @@ export class ArcadeWorld {
                             const aim = unmounted.aimAngle;
                             const airStep = e.attackStep ?? 0;
                             if (this.up) e.attackStep = airStep + 1;
-                            let angles: number[] = e.family === 'bomber' ? (this.effectiveHard ? [-.32, -.16, 0, .16, .32] : [-.26, 0, .26])
-                                : e.family === 'heli_utility' ? (this.effectiveHard ? [-.16, 0, .16] : [-.10, .10])
-                                    : e.family === 'heli_phantom' ? (this.effectiveHard ? [-.26, 0, .26] : [-.18, 0, .18])
-                                        : e.family === 'heli_scout' ? (this.effectiveHard ? [-.09, .09] : [0])
-                                            : e.family === 'interceptor' ? (this.up && this.effectiveHard && airStep % 2 === 1 ? [-.06, .06] : [0])
-                                                : e.family === 'acrobat' ? (this.up && this.effectiveHard && airStep % 2 === 1 ? [-.10, .10] : [0])
-                                                    : e.family === 'fighter' ? (this.up && this.effectiveHard && airStep % 3 === 2 ? [-.06, .06] : [0])
+                            let angles: number[] = e.family === 'bomber' ? (profile.useExtremePatterns ? [-.38, -.19, 0, .19, .38] : profile.useHardPatterns ? [-.32, -.16, 0, .16, .32] : [-.26, 0, .26])
+                                : e.family === 'heli_utility' ? (profile.useExtremePatterns ? [-.22, -.07, .07, .22] : profile.useHardPatterns ? [-.16, 0, .16] : [-.10, .10])
+                                    : e.family === 'heli_phantom' ? (profile.useExtremePatterns ? [-.34, -.17, 0, .17, .34] : profile.useHardPatterns ? [-.26, 0, .26] : [-.18, 0, .18])
+                                        : e.family === 'heli_scout' ? (profile.useExtremePatterns ? (airStep % 2 === 1 ? [-.14, 0, .14] : [-.09, .09]) : profile.useHardPatterns ? [-.09, .09] : [0])
+                                            : e.family === 'interceptor' ? (this.up && profile.useExtremePatterns && airStep % 2 === 1 ? [-.09, .09] : this.up && profile.useHardPatterns && airStep % 2 === 1 ? [-.06, .06] : [0])
+                                                : e.family === 'acrobat' ? (this.up && profile.useExtremePatterns && airStep % 2 === 1 ? [-.14, .14] : this.up && profile.useHardPatterns && airStep % 2 === 1 ? [-.10, .10] : [0])
+                                                    : e.family === 'fighter' ? (this.up && profile.useExtremePatterns && airStep % 3 !== 0 ? [-.08, .08] : this.up && profile.useHardPatterns && airStep % 3 === 2 ? [-.06, .06] : [0])
                                                         : e.family === 'ship' || e.submarine ? [-.16, .16]
                                                             : [0];
                             if (e.eventRole === 'elite-ace') {
-                                angles = this.effectiveHard && e.offset === 0 ? [-.12, 0, .12] : [-.08, .08];
-                                shotSpd = 212 + (this.effectiveHard ? 28 : 0);
+                                angles = profile.useHardPatterns && e.offset === 0 ? [-.12, 0, .12] : [-.08, .08];
+                                shotSpd = 212 + profile.shotSpeedBonus;
                             } else if (e.eventRole === 'coord-wing') {
                                 angles = e.family === 'acrobat' ? [-.12, .12] : [0];
                             } else if (e.eventRole === 'convoy-escort') {
                                 angles = [-.06, .06];
                             } else if (e.eventRole === 'rare-probe') {
                                 angles = [-.42, -.14, .14, .42];
-                                shotSpd = 178 + (this.effectiveHard ? 24 : 0);
+                                shotSpd = 178 + (profile.useHardPatterns ? 24 : 0);
                             }
                             for (const a of angles) this.hostile(unmounted.muzzleX, unmounted.muzzleY, aim + a, shotSpd, shot.radius, shot.color);
                             this.stepEnemyShots++;
@@ -955,13 +986,18 @@ export class ArcadeWorld {
                     const archCd = e.archPattern ? 2.24 : e.archBoat ? 2.30 : baseCd;
                     const roleCd = e.eventRole === 'rare-probe' ? 1.65 : e.eventRole === 'elite-ace' ? 1.32 : e.family === 'heli_warhawk' && (e.attackStep ?? 0) % 3 === 2 ? .84 : archCd;
                     const fireScale = this.enemyFireRateScale !== 1 ? clamp(this.enemyFireRateScale, .2, 5) : 1;
-                    const hardFactor = (e.archPattern || e.archBoat) ? .80 : .78;
-                    const modeFactor = this.effectiveHard ? hardFactor : 1;
+                    const archFactor = this.effectiveExtreme ? .72 : this.effectiveHard ? .80 : 1;
+                    const modeFactor = (e.archPattern || e.archBoat)
+                        ? archFactor
+                        : e.eventRole === 'elite-ace'
+                            ? Math.max(.92, profile.cooldownFactor)
+                            : profile.cooldownFactor;
                     e.cooldown = (roleCd * modeFactor) / fireScale;
                 }
             }
             if (!e.ground && Math.hypot(e.x - this.player.x, e.y - this.player.y) < e.size * .28 + 7) this.hurtPlayer();
         }
+        if (this.up) enforceHelicopterSeparation(this.enemies, this.arena.left, this.arena.right, mDt);
         const cullBottom = Math.max(470, this.arena.bottom + 55);
         this.enemies = this.enemies.filter(e => {
             const sideExited = this.up && (e.entry === 'left' || e.entry === 'right' || e.motion === 'side-cross') && e.age > 1.8 && (e.x < this.arena.left - 65 || e.x > this.arena.right + 65);
@@ -1326,6 +1362,17 @@ export class ArcadeWorld {
         if (this.up) this.pelagicScoring.onBossStart(mini);
         if (!mini && this.up) {
             const sub = createSubmarineBoss(() => ++this.sequence, this.arenaCenterX);
+            const bossHpMult = this.difficultyProfile.bossHpMultiplier;
+            if (bossHpMult !== 1) {
+                for (const sec of sub.sections) {
+                    sec.hullMaxHp = Math.round(sec.hullMaxHp * bossHpMult);
+                    sec.hullHp = sec.hullMaxHp;
+                    for (const part of sec.parts) {
+                        part.maxHp = Math.round(part.maxHp * bossHpMult);
+                        part.hp = part.maxHp;
+                    }
+                }
+            }
             const boss: Boss = { mini: false, x: this.arenaCenterX, y: subSectionCenterY(sub, 0), size: SUB_HULL_DISPLAY_W, age: 0, phase: 'enter', configuration: 1, timer: 0, attack: 0, attackTime: 0, volley: 0, aimX: this.arenaCenterX, aimY: this.playerHomeY, parts: sub.sections[0].parts, sub };
             this.boss = boss; this.emit('boss', 0, 0, 1, SUB_BOSS_NAME); this.emit('radio', 0, 0, 1, sub.sections[0].radio);
             return;
@@ -1336,7 +1383,13 @@ export class ArcadeWorld {
     private installParts(b: Boss, count: number): void {
         // Sockets are registered to the painted atlas, not distributed over an arbitrary circle.
         const mounts = this.up ? (count === 6 ? [[-.143, .015], [0, .015], [.143, .015], [-.143, .17], [0, .17], [.143, .17]] : b.mini ? [[-.19, 0], [.19, 0], [0, .135]] : [[-.17, .07], [.17, .07], [0, .14]]) : [[-.24, .23], [-.04, .23], [.16, .23]];
-        b.parts = mounts.map(([mx, my]) => { const dx = mx * b.size, dy = my * b.size, hp = b.mini ? 95 : this.up ? (b.configuration === 1 ? 200 : 90) : 200; return { id: ++this.sequence, x: b.x + dx, y: b.y + dy, dx, dy, hp, maxHp: hp, radius: b.mini ? 10 : 13, flash: 0, warning: 0, angle: this.up ? Math.PI / 2 : Math.PI }; });
+        const bossHpMult = this.difficultyProfile.bossHpMultiplier;
+        b.parts = mounts.map(([mx, my]) => {
+            const dx = mx * b.size, dy = my * b.size;
+            const baseHp = b.mini ? 95 : this.up ? (b.configuration === 1 ? 200 : 90) : 200;
+            const hp = Math.round(baseHp * bossHpMult);
+            return { id: ++this.sequence, x: b.x + dx, y: b.y + dy, dx, dy, hp, maxHp: hp, radius: b.mini ? 10 : 13, flash: 0, warning: 0, angle: this.up ? Math.PI / 2 : Math.PI };
+        });
     }
     private updateBoss(dt: number): void {
         const b = this.boss; if (!b) return;
@@ -1371,18 +1424,26 @@ export class ArcadeWorld {
         parts.forEach((p, i) => {
             if (i % 2 !== b.attack % 2 && parts.length > 2 && pattern !== 3) return;
             const aim = Math.atan2(b.aimY - p.y, b.aimX - p.x), mx = p.x + Math.cos(pattern === 0 ? forward : aim) * p.radius * 1.1, my = p.y + Math.sin(pattern === 0 ? forward : aim) * p.radius * 1.1;
+            const speedBoost = this.effectiveExtreme ? 28 : this.effectiveHard ? 20 : 0;
             if (!this.up) {
                 // Giro builds moving horizontal lanes; Pula-Onda owns the radial naval pattern below.
-                if (pattern === 0) for (const a of [-.32, 0, .32]) this.hostile(mx, my, forward + a + (volley - 1) * .08, 102 + (this.effectiveHard ? 20 : 0), 3.1);
-                else if (pattern === 1) for (const a of [-.13, .13]) this.hostile(mx, my, aim + a, 145 + volley * 12, 2.7);
-                else if (pattern === 2) for (const a of [-.09, .09]) this.hostile(mx, my, aim + Math.sin(volley * 1.7) * .24 + a, 170, 2.4);
+                if (pattern === 0) for (const a of [-.32, 0, .32]) this.hostile(mx, my, forward + a + (volley - 1) * .08, 102 + speedBoost, 3.1);
+                else if (pattern === 1) for (const a of [-.13, .13]) this.hostile(mx, my, aim + a, 145 + volley * 12 + (this.effectiveExtreme ? 12 : 0), 2.7);
+                else if (pattern === 2) for (const a of [-.09, .09]) this.hostile(mx, my, aim + Math.sin(volley * 1.7) * .24 + a, 170 + (this.effectiveExtreme ? 12 : 0), 2.4);
                 else if (i === b.attack % parts.length) for (const a of [-.28, 0, .28]) this.hostile(mx, my, aim + a, 88 + volley * 8, 7.5);
                 return;
             }
-            if (pattern === 0) { for (const a of [-.48, -.24, 0, .24, .48]) this.hostile(mx, my, forward + a, 125 + (this.effectiveHard ? 20 : 0), 3.1); }
-            else if (pattern === 1) { for (const a of [-.10, .10]) this.hostile(mx, my, aim + a, 155 + (this.effectiveHard ? 25 : 0), 2.7); }
-            else if (pattern === 2) this.hostile(mx, my, aim + (volley - 1) * .16, 180, 2.4);
-            else if (i === b.attack % parts.length) { for (let j = 0; j < 12; j++)this.hostile(mx, my, TAU * j / 12 + volley * .14, 105, 7.4); }
+            if (pattern === 0) {
+                const fan = this.effectiveExtreme ? [-.58, -.36, -.16, 0, .16, .36, .58] : [-.48, -.24, 0, .24, .48];
+                for (const a of fan) this.hostile(mx, my, forward + a, 125 + speedBoost, 3.1);
+            } else if (pattern === 1) {
+                const aimFan = this.effectiveExtreme ? [-.16, 0, .16] : [-.10, .10];
+                for (const a of aimFan) this.hostile(mx, my, aim + a, 155 + (this.effectiveExtreme ? 30 : this.effectiveHard ? 25 : 0), 2.7);
+            } else if (pattern === 2) this.hostile(mx, my, aim + (volley - 1) * .16, 180 + (this.effectiveExtreme ? 16 : 0), 2.4);
+            else if (i === b.attack % parts.length) {
+                const n = this.effectiveExtreme ? 14 : 12;
+                for (let j = 0; j < n; j++) this.hostile(mx, my, TAU * j / n + volley * .14, 105 + (this.effectiveExtreme ? 8 : 0), 7.4);
+            }
         }); this.emit('enemy-shot', b.x, b.y);
     }
     private updateSubmarineBoss(b: Boss, sub: SubmarineBossState, dt: number): void {
@@ -1462,7 +1523,7 @@ export class ArcadeWorld {
                     return;
                 }
             }
-            const pace = (sub.bridgeDestroyed ? 1.18 : 1) * (this.effectiveHard ? 1.15 : 1);
+            const pace = (sub.bridgeDestroyed ? 1.18 : 1) * this.difficultyProfile.bossPaceMultiplier;
             for (const p of sec.parts) {
                 if (p.hp <= 0) { p.warning = 0; continue; }
                 p.cooldown -= dt * pace;
@@ -1493,29 +1554,43 @@ export class ArcadeWorld {
         const aim = Math.atan2(this.player.y - p.y, this.player.x - p.x);
         const muzzle = p.radius * .95;
         const mx = p.x + Math.cos(aim) * muzzle, my = p.y + Math.sin(aim) * muzzle;
-        const hardBoost = this.effectiveHard ? 18 : 0;
+        const hardBoost = this.effectiveExtreme ? 20 : this.effectiveHard ? 12 : 0;
         switch (p.kind) {
             case 'turret': {
                 const spd = 142 + sec.index * 7 + hardBoost;
-                const offsets = this.effectiveHard || (sec.index >= 3 && Math.abs(p.dx) < 8) ? [-.22, 0, .22] : [-.12, .12];
+                const offsets = this.effectiveExtreme
+                    ? [-.26, -.09, .09, .26]
+                    : (sec.index >= 3 && Math.abs(p.dx) < 8)
+                        ? [-.22, 0, .22]
+                        : this.effectiveHard
+                            ? [-.14, .14]
+                            : [-.12, .12];
                 for (const a of offsets) this.hostile(mx, my, aim + a, spd, 2.8, 1);
                 break;
             }
             case 'launcher': {
                 const spd = 118 + hardBoost;
-                const fan = this.effectiveHard ? [-.62, -.36, -.12, .12, .36, .62] : [-.50, -.24, 0, .24, .50];
+                const fan = this.effectiveExtreme
+                    ? [-.72, -.48, -.24, 0, .24, .48, .72]
+                    : this.effectiveHard
+                        ? [-.62, -.36, -.12, .12, .36, .62]
+                        : [-.50, -.24, 0, .24, .50];
                 for (const a of fan) this.hostile(p.x, p.y + 10, Math.PI / 2 + a, spd, 3.1, 1);
                 break;
             }
             case 'armor': {
                 const spd = 110 + hardBoost;
-                const angles = this.effectiveHard ? [.88, 1.18, 1.45, 1.69, 1.96, 2.26] : [1.0, 1.28, 1.57, 1.86, 2.14];
+                const angles = this.effectiveExtreme
+                    ? [.82, 1.06, 1.32, 1.57, 1.82, 2.08, 2.32]
+                    : this.effectiveHard
+                        ? [.88, 1.18, 1.45, 1.69, 1.96, 2.26]
+                        : [1.0, 1.28, 1.57, 1.86, 2.14];
                 for (const a of angles) this.hostile(p.x, p.y + 12, a, spd, 3.4, 2);
                 break;
             }
             case 'bridge': {
                 const spd = 124 + hardBoost;
-                const count = this.effectiveHard ? 8 : 6;
+                const count = this.effectiveExtreme ? 10 : this.effectiveHard ? 8 : 6;
                 const phase = Math.sin(sub.age * 1.9) * .18;
                 for (let i = 0; i < count; i++) {
                     const a = Math.PI / 2 + (i / (count - 1) - .5) * 1.42 + phase;
@@ -1525,13 +1600,17 @@ export class ArcadeWorld {
             }
             case 'propeller': {
                 const spd = 102 + hardBoost;
-                const offsets = this.effectiveHard ? [-.48, -.24, 0, .24, .48] : [-.36, 0, .36];
+                const offsets = this.effectiveExtreme
+                    ? [-.52, -.26, -.09, .09, .26, .52]
+                    : this.effectiveHard
+                        ? [-.42, -.14, .14, .42]
+                        : [-.36, 0, .36];
                 for (const a of offsets) this.hostile(p.x, p.y + 12, Math.PI / 2 + a, spd, 3.8, 2);
                 break;
             }
             case 'reactor': {
                 const spd = 100 + hardBoost;
-                const n = this.effectiveHard ? 12 : 10;
+                const n = this.effectiveExtreme ? 14 : this.effectiveHard ? 12 : 10;
                 const spin = sub.age * .55;
                 for (let j = 0; j < n; j++)this.hostile(p.x, p.y, TAU * j / n + spin, spd, 3.4, 2);
                 break;
@@ -1609,9 +1688,10 @@ export class ArcadeWorld {
         const scState = this.pelagicScoring.exportState();
         this.pelagicScoring.restoreState({ ...scState, currentSector: this.region, sectorHadDeath: false });
 
-        this.waveIndex = this.mission.encounters.findIndex(e => e.at >= t);
-        if (this.waveIndex < 0) this.waveIndex = this.mission.encounters.length;
-        if (opts?.pauseDirector || opts?.isolated) this.waveIndex = this.mission.encounters.length;
+        const encounters = this.activeEncounters;
+        this.waveIndex = encounters.findIndex(e => e.at >= t);
+        if (this.waveIndex < 0) this.waveIndex = encounters.length;
+        if (opts?.pauseDirector || opts?.isolated) this.waveIndex = encounters.length;
         this.supplyIndex = SUPPLIES.findIndex(s => s.at >= t);
         if (this.supplyIndex < 0) this.supplyIndex = SUPPLIES.length;
 
@@ -1677,8 +1757,9 @@ export class ArcadeWorld {
         this.player.y = this.playerHomeY;
         this.player.bank = 0;
         this.player.invulnerable = 1.5;
-        this.waveIndex = (pauseDirector || isolated) ? this.mission.encounters.length : Math.max(0, this.mission.encounters.findIndex(e => e.at >= t));
-        if (this.waveIndex < 0) this.waveIndex = this.mission.encounters.length;
+        const encounters = this.activeEncounters;
+        this.waveIndex = (pauseDirector || isolated) ? encounters.length : Math.max(0, encounters.findIndex(e => e.at >= t));
+        if (this.waveIndex < 0) this.waveIndex = encounters.length;
         this.supplyIndex = Math.max(0, SUPPLIES.findIndex(s => s.at >= t));
         if (this.supplyIndex < 0) this.supplyIndex = SUPPLIES.length;
         this.miniStarted = false;
@@ -1728,7 +1809,7 @@ export class ArcadeWorld {
         this.route = mini ? 155 : 300;
         this.elapsed = this.route;
         this.region = regionAt(this.route);
-        this.waveIndex = this.mission.encounters.length;
+        this.waveIndex = this.activeEncounters.length;
         this.miniStarted = true;
         this.bossStarted = !mini;
         this.startBoss(mini);
@@ -1984,12 +2065,13 @@ export class ArcadeWorld {
         pacing: PelagicPacingSnapshot;
         stageDirector: StageDirectorSnapshot;
     } {
+        const encounters = this.activeEncounters;
         return {
             route: Number(this.route.toFixed(2)),
             region: this.region,
             waveIndex: this.waveIndex,
-            totalEncounters: this.mission.encounters.length,
-            nextEncounterAt: this.waveIndex < this.mission.encounters.length ? this.mission.encounters[this.waveIndex].at : null,
+            totalEncounters: encounters.length,
+            nextEncounterAt: this.waveIndex < encounters.length ? encounters[this.waveIndex].at : null,
             triggeredEvents: [...this.specialEventsTriggered],
             pacing: this.pacingDirector.snapshot(),
             stageDirector: this.stageDirector.snapshot(this.route, this.region),
@@ -1997,8 +2079,9 @@ export class ArcadeWorld {
     }
 
     devJumpNextEncounter(): Encounter | null {
-        if (this.waveIndex >= this.mission.encounters.length) return null;
-        const enc = this.mission.encounters[this.waveIndex++];
+        const encounters = this.activeEncounters;
+        if (this.waveIndex >= encounters.length) return null;
+        const enc = encounters[this.waveIndex++];
         if (enc.at > this.route) {
             this.route = enc.at;
             this.elapsed = enc.at;
