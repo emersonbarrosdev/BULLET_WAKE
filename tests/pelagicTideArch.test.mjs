@@ -12,6 +12,7 @@ import {
   TIDE_ARCH_BOATS,
   TideArchController,
   computeArchOpening,
+  resolveArchCannonWorldPos,
 } from '../src/game/arcade/PelagicTideArch.ts';
 import { PelagicComms } from '../src/game/arcade/PelagicComms.ts';
 import { DevScenarioRegistry } from '../src/devtools/DevScenarioRegistry.ts';
@@ -342,7 +343,7 @@ test('31: Coast water occlusion fix, waterfalls & grey pad removal, cannon coast
   // 2. Interior coastal islands remain 100% solid terrain without cool-rock/quay alpha cutouts
   assert.ok(paintingSrc.includes('isDeepInland'), 'Coast terrain mask must preserve solid island interiors');
 
-  // 3. Artificial waterfalls, grey circular gun pads, and floating cutout piers remain completely removed
+  // 3. Artificial waterfalls, grey circular gun pads, floating cutouts, and opaque ellipse shadow remain removed
   for (const forbidden of [
     'WATERFALL_SLOTS',
     'waterfallMistGfx',
@@ -352,22 +353,133 @@ test('31: Coast water occlusion fix, waterfalls & grey pad removal, cannon coast
     'PAD_FRAME_META',
     'PIER_LAYOUT',
     'BACKING_CLIFFS',
+    'archShadowGfx',
+    '.fillEllipse(',
   ]) {
     assert.ok(!archArtSrc.includes(forbidden), `PelagicTideArchArt must NOT contain ${forbidden}`);
   }
   assert.ok(!sceneSrc.includes('0xd8e2ec'), 'ArcadeScene must NOT apply grey pad tint 0xd8e2ec to arch cannons');
 
-  // 4. Tide Arch preserves monumental bridge, cast shadow, pillar water surf & locator beacon depths
+  // 4. Tide Arch renders natural rock platforms, silhouette-derived shadow, bridge span & altitude locator beacon
   for (const token of [
     'TIDE_ARCH_BRIDGE_TEX',
+    'TIDE_ARCH_ROCK_PLATFORMS_TEX',
+    'TIDE_ARCH_SHADOW_TEX',
+    'resolveArchCannonWorldPos',
     'setDepth(1.12)',
-    'setDepth(1.36)',
+    'setDepth(1.18)',
+    'setDepth(1.44',
     'setDepth(18.90)',
     'setDepth(18.95)',
     'setDepth(19.30)',
-    'archShadowGfx',
+    'archShadowImage',
     'rivetBeaconGfx',
   ]) {
     assert.ok(archArtSrc.includes(token), `PelagicTideArchArt must contain ${token}`);
+  }
+});
+
+test('32: All 10 Tide Arch cannons sit synced to rock coordinates and can be individually destroyed with Power 1 primary shots across Easy, Normal, Hard, PC and Portrait', () => {
+  const clampVal = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const configs = [
+    { upLayout: 'pc', difficulty: 'easy' },
+    { upLayout: 'pc', difficulty: 'normal' },
+    { upLayout: 'pc', difficulty: 'hard' },
+    { upLayout: 'portrait', difficulty: 'normal' },
+    { upLayout: 'portrait', difficulty: 'hard' },
+  ];
+
+  for (const cfg of configs) {
+    const w = new ArcadeWorld(FENDA, undefined, { ...cfg, seed: 1337 });
+    w.state = 'play';
+    w.introTime = 0;
+    w.accessibility = true;
+    w.weapons.weaponLevel = 1;
+    w.weapons.specialCharges = 0;
+    w.route = 147.9;
+    w.scroll = 147.9 * 38;
+    w.waveIndex = FENDA.encounters.findIndex(e => e.at >= 148);
+    w.supplyIndex = 999;
+
+    const cannonRecords = new Map();
+    const dt = 1 / 120;
+    for (let s = 0; s < 52 * 120; s++) {
+      w.player.invulnerable = 999;
+      w.events.length = 0;
+      const open = computeArchOpening(w.arena.left, w.arena.right);
+      const inBand = w.tideArch.isInBridgeBand(w.scroll, w.player.y + 12) || w.tideArch.isInBridgeBand(w.scroll, w.player.y - 18);
+      const minX = inBand ? open.left + 11 : w.arena.left + 20;
+      const maxX = inBand ? open.right - 11 : w.arena.right - 20;
+
+      const alreadyDestroyedIds = new Set([...cannonRecords.values()].filter(r => r.destroyed).map(r => r.actorId));
+      const cannons = w.enemies.filter(e => e.hp > 0 && e.navigation?.customAnchor);
+      for (const c of cannons) {
+        const spec = TIDE_ARCH_CANNONS.find(sp => Math.abs((w.tideArch.archWorldY + sp.relWorldY) - c.navigation.worldY) < 1 && sp.side === c.archSide);
+        assert.ok(spec, `Expected matching Tide Arch spec for cannon id=${c.id}`);
+        const expected = resolveArchCannonWorldPos(spec, w.tideArch.archWorldY, w.arena.left, w.arena.right);
+        assert.ok(Math.abs(c.x - expected.x) < 0.01, `Cannon ${spec.id} must match shared rock coordinate`);
+
+        let rec = cannonRecords.get(spec.id);
+        if (!rec) {
+          rec = { id: spec.id, actorId: c.id, maxHp: c.maxHp, damaged: false, destroyed: false, wreckCreated: false };
+          cannonRecords.set(spec.id, rec);
+        } else if (rec.destroyed) {
+          rec.respawned = true;
+        }
+        if (c.hp < c.maxHp) rec.damaged = true;
+      }
+
+      const target = cannons
+        .filter(e => e.y > -10 && e.y < w.player.y - 18)
+        .sort((a, b) => b.y - a.y)[0];
+      const tx = target ? clampVal(target.x, minX, maxX) : open.center;
+      const ty = w.playerHomeY;
+      w.step(dt, {
+        x: clampVal((tx - w.player.x) / 5, -1, 1),
+        y: clampVal((ty - w.player.y) / 5, -1, 1),
+        fire: true,
+        special: false,
+        charge: false,
+      });
+
+      for (const rec of cannonRecords.values()) {
+        if (alreadyDestroyedIds.has(rec.actorId) && w.enemies.some(e => e.id === rec.actorId)) {
+          rec.respawned = true;
+        }
+      }
+
+      for (const ev of w.events) {
+        if (ev.type === 'enemy-shot') {
+          for (const rec of cannonRecords.values()) {
+            if (alreadyDestroyedIds.has(rec.actorId)) {
+              const wk = w.wrecks.find(k => k.id === rec.actorId);
+              if (wk && Math.hypot(ev.x - wk.x, ev.y - wk.y) < 12) rec.firedAfterDestroy = true;
+            }
+          }
+        }
+      }
+      for (const wk of w.wrecks) {
+        if (!wk.customAnchor) continue;
+        for (const rec of cannonRecords.values()) {
+          if (rec.actorId === wk.id) {
+            rec.damaged = true;
+            rec.destroyed = true;
+            rec.wreckCreated = true;
+          }
+        }
+      }
+      if (w.tideArch.phase === 'complete') break;
+    }
+
+    assert.equal(cannonRecords.size, 10, `All 10 cannons must spawn in ${cfg.upLayout}/${cfg.difficulty}`);
+    for (const spec of TIDE_ARCH_CANNONS) {
+      const rec = cannonRecords.get(spec.id);
+      assert.ok(rec, `Missing cannon ${spec.id}`);
+      assert.equal(rec.damaged, true, `Cannon ${spec.id} must take Power 1 damage (${cfg.upLayout}/${cfg.difficulty})`);
+      assert.equal(rec.destroyed, true, `Cannon ${spec.id} must be destroyed at Power 1 (${cfg.upLayout}/${cfg.difficulty})`);
+      assert.equal(rec.wreckCreated, true, `Cannon ${spec.id} must leave a wreck (${cfg.upLayout}/${cfg.difficulty})`);
+      assert.ok(!rec.respawned, `Cannon ${spec.id} must never respawn (${cfg.upLayout}/${cfg.difficulty})`);
+      assert.ok(!rec.firedAfterDestroy, `Cannon ${spec.id} must stop firing after destruction (${cfg.upLayout}/${cfg.difficulty})`);
+    }
   }
 });

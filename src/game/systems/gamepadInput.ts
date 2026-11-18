@@ -11,8 +11,8 @@ export type PadProfile = 'playstation' | 'xbox' | 'nintendo';
 
 /** W3C Standard Gamepad button indices. */
 export const STANDARD_GAMEPAD_BUTTON = {
-  SPECIAL_FACE: 0, // PS: × (Xis)    | Xbox: A -> gameplay SPECIAL, menu CONFIRM
-  CIRCLE: 1,       // PS: ○ (Círculo)| Xbox: B -> gameplay FIRE, menu CANCEL
+  SPECIAL_FACE: 0, // PS: × (Xis)    | Xbox: A -> gameplay SPECIAL, menu CANCEL / BACK
+  CIRCLE: 1,       // PS: ○ (Círculo)| Xbox: B -> gameplay FIRE, menu CONFIRM / SELECT
   CHARGE: 2,       // PS: □ (Quad.)  | Xbox: X -> gameplay CHARGE (tiro carregado)
   NORTH: 3,        // PS: △ (Triân.) | Xbox: Y -> reserved in combat / pilot profile preview
   L1: 4,
@@ -47,9 +47,9 @@ export function padLabels(id = '') {
       shoot: 'A / R',
       charge: 'Y',
       special: 'B / ZR',
-      confirm: 'B',
-      cancel: 'A',
-      back: 'A',
+      confirm: 'A',
+      cancel: 'B',
+      back: 'B',
       pause: '+',
       dash: 'L',
       missile: 'X',
@@ -61,9 +61,9 @@ export function padLabels(id = '') {
       shoot: '○ / R1',
       charge: '□',
       special: '× / R2',
-      confirm: '×',
-      cancel: '○',
-      back: '○',
+      confirm: '○',
+      cancel: '×',
+      back: '×',
       pause: 'OPTIONS',
       dash: 'L1',
       missile: '△',
@@ -74,9 +74,9 @@ export function padLabels(id = '') {
     shoot: 'B / RB',
     charge: 'X',
     special: 'A / RT',
-    confirm: 'A',
-    cancel: 'B',
-    back: 'B',
+    confirm: 'B',
+    cancel: 'A',
+    back: 'A',
     pause: 'START',
     dash: 'LB',
     missile: 'Y',
@@ -181,9 +181,9 @@ export class GamepadReader {
     const special = specialHeld && !this.prevSpecialHeld;
     this.prevSpecialHeld = specialHeld;
 
-    // Logical MENU actions: × (0) = confirm, ○ (1) = cancel/back, Options/Start (9) = pause
-    const confirm = buttonDown(STANDARD_GAMEPAD_BUTTON.SPECIAL_FACE);
-    const cancel = buttonDown(STANDARD_GAMEPAD_BUTTON.CIRCLE);
+    // Logical MENU actions: ○ (1) = confirm, × (0) = cancel/back, Options/Start (9) = pause
+    const confirm = buttonDown(STANDARD_GAMEPAD_BUTTON.CIRCLE);
+    const cancel = buttonDown(STANDARD_GAMEPAD_BUTTON.SPECIAL_FACE);
     const pause = buttonDown(STANDARD_GAMEPAD_BUTTON.PAUSE);
     const northTap = buttonDown(STANDARD_GAMEPAD_BUTTON.NORTH);
 

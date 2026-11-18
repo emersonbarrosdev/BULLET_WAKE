@@ -298,7 +298,7 @@ export class ArcadeBackdrop {
       const rotation = naval ? heading : e.ground ? heading - Math.PI : e.family === 'alien' ? 0 : Math.PI;
       const texture = e.family === 'alien' ? 'arc-ufo' : 'arc-enemies';
       const frame = e.family === 'alien' ? 0 : e.family === 'airship' ? 12 : (w.up && e.family === 'tank' ? 7 : FAMILIES.indexOf(e.family));
-      if (!naval && !e.submarine && e.navigation?.anchor === undefined) {
+      if (!naval && !e.submarine && e.navigation?.anchor === undefined && !e.navigation?.customAnchor) {
         this.shadows[shadow++].setVisible(true).setTexture(texture, Math.max(0, frame))
           .setPosition(e.x + (e.ground ? 3 : 12), e.y + (e.ground ? 4 : 16))
           .setDisplaySize(e.size * (e.ground ? .96 : .82), e.size * (e.ground ? .96 : .82))

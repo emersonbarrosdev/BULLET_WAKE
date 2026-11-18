@@ -46,7 +46,6 @@ import { clamp, sweepEllipse, type Box } from './geometry.ts';
 import { collectPowerItem, createPlayerWeapons, getPrimaryProjectiles, getSecondaryProjectiles, type PlayerWeaponsState } from '../systems/weaponSystem.ts';
 import { enterStage, type CampaignFlight } from '../systems/campaignFlight.ts';
 import { prepareSurface, moveSurface, waterCorridor, type SurfaceRoute } from './PelagicEnvironment.ts';
-import { coastWorldEdgeX } from './PelagicCoastGeometry.ts';
 import {
     PELAGIC_CONVOY_CLEAR_BONUS,
     PELAGIC_RARE_BONUS,
@@ -96,6 +95,7 @@ import {
     TIDE_ARCH_CLEAN_BONUS,
     TideArchController,
     computeArchOpening,
+    resolveArchCannonWorldPos,
     type ArchCannonPattern,
     type PelagicCheckpointSnapshot,
     type TideArchBoatSpec,
@@ -265,7 +265,7 @@ export class ArcadeWorld {
         const effectiveAutoFire = input.fire && !this.chargedShot.shouldSuspendAutoFire;
         const burstStep = this.burst.step(dt * 1000, effectiveAutoFire, {
             accessibility: this.accessibility,
-            allowHoldRepeat: !this.up,
+            allowHoldRepeat: true,
         });
         for (let i = 0; i < burstStep.pulses; i++) this.firePrimary();
         this.missileTime = Math.max(0, this.missileTime - dt);
@@ -403,39 +403,9 @@ export class ArcadeWorld {
         if (!this.up) return;
         const def = FAMILY.tower;
         const maxHp = resolveEnemyMaxHp('tower', this.effectiveDifficulty);
-        const opening = computeArchOpening(this.arena.left, this.arena.right);
-        const outerX = spec.side < 0 ? this.arena.left : this.arena.right;
-        const edgeX = spec.side < 0 ? opening.left : opening.right;
-        let worldY = this.tideArch.archWorldY + spec.relWorldY;
-        let anchorX = outerX + (edgeX - outerX) * spec.pierDepth;
-        if (this.upLayout === 'pc') {
-            if (Math.abs(worldY - this.tideArch.archWorldY) < 92) {
-                worldY = this.tideArch.archWorldY + (spec.relWorldY >= 0 ? 102 : -118);
-            }
-            let coastEdgeX = coastWorldEdgeX(worldY, spec.side, this.arena.left, this.arenaWidth);
-            const edgeWidth = (edge: number) =>
-                spec.side < 0 ? edge - this.arena.left : this.arena.right - edge;
-            if (edgeWidth(coastEdgeX) < 48) {
-                for (let step = 16; step <= 160; step += 16) {
-                    let found = false;
-                    for (const d of [step, -step]) {
-                        const candY = worldY + d;
-                        if (Math.abs(candY - this.tideArch.archWorldY) < 92) continue;
-                        const ce = coastWorldEdgeX(candY, spec.side, this.arena.left, this.arenaWidth);
-                        if (edgeWidth(ce) >= 48) {
-                            worldY = candY;
-                            coastEdgeX = ce;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (found) break;
-                }
-            }
-            anchorX = spec.side < 0
-                ? clamp(coastEdgeX - 26, this.arena.left + 22, opening.left - 12)
-                : clamp(coastEdgeX + 26, opening.right + 12, this.arena.right - 22);
-        }
+        const pos = resolveArchCannonWorldPos(spec, this.tideArch.archWorldY, this.arena.left, this.arena.right);
+        const worldY = pos.worldY;
+        const anchorX = pos.x;
         const mountCount = getMountSpecs('tower').length;
         const actor: Actor = {
             id: ++this.sequence,
@@ -917,7 +887,7 @@ export class ArcadeWorld {
                                 if (phase < 2) {
                                     // Chin gatling burst directly from chin turret muzzle
                                     const m0 = mounts[0];
-                                    const spread = profile.useExtremePatterns ? [-.20, -.07, .07, .20] : profile.useHardPatterns ? [-.14, 0, .14] : [-.09, .09];
+                                    const spread = profile.useExtremePatterns ? [-.20, -.07, .07, .20] : profile.useHardPatterns ? [-.14, 0, .14] : [0];
                                     for (const a of spread) this.hostile(m0.muzzleX, m0.muzzleY, m0.aimAngle + a, shotSpd, shot.radius, shot.color);
                                     if (e.mountRecoil) e.mountRecoil[0] = 1;
                                     this.stepEnemyShots++;
@@ -987,21 +957,21 @@ export class ArcadeWorld {
                             const airStep = e.attackStep ?? 0;
                             if (this.up) e.attackStep = airStep + 1;
                             let angles: number[] = e.family === 'bomber' ? (profile.useExtremePatterns ? [-.38, -.19, 0, .19, .38] : profile.useHardPatterns ? [-.32, -.16, 0, .16, .32] : [-.26, 0, .26])
-                                : e.family === 'heli_utility' ? (profile.useExtremePatterns ? [-.22, -.07, .07, .22] : profile.useHardPatterns ? [-.16, 0, .16] : [-.10, .10])
+                                : e.family === 'heli_utility' ? [0]
                                     : e.family === 'heli_phantom' ? (profile.useExtremePatterns ? [-.34, -.17, 0, .17, .34] : profile.useHardPatterns ? [-.26, 0, .26] : [-.18, 0, .18])
-                                        : e.family === 'heli_scout' ? (profile.useExtremePatterns ? (airStep % 2 === 1 ? [-.14, 0, .14] : [-.09, .09]) : profile.useHardPatterns ? [-.09, .09] : [0])
-                                            : e.family === 'interceptor' ? (this.up && profile.useExtremePatterns && airStep % 2 === 1 ? [-.09, .09] : this.up && profile.useHardPatterns && airStep % 2 === 1 ? [-.06, .06] : [0])
-                                                : e.family === 'acrobat' ? (this.up && profile.useExtremePatterns && airStep % 2 === 1 ? [-.14, .14] : this.up && profile.useHardPatterns && airStep % 2 === 1 ? [-.10, .10] : [0])
-                                                    : e.family === 'fighter' ? (this.up && profile.useExtremePatterns && airStep % 3 !== 0 ? [-.08, .08] : this.up && profile.useHardPatterns && airStep % 3 === 2 ? [-.06, .06] : [0])
+                                        : e.family === 'heli_scout' ? [0]
+                                            : e.family === 'interceptor' ? [0]
+                                                : e.family === 'acrobat' ? [0]
+                                                    : e.family === 'fighter' ? [0]
                                                         : e.family === 'ship' || e.submarine ? [-.16, .16]
                                                             : [0];
                             if (e.eventRole === 'elite-ace') {
-                                angles = profile.useHardPatterns && e.offset === 0 ? [-.12, 0, .12] : [-.08, .08];
+                                angles = [0];
                                 shotSpd = this.resolveEnemyProjectileSpeed(238);
                             } else if (e.eventRole === 'coord-wing') {
-                                angles = e.family === 'acrobat' ? [-.12, .12] : [0];
+                                angles = [0];
                             } else if (e.eventRole === 'convoy-escort') {
-                                angles = [-.06, .06];
+                                angles = [0];
                             } else if (e.eventRole === 'rare-probe') {
                                 angles = [-.42, -.14, .14, .42];
                                 shotSpd = this.resolveEnemyProjectileSpeed(202);
@@ -1101,11 +1071,11 @@ export class ArcadeWorld {
             b.x += b.vx * dt; b.y += b.vy * dt;
             if (b.enemy) { if (this.bomb?.phase === 'blast' && Math.hypot(b.x - this.bomb.x, b.y - this.bomb.y) < this.bomb.radius) { b.active = false; continue; } if (sweepEllipse(b.px, b.py, b.x, b.y, this.player.x, this.player.y, 5 + b.radius, 7 + b.radius) !== null) { b.active = false; this.hurtPlayer(); } }
             else {
-                if (this.up && this.tideArch.isPillarCollisionActive(this.scroll, b.y)) {
-                    const opening = computeArchOpening(this.arena.left, this.arena.right);
-                    if (b.x < opening.left - 8 || b.x > opening.right + 8) { b.active = false; this.emit('impact', b.x, b.y, .25); continue; }
-                }
                 this.collideFriendly(b);
+                if (b.active && this.up && this.tideArch.isPillarCollisionActive(this.scroll, b.y)) {
+                    const opening = computeArchOpening(this.arena.left, this.arena.right);
+                    if (b.x < opening.left - 16 || b.x > opening.right + 16) { b.active = false; this.emit('impact', b.x, b.y, .25); continue; }
+                }
             }
             if (b.age > 9 || b.x < this.arena.left - 35 || b.x > this.arena.right + 35 || b.y < this.arena.top - 60 || b.y > this.arena.bottom + 40) b.active = false;
         }
@@ -1328,7 +1298,7 @@ export class ArcadeWorld {
         const assist = this.isAssisted;
         if (!assist) {
             if (this.weapons.weaponLevel > 1 || this.weapons.powerMeter > 0) this.cargo.push({ id: ++this.sequence, x: this.player.x, y: this.player.y - 20, vx: 55, vy: -35, kind: 'power', crate: false, hp: 1, age: 0 });
-            this.weapons.weaponLevel = 1; this.weapons.powerMeter = 0; this.specialTime = 0; this.bomb = undefined; this.burst.reset(this.up); this.player.invulnerable = 3;
+            this.weapons.weaponLevel = 1; this.weapons.powerMeter = 0; this.specialTime = 0; this.bomb = undefined; this.burst.reset(true); this.player.invulnerable = 3;
             if (this.lives <= 0) { this.state = 'defeat'; this.emit('defeat'); return; }
             this.player.x = safeRespawnX; this.player.y = safeRespawnY;
             for (const b of this.bullets) if (b.enemy && Math.hypot(b.x - this.player.x, b.y - this.player.y) < 75) b.active = false;
@@ -1336,7 +1306,7 @@ export class ArcadeWorld {
         }
         const recovery = computeAssistedDeathRecovery(this.weapons.weaponLevel, this.weapons.powerMeter);
         this.weapons.weaponLevel = recovery.nextLevel; this.weapons.powerMeter = recovery.nextMeter;
-        this.specialTime = 0; this.bomb = undefined; this.burst.reset(this.up); this.player.invulnerable = ASSISTED_RESPAWN_INVULNERABLE;
+        this.specialTime = 0; this.bomb = undefined; this.burst.reset(true); this.player.invulnerable = ASSISTED_RESPAWN_INVULNERABLE;
         if (this.lives <= 0) { this.state = 'defeat'; this.emit('defeat'); return; }
         if (recovery.dropP > 0) {
             // Keep at most one death-dropped recovery capsule active at once to prevent stacking on consecutive deaths.
@@ -1909,8 +1879,8 @@ export class ArcadeWorld {
 
     devTriggerBurst(): void {
         this.state = 'play';
-        this.burst.reset(this.up);
-        this.burst.step(1000 / 120, true, { accessibility: this.accessibility, allowHoldRepeat: !this.up });
+        this.burst.reset(true);
+        this.burst.step(1000 / 120, true, { accessibility: this.accessibility, allowHoldRepeat: true });
         this.firePrimary();
     }
 

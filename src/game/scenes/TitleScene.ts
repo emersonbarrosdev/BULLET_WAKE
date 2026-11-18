@@ -149,7 +149,7 @@ export class TitleScene extends Phaser.Scene {
         <nav class="bw-submenu-list" aria-label="${controls ? 'Controles' : 'Opções'}">
           ${this.renderActions()}
         </nav>
-        <p class="bw-submenu-help">${this.mode === 'guide' ? '↑ ↓ ROLAR LEGENDA' : '↑ ↓ NAVEGAR'}&nbsp;&nbsp; · &nbsp;&nbsp;${connectedPad()?padLabels(connectedPad()?.id).shoot:'ENTER'} SELECIONAR&nbsp;&nbsp; · &nbsp;&nbsp;${connectedPad()?padLabels(connectedPad()?.id).back:'ESC'} VOLTAR</p>
+        <p class="bw-submenu-help">${this.mode === 'guide' ? '↑ ↓ ROLAR LEGENDA' : '↑ ↓ NAVEGAR'}&nbsp;&nbsp; · &nbsp;&nbsp;${connectedPad()?padLabels(connectedPad()?.id).confirm:'ENTER'} SELECIONAR&nbsp;&nbsp; · &nbsp;&nbsp;${connectedPad()?padLabels(connectedPad()?.id).back:'ESC'} VOLTAR</p>
       </main>
     `;
     this.bindActions();

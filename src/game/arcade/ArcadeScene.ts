@@ -9,7 +9,7 @@ import { globalAudio } from '../audio/audioSystem';
 import { stageFlightSnapshot, type CampaignFlight } from '../systems/campaignFlight';
 import { spriteContact } from '../render/SpriteSilhouette';
 import { enableCombatResolution, getCombatVirtualSize, setCombatVirtualSize } from '../render/combatResolution';
-import { clamp } from './geometry';
+import { clamp, sweepEllipse } from './geometry';
 import { readArcadeProgress, recordArcadeClear } from './progress';
 import { pelagicShotSize } from './PelagicPresentation';
 import { rivetShotPresentation } from '../render/rivetPresentation';
@@ -410,10 +410,9 @@ export class ArcadeScene extends Phaser.Scene {
     if (screen === 'play' && old !== 'play') {
       this.audio.resume();
       this.accumulator = 0;
-      const fromMenu = !['loading', 'intro', 'missions'].includes(old);
-      this.suppressHeldFireUntilRelease = fromMenu;
-      this.suppressChargeUntilRelease = fromMenu;
-      this.suppressSpecialUntilRelease = fromMenu;
+      this.suppressHeldFireUntilRelease = true;
+      this.suppressChargeUntilRelease = true;
+      this.suppressSpecialUntilRelease = true;
     }
 
     if (screen === 'loading' || screen === 'intro') {
@@ -664,9 +663,9 @@ export class ArcadeScene extends Phaser.Scene {
             drawShoulderPill(420, 233, 'RT', 24);
           }, 'ESPECIAL (Tormenta)', UI.cyanHex);
           padRow(260, () => {
-            drawFaceOrb(386, 260, 'A', 0x22c55e, '#86efac', 8.5, 9.5);
+            drawFaceOrb(386, 260, 'B', 0xef4444, '#fca5a5', 8.5, 9.5);
             this.text(401, 260, '/', 9, UI.slate);
-            drawFaceOrb(418, 260, 'B', 0xef4444, '#fca5a5', 8.5, 9.5);
+            drawFaceOrb(418, 260, 'A', 0x22c55e, '#86efac', 8.5, 9.5);
           }, 'CONFIRMAR / VOLTAR (menus)');
           padRow(287, () => drawShoulderPill(404, 287, 'START', 48), 'PAUSAR / RETOMAR');
           this.text(518, 316, 'Segure X para carregar (1.2s máx) e solte para disparar  •  Y reservado', 7.6, UI.silver, { wrap: 296 });
@@ -683,9 +682,9 @@ export class ArcadeScene extends Phaser.Scene {
             drawShoulderPill(420, 233, 'R2', 24);
           }, 'ESPECIAL (Tormenta)', UI.cyanHex);
           padRow(260, () => {
-            drawFaceOrb(386, 260, '×', 0x4ea8ff, '#93c5fd', 8.5, 11);
+            drawFaceOrb(386, 260, '○', 0xff4f7a, '#ff8aa8', 8.5, 10);
             this.text(401, 260, '/', 9, UI.slate);
-            drawFaceOrb(418, 260, '○', 0xff4f7a, '#ff8aa8', 8.5, 10);
+            drawFaceOrb(418, 260, '×', 0x4ea8ff, '#93c5fd', 8.5, 11);
           }, 'CONFIRMAR / VOLTAR (menus)');
           padRow(287, () => drawShoulderPill(404, 287, 'OPTIONS', 54), 'PAUSAR / RETOMAR');
           this.text(518, 316, 'Segure □ para carregar (1.2s máx) e solte para disparar  •  △ reservado', 7.6, UI.silver, { wrap: 296 });
@@ -963,9 +962,11 @@ export class ArcadeScene extends Phaser.Scene {
     this.world.subHullContact = (_sub, secIdx, ax, ay, bx, by, radius) => this.subBossArt.hullContact(secIdx, ax, ay, bx, by, radius);
     this.world.contact = (e, ax, ay, bx, by, radius) => {
       const sprite = this.enemySprites.get(e.id), turret = this.turrets.get(e.id), mounts = this.pelagicAnims?.mountSpritesFor(e.id);
+      const customBase = e.navigation?.customAnchor ? sweepEllipse(ax, ay, bx, by, e.x, e.y, e.size * 0.34 + radius, e.size * 0.38 + radius) : null;
       const hits = [
         sprite ? spriteContact(sprite, ax, ay, bx, by, radius) : null,
         turret ? spriteContact(turret, ax, ay, bx, by, radius) : null,
+        customBase,
         ...(mounts ? mounts.map(ms => spriteContact(ms, ax, ay, bx, by, radius)) : []),
       ].filter((v): v is number => v !== null);
       return hits.length ? Math.min(...hits) : null;

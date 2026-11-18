@@ -223,6 +223,7 @@ export class PelagicActorAnims {
     }
 
     g.setVisible(true);
+    this.shadowGfx.clear().setVisible(true);
     const safeDt = Math.max(dt, 1 / 240);
     const rawVx = dt > 0 ? (w.player.x - this.playerPrevX) / safeDt : 0;
     const rawVy = dt > 0 ? (w.player.y - this.playerPrevY) / safeDt : 0;
@@ -282,6 +283,15 @@ export class PelagicActorAnims {
     } else {
       playerSprite.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
     }
+
+    // 2.5D altitude-linked cast shadow over ocean surface (`depth 4.5`): tightens & darkens during low-flight
+    const shOffX = 6 + alt * 12;
+    const shOffY = 8 + alt * 16;
+    const shScale = clamp(1.04 - alt * 0.24, 0.72, 1.04);
+    const shAlpha = underBridge ? 0.14 : clamp(0.30 - alt * 0.10, 0.16, 0.32);
+    const shW = 28 * Math.max(0.52, Math.cos(bank * 0.95)) * shScale;
+    const shH = 20 * shScale;
+    this.shadowGfx.fillStyle(0x04152d, shAlpha).fillEllipse(w.player.x + shOffX, w.player.y + shOffY, shW, shH);
 
     // Low-altitude ocean wave wake spray beneath RIVET when skimming near the waves
     if (alt < 0.72 && quality > 0) {
@@ -460,7 +470,7 @@ export class PelagicActorAnims {
     const g = this.speedGfx;
     const sh = this.shadowGfx;
     const gsh = this.groundShadowGfx;
-    sh.clear().setVisible(true);
+    sh.setVisible(true);
     gsh.clear().setVisible(true);
     const seen = new Set<number>();
 
