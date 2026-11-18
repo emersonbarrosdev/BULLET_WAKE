@@ -17,6 +17,7 @@ import { SUPPLY_ART, SUB_ART, BOMB_ART, BLAST_ART, SUB_HULL_ART, SUB_SUBMERGED_A
 import { subTotalHp } from './PelagicSubmarineBoss';
 import { EMPLACEMENT_TEXTURE, GUN_SMOKE_TEXTURE, TOWER_TEXTURE, PelagicEmplacements } from './PelagicEmplacements';
 import { PelagicActorAnims, preloadPelagicActorAnims } from './PelagicActorAnims';
+import { PELAGIC_RIVET_SHEET } from './PelagicActorAnimsMath';
 import { preloadTideArchArt } from './PelagicTideArchArt';
 import type { PelagicCheckpointSnapshot, TideArchPhase } from './PelagicTideArch';
 import {
@@ -418,38 +419,39 @@ export class ArcadeScene extends Phaser.Scene {
         this.setOpeningPhase('TITLE_VISIBLE');
       }
     } else if (screen === 'pilot') {
-      this.audio.play('select'); this.addModalBackdrop(0x041530, .36, false);
-      makeRibbon(this, 384, 28, 332, 38, 'gold', this.ui);
-      this.text(384, 28, 'ESCOLHA SEU PILOTO', 17, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
-      makePanel(this, 384, 146, 678, 174, 'cobalt', this.ui);
-      makePanel(this, 132, 144, 136, 136, 'gold', this.ui);
-      this.ui.add(this.add.image(132, 140, 'arc-pilots', 3).setDisplaySize(114, 114));
-      makeRibbon(this, 132, 206, 114, 24, 'gold', this.ui);
-      this.text(132, 206, 'BAYEK', 12, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 1 });
+      this.audio.play('select'); this.addModalBackdrop(0x030d22, .60, false);
+      makeRibbon(this, 384, 30, 316, 36, 'gold', this.ui);
+      this.text(384, 30, 'ESCOLHA SEU PILOTO', 16.5, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
+      makePanel(this, 384, 144, 644, 154, 'cobalt', this.ui);
+      makePanel(this, 134, 142, 124, 124, 'gold', this.ui);
+      this.ui.add(this.add.image(134, 138, 'arc-pilots', 3).setDisplaySize(104, 104));
+      makeRibbon(this, 134, 198, 106, 22, 'gold', this.ui);
+      this.text(134, 198, 'BAYEK', 11.5, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 1 });
       const bay = this.add.graphics()
-        .fillStyle(0x05214d, .82).fillRoundedRect(218, 72, 188, 92, 10)
-        .lineStyle(1.4, UI.cyan, .62).strokeRoundedRect(218, 72, 188, 92, 10)
-        .lineStyle(1, UI.cyan, .22).lineBetween(428, 74, 428, 218);
+        .fillStyle(0x05214d, .84).fillRoundedRect(241, 80, 164, 92, 10)
+        .lineStyle(1.3, UI.cyan, .62).strokeRoundedRect(241, 80, 164, 92, 10)
+        .lineStyle(0.8, UI.cyan, .22).strokeCircle(323, 126, 34).strokeCircle(323, 126, 20)
+        .lineStyle(0.7, UI.cyan, .18).lineBetween(275, 126, 371, 126).lineBetween(323, 88, 323, 164)
+        .lineStyle(1, UI.cyan, .24).lineBetween(448, 80, 448, 206);
       this.ui.add(bay);
-      const plane = this.add.image(312, 118, UI_TEX.rivetProfile).setDisplaySize(134, 80);
+      const plane = this.add.sprite(323, 126, PELAGIC_RIVET_SHEET, 3).setDisplaySize(66, 66);
       this.ui.add(plane);
-      this.text(312, 176, 'RIVET  •  VANGUARDA', 12, UI.cyanHex);
-      this.text(312, 193, 'Asas da Vanguarda. Um destino: trazer todos.', 9.5, UI.silver);
-      makeIcon(this, 224, 212, UI_ICON.lightning, 16, this.ui);
-      this.text(318, 212, 'ESPECIAL: TORMENTA ESCARLATE', 9.5, UI.goldHex);
-      const stats: [string, number, number, number][] = [['VELOCIDADE', 4, UI_PIP.cyan, 96], ['ARMAMENTO', 5, UI_PIP.gold, 140], ['BLINDAGEM', 3, UI_PIP.green, 184]];
+      this.text(323, 184, 'RIVET  •  VANGUARDA', 11, UI.cyanHex);
+      makeIcon(this, 241, 202, UI_ICON.lightning, 14, this.ui);
+      this.text(328, 202, 'ESPECIAL: TORMENTA ESCARLATE', 8.8, UI.goldHex);
+      const stats: [string, number, number, number][] = [['VELOCIDADE', 4, UI_PIP.cyan, 98], ['ARMAMENTO', 5, UI_PIP.gold, 140], ['BLINDAGEM', 3, UI_PIP.green, 182]];
       for (const [lbl, val, pip, sy] of stats) {
-        this.text(566, sy - 16, lbl, 9.5, UI.silver);
-        makeGaugeMeter(this, 566, sy + 3, 170, 22, 5, val, pip, this.ui);
+        this.text(572, sy - 14, lbl, 9, UI.silver);
+        makeGaugeMeter(this, 572, sy + 2, 154, 19, 5, val, pip, this.ui);
       }
       const portraits = [0, 4, 5, 6, 7], names = ['BAYEK', 'TITA', 'LEONA', 'OSVALD', 'HIEN'];
       for (let i = 0; i < 5; i++) {
         const cx = 112 + i * 136;
-        makePanel(this, cx, 290, 124, 96, i === 0 ? 'gold' : 'cobalt', this.ui);
-        this.ui.add(this.add.image(cx, 274, 'arc-pilots', portraits[i]).setDisplaySize(50, 50).setAlpha(i ? .52 : 1));
-        if (i) makeIcon(this, cx + 40, 256, UI_ICON.padlock, 21, this.ui);
-        this.text(cx, 307, names[i], 11, i ? UI.silver : UI.goldHex);
-        this.text(cx, 320, i ? 'EM BREVE' : 'PRONTO', 7.5, i ? UI.slate : UI.cyanHex);
+        makePanel(this, cx, 282, 122, 90, i === 0 ? 'gold' : 'cobalt', this.ui);
+        this.ui.add(this.add.image(cx, 267, 'arc-pilots', portraits[i]).setDisplaySize(48, 48).setAlpha(i ? .52 : 1));
+        if (i) makeIcon(this, cx + 38, 250, UI_ICON.padlock, 20, this.ui);
+        this.text(cx, 299, names[i], 10.5, i ? UI.silver : UI.goldHex);
+        this.text(cx, 312, i ? 'EM BREVE' : 'PRONTO', 7.5, i ? UI.slate : UI.cyanHex);
       }
       this.button(468, 384, 'DECOLAR COM BAYEK', () => this.show('missions'), 286, 40, { fontSize: 14 });
       this.button(154, 384, 'VOLTAR', () => this.show('title'), 156, 36, { fontSize: 13 });

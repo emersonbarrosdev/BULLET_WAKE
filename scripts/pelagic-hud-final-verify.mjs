@@ -178,14 +178,15 @@ try {
   await shot('00-title-check');
 
   await evaluate(`window.__GAME__.scene.getScene('ArcadeScene').show('pilot')`);
-  await sleep(200);
+  await sleep(220);
   const pilotState = await evaluate(`(() => {
     const s = window.__GAME__.scene.getScene('ArcadeScene');
-    const imgs = s.ui.list.filter(o => o && o.texture && o.texture.key === 'ui-rivet-profile');
-    return { screen: s.screen, profileCount: imgs.length };
+    const imgs = s.ui.list.filter(o => o && o.texture && o.texture.key === 'pelagic-rivet-up');
+    return { screen: s.screen, topDownCount: imgs.length, frame: imgs[0]?.frame?.name ?? null };
   })()`);
-  assert.equal(pilotState.profileCount, 1);
+  assert.equal(pilotState.topDownCount, 1);
   report.functionalChecks.menus = { titleState, pilotState };
+  await shot('00b-pilot-select');
 
   // 1. State 1: Start of Fenda Pelágica gameplay (1280x720)
   await evaluate(`(() => {

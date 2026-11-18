@@ -83,7 +83,8 @@
       },
       "pilotState": {
         "screen": "pilot",
-        "profileCount": 1
+        "topDownCount": 1,
+        "frame": 3
       }
     },
     "startHud": {
@@ -184,7 +185,7 @@
   "fpsBenchmark": {
     "avgFrameMs": 16.69,
     "fps": 59.9,
-    "hudCpuMsPerFrame": 0.053
+    "hudCpuMsPerFrame": 0.048
   },
   "androidPortraitCheck": {
     "portraitUpActive": true,
@@ -230,6 +231,7 @@
   },
   "screenshots": {
     "00-title-check": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\00-title-check.png",
+    "00b-pilot-select": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\00b-pilot-select.png",
     "01-start": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\01-start.png",
     "02-combat-radio-score": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\02-combat-radio-score.png",
     "03-power-especial-vidas": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\03-power-especial-vidas.png",
