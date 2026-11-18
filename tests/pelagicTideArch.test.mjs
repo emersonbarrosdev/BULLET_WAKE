@@ -327,10 +327,11 @@ test('24-30: Special bomb, weapons LV1/LV3/FULL, Hard intensity, layout switchin
   assert.ok(full.boss?.sub, 'Colosso Abissal spawns cleanly after completing Arco das Mares');
 });
 
-test('31: Coast water occlusion fix, canyon depth hierarchy, waterfall origin/impact & pad-to-cannon alignment contracts', () => {
+test('31: Coast water occlusion fix, waterfalls & grey pad removal, cannon coastline anchoring & Tide Arch depth contracts', () => {
   const backdropSrc = readFileSync(resolve('src/game/arcade/ArcadeBackdrop.ts'), 'utf8');
   const paintingSrc = readFileSync(resolve('src/game/arcade/PelagicCoastPainting.ts'), 'utf8');
   const archArtSrc = readFileSync(resolve('src/game/arcade/PelagicTideArchArt.ts'), 'utf8');
+  const sceneSrc = readFileSync(resolve('src/game/arcade/ArcadeScene.ts'), 'utf8');
 
   // 1. Coast remains opaque during Tide Arch and waves/glints render strictly below painted coast strips (-18.8)
   assert.ok(!backdropSrc.includes('tideArch.isActive ? 0.55'), 'Tide Arch must not make coastal islands translucent');
@@ -341,19 +342,31 @@ test('31: Coast water occlusion fix, canyon depth hierarchy, waterfall origin/im
   // 2. Interior coastal islands remain 100% solid terrain without cool-rock/quay alpha cutouts
   assert.ok(paintingSrc.includes('isDeepInland'), 'Coast terrain mask must preserve solid island interiors');
 
-  // 3. Tide Arch layers enforce strict vertical depth order & pad-free backing canyon cliffs
+  // 3. Artificial waterfalls, grey circular gun pads, and floating cutout piers remain completely removed
+  for (const forbidden of [
+    'WATERFALL_SLOTS',
+    'waterfallMistGfx',
+    'upperStreamGfx',
+    'bridgeWaterfallGfx',
+    'padMountGfx',
+    'PAD_FRAME_META',
+    'PIER_LAYOUT',
+    'BACKING_CLIFFS',
+  ]) {
+    assert.ok(!archArtSrc.includes(forbidden), `PelagicTideArchArt must NOT contain ${forbidden}`);
+  }
+  assert.ok(!sceneSrc.includes('0xd8e2ec'), 'ArcadeScene must NOT apply grey pad tint 0xd8e2ec to arch cannons');
+
+  // 4. Tide Arch preserves monumental bridge, cast shadow, pillar water surf & locator beacon depths
   for (const token of [
-    'setDepth(0.88)',
+    'TIDE_ARCH_BRIDGE_TEX',
     'setDepth(1.12)',
     'setDepth(1.36)',
-    'setDepth(1.44',
-    'setDepth(1.50)',
-    'setDepth(1.92)',
     'setDepth(18.90)',
-    'setDepth(18.91)',
-    'TIDE_ARCH_WALLS_TEX',
-    'PAD_FRAME_META',
-    'WATERFALL_SLOTS',
+    'setDepth(18.95)',
+    'setDepth(19.30)',
+    'archShadowGfx',
+    'rivetBeaconGfx',
   ]) {
     assert.ok(archArtSrc.includes(token), `PelagicTideArchArt must contain ${token}`);
   }

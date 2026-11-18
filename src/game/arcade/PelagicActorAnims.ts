@@ -133,6 +133,10 @@ export class PelagicActorAnims {
     this.prevInvuln = 0; this.prevLives = 3; this.playerSmoothVx = 0; this.playerSmoothVy = 0;
   }
 
+  mountSpritesFor(enemyId: number): ReadonlyArray<Phaser.GameObjects.Sprite> | undefined {
+    return this.mountSprites.get(enemyId);
+  }
+
   hide(): void {
     this.speedGfx.clear().setVisible(false);
     this.shadowGfx.clear().setVisible(false);
@@ -594,8 +598,8 @@ export class PelagicActorAnims {
       if (e.family === 'tank' || e.family === 'tower') {
         const customAnchor = !!e.navigation?.customAnchor;
         const isCastle = e.family === 'tower' && !customAnchor;
-        const shW = e.size * (isCastle ? 1.55 : customAnchor ? 0.98 : 1.24);
-        const shH = e.size * (isCastle ? 0.68 : customAnchor ? 0.82 : 0.86);
+        const shW = e.size * (isCastle ? 1.55 : customAnchor ? 0.76 : 1.24);
+        const shH = e.size * (isCastle ? 0.68 : customAnchor ? 0.64 : 0.86);
         const shX = e.x + (customAnchor ? 1.5 : 3);
         const shY = e.y + (isCastle ? 4 : customAnchor ? 2 : 3);
         gsh.fillStyle(0x041224, customAnchor ? .38 : .34).fillEllipse(shX, shY, shW, shH);

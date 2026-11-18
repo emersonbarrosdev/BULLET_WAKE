@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createServer as createViteDevServer } from 'vite';
 
-const shotDir = resolve('docs/screenshots/arch-waterfalls-fixed');
+const shotDir = resolve('docs/screenshots/tide-arch-cleaned');
 mkdirSync(shotDir, { recursive: true });
 
 const chromePath =
@@ -15,7 +15,7 @@ const chromePath =
     : '/usr/bin/google-chrome');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const profile = mkdtempSync(join(tmpdir(), 'bw-arch-waterfalls-'));
+const profile = mkdtempSync(join(tmpdir(), 'bw-tide-arch-cleaned-'));
 
 function spawnBuild() {
   const proc = spawn(process.execPath, [resolve('node_modules/vite/bin/vite.js'), 'build'], {
@@ -131,84 +131,109 @@ try {
     ready = await evaluate(`(() => {
       const g = window.__GAME__;
       const s = g && g.scene && g.scene.getScene('ArcadeScene');
-      return !!(s && s.textures && s.textures.exists('pelagic-tide-arch-bridge') && s.textures.exists('pelagic-tide-arch-cliffs') && s.textures.exists('pelagic-tide-arch-waterfalls') && s.screen !== 'loading');
+      return !!(s && s.textures && s.textures.exists('pelagic-tide-arch-bridge') && s.screen !== 'loading');
     })()`);
     if (ready) break;
     await sleep(100);
   }
-  assert.equal(ready, true, 'ArcadeScene must finish boot & preload Tide Arch assets');
+  assert.equal(ready, true, 'ArcadeScene must finish boot & preload Tide Arch bridge texture');
 
-  // Start Mission 0 just before Tide Arch entry (route = 146s) and drive continuously without jumps!
-  await evaluate(`(() => {
+  // Moment 1: Continuous scroll entry into the islands / Arco das Mares stretch (approach -> descent)
+  const m1 = await evaluate(`(() => {
     const s = window.__GAME__.scene.getScene('ArcadeScene');
     s.audio.setMix(0, 0, true);
     s.begin(0);
+    s.world.setDifficulty('normal');
     s.world.devInvincible = true;
     s.world.introTime = 0;
     s.world.state = 'play';
-    s.world.route = 145.5;
-    s.world.scroll = 145.5 * 38;
-    s.world.waveIndex = s.world.mission.encounters.findIndex(e => e.at >= 146);
+    s.world.route = 147.2;
+    s.world.scroll = 147.2 * 38;
+    s.world.waveIndex = s.world.mission.encounters.findIndex(e => e.at >= 148);
     s.world.supplyIndex = 999;
     s.world.weapons.weaponLevel = 3;
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 60 * 3.5; i++) {
       s.world.step(1 / 60, { x: 0, y: 0, fire: i % 14 === 0, special: false });
       s.clock += 1 / 60;
       s.consumeEvents();
     }
     s.backdrop.draw(s.clock, s.world, s.quality);
     s.renderWorld(1 / 60);
+    const ta = s.backdrop.tideArch;
+    return {
+      route: Number(s.world.route.toFixed(2)),
+      phase: s.world.tideArch.phase,
+      difficulty: s.world.difficulty,
+      archY: Math.round(s.world.tideArch.archScreenY(s.world.scroll)),
+      waterfallsRemoved: ta.waterfalls === undefined && ta.upperStreamGfx === undefined && ta.waterfallMistGfx === undefined && ta.bridgeWaterfallGfx === undefined,
+      padsAndCutoutsRemoved: ta.padMountGfx === undefined && ta.piers === undefined && ta.backingCliffs === undefined,
+      coastAlpha: s.backdrop.coastPainting.strips[0]?.alpha ?? 0,
+      cannons: s.world.enemies.filter(e => e.navigation?.customAnchor).map(e => ({ id: e.id, x: Math.round(e.x), y: Math.round(e.y), hp: e.hp })),
+    };
   })()`);
-  await sleep(220);
+  assert.equal(m1.phase, 'approach');
+  assert.equal(m1.waterfallsRemoved, true, 'All artificial waterfalls objects must be removed');
+  assert.equal(m1.padsAndCutoutsRemoved, true, 'All grey circular pad and cutout cliff objects must be removed');
+  assert.equal(m1.coastAlpha, 1);
+  report.moments.entryIslands = m1;
+  await shot('01-entry-islands');
 
-  const m1 = await evaluate(`(() => {
-    const s = window.__GAME__.scene.getScene('ArcadeScene');
-    const st = s.world.stateSnapshot?.() ?? {};
-    const bd = s.backdrop.pelagicState();
-    return { route: Number(s.world.route.toFixed(2)), phase: s.world.tideArch.phase, archY: Math.round(s.world.tideArch.archScreenY(s.world.scroll)), bd, st };
-  })()`);
-  assert.equal(m1.phase, 'idle');
-  assert.equal(m1.bd.coast.visible, true);
-  assert.equal(m1.bd.water.visible, true);
-  report.moments.beforeEntry = m1;
-  await shot('01-before-arch-entry');
-
-  // Step continuously into approach & descent showing lateral islands, cannons & lower gorge waterfalls
+  // Moment 2: Mid-passage (low-flight) with active cannons integrated into natural coastal terrain
   const m2 = await evaluate(`(() => {
     const s = window.__GAME__.scene.getScene('ArcadeScene');
     const w = s.world;
-    for (let i = 0; i < 60 * 18; i++) {
+    for (let i = 0; i < 60 * 14; i++) {
       const dx = (384 - w.player.x) * 0.025;
-      w.step(1 / 60, { x: Math.max(-1, Math.min(1, dx)), y: 0, fire: i % 10 < 2, special: false });
+      w.step(1 / 60, { x: Math.max(-1, Math.min(1, dx)), y: 0, fire: i % 16 === 0, special: false });
       s.clock += 1 / 60;
       s.consumeEvents();
       const archY = w.tideArch.archScreenY(w.scroll);
-      if (w.tideArch.phase === 'low-flight' && archY >= -140) break;
+      if (w.tideArch.phase === 'low-flight' && archY >= -110) break;
     }
     s.backdrop.draw(s.clock, w, s.quality);
     s.renderWorld(1 / 60);
-    const ta = s.backdrop.tideArch;
     return {
       route: Number(w.route.toFixed(2)),
       phase: w.tideArch.phase,
       altitude: Number(w.player.altitude.toFixed(3)),
       archY: Math.round(w.tideArch.archScreenY(w.scroll)),
-      cannons: w.enemies.filter(e => e.navigation?.customAnchor).map(e => ({ x: Math.round(e.x), y: Math.round(e.y), hp: e.hp })),
-      waterfallsVisible: ta.waterfalls.filter(wf => wf.visible).length,
-      piersVisible: ta.piers.filter(p => p.visible).length,
-      backingVisible: ta.backingCliffs.filter(b => b.visible).length,
-      coastAlpha: ta.scene ? s.backdrop.coastPainting.strips[0]?.alpha : 0,
+      cannons: w.enemies.filter(e => e.navigation?.customAnchor).map(e => ({ id: e.id, x: Math.round(e.x), y: Math.round(e.y), hp: e.hp })),
+      boats: w.enemies.filter(e => e.archBoat).map(e => ({ id: e.id, x: Math.round(e.x), y: Math.round(e.y) })),
     };
   })()`);
   assert.equal(m2.phase, 'low-flight');
-  console.log('m2 snapshot:', m2);
-  assert.ok(m2.cannons.length >= 2, 'Multiple cliff cannons must be anchored and visible during approach/descent');
-  assert.ok(m2.waterfallsVisible >= 2, `Waterfalls must be visible in approach view, got ${m2.waterfallsVisible}`);
-  assert.equal(m2.coastAlpha, 1, 'Coast alpha must remain 1.0 (no semi-transparent water bleed)');
-  report.moments.approach = m2;
-  await shot('02-approach-islands-waterfalls');
+  assert.ok(m2.cannons.length >= 2, 'Multiple cliff cannons must be active in low-flight mid-passage');
+  report.moments.midActiveCannons = m2;
+  await shot('02-mid-passage-active-cannons');
 
-  // Step continuously until RIVET passes directly under the monumental stone arch (`isInBridgeBand`)
+  // Moment 2b: Destroy two visible cannons to verify wreck + smoke renders WITHOUT exposing grey circles underneath
+  const m2b = await evaluate(`(() => {
+    const s = window.__GAME__.scene.getScene('ArcadeScene');
+    const w = s.world;
+    const targets = w.enemies.filter(e => e.navigation?.customAnchor && e.hp > 0 && e.y >= 10 && e.y <= 395).slice(0, 2);
+    for (const t of targets) {
+      w.bullet(t.x, t.y + 8, 0, -600, 999, 10);
+    }
+    for (let i = 0; i < 20; i++) {
+      w.step(1 / 60, { x: 0, y: 0, fire: false, special: false });
+      s.clock += 1 / 60;
+      s.consumeEvents();
+    }
+    s.backdrop.draw(s.clock, w, s.quality);
+    s.renderWorld(1 / 60);
+    return {
+      route: Number(w.route.toFixed(2)),
+      phase: w.tideArch.phase,
+      destroyedTargets: targets.length,
+      wrecks: w.wrecks.map(wk => ({ id: wk.id, x: Math.round(wk.x), y: Math.round(wk.y), customAnchor: !!wk.customAnchor, family: wk.family })),
+      remainingCannons: w.enemies.filter(e => e.navigation?.customAnchor).length,
+    };
+  })()`);
+  assert.ok(m2b.destroyedTargets >= 1 && m2b.wrecks.some(wk => wk.customAnchor), 'Destroyed arch cannons must create customAnchor wrecks');
+  report.moments.midDestroyedCannons = m2b;
+  await shot('03-mid-passage-destroyed-cannons');
+
+  // Moment 3: Continuous scroll into arch traversal (`under-arch` — RIVET flying underneath the stone bridge)
   const m3 = await evaluate(`(() => {
     const s = window.__GAME__.scene.getScene('ArcadeScene');
     const w = s.world;
@@ -230,21 +255,22 @@ try {
       playerY: Math.round(w.player.y),
       inBridgeBand: w.tideArch.isInBridgeBand(w.scroll, w.player.y),
       bridgeVisible: ta.archBridge.visible,
-      bridgeW: Math.round(ta.archBridge.displayWidth),
-      bridgeH: Math.round(ta.archBridge.displayHeight),
+      shadowVisible: ta.archShadowGfx.visible,
+      surfVisible: ta.waterSurfGfx.visible,
       beaconVisible: ta.rivetBeaconGfx.visible,
-      waterfallsVisible: ta.waterfalls.filter(wf => wf.visible).length,
       coastAlpha: s.backdrop.coastPainting.strips[0]?.alpha ?? 0,
     };
   })()`);
-  assert.equal(m3.inBridgeBand, true, 'RIVET must be actively passing under the arch bridge');
+  assert.equal(m3.inBridgeBand, true);
   assert.equal(m3.bridgeVisible, true);
+  assert.equal(m3.shadowVisible, true);
+  assert.equal(m3.surfVisible, true);
   assert.equal(m3.beaconVisible, true);
   assert.equal(m3.coastAlpha, 1);
   report.moments.traversal = m3;
-  await shot('03-arch-traversal');
+  await shot('04-arch-traversal');
 
-  // Live RAF FPS measurement while scrolling actively across under-arch -> ascent
+  // Live RAF FPS measurement during active scrolling
   report.fpsBenchmark = await evaluate(`new Promise((resolve) => {
     const s = window.__GAME__.scene.getScene('ArcadeScene');
     const w = s.world;
@@ -269,7 +295,7 @@ try {
     requestAnimationFrame(tick);
   })`);
 
-  // Step continuously into ascent / arch exit
+  // Moment 4: Exit (`ascent`) & multi-difficulty Hard validation check
   const m4 = await evaluate(`(() => {
     const s = window.__GAME__.scene.getScene('ArcadeScene');
     const w = s.world;
@@ -281,28 +307,40 @@ try {
     }
     s.backdrop.draw(s.clock, w, s.quality);
     s.renderWorld(1 / 60);
-    return {
+    const exitSnap = {
       route: Number(w.route.toFixed(2)),
       phase: w.tideArch.phase,
       crossedArch: w.tideArch.crossedArch,
       altitude: Number(w.player.altitude.toFixed(3)),
-      archY: Math.round(w.tideArch.archScreenY(w.scroll)),
-      playerY: Math.round(w.player.y),
     };
+    // Also verify Easy & Hard difficulty runs through low-flight produce clean cannons on rock with zero grey pads
+    const diffChecks = {};
+    for (const diff of ['easy', 'hard']) {
+      s.begin(0);
+      s.world.setDifficulty(diff);
+      s.world.devJumpTideArch('low-flight', true);
+      s.world.step(1 / 60, { x: 0, y: 0, fire: false, special: false });
+      s.backdrop.draw(s.clock, s.world, s.quality);
+      s.renderWorld(1 / 60);
+      diffChecks[diff] = {
+        cannonCount: s.world.enemies.filter(e => e.navigation?.customAnchor).length,
+        archBridgeVisible: s.backdrop.tideArch.archBridge.visible,
+        waterfallsRemoved: s.backdrop.tideArch.waterfalls === undefined,
+        padsRemoved: s.backdrop.tideArch.padMountGfx === undefined,
+      };
+    }
+    return { exitSnap, diffChecks };
   })()`);
-  assert.equal(m4.crossedArch, true);
-  assert.ok(m4.phase === 'ascent' || m4.phase === 'checkpoint' || m4.phase === 'complete');
-  report.moments.exit = m4;
-  await shot('04-arch-exit');
+  assert.equal(m4.exitSnap.crossedArch, true);
+  assert.ok(m4.diffChecks.easy.cannonCount >= 2 && m4.diffChecks.hard.cannonCount >= 2);
+  assert.equal(m4.diffChecks.hard.waterfallsRemoved, true);
+  assert.equal(m4.diffChecks.hard.padsRemoved, true);
+  report.moments.exitAndDifficulties = m4;
+  await shot('05-arch-exit-hard');
 
   assert.equal(runtimeErrors.length, 0, `Expected 0 runtime errors, got: ${JSON.stringify(runtimeErrors)}`);
   writeFileSync(join(shotDir, 'report.json'), JSON.stringify(report, null, 2));
-  console.log('VERIFICATION REPORT:', JSON.stringify({ moments: {
-    beforeEntry: { route: m1.route, phase: m1.phase },
-    approach: { route: m2.route, phase: m2.phase, waterfalls: m2.waterfallsVisible, piers: m2.piersVisible, coastAlpha: m2.coastAlpha },
-    traversal: { route: m3.route, phase: m3.phase, bridgeW: m3.bridgeW, bridgeH: m3.bridgeH, beacon: m3.beaconVisible, waterfalls: m3.waterfallsVisible },
-    exit: m4,
-  }, fpsBenchmark: report.fpsBenchmark, runtimeErrors: runtimeErrors.length }, null, 2));
+  console.log('VERIFICATION REPORT:', JSON.stringify(report, null, 2));
 } finally {
   try { socket?.close(); } catch {}
   try { chrome?.kill('SIGKILL'); } catch {}

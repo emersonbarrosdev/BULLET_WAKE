@@ -46,6 +46,7 @@ import { clamp, sweepEllipse, type Box } from './geometry.ts';
 import { collectPowerItem, createPlayerWeapons, getPrimaryProjectiles, getSecondaryProjectiles, type PlayerWeaponsState } from '../systems/weaponSystem.ts';
 import { enterStage, type CampaignFlight } from '../systems/campaignFlight.ts';
 import { prepareSurface, moveSurface, waterCorridor, type SurfaceRoute } from './PelagicEnvironment.ts';
+import { coastWorldEdgeX } from './PelagicCoastGeometry.ts';
 import {
     PELAGIC_CONVOY_CLEAR_BONUS,
     PELAGIC_RARE_BONUS,
@@ -405,8 +406,36 @@ export class ArcadeWorld {
         const opening = computeArchOpening(this.arena.left, this.arena.right);
         const outerX = spec.side < 0 ? this.arena.left : this.arena.right;
         const edgeX = spec.side < 0 ? opening.left : opening.right;
-        const anchorX = outerX + (edgeX - outerX) * spec.pierDepth;
-        const worldY = this.tideArch.archWorldY + spec.relWorldY;
+        let worldY = this.tideArch.archWorldY + spec.relWorldY;
+        let anchorX = outerX + (edgeX - outerX) * spec.pierDepth;
+        if (this.upLayout === 'pc') {
+            if (Math.abs(worldY - this.tideArch.archWorldY) < 92) {
+                worldY = this.tideArch.archWorldY + (spec.relWorldY >= 0 ? 102 : -118);
+            }
+            let coastEdgeX = coastWorldEdgeX(worldY, spec.side, this.arena.left, this.arenaWidth);
+            const edgeWidth = (edge: number) =>
+                spec.side < 0 ? edge - this.arena.left : this.arena.right - edge;
+            if (edgeWidth(coastEdgeX) < 48) {
+                for (let step = 16; step <= 160; step += 16) {
+                    let found = false;
+                    for (const d of [step, -step]) {
+                        const candY = worldY + d;
+                        if (Math.abs(candY - this.tideArch.archWorldY) < 92) continue;
+                        const ce = coastWorldEdgeX(candY, spec.side, this.arena.left, this.arenaWidth);
+                        if (edgeWidth(ce) >= 48) {
+                            worldY = candY;
+                            coastEdgeX = ce;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+            }
+            anchorX = spec.side < 0
+                ? clamp(coastEdgeX - 26, this.arena.left + 22, opening.left - 12)
+                : clamp(coastEdgeX + 26, opening.right + 12, this.arena.right - 22);
+        }
         const mountCount = getMountSpecs('tower').length;
         const actor: Actor = {
             id: ++this.sequence,

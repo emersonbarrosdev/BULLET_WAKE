@@ -262,7 +262,7 @@ export function resolveActorMounts(
   return specs.map((spec, i) => {
     const lx = isCliffBunker ? -0.01 : spec.localX;
     const ly = isCliffBunker ? -0.06 : spec.localY;
-    const tScale = isCliffBunker ? 0.64 : spec.turretScale;
+    const tScale = isCliffBunker ? 0.78 : spec.turretScale;
     const pivot = localToWorldPoint(hull, lx, ly);
     const defaultAim = spec.canRotate
       ? Math.atan2(playerY - pivot.y, playerX - pivot.x)

@@ -934,7 +934,15 @@ export class ArcadeScene extends Phaser.Scene {
     this.accumulator = 0;
     this.world.bossContact = (_boss, ax, ay, bx, by, radius) => spriteContact(this.bossSprite, ax, ay, bx, by, radius);
     this.world.subHullContact = (_sub, secIdx, ax, ay, bx, by, radius) => this.subBossArt.hullContact(secIdx, ax, ay, bx, by, radius);
-    this.world.contact = (e, ax, ay, bx, by, radius) => { const sprite = this.enemySprites.get(e.id), turret = this.turrets.get(e.id); const hits = [sprite ? spriteContact(sprite, ax, ay, bx, by, radius) : null, turret ? spriteContact(turret, ax, ay, bx, by, radius) : null].filter((v): v is number => v !== null); return hits.length ? Math.min(...hits) : null; };
+    this.world.contact = (e, ax, ay, bx, by, radius) => {
+      const sprite = this.enemySprites.get(e.id), turret = this.turrets.get(e.id), mounts = this.pelagicAnims?.mountSpritesFor(e.id);
+      const hits = [
+        sprite ? spriteContact(sprite, ax, ay, bx, by, radius) : null,
+        turret ? spriteContact(turret, ax, ay, bx, by, radius) : null,
+        ...(mounts ? mounts.map(ms => spriteContact(ms, ax, ay, bx, by, radius)) : []),
+      ].filter((v): v is number => v !== null);
+      return hits.length ? Math.min(...hits) : null;
+    };
     this.player.setVisible(true); this.audio.play(index ? 'stage2' : 'stage1'); this.show('play');
   }
   private disposeWorld(): void {
@@ -1177,14 +1185,15 @@ export class ArcadeScene extends Phaser.Scene {
     this.emplacements.draw(w, this.quality);
     for (const e of w.enemies) {
       if (e.hp <= 0) continue; alive.add(e.id); let s = this.enemySprites.get(e.id); if (!s) { s = this.add.sprite(e.x, e.y, 'arc-enemies').setDepth(e.ground ? 2 : 8); this.enemySprites.set(e.id, s); } const enemyFrame = e.family === 'alien' ? (w.up ? 0 : 2) + Math.floor(time * 5) % 2 : e.family === 'airship' ? 12 : (w.up && e.family === 'tank' ? 7 : Math.max(0, FAMILY_ORDER.indexOf(e.family))) + (w.up ? 0 : 8); s.setOrigin(.5, .5).setFlipX(false).setPosition(e.x, e.y).setTexture(e.family === 'alien' ? 'arc-ufo' : 'arc-enemies', enemyFrame).setDisplaySize(e.size, e.size).setRotation(w.up && !e.ground && e.family !== 'alien' ? Math.PI : 0);
-      if (w.up && (e.navigation?.anchor !== undefined || e.navigation?.customAnchor)) {
-        const isFortressTower = e.family === 'tower' && !e.navigation?.customAnchor;
+      if (w.up && e.navigation?.customAnchor) {
+        s.setVisible(false);
+      } else if (w.up && e.navigation?.anchor !== undefined) {
+        const isFortressTower = e.family === 'tower';
         const towerTex = this.textures.exists(PELAGIC_TOWER_CLEAN_SHEET) ? PELAGIC_TOWER_CLEAN_SHEET : TOWER_TEXTURE;
-        const scl = isFortressTower ? 1.8 : e.navigation?.customAnchor ? 1.04 : 1.3;
-        s.setTexture(isFortressTower ? towerTex : EMPLACEMENT_TEXTURE, 0).setOrigin(.5, isFortressTower ? .78 : .5).setDisplaySize(e.size * scl, e.size * scl);
+        const scl = isFortressTower ? 1.8 : 1.3;
+        s.setVisible(true).setTexture(isFortressTower ? towerTex : EMPLACEMENT_TEXTURE, 0).setOrigin(.5, isFortressTower ? .78 : .5).setDisplaySize(e.size * scl, e.size * scl);
       }
       s.clearTint().setTintMode(Phaser.TintModes.MULTIPLY).setAlpha(1);
-      if (w.up && e.navigation?.customAnchor && e.flash <= 0) s.setTint(0xd8e2ec);
       if (w.up && (e.family === 'boat' || e.family === 'ship')) {
         const hullFrame = Math.floor(time * 10 + e.id * 1.7) % 6;
         const hull = resolveHullVisualTransform(e, time);
@@ -1210,7 +1219,7 @@ export class ArcadeScene extends Phaser.Scene {
       this.pelagicAnims.updateEnemies(w, this.enemySprites, this.turrets, dt, this.quality, (sp, fl) => this.hitOverlays.draw(sp, fl), this.devWeaponDebug);
       for (const e of w.enemies) {
         if (e.hp <= 0) continue;
-        const s = this.enemySprites.get(e.id); if (s) this.hitOverlays.draw(s, e.flash);
+        const s = this.enemySprites.get(e.id); if (s && s.visible) this.hitOverlays.draw(s, e.flash);
       }
     }
     this.renderBoss(g);

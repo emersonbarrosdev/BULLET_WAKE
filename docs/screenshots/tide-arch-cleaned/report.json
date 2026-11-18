@@ -1,0 +1,175 @@
+{
+  "moments": {
+    "entryIslands": {
+      "route": 150.7,
+      "phase": "approach",
+      "difficulty": "normal",
+      "archY": -451,
+      "waterfallsRemoved": true,
+      "padsAndCutoutsRemoved": true,
+      "coastAlpha": 1,
+      "cannons": [
+        {
+          "id": 30,
+          "x": 231,
+          "y": 94,
+          "hp": 14
+        },
+        {
+          "id": 31,
+          "x": 567,
+          "y": 34,
+          "hp": 14
+        }
+      ]
+    },
+    "midActiveCannons": {
+      "route": 159.76,
+      "phase": "low-flight",
+      "altitude": 0,
+      "archY": -109,
+      "cannons": [
+        {
+          "id": 30,
+          "x": 231,
+          "y": 436,
+          "hp": 14
+        },
+        {
+          "id": 31,
+          "x": 567,
+          "y": 376,
+          "hp": 14
+        },
+        {
+          "id": 33,
+          "x": 194,
+          "y": 280,
+          "hp": 14
+        },
+        {
+          "id": 34,
+          "x": 579,
+          "y": 176,
+          "hp": 14
+        },
+        {
+          "id": 37,
+          "x": 193,
+          "y": 56,
+          "hp": 14
+        },
+        {
+          "id": 38,
+          "x": 537,
+          "y": 26,
+          "hp": 14
+        },
+        {
+          "id": 39,
+          "x": 185,
+          "y": -7,
+          "hp": 14
+        },
+        {
+          "id": 40,
+          "x": 537,
+          "y": -7,
+          "hp": 14
+        }
+      ],
+      "boats": [
+        {
+          "id": 35,
+          "x": 337,
+          "y": 357
+        },
+        {
+          "id": 36,
+          "x": 446,
+          "y": 353
+        },
+        {
+          "id": 41,
+          "x": 384,
+          "y": 178
+        },
+        {
+          "id": 42,
+          "x": 439,
+          "y": 176
+        }
+      ]
+    },
+    "midDestroyedCannons": {
+      "route": 160.46,
+      "phase": "low-flight",
+      "destroyedTargets": 2,
+      "wrecks": [
+        {
+          "id": 31,
+          "x": 567,
+          "y": 400,
+          "customAnchor": true,
+          "family": "tank"
+        },
+        {
+          "id": 33,
+          "x": 194,
+          "y": 304,
+          "customAnchor": true,
+          "family": "tank"
+        }
+      ],
+      "remainingCannons": 6
+    },
+    "traversal": {
+      "route": 173.09,
+      "phase": "under-arch",
+      "altitude": 0,
+      "archY": 354,
+      "playerY": 372,
+      "inBridgeBand": true,
+      "bridgeVisible": true,
+      "shadowVisible": true,
+      "surfVisible": true,
+      "beaconVisible": true,
+      "coastAlpha": 1
+    },
+    "exitAndDifficulties": {
+      "exitSnap": {
+        "route": 178.09,
+        "phase": "ascent",
+        "crossedArch": true,
+        "altitude": 0.723
+      },
+      "diffChecks": {
+        "easy": {
+          "cannonCount": 4,
+          "archBridgeVisible": true,
+          "waterfallsRemoved": true,
+          "padsRemoved": true
+        },
+        "hard": {
+          "cannonCount": 4,
+          "archBridgeVisible": true,
+          "waterfallsRemoved": true,
+          "padsRemoved": true
+        }
+      }
+    }
+  },
+  "fpsBenchmark": {
+    "samples": 90,
+    "avgFrameMs": 16.69,
+    "avgFps": 59.9
+  },
+  "screenshots": {
+    "01-entry-islands": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\tide-arch-cleaned\\01-entry-islands.png",
+    "02-mid-passage-active-cannons": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\tide-arch-cleaned\\02-mid-passage-active-cannons.png",
+    "03-mid-passage-destroyed-cannons": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\tide-arch-cleaned\\03-mid-passage-destroyed-cannons.png",
+    "04-arch-traversal": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\tide-arch-cleaned\\04-arch-traversal.png",
+    "05-arch-exit-hard": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\tide-arch-cleaned\\05-arch-exit-hard.png"
+  },
+  "errors": []
+}
