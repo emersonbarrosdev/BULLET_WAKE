@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { ArcadeWorld } from '../src/game/arcade/ArcadeWorld.ts';
 import { FENDA, SOLAR } from '../src/game/arcade/content.ts';
 import {
@@ -323,4 +325,36 @@ test('24-30: Special bomb, weapons LV1/LV3/FULL, Hard intensity, layout switchin
   full.route = 299.9;
   stepWorld(full, 0.5);
   assert.ok(full.boss?.sub, 'Colosso Abissal spawns cleanly after completing Arco das Mares');
+});
+
+test('31: Coast water occlusion fix, canyon depth hierarchy, waterfall origin/impact & pad-to-cannon alignment contracts', () => {
+  const backdropSrc = readFileSync(resolve('src/game/arcade/ArcadeBackdrop.ts'), 'utf8');
+  const paintingSrc = readFileSync(resolve('src/game/arcade/PelagicCoastPainting.ts'), 'utf8');
+  const archArtSrc = readFileSync(resolve('src/game/arcade/PelagicTideArchArt.ts'), 'utf8');
+
+  // 1. Coast remains opaque during Tide Arch and waves/glints render strictly below painted coast strips (-18.8)
+  assert.ok(!backdropSrc.includes('tideArch.isActive ? 0.55'), 'Tide Arch must not make coastal islands translucent');
+  assert.ok(backdropSrc.includes('setDepth(-19.02)'), 'Wave crests must sit strictly below coast strips (-18.8)');
+  assert.ok(backdropSrc.includes('setDepth(-19.00)'), 'Water glints must sit strictly below coast strips (-18.8)');
+  assert.ok(backdropSrc.includes('computeArchOpening(areaLeft, areaLeft + areaWidth)'), 'Canyon channel clamps ocean wave crests/glints');
+
+  // 2. Interior coastal islands remain 100% solid terrain without cool-rock/quay alpha cutouts
+  assert.ok(paintingSrc.includes('isDeepInland'), 'Coast terrain mask must preserve solid island interiors');
+
+  // 3. Tide Arch layers enforce strict vertical depth order & pad-free backing canyon cliffs
+  for (const token of [
+    'setDepth(0.88)',
+    'setDepth(1.12)',
+    'setDepth(1.36)',
+    'setDepth(1.44',
+    'setDepth(1.50)',
+    'setDepth(1.92)',
+    'setDepth(18.90)',
+    'setDepth(18.91)',
+    'TIDE_ARCH_WALLS_TEX',
+    'PAD_FRAME_META',
+    'WATERFALL_SLOTS',
+  ]) {
+    assert.ok(archArtSrc.includes(token), `PelagicTideArchArt must contain ${token}`);
+  }
 });

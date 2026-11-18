@@ -1172,10 +1172,11 @@ export class ArcadeScene extends Phaser.Scene {
       if (w.up && (e.navigation?.anchor !== undefined || e.navigation?.customAnchor)) {
         const isFortressTower = e.family === 'tower' && !e.navigation?.customAnchor;
         const towerTex = this.textures.exists(PELAGIC_TOWER_CLEAN_SHEET) ? PELAGIC_TOWER_CLEAN_SHEET : TOWER_TEXTURE;
-        const scl = isFortressTower ? 1.8 : e.navigation?.customAnchor ? 1.38 : 1.3;
+        const scl = isFortressTower ? 1.8 : e.navigation?.customAnchor ? 1.04 : 1.3;
         s.setTexture(isFortressTower ? towerTex : EMPLACEMENT_TEXTURE, 0).setOrigin(.5, isFortressTower ? .78 : .5).setDisplaySize(e.size * scl, e.size * scl);
       }
       s.clearTint().setTintMode(Phaser.TintModes.MULTIPLY).setAlpha(1);
+      if (w.up && e.navigation?.customAnchor && e.flash <= 0) s.setTint(0xd8e2ec);
       if (w.up && (e.family === 'boat' || e.family === 'ship')) {
         const hullFrame = Math.floor(time * 10 + e.id * 1.7) % 6;
         const hull = resolveHullVisualTransform(e, time);

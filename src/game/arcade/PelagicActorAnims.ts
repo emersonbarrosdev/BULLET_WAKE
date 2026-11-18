@@ -584,11 +584,13 @@ export class PelagicActorAnims {
 
       // Rock/island contact shadow beneath anchored coastal turrets & bunkers
       if (e.family === 'tank' || e.family === 'tower') {
-        const isCastle = e.family === 'tower' && !e.navigation?.customAnchor;
-        const shW = e.size * (isCastle ? 1.55 : 1.24);
-        const shH = e.size * (isCastle ? 0.68 : 0.86);
-        const shY = e.y + (isCastle ? 4 : 3);
-        gsh.fillStyle(0x041224, .34).fillEllipse(e.x + 3, shY, shW, shH);
+        const customAnchor = !!e.navigation?.customAnchor;
+        const isCastle = e.family === 'tower' && !customAnchor;
+        const shW = e.size * (isCastle ? 1.55 : customAnchor ? 0.98 : 1.24);
+        const shH = e.size * (isCastle ? 0.68 : customAnchor ? 0.82 : 0.86);
+        const shX = e.x + (customAnchor ? 1.5 : 3);
+        const shY = e.y + (isCastle ? 4 : customAnchor ? 2 : 3);
+        gsh.fillStyle(0x041224, customAnchor ? .38 : .34).fillEllipse(shX, shY, shW, shH);
       }
 
       // Articulated cannon & launcher turret rendering synced with PelagicWeaponMounts
