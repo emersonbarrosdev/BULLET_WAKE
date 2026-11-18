@@ -301,15 +301,15 @@ export class PelagicDesktopHud {
 
         // Top-down gameplay RIVET sprite (neutral column 3 of PELAGIC_RIVET_SHEET, 1:1 ratio, centered inside radar)
         this.rivetSprite = scene.add
-            .sprite(688, 118, PELAGIC_RIVET_SHEET, 3)
-            .setDisplaySize(46, 46)
+            .sprite(688, 113, PELAGIC_RIVET_SHEET, 3)
+            .setDisplaySize(48, 48)
             .setDepth(43)
             .setVisible(false);
 
-        this.ammoIcon = scene.add.image(629, 202, ICON_AMMO).setDisplaySize(20, 16).setDepth(43).setVisible(false);
-        this.specialIcon = scene.add.image(627, 284, ICON_SPECIAL).setDisplaySize(16, 18).setDepth(43).setVisible(false);
-        this.heartMiniIcon = scene.add.image(628, 366, ICON_HEART).setDisplaySize(14, 13).setDepth(43).setVisible(false);
-        this.heartMainIcon = scene.add.image(666, 403, ICON_HEART).setDisplaySize(24, 22).setDepth(43).setVisible(false);
+        this.ammoIcon = scene.add.image(638, 199, ICON_AMMO).setDisplaySize(19, 15).setDepth(43).setVisible(false);
+        this.specialIcon = scene.add.image(638, 279, ICON_SPECIAL).setDisplaySize(15, 17).setDepth(43).setVisible(false);
+        this.heartMiniIcon = scene.add.image(638, 359, ICON_HEART).setDisplaySize(14, 13).setDepth(43).setVisible(false);
+        this.heartMainIcon = scene.add.image(668, 391, ICON_HEART).setDisplaySize(24, 22).setDepth(43).setVisible(false);
 
         // Typography hierarchy: balanced bold/600 weights, dark ink on bright badges, zero heavy black blur
         this.missionBadgeText = mkText(39, 16, 'MISSÃO', 9.5, '#051536', { weight: 'bold' });
@@ -333,16 +333,16 @@ export class PelagicDesktopHud {
 
         this.scoreValue = mkText(384, 9.5, '0', 12, '#ffffff', { weight: 'bold', strokeThickness: 1.5, depth: 46 });
 
-        this.rivetNameText = mkText(672, 20, 'RIVET', 13.5, '#ffffff', { weight: 'bold', strokeThickness: 1.8 });
-        this.vanguardaText = mkText(672, 39, 'VANGUARDA', 8, '#ffffff', {
+        this.rivetNameText = mkText(672, 19.5, 'RIVET', 13.5, '#ffffff', { weight: 'bold', strokeThickness: 1.8 });
+        this.vanguardaText = mkText(672, 37.5, 'VANGUARDA', 8, '#ffffff', {
             weight: 'bold',
             stroke: '#04224a',
             strokeThickness: 2.2,
         });
-        this.powerHeaderText = mkText(644, 202, 'POWER', 10.5, '#f2f9ff', { ox: 0, weight: 'bold', strokeThickness: 1.4 });
-        this.especialHeaderText = mkText(640, 284, 'ESPECIAL', 10.5, '#f2f9ff', { ox: 0, weight: 'bold', strokeThickness: 1.4 });
-        this.vidasHeaderText = mkText(640, 366, 'VIDAS', 10.5, '#f2f9ff', { ox: 0, weight: 'bold', strokeThickness: 1.4 });
-        this.vidasMultiplierText = mkText(686, 403, '× 3', 15.5, '#ffffff', { ox: 0, weight: 'bold', strokeThickness: 1.8 });
+        this.powerHeaderText = mkText(653, 199, 'POWER', 10.5, '#f2f9ff', { ox: 0, weight: 'bold', strokeThickness: 1.4 });
+        this.especialHeaderText = mkText(651, 279, 'ESPECIAL', 10.5, '#f2f9ff', { ox: 0, weight: 'bold', strokeThickness: 1.4 });
+        this.vidasHeaderText = mkText(651, 359, 'VIDAS', 10.5, '#f2f9ff', { ox: 0, weight: 'bold', strokeThickness: 1.4 });
+        this.vidasMultiplierText = mkText(687, 391, '× 3', 15.5, '#ffffff', { ox: 0, weight: 'bold', strokeThickness: 1.8 });
 
         this.allNodes = [
             this.sideBg,
@@ -451,32 +451,33 @@ export class PelagicDesktopHud {
         g.fillStyle(0x021233, 0.92).fillRoundedRect(11, 324, 138, 96, 5);
         g.lineStyle(1.1, 0x26ceff, 0.72).strokeRoundedRect(11, 324, 138, 96, 5);
 
-        // 4. RIGHT PANEL CARDS (X = 614..762)
-        // A. RIVET / VANGUARDA + Radar Grid
-        drawCard(g, 614, 6, 148, 176, 8, 6, 8, 6);
-        drawChamferRibbon(g, 672, 39, 86, 13, 'cyan', 5);
-        drawSlashes(g, [725, 732, 739], 34, 44);
-        // Radar reticle inside RIVET showcase
-        g.lineStyle(0.9, 0x28c8ff, 0.22);
-        for (const r of [45, 29, 14]) g.strokeCircle(688, 118, r);
-        g.lineStyle(0.8, 0x28c8ff, 0.16)
-            .lineBetween(636, 118, 740, 118)
-            .lineBetween(688, 66, 688, 170);
+        // 4. RIGHT PANEL OUTER SHELL + INNER CHAMFERED OCTAGONAL CARDS (matching approved layout!)
+        drawCard(g, 613, 6, 150, 420, 12, 8, 8, 12);
+        drawChamferRibbon(g, 672, 37.5, 86, 13, 'cyan', 5);
+        drawSlashes(g, [724, 731, 738], 32.5, 42.5);
 
-        // B. POWER
-        drawCard(g, 614, 188, 148, 76, 6, 6, 6, 6);
-        drawSlashes(g, [735, 742, 749], 197, 207);
-        g.lineStyle(1, 0x26ceff, 0.55).lineBetween(621, 215, 755, 215);
+        // A. RIVET Radar Showcase (large chamfered octagon + grid & concentric circles)
+        drawCard(g, 621, 50, 134, 126, 14, 14, 14, 14);
+        g.lineStyle(0.7, 0x28c8ff, 0.14);
+        for (let gx = 638; gx <= 738; gx += 25) g.lineBetween(gx, 56, gx, 170);
+        for (let gy = 68; gy <= 158; gy += 22.5) g.lineBetween(627, gy, 749, gy);
+        g.lineStyle(0.9, 0x28c8ff, 0.24);
+        for (const r of [46, 30, 15]) g.strokeCircle(688, 113, r);
+        g.lineStyle(0.8, 0x28c8ff, 0.2)
+            .lineBetween(636, 113, 740, 113)
+            .lineBetween(688, 61, 688, 165);
 
-        // C. ESPECIAL
-        drawCard(g, 614, 270, 148, 76, 6, 6, 6, 6);
-        drawSlashes(g, [735, 742, 749], 279, 289);
-        g.lineStyle(1, 0x26ceff, 0.55).lineBetween(621, 297, 755, 297);
+        // B. POWER Card (chamfered octagon, NO inner divider line)
+        drawCard(g, 621, 182, 134, 74, 12, 12, 12, 12);
+        drawSlashes(g, [725, 732, 739], 194, 204);
 
-        // D. VIDAS
-        drawCard(g, 614, 352, 148, 74, 6, 6, 6, 6);
-        drawSlashes(g, [735, 742, 749], 361, 371);
-        g.lineStyle(1, 0x26ceff, 0.55).lineBetween(621, 379, 755, 379);
+        // C. ESPECIAL Card (chamfered octagon, NO inner divider line)
+        drawCard(g, 621, 262, 134, 74, 12, 12, 12, 12);
+        drawSlashes(g, [725, 732, 739], 274, 284);
+
+        // D. VIDAS Card (chamfered octagon, NO inner divider line)
+        drawCard(g, 621, 342, 134, 74, 12, 12, 12, 12);
+        drawSlashes(g, [725, 732, 739], 354, 364);
     }
 
     draw(
@@ -600,48 +601,29 @@ export class PelagicDesktopHud {
         const g = this.slotsGfx;
         g.clear();
 
-        // 1. POWER: 5 warm golden weapon level blocks inside [623..752, y=226..250]
-        for (let i = 0; i < 5; i++) {
-            const x = 623 + i * 26.5;
-            const y = 226;
-            const w = 23;
-            const h = 24;
-            const active = i < world.weapons.weaponLevel;
-            if (active) {
-                g.fillGradientStyle(0xfff49a, 0xfff49a, 0xe89c00, 0xe89c00, 1).fillRoundedRect(x, y, w, h, 4);
-                g.fillStyle(0xffffff, 0.45).fillRoundedRect(x + 2, y + 2, w - 4, 4, 2);
-                g.lineStyle(1.3, 0xffe86b, 0.98).strokeRoundedRect(x, y, w, h, 4);
-            } else {
-                g.fillStyle(0x05183f, 0.88).fillRoundedRect(x, y, w, h, 4);
-                g.lineStyle(1.1, 0x3574b0, 0.78).strokeRoundedRect(x, y, w, h, 4);
+        // Shared horizontal rounded-rectangle gauge renderer for both POWER & ESPECIAL
+        const drawGaugeRow = (rowY: number, count: number) => {
+            const w = 21.5;
+            const h = 15.5;
+            for (let i = 0; i < 5; i++) {
+                const x = 629 + i * 24;
+                if (i < count) {
+                    g.fillGradientStyle(0xfff48a, 0xfff48a, 0xe8a400, 0xe8a400, 1).fillRoundedRect(x, rowY, w, h, 3.5);
+                    g.fillStyle(0xffffff, 0.58).fillRoundedRect(x + 2, rowY + 1.5, w - 4, 3, 1.5);
+                    g.fillStyle(0xb87200, 0.35).fillRoundedRect(x + 2, rowY + h - 3.5, w - 4, 2, 1);
+                    g.lineStyle(1.3, 0xffe86b, 0.98).strokeRoundedRect(x, rowY, w, h, 3.5);
+                } else {
+                    g.fillStyle(0x04173c, 0.52).fillRoundedRect(x, rowY, w, h, 3.5);
+                    g.lineStyle(1.1, 0x3b86d1, 0.84).strokeRoundedRect(x, rowY, w, h, 3.5);
+                }
             }
-        }
+        };
 
-        // 2. ESPECIAL: 5 chamfered electric-cyan energy cells with amber charge accent (distinct from POWER!)
-        for (let i = 0; i < 5; i++) {
-            const x = 623 + i * 26.5;
-            const y = 308;
-            const w = 23;
-            const h = 24;
-            const active = i < world.weapons.specialCharges;
-            if (active) {
-                g.fillGradientStyle(0x8ffbff, 0x8ffbff, 0x0b96e6, 0x0b96e6, 1);
-                chamferPath(g, x, y, w, h, 5, 2, 5, 2);
-                g.fillPath();
-                g.fillStyle(0xffe042, 0.92).fillRect(x + 5, y + 3, w - 10, 3);
-                g.lineStyle(1.3, 0xa8f9ff, 0.98);
-                chamferPath(g, x, y, w, h, 5, 2, 5, 2);
-                g.strokePath();
-            } else {
-                g.fillStyle(0x041536, 0.88);
-                chamferPath(g, x, y, w, h, 5, 2, 5, 2);
-                g.fillPath();
-                g.fillStyle(0x235285, 0.45).fillRect(x + 6, y + 11, w - 12, 2);
-                g.lineStyle(1.1, 0x2e6ba3, 0.76);
-                chamferPath(g, x, y, w, h, 5, 2, 5, 2);
-                g.strokePath();
-            }
-        }
+        // 1. POWER: 5 horizontal rounded rectangles inside [621..755, y=219..234.5]
+        drawGaugeRow(219, world.weapons.weaponLevel);
+
+        // 2. ESPECIAL: identical horizontal rounded rectangles inside [621..755, y=299..314.5]
+        drawGaugeRow(299, world.weapons.specialCharges);
 
         // 3. Boss HP compact bar tucked below central Placar ONLY during boss fight
         if (world.boss?.sub && world.boss.sub.phase !== 'done') {

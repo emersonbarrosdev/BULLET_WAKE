@@ -184,7 +184,7 @@
   "fpsBenchmark": {
     "avgFrameMs": 16.69,
     "fps": 59.9,
-    "hudCpuMsPerFrame": 0.052
+    "hudCpuMsPerFrame": 0.053
   },
   "androidPortraitCheck": {
     "portraitUpActive": true,
