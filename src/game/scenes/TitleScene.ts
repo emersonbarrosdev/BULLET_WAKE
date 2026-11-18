@@ -23,9 +23,10 @@ export class TitleScene extends Phaser.Scene {
   update(): void {
     const device=connectedPad(), p=this.pad.sample(device);
     if(this.padId !== (device?.id ?? '')){this.padId=device?.id??'';if(this.root)this.renderMode();}
-    if(p.confirm||p.menuOrBack){if(this.mode==='attract')this.revealMenu();else this.activateSelected();}
+    if(this.mode==='attract'&&(p.confirm||p.menuOrBack)){this.revealMenu();return;}
+    if(p.confirm){this.activateSelected();}
     if(p.up)this.moveSelection(-1);if(p.down)this.moveSelection(1);
-    if(p.back)this.handleKeyDown(new KeyboardEvent('keydown',{key:'Escape'}));
+    if(p.back||(this.mode!=='attract'&&p.menuOrBack))this.handleKeyDown(new KeyboardEvent('keydown',{key:'Escape'}));
   }
   private secretBuffer='';private secretEligibleAtBoot=false;
   private mode: TitleMode = 'attract';
@@ -172,12 +173,15 @@ export class TitleScene extends Phaser.Scene {
         this.actionButton('back', 'VOLTAR', '', 5),
       ].join('');
     }
+    const pad = connectedPad();
+    const labels = padLabels(pad?.id);
     return `
       <div class="bw-controls-list">
-        <div><span>${connectedPad()?'ANALÓGICO / DIRECIONAL':'WASD / SETAS'}</span><strong>MOVIMENTO</strong></div>
-        <div><span>${connectedPad()?padLabels(connectedPad()?.id).shoot:'ESPAÇO'}</span><strong>SEGURAR PARA DISPARO RÁPIDO</strong></div>
-        <div><span>${connectedPad()?padLabels(connectedPad()?.id).special:'X'}</span><strong>ESPECIAL · 2 INICIAIS / MÁX. 5</strong></div>
-        <div><span>${connectedPad()?padLabels(connectedPad()?.id).pause:'ESC'}</span><strong>PAUSA</strong></div>
+        <div><span>${pad?'ANALÓGICO / DIRECIONAL':'WASD / SETAS'}</span><strong>MOVIMENTO</strong></div>
+        <div><span>${pad?labels.shoot:'ESPAÇO'}</span><strong>ATIRAR</strong></div>
+        <div><span>${pad?labels.special:'X'}</span><strong>ESPECIAL · 2 INICIAIS / MÁX. 5</strong></div>
+        ${pad?`<div><span>${labels.confirm} / ${labels.cancel}</span><strong>CONFIRMAR / VOLTAR</strong></div>`:''}
+        <div><span>${pad?labels.pause:'ESC'}</span><strong>PAUSA</strong></div>
       </div>
       ${this.actionButton('back', 'VOLTAR', '', 0)}
     `;

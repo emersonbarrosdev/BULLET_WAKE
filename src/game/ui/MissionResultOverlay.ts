@@ -53,7 +53,7 @@ export class MissionResultOverlay extends Phaser.GameObjects.Container {
       const pad=connectedPad(),p=reader.sample(pad);
       if(device!==(pad?.id??'keyboard')){
         device=pad?.id??'keyboard';
-        root.querySelectorAll('kbd').forEach((node,i)=>node.textContent=pad?'['+padLabels(pad.id).shoot+']':'['+actions[i].key.toUpperCase().replace('ESCAPE','ESC')+']');
+        root.querySelectorAll('kbd').forEach((node,i)=>node.textContent=pad?'['+padLabels(pad.id).confirm+']':'['+actions[i].key.toUpperCase().replace('ESCAPE','ESC')+']');
       }
       if(p.left||p.up)selected=(selected+actions.length-1)%actions.length;
       if(p.right||p.down)selected=(selected+1)%actions.length;

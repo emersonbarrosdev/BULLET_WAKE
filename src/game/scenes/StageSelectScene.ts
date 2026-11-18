@@ -77,8 +77,8 @@ export class StageSelectScene extends Phaser.Scene {
     if (this.device !== (pad?.id ?? '')) {
       this.device = pad?.id ?? '';
       const labels = padLabels(pad?.id);
-      this.root!.querySelector('[data-mission-action="launch"]')!.textContent = 'INICIAR MISSÃO · ' + (pad ? labels.shoot : 'ENTER');
-      this.root!.querySelector('[data-mission-action="back"]')!.textContent = 'VOLTAR · ' + (pad ? labels.back : 'ESC');
+      this.root!.querySelector('[data-mission-action="launch"]')!.textContent = 'INICIAR MISSÃO · ' + (pad ? labels.confirm : 'ENTER');
+      this.root!.querySelector('[data-mission-action="back"]')!.textContent = 'VOLTAR · ' + (pad ? labels.cancel : 'ESC');
     }
     if (commands.left || commands.up) this.move(-1);
     if (commands.right || commands.down) this.move(1);

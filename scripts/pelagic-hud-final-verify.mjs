@@ -188,6 +188,17 @@ try {
   report.functionalChecks.menus = { titleState, pilotState };
   await shot('00b-pilot-select');
 
+  // Verify CONTROLES -> CONTROLE (PS5 DualSense visual profile)
+  await evaluate(`(() => {
+    const s = window.__GAME__.scene.getScene('ArcadeScene');
+    s.controlsPadPreview = 'playstation';
+    s.show('controls');
+  })()`);
+  await sleep(120);
+  await clickWorld(384, 80);
+  await sleep(180);
+  await shot('00c-controls-ps5');
+
   // 1. State 1: Start of Fenda Pelágica gameplay (1280x720)
   await evaluate(`(() => {
     const s = window.__GAME__.scene.getScene('ArcadeScene');

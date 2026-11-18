@@ -3,7 +3,7 @@ import { ArcadeWorld, type Actor, type WorldEvent, type Controls } from './Arcad
 import { ArcadeBackdrop } from './ArcadeBackdrop';
 import { ArcadeAudio } from './ArcadeAudio';
 import { MISSIONS, type Encounter, type Family } from './content';
-import { connectedPad, GamepadReader } from '../systems/gamepadInput';
+import { connectedPad, detectPadProfile, GamepadReader, padLabels, type PadProfile } from '../systems/gamepadInput';
 import { globalSave } from '../systems/saveSystem';
 import { globalAudio } from '../audio/audioSystem';
 import { stageFlightSnapshot, type CampaignFlight } from '../systems/campaignFlight';
@@ -63,7 +63,7 @@ export class ArcadeScene extends Phaser.Scene {
   private introSkipFade?: number;
   private loadStartMs = 0; private loadCompleteAtMs?: number; private loadRealProgress = 0; private loadVisualProgress = 0;
   private splashHandoffCommitted = false; private bootOverlayDismissed = false; private loadErrors: string[] = [];
-  private controlsTab: ControlsTab = 'pc'; private lastControlsPadId = ''; private nextControlsFocus?: number;
+  private controlsTab: ControlsTab = 'pc'; private lastControlsPadId = ''; private nextControlsFocus?: number; private controlsPadPreview: 'auto' | 'playstation' | 'xbox' = 'auto';
   private enemySprites = new Map<number, Phaser.GameObjects.Sprite>(); private cargoSprites = new Map<number, Phaser.GameObjects.Sprite>(); private partSprites = new Map<number, Phaser.GameObjects.Sprite>(); private bulletSprites: Phaser.GameObjects.Sprite[] = []; private effects: Effect[] = [];
   private bonusPopups: BonusPopup[] = []; private bonusPopupPool: Phaser.GameObjects.Text[] = [];
   private turrets = new Map<number, Phaser.GameObjects.Sprite>(); private effectPool: Phaser.GameObjects.Sprite[] = [];
@@ -74,6 +74,7 @@ export class ArcadeScene extends Phaser.Scene {
   private touchNodes: (Phaser.GameObjects.Graphics | Phaser.GameObjects.Text)[] = [];
   private touchShown = false; private touchDeviceActive = false; private pauseBtn?: Phaser.GameObjects.Container;
   private suppressHeldFireUntilRelease = false;
+  private suppressSpecialUntilRelease = false;
   private mute = false;
   private pelagicLevel!: Phaser.GameObjects.Text; private pelagicAssistBadge!: Phaser.GameObjects.Text; private pelagicCheckpointBadge!: Phaser.GameObjects.Text; private pelagicSpecialText!: Phaser.GameObjects.Text; private bossHudLabel!: Phaser.GameObjects.Text;
   private checkpointBannerUntil = 0; private activeCheckpointSnapshot?: PelagicCheckpointSnapshot; private portraitUpActive = false;
@@ -380,7 +381,9 @@ export class ArcadeScene extends Phaser.Scene {
     if (screen === 'play' && old !== 'play') {
       this.audio.resume();
       this.accumulator = 0;
-      this.suppressHeldFireUntilRelease = !['loading', 'intro', 'missions'].includes(old);
+      const fromMenu = !['loading', 'intro', 'missions'].includes(old);
+      this.suppressHeldFireUntilRelease = fromMenu;
+      this.suppressSpecialUntilRelease = fromMenu;
     }
 
     if (screen === 'loading' || screen === 'intro') {
@@ -509,7 +512,9 @@ export class ArcadeScene extends Phaser.Scene {
       this.button(384, 209, 'CONTROLES', () => this.show('controls'), 266, 38);
       this.button(384, 256, 'OPÇÕES', () => { this.pauseOrigin = 'pause'; this.show('settings'); }, 266, 38);
       this.button(384, 303, 'SAIR DA MISSÃO', () => this.show('confirm-exit'), 266, 38);
-      this.text(384, 358, 'ESC: RETOMAR VOO', 9.5, UI.slate);
+      const pPad = connectedPad();
+      const pLabels = padLabels(pPad?.id);
+      this.text(384, 358, pPad ? `${pLabels.pause}: RETOMAR  •  ${pLabels.confirm}: CONFIRMAR  •  ${pLabels.cancel}: VOLTAR` : 'ESC: RETOMAR VOO', 9, UI.slate);
     } else if (screen === 'controls') {
       this.addModalBackdrop(0x031129, .62, true);
       const pad = connectedPad();
@@ -573,22 +578,77 @@ export class ArcadeScene extends Phaser.Scene {
         cmdRow(378, 270, 'ESC / ENTER', 'Pausar / Confirmar menus', { wide: true, badgeFont: 7.5 });
         this.text(504, 310, 'Segurar ESPAÇO não repete no modo padrão.\nTiro contínuo só com Disparo Acessível ativo.', 8.2, UI.silver, { wrap: 318 });
       } else if (this.controlsTab === 'gamepad') {
-        const idLower = (pad?.id ?? '').toLowerCase();
-        const isXbox = /xbox|xinput|045e/.test(idLower);
+        const detected = pad ? detectPadProfile(pad.id) : 'playstation';
+        const activeProfile: Extract<PadProfile, 'playstation' | 'xbox'> =
+          this.controlsPadPreview === 'auto'
+            ? (detected === 'xbox' ? 'xbox' : 'playstation')
+            : this.controlsPadPreview;
+        const isXbox = activeProfile === 'xbox';
         const padTex = isXbox ? UI_TEX.padXbox : UI_TEX.padDualSense;
         makePanel(this, 212, 224, 256, 222, 'cobalt', this.ui);
         this.text(212, 126, isXbox ? 'CONTROLE XBOX / PC' : 'PS5 DUALSENSE', 11, UI.goldHex);
-        this.ui.add(this.add.image(212, 214, padTex).setDisplaySize(226, 134));
-        this.text(212, 305, pad ? `CONECTADO: ${pad.id.slice(0, 20).toUpperCase()}` : 'DUALSENSE VIA USB / BLUETOOTH', 8, pad ? UI.cyanHex : UI.silver, { wrap: 232 });
+        this.ui.add(this.add.image(212, 206, padTex).setDisplaySize(222, 130));
+        this.text(212, 282, pad ? `CONECTADO: ${pad.id.slice(0, 22).toUpperCase()}` : (isXbox ? 'PERFIL XBOX / XINPUT' : 'DUALSENSE VIA USB / BLUETOOTH'), 7.6, pad ? UI.cyanHex : UI.silver, { wrap: 232 });
+        this.button(212, 310, isXbox ? 'VER PLAYSTATION ⇄' : 'VER XBOX ⇄', () => {
+          this.controlsPadPreview = isXbox ? 'playstation' : 'xbox';
+          this.nextControlsFocus = 1;
+          this.show('controls');
+        }, 172, 24, { fontSize: 9.5 });
 
         makePanel(this, 518, 224, 320, 222, 'cobalt', this.ui);
-        this.text(518, 126, isXbox ? 'COMANDOS XBOX / DUALSENSE' : 'COMANDOS PS5 DUALSENSE', 10.5, UI.goldHex);
-        cmdRow(400, 158, 'L / D-PAD', 'Mover nave (analógico ou direcional)', { wide: true, badgeFont: 7.5 });
-        cmdRow(400, 190, isXbox ? 'A' : '✕', 'Disparar rajada (3 pulsos) / Confirmar', { wide: false, descColor: UI.goldHex, badgeFont: isXbox ? 11 : 13.5 });
-        cmdRow(400, 222, isXbox ? 'X' : '□', 'Tormenta Escarlate (Especial)', { wide: false, gold: true, descColor: UI.cyanHex, badgeFont: isXbox ? 11 : 14 });
-        cmdRow(400, 254, isXbox ? 'START' : 'OPTIONS', 'Pausar / Retomar partida', { wide: true, badgeFont: 7.5 });
-        cmdRow(400, 286, isXbox ? 'B' : '○', 'Voltar nos menus', { wide: false, badgeFont: isXbox ? 11 : 14 });
-        this.text(518, 316, 'Botão △ e gatilhos sem função ativa neste modo.', 8, UI.silver, { wrap: 296 });
+        this.text(518, 126, isXbox ? 'COMANDOS XBOX' : 'COMANDOS PLAYSTATION', 10.5, UI.goldHex);
+
+        const drawFaceOrb = (cx: number, cy: number, sym: string, ringColor: number, textColor: string, r = 9.5, fontSize = 10.5) => {
+          const g = this.add.graphics()
+            .fillStyle(0x091933, 0.96).fillCircle(cx, cy, r)
+            .lineStyle(1.8, ringColor, 0.98).strokeCircle(cx, cy, r);
+          this.ui.add(g);
+          this.text(cx, cy - 0.5, sym, fontSize, textColor, { stroke: '#040d1e', strokeThickness: 1.5 });
+        };
+        const drawShoulderPill = (cx: number, cy: number, lbl: string, w = 26) => {
+          const g = this.add.graphics()
+            .fillStyle(0x1e293b, 0.96).fillRoundedRect(cx - w / 2, cy - 8, w, 16, 4)
+            .lineStyle(1.3, 0x94a3b8, 0.92).strokeRoundedRect(cx - w / 2, cy - 8, w, 16, 4);
+          this.ui.add(g);
+          this.text(cx, cy, lbl, lbl.length > 4 ? 7 : 8.5, '#f8fafc');
+        };
+        const padRow = (y: number, drawIcons: () => void, actionLabel: string, detailColor: string = UI.white) => {
+          drawIcons();
+          this.text(448, y, actionLabel, 9.8, detailColor, { originX: 0, wrap: 224 });
+        };
+
+        padRow(154, () => drawShoulderPill(404, 154, 'L / D-PAD', 58), 'MOVIMENTAR NAVE');
+        if (isXbox) {
+          padRow(183, () => {
+            drawFaceOrb(386, 183, 'B', 0xef4444, '#fca5a5');
+            this.text(401, 183, '/', 9, UI.slate);
+            drawShoulderPill(420, 183, 'RB', 24);
+          }, 'ATIRAR (disparo contínuo)', UI.goldHex);
+          padRow(212, () => {
+            drawFaceOrb(386, 212, 'X', 0x3b82f6, '#93c5fd');
+            this.text(401, 212, '/', 9, UI.slate);
+            drawShoulderPill(420, 212, 'RT', 24);
+          }, 'ESPECIAL (Tormenta)', UI.cyanHex);
+          padRow(241, () => drawFaceOrb(404, 241, 'A', 0x22c55e, '#86efac'), 'CONFIRMAR (menus)');
+          padRow(270, () => drawFaceOrb(404, 270, 'B', 0xef4444, '#fca5a5'), 'VOLTAR (menus)');
+          padRow(299, () => drawShoulderPill(404, 299, 'START', 48), 'PAUSAR / RETOMAR');
+          this.text(518, 322, 'Botão A sem função em combate  •  Y reservado', 7.8, UI.silver, { wrap: 296 });
+        } else {
+          padRow(183, () => {
+            drawFaceOrb(386, 183, '○', 0xff4f7a, '#ff8aa8', 9.5, 11);
+            this.text(401, 183, '/', 9, UI.slate);
+            drawShoulderPill(420, 183, 'R1', 24);
+          }, 'ATIRAR (disparo contínuo)', UI.goldHex);
+          padRow(212, () => {
+            drawFaceOrb(386, 212, '□', 0xf472b6, '#f9a8d4', 9.5, 11);
+            this.text(401, 212, '/', 9, UI.slate);
+            drawShoulderPill(420, 212, 'R2', 24);
+          }, 'ESPECIAL (Tormenta)', UI.cyanHex);
+          padRow(241, () => drawFaceOrb(404, 241, '×', 0x4ea8ff, '#93c5fd', 9.5, 12.5), 'CONFIRMAR (menus)');
+          padRow(270, () => drawFaceOrb(404, 270, '○', 0xff4f7a, '#ff8aa8', 9.5, 11), 'VOLTAR (menus)');
+          padRow(299, () => drawShoulderPill(404, 299, 'OPTIONS', 54), 'PAUSAR / RETOMAR');
+          this.text(518, 322, '× sem função em combate  •  △ reservado', 7.8, UI.silver, { wrap: 296 });
+        }
       } else {
         makePanel(this, 222, 224, 276, 222, 'cobalt', this.ui);
         this.text(222, 126, 'ANDROID TOUCH (PAISAGEM)', 10.5, UI.goldHex);
@@ -926,20 +986,34 @@ export class ArcadeScene extends Phaser.Scene {
       if (just('RIGHT') || gp.right) { this.audio.unlock(); if (active?.onRight) active.onRight(); else { this.focus = (this.focus + 1) % Math.max(1, this.buttons.length); this.focusButtons(); globalAudio.playArcade('navigate'); } }
       if (just('LEFT') || gp.left) { this.audio.unlock(); if (active?.onLeft) active.onLeft(); else { this.focus = (this.focus + this.buttons.length - 1) % Math.max(1, this.buttons.length); this.focusButtons(); globalAudio.playArcade('navigate'); } }
       const confirm = just('ENTER') || just('SPACE') || gp.confirm;
+      const backPressed = escPressed || gp.cancel;
+      const pausePressed = gp.pause;
       if (confirm) { this.audio.unlock(); globalAudio.playArcade('confirm'); this.buttons[this.focus]?.action(); }
-      else if (escPressed || gp.back || gp.menuOrBack) { if (this.screen === 'pause') this.show('play'); else if (this.screen === 'confirm-exit') this.show('pause'); else if (this.screen === 'controls') this.show(this.world ? 'pause' : this.pauseOrigin); else if (this.screen === 'touch-settings') this.show('settings'); else if (this.screen === 'settings') this.show(this.pauseOrigin); else if (this.screen === 'missions') this.show('pilot'); else if (this.screen === 'pilot') this.show('title'); }
-    } else if (escPressed || gp.menuOrBack) this.show('pause');
+      else if (this.screen === 'pause' && (pausePressed || backPressed)) { this.show('play'); }
+      else if (backPressed || pausePressed) {
+        if (this.screen === 'confirm-exit') this.show('pause');
+        else if (this.screen === 'controls') this.show(this.world ? 'pause' : this.pauseOrigin);
+        else if (this.screen === 'touch-settings') this.show('settings');
+        else if (this.screen === 'settings') this.show(this.pauseOrigin);
+        else if (this.screen === 'missions') this.show('pilot');
+        else if (this.screen === 'pilot') this.show('title');
+        else if (backPressed && ['result', 'defeat', 'ending'].includes(this.screen)) { this.disposeWorld(); this.show('title'); }
+      }
+    } else if (escPressed || gp.pause) this.show('pause');
     const resumedFromMenu = !startedInPlay && this.screen === 'play';
     if (this.world && this.screen === 'play' && !resumedFromMenu) {
-      if (just('ENTER') || gp.confirm) this.world.introTime = 0;
+      if (just('ENTER')) this.world.introTime = 0;
       const held = (k: string) => !domInputFocused && this.controls[k].isDown;
       const touchCmd = this.touchController.consumeStep();
       const rawFire = held('SPACE') || gp.firePrimary || touchCmd.fire;
       if (this.suppressHeldFireUntilRelease && !rawFire) this.suppressHeldFireUntilRelease = false;
       const fireInput = this.suppressHeldFireUntilRelease ? false : rawFire;
+      const rawSpecialHeld = held('X') || gp.specialHeld || touchCmd.special;
+      if (this.suppressSpecialUntilRelease && !rawSpecialHeld) this.suppressSpecialUntilRelease = false;
+      const specialInput = this.suppressSpecialUntilRelease ? false : (held('X') || gp.special || touchCmd.special);
       const moveX = clamp(Number(held('D') || held('RIGHT')) - Number(held('A') || held('LEFT')) + gp.moveX + touchCmd.x, -1, 1);
       const moveY = clamp(Number(held('S') || held('DOWN')) - Number(held('W') || held('UP')) + gp.moveY + touchCmd.y, -1, 1);
-      const input: Controls = { x: moveX, y: moveY, fire: fireInput, special: held('X') || gp.special || touchCmd.special };
+      const input: Controls = { x: moveX, y: moveY, fire: fireInput, special: specialInput };
       this.lastInput = input;
       if (!this.devSimulationPaused) {
         this.accumulator += dt * this.devTimeScale;
