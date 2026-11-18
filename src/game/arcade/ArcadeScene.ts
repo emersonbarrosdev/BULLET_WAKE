@@ -70,10 +70,11 @@ export class ArcadeScene extends Phaser.Scene {
   private controls!: Record<string, Phaser.Input.Keyboard.Key>; private pad = new GamepadReader(); buttons: MenuButton[] = []; private focus = 0;
   private clock = 0; private introClock = 0; private accumulator = 0; private lastHud = ''; private messageUntil = 0; private pauseOrigin: Screen = 'pause'; private carried?: CampaignFlight; private currentMission = 0; private stageClearSaved = false;
   private touchController = new TouchInputController(globalSave.getSettings().touch);
-  private touchGfx!: Phaser.GameObjects.Graphics; private touchFireText!: Phaser.GameObjects.Text; private touchSpecialText!: Phaser.GameObjects.Text;
+  private touchGfx!: Phaser.GameObjects.Graphics; private touchFireText!: Phaser.GameObjects.Text; private touchChargeText!: Phaser.GameObjects.Text; private touchSpecialText!: Phaser.GameObjects.Text;
   private touchNodes: (Phaser.GameObjects.Graphics | Phaser.GameObjects.Text)[] = [];
   private touchShown = false; private touchDeviceActive = false; private pauseBtn?: Phaser.GameObjects.Container;
   private suppressHeldFireUntilRelease = false;
+  private suppressChargeUntilRelease = false;
   private suppressSpecialUntilRelease = false;
   private mute = false;
   private pelagicLevel!: Phaser.GameObjects.Text; private pelagicAssistBadge!: Phaser.GameObjects.Text; private pelagicCheckpointBadge!: Phaser.GameObjects.Text; private pelagicSpecialText!: Phaser.GameObjects.Text; private bossHudLabel!: Phaser.GameObjects.Text;
@@ -169,7 +170,7 @@ export class ArcadeScene extends Phaser.Scene {
   }
   create(): void {
     enableCombatResolution(this); this.input.addPointer(3);
-    this.controls = this.input.keyboard!.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D,SPACE,X,ESC,ENTER,ONE,TWO,THREE') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.controls = this.input.keyboard!.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D,SPACE,X,Z,ESC,ENTER,ONE,TWO,THREE') as Record<string, Phaser.Input.Keyboard.Key>;
     this.input.keyboard!.addCapture(['SPACE', 'UP', 'DOWN', 'LEFT', 'RIGHT', 'ENTER']);
     const settings = globalSave.getSettings(); this.mute = settings.isMuted; this.audio.setMix(settings.musicVolume, settings.sfxVolume, this.mute);
     try { const stored = localStorage.getItem('bullet_wake_visual'); if (stored !== null) this.quality = clamp(Number(stored) || 0, 0, 2); } catch {/* Optional preference. */ }
@@ -383,6 +384,7 @@ export class ArcadeScene extends Phaser.Scene {
       this.accumulator = 0;
       const fromMenu = !['loading', 'intro', 'missions'].includes(old);
       this.suppressHeldFireUntilRelease = fromMenu;
+      this.suppressChargeUntilRelease = fromMenu;
       this.suppressSpecialUntilRelease = fromMenu;
     }
 
@@ -566,17 +568,19 @@ export class ArcadeScene extends Phaser.Scene {
         makeKeyBadge(this, 218, 198, '↓', { size: 24, fontSize: 10.5, container: this.ui });
         makeKeyBadge(this, 246, 198, '→', { size: 24, fontSize: 10.5, container: this.ui });
         makeKeyBadge(this, 198, 238, 'ESPAÇO', { wide: true, size: 26, fontSize: 9, container: this.ui });
-        makeKeyBadge(this, 168, 276, 'X', { gold: true, size: 26, fontSize: 10.5, container: this.ui });
-        makeKeyBadge(this, 226, 276, 'ESC', { wide: true, size: 26, fontSize: 8.5, container: this.ui });
+        makeKeyBadge(this, 148, 276, 'Z', { size: 24, fontSize: 10.5, container: this.ui });
+        makeKeyBadge(this, 184, 276, 'X', { gold: true, size: 24, fontSize: 10.5, container: this.ui });
+        makeKeyBadge(this, 238, 276, 'ESC', { wide: true, size: 24, fontSize: 8.5, container: this.ui });
         this.text(198, 312, 'MOUSE NÃO MOVE NEM ATIRA EM COMBATE', 8, UI.cyanHex, { wrap: 204 });
 
         makePanel(this, 504, 224, 344, 222, 'cobalt', this.ui);
-        this.text(504, 128, 'DISPARO ARCADE MANUAL', 11.5, UI.goldHex);
-        cmdRow(378, 162, 'WASD/SETAS', 'Mover RIVET em 8 direções', { wide: true, badgeFont: 7.5 });
-        cmdRow(378, 198, 'ESPAÇO', 'Rajada manual (3 pulsos por toque)', { wide: true, descColor: UI.goldHex, badgeFont: 8 });
-        cmdRow(378, 234, 'TECLA X', 'Tormenta Escarlate (Especial)', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8 });
-        cmdRow(378, 270, 'ESC / ENTER', 'Pausar / Confirmar menus', { wide: true, badgeFont: 7.5 });
-        this.text(504, 310, 'Segurar ESPAÇO não repete no modo padrão.\nTiro contínuo só com Disparo Acessível ativo.', 8.2, UI.silver, { wrap: 318 });
+        this.text(504, 128, 'TIRO AUTOMÁTICO E CARREGADO', 11, UI.goldHex);
+        cmdRow(378, 158, 'WASD/SETAS', 'Mover RIVET em 8 direções', { wide: true, badgeFont: 7.5 });
+        cmdRow(378, 190, 'ESPAÇO', 'Tiro automático / rajada principal', { wide: true, descColor: UI.goldHex, badgeFont: 8 });
+        cmdRow(378, 222, 'TECLA Z', 'Tiro carregado (segurar / soltar)', { wide: true, descColor: '#67e8f9', badgeFont: 8 });
+        cmdRow(378, 254, 'TECLA X', 'Especial — Tormenta Escarlate', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8 });
+        cmdRow(378, 286, 'ESC / ENTER', 'Pausar / Confirmar menus', { wide: true, badgeFont: 7.5 });
+        this.text(504, 316, 'Segure Z para carregar energia e solte para disparar.', 8.2, UI.silver, { wrap: 318 });
       } else if (this.controlsTab === 'gamepad') {
         const detected = pad ? detectPadProfile(pad.id) : 'playstation';
         const activeProfile: Extract<PadProfile, 'playstation' | 'xbox'> =
@@ -614,40 +618,48 @@ export class ArcadeScene extends Phaser.Scene {
         };
         const padRow = (y: number, drawIcons: () => void, actionLabel: string, detailColor: string = UI.white) => {
           drawIcons();
-          this.text(448, y, actionLabel, 9.8, detailColor, { originX: 0, wrap: 224 });
+          this.text(448, y, actionLabel, 9.5, detailColor, { originX: 0, wrap: 224 });
         };
 
-        padRow(154, () => drawShoulderPill(404, 154, 'L / D-PAD', 58), 'MOVIMENTAR NAVE');
+        padRow(152, () => drawShoulderPill(404, 152, 'L / D-PAD', 58), 'MOVIMENTAR NAVE');
         if (isXbox) {
-          padRow(183, () => {
-            drawFaceOrb(386, 183, 'B', 0xef4444, '#fca5a5');
-            this.text(401, 183, '/', 9, UI.slate);
-            drawShoulderPill(420, 183, 'RB', 24);
-          }, 'ATIRAR (disparo contínuo)', UI.goldHex);
-          padRow(212, () => {
-            drawFaceOrb(386, 212, 'X', 0x3b82f6, '#93c5fd');
-            this.text(401, 212, '/', 9, UI.slate);
-            drawShoulderPill(420, 212, 'RT', 24);
+          padRow(179, () => {
+            drawFaceOrb(386, 179, 'B', 0xef4444, '#fca5a5');
+            this.text(401, 179, '/', 9, UI.slate);
+            drawShoulderPill(420, 179, 'RB', 24);
+          }, 'TIRO AUTOMÁTICO', UI.goldHex);
+          padRow(206, () => drawFaceOrb(404, 206, 'X', 0x3b82f6, '#93c5fd'), 'TIRO CARREGADO (segurar)', '#67e8f9');
+          padRow(233, () => {
+            drawFaceOrb(386, 233, 'A', 0x22c55e, '#86efac');
+            this.text(401, 233, '/', 9, UI.slate);
+            drawShoulderPill(420, 233, 'RT', 24);
           }, 'ESPECIAL (Tormenta)', UI.cyanHex);
-          padRow(241, () => drawFaceOrb(404, 241, 'A', 0x22c55e, '#86efac'), 'CONFIRMAR (menus)');
-          padRow(270, () => drawFaceOrb(404, 270, 'B', 0xef4444, '#fca5a5'), 'VOLTAR (menus)');
-          padRow(299, () => drawShoulderPill(404, 299, 'START', 48), 'PAUSAR / RETOMAR');
-          this.text(518, 322, 'Botão A sem função em combate  •  Y reservado', 7.8, UI.silver, { wrap: 296 });
+          padRow(260, () => {
+            drawFaceOrb(386, 260, 'A', 0x22c55e, '#86efac', 8.5, 9.5);
+            this.text(401, 260, '/', 9, UI.slate);
+            drawFaceOrb(418, 260, 'B', 0xef4444, '#fca5a5', 8.5, 9.5);
+          }, 'CONFIRMAR / VOLTAR (menus)');
+          padRow(287, () => drawShoulderPill(404, 287, 'START', 48), 'PAUSAR / RETOMAR');
+          this.text(518, 316, 'Segure X para carregar (1.2s máx) e solte para disparar  •  Y reservado', 7.6, UI.silver, { wrap: 296 });
         } else {
-          padRow(183, () => {
-            drawFaceOrb(386, 183, '○', 0xff4f7a, '#ff8aa8', 9.5, 11);
-            this.text(401, 183, '/', 9, UI.slate);
-            drawShoulderPill(420, 183, 'R1', 24);
-          }, 'ATIRAR (disparo contínuo)', UI.goldHex);
-          padRow(212, () => {
-            drawFaceOrb(386, 212, '□', 0xf472b6, '#f9a8d4', 9.5, 11);
-            this.text(401, 212, '/', 9, UI.slate);
-            drawShoulderPill(420, 212, 'R2', 24);
+          padRow(179, () => {
+            drawFaceOrb(386, 179, '○', 0xff4f7a, '#ff8aa8', 9.5, 11);
+            this.text(401, 179, '/', 9, UI.slate);
+            drawShoulderPill(420, 179, 'R1', 24);
+          }, 'TIRO AUTOMÁTICO', UI.goldHex);
+          padRow(206, () => drawFaceOrb(404, 206, '□', 0xf472b6, '#f9a8d4', 9.5, 11), 'TIRO CARREGADO (segurar)', '#67e8f9');
+          padRow(233, () => {
+            drawFaceOrb(386, 233, '×', 0x4ea8ff, '#93c5fd', 9.5, 12.5);
+            this.text(401, 233, '/', 9, UI.slate);
+            drawShoulderPill(420, 233, 'R2', 24);
           }, 'ESPECIAL (Tormenta)', UI.cyanHex);
-          padRow(241, () => drawFaceOrb(404, 241, '×', 0x4ea8ff, '#93c5fd', 9.5, 12.5), 'CONFIRMAR (menus)');
-          padRow(270, () => drawFaceOrb(404, 270, '○', 0xff4f7a, '#ff8aa8', 9.5, 11), 'VOLTAR (menus)');
-          padRow(299, () => drawShoulderPill(404, 299, 'OPTIONS', 54), 'PAUSAR / RETOMAR');
-          this.text(518, 322, '× sem função em combate  •  △ reservado', 7.8, UI.silver, { wrap: 296 });
+          padRow(260, () => {
+            drawFaceOrb(386, 260, '×', 0x4ea8ff, '#93c5fd', 8.5, 11);
+            this.text(401, 260, '/', 9, UI.slate);
+            drawFaceOrb(418, 260, '○', 0xff4f7a, '#ff8aa8', 8.5, 10);
+          }, 'CONFIRMAR / VOLTAR (menus)');
+          padRow(287, () => drawShoulderPill(404, 287, 'OPTIONS', 54), 'PAUSAR / RETOMAR');
+          this.text(518, 316, 'Segure □ para carregar (1.2s máx) e solte para disparar  •  △ reservado', 7.6, UI.silver, { wrap: 296 });
         }
       } else {
         makePanel(this, 222, 224, 276, 222, 'cobalt', this.ui);
@@ -657,11 +669,12 @@ export class ArcadeScene extends Phaser.Scene {
 
         makePanel(this, 528, 224, 300, 222, 'cobalt', this.ui);
         this.text(528, 126, 'COMANDOS NA TELA', 11, UI.goldHex);
-        cmdRow(414, 160, 'JOYSTICK', 'Voo preciso em 8 direções', { wide: true, badgeFont: 7.5 });
-        cmdRow(414, 196, 'TIRO', 'Toque no botão para rajada', { wide: true, descColor: UI.goldHex, badgeFont: 8.5 });
-        cmdRow(414, 232, 'ESP', 'Ativar especial sem erro', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8.5 });
-        cmdRow(414, 268, 'PAUSA', 'Botão no topo direito', { wide: true, badgeFont: 8 });
-        this.text(528, 310, 'Personalize tamanho, lado e transparência\nem OPÇÕES > CONTROLES TOUCH.', 8.2, UI.silver, { wrap: 280 });
+        cmdRow(414, 156, 'JOYSTICK', 'Voo preciso em 8 direções', { wide: true, badgeFont: 7.5 });
+        cmdRow(414, 188, 'TIRO', 'Segure para tiro automático', { wide: true, descColor: UI.goldHex, badgeFont: 8.5 });
+        cmdRow(414, 220, 'CARGA', 'Segure e solte (quando disponível)', { wide: true, descColor: '#67e8f9', badgeFont: 8 });
+        cmdRow(414, 252, 'ESP', 'Ativar especial sem erro', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8.5 });
+        cmdRow(414, 284, 'PAUSA', 'Botão no topo direito', { wide: true, badgeFont: 8 });
+        this.text(528, 316, 'Personalize tamanho, lado e transparência em OPÇÕES.', 8, UI.silver, { wrap: 280 });
       }
 
       this.button(384, 372, 'VOLTAR', () => { this.nextControlsFocus = undefined; this.show(this.world ? 'pause' : this.pauseOrigin); }, 204, 34, { fontSize: 13 });
@@ -1008,12 +1021,15 @@ export class ArcadeScene extends Phaser.Scene {
       const rawFire = held('SPACE') || gp.firePrimary || touchCmd.fire;
       if (this.suppressHeldFireUntilRelease && !rawFire) this.suppressHeldFireUntilRelease = false;
       const fireInput = this.suppressHeldFireUntilRelease ? false : rawFire;
+      const rawCharge = held('Z') || gp.chargeHeld || touchCmd.charge;
+      if (this.suppressChargeUntilRelease && !rawCharge) this.suppressChargeUntilRelease = false;
+      const chargeInput = this.suppressChargeUntilRelease ? false : rawCharge;
       const rawSpecialHeld = held('X') || gp.specialHeld || touchCmd.special;
       if (this.suppressSpecialUntilRelease && !rawSpecialHeld) this.suppressSpecialUntilRelease = false;
       const specialInput = this.suppressSpecialUntilRelease ? false : (held('X') || gp.special || touchCmd.special);
       const moveX = clamp(Number(held('D') || held('RIGHT')) - Number(held('A') || held('LEFT')) + gp.moveX + touchCmd.x, -1, 1);
       const moveY = clamp(Number(held('S') || held('DOWN')) - Number(held('W') || held('UP')) + gp.moveY + touchCmd.y, -1, 1);
-      const input: Controls = { x: moveX, y: moveY, fire: fireInput, special: specialInput };
+      const input: Controls = { x: moveX, y: moveY, fire: fireInput, special: specialInput, charge: chargeInput };
       this.lastInput = input;
       if (!this.devSimulationPaused) {
         this.accumulator += dt * this.devTimeScale;
@@ -1134,6 +1150,21 @@ export class ArcadeScene extends Phaser.Scene {
       // Temporary invulnerability remains readable without making the ship translucent.
       if (w.player.invulnerable > 0) this.player.setAlpha(.72 + .28 * Math.cos(time * 18) ** 2);
     }
+    if (w.chargedShot.isHolding && w.state === 'play') {
+      const cSnap = w.chargedShot.snapshot();
+      const nx = w.player.x + (w.up ? 0 : 18);
+      const ny = w.player.y + (w.up ? -18 : 0);
+      const col = cSnap.isFull ? 0xfef08a : cSnap.ratio >= 0.72 ? 0x99f6e4 : 0x38bdf8;
+      const pulse = 1 + Math.sin(this.clock * (cSnap.isFull ? 22 : 12)) * 0.16;
+      const rCore = (3.5 + cSnap.ratio * 6.5) * pulse;
+      g.fillStyle(col, 0.25 + cSnap.ratio * 0.35).fillCircle(nx, ny, rCore * 1.45);
+      g.fillStyle(0xffffff, 0.65 + cSnap.ratio * 0.3).fillCircle(nx, ny, rCore * 0.6);
+      if (cSnap.isFull) {
+        g.lineStyle(1.4, 0xfde047, 0.88).strokeCircle(w.player.x, w.player.y, 19 + Math.sin(this.clock * 16) * 2.5);
+      } else if (cSnap.isPartialReady) {
+        g.lineStyle(1.1, 0x67e8f9, 0.55).strokeCircle(nx, ny, rCore * 1.8);
+      }
+    }
     const alive = new Set<number>();
     this.emplacements.draw(w, this.quality);
     for (const e of w.enemies) {
@@ -1177,11 +1208,26 @@ export class ArcadeScene extends Phaser.Scene {
     for (let i = 0; i < w.bullets.length; i++) {
       const b = w.bullets[i], s = this.bulletSprites[i]; s.setVisible(b.active); if (!b.active) continue;
       if (b.enemy && b.enemyMissile && this.textures.exists(PELAGIC_ENEMY_MISSILE_SHEET)) {
-        s.setTexture(PELAGIC_ENEMY_MISSILE_SHEET, Math.floor(b.age * 18) % 4).setDisplaySize(18, 28).setRotation(Math.atan2(b.vy, b.vx) - Math.PI / 2);
+        s.clearTint().setTexture(PELAGIC_ENEMY_MISSILE_SHEET, Math.floor(b.age * 18) % 4).setDisplaySize(18, 28).setRotation(Math.atan2(b.vy, b.vx) - Math.PI / 2);
       } else if (b.enemy) {
-        s.setTexture('arc-orb-' + b.color).setDisplaySize(b.radius * 2 + 1.2, b.radius * 2 + 1.2).setRotation(0);
+        s.clearTint().setTexture('arc-orb-' + b.color).setDisplaySize(b.radius * 2 + 1.2, b.radius * 2 + 1.2).setRotation(0);
+      } else if (b.charged) {
+        const isFull = b.chargeTier === 'full';
+        const art = w.up ? pelagicShotSize(w.weapons.weaponLevel) : rivetShotPresentation(w.weapons.weaponLevel);
+        const bw = art.width * Math.max(1.25, b.scale * 0.9);
+        const bh = art.height * Math.max(1.4, b.scale * 1.05);
+        s.setTexture(w.up ? 'pelagic-plasma' : 'arc-red', w.up ? undefined : Math.floor(b.age * 20) % 8)
+          .setDisplaySize(bw, bh)
+          .setTint(isFull ? 0xfef08a : 0x67e8f9)
+          .setRotation(Math.atan2(b.vy, b.vx) + Math.PI / 2);
+        const spd = Math.max(1, Math.hypot(b.vx, b.vy));
+        const dx = (b.vx / spd) * (b.radius * 2.2 + 8);
+        const dy = (b.vy / spd) * (b.radius * 2.2 + 8);
+        g.lineStyle(b.radius * 1.1, isFull ? 0xfde047 : 0x38bdf8, 0.35).lineBetween(b.x, b.y, b.x - dx, b.y - dy);
+        g.fillStyle(isFull ? 0xfef08a : 0xa5f3fc, 0.72).fillCircle(b.x, b.y, b.radius * 0.78);
+        g.fillStyle(0xffffff, 0.92).fillCircle(b.x, b.y, b.radius * 0.38);
       } else {
-        const art = w.up ? pelagicShotSize(w.weapons.weaponLevel) : rivetShotPresentation(w.weapons.weaponLevel); s.setTexture(b.missile ? 'arc-missile' : w.up ? 'pelagic-plasma' : 'arc-red', w.up && !b.missile ? undefined : Math.floor(b.age * 20) % 8).setDisplaySize(b.missile ? 17 : art.width, b.missile ? 25 : art.height).setRotation(Math.atan2(b.vy, b.vx) + Math.PI / 2);
+        const art = w.up ? pelagicShotSize(w.weapons.weaponLevel) : rivetShotPresentation(w.weapons.weaponLevel); s.clearTint().setTexture(b.missile ? 'arc-missile' : w.up ? 'pelagic-plasma' : 'arc-red', w.up && !b.missile ? undefined : Math.floor(b.age * 20) % 8).setDisplaySize(b.missile ? 17 : art.width, b.missile ? 25 : art.height).setRotation(Math.atan2(b.vy, b.vx) + Math.PI / 2);
       }
       s.setPosition(b.x, b.y);
     }
@@ -1270,6 +1316,11 @@ export class ArcadeScene extends Phaser.Scene {
         const sx = 188;
         g.fillStyle(0xffdc39).beginPath().moveTo(sx + 2, 8).lineTo(sx - 3, 16).lineTo(sx, 16).lineTo(sx - 2, 24).lineTo(sx + 5, 14).lineTo(sx + 1, 14).closePath().fillPath();
         this.pelagicSpecialText.setPosition(sx + 9, 16).setText(`${w.weapons.specialCharges}`).setVisible(true);
+        const cPort = w.chargedShot.snapshot();
+        if (cPort.ratio > 0) {
+          g.fillStyle(0x051936, 0.9).fillRoundedRect(122, 23, 53, 4, 2);
+          g.fillStyle(cPort.isFull ? 0xfef08a : 0x38bdf8, 0.96).fillRoundedRect(122, 23, Math.max(3, 53 * cPort.ratio), 4, 2);
+        }
         const scoreLine = String(w.score).padStart(6, '0');
         if (scoreLine !== this.lastHud) {
           this.hud.setFontSize(13).setColor('#ffe654').setStroke('#032f74', 2).setOrigin(1, .5);
@@ -1328,6 +1379,12 @@ export class ArcadeScene extends Phaser.Scene {
         const x = 589 + i * 20; g.fillStyle(i < w.weapons.specialCharges ? 0xffd95a : 0x45718a);
         g.beginPath().moveTo(x + 2, 9).lineTo(x - 5, 20).lineTo(x, 20).lineTo(x - 2, 29).lineTo(x + 7, 16).lineTo(x + 2, 16).closePath().fillPath();
       }
+      const cSide = w.chargedShot.snapshot();
+      if (cSide.ratio > 0) {
+        g.fillStyle(0x041430, 0.92).fillRoundedRect(326, 22, 96, 6, 3);
+        g.fillStyle(cSide.isFull ? 0xfef08a : 0x38bdf8, 0.96).fillRoundedRect(326, 22, Math.max(4, 96 * cSide.ratio), 6, 3);
+        g.lineStyle(0.9, cSide.isFull ? 0xfef08a : 0x67e8f9, 0.9).strokeRoundedRect(326, 22, 96, 6, 3);
+      }
     }
     if (w.state === 'intro' && !w.up) {
       g.fillStyle(0xffe77d, .95).fillRoundedRect(220, 170, 328, 75, 12);
@@ -1339,6 +1396,14 @@ export class ArcadeScene extends Phaser.Scene {
   private consumeEvents(): void {
     const w = this.world!; for (const e of w.events) {
       if (e.type === 'shot') { globalAudio.playShot('nolan', w.weapons.weaponLevel); if (w.up) this.pelagicAnims.triggerShot(); }
+      else if (e.type === 'charge-windup') { globalAudio.playChargeWindup(e.size ?? 0); }
+      else if (e.type === 'charge-full') { globalAudio.playArcade('bonus'); }
+      else if (e.type === 'charged-shot') {
+        const intensity = e.size ?? 1;
+        globalAudio.playChargedShot('nolan', intensity >= 1.5 ? 2 : 1);
+        if (w.up) this.pelagicAnims.triggerShot();
+        this.explosion(e.x, e.y, intensity >= 1.5 ? 18 : 12, .16);
+      }
       else if (e.type === 'missile') { globalAudio.playMissile(); if (w.up) this.pelagicAnims.triggerMissile(); }
       else if (e.type === 'death') { if (w.up) { this.pelagicAnims.triggerPlayerDamage(); this.pelagicComms.trigger({ category: 'damage', detail: w.lives <= 1 ? 'low-lives' : undefined }); } }
       else if (e.type === 'enemy-shot') { globalAudio.playArcade(w.boss ? 'cannon' : 'orb'); if (w.up) this.pelagicAnims.triggerEnemyShot(e.x, e.y, e.size ?? 1); }
@@ -1575,12 +1640,28 @@ export class ArcadeScene extends Phaser.Scene {
     g.fillStyle(out.specialPressed ? 0xff6e52 : 0x261018, op * (out.specialPressed ? 0.76 : 0.36)).fillCircle(sx, sy, sr);
     g.lineStyle(1.8, specColor, Math.min(0.96, op * (hasSpecial ? 1.2 : 0.6))).strokeCircle(sx, sy, sr);
     this.touchSpecialText.setPosition(sx, sy).setFontSize(`${Math.round(9.5 * l.scale)}px`).setAlpha(Math.min(1, hasSpecial ? op + 0.28 : op * 0.7)).setScale(out.specialPressed ? 0.92 : 1);
+
+    // 4. Optional ergonomic CHARGED SHOT button (shown when touch layout provides room)
+    if (l.charge) {
+      const cx = l.charge.x, cy = l.charge.y, cr = l.charge.radius;
+      const chargeRatio = this.world?.chargedShot.ratio ?? 0;
+      const activeCol = chargeRatio >= 0.99 ? 0xfef08a : 0x38bdf8;
+      g.fillStyle(out.chargePressed ? 0x0ea5e9 : 0x082246, op * (out.chargePressed ? 0.75 : 0.38)).fillCircle(cx, cy, cr);
+      g.lineStyle(1.7, activeCol, Math.min(0.96, op * (out.chargePressed ? 1.5 : 1.1))).strokeCircle(cx, cy, cr);
+      if (chargeRatio > 0) {
+        g.lineStyle(2.4, activeCol, 0.95).beginPath().arc(cx, cy, cr - 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * chargeRatio, false).strokePath();
+      }
+      this.touchChargeText.setVisible(true).setPosition(cx, cy).setFontSize(`${Math.round(8.2 * l.scale)}px`).setAlpha(Math.min(1, op + 0.28)).setScale(out.chargePressed ? 0.92 : 1);
+    } else {
+      this.touchChargeText.setVisible(false);
+    }
   }
   private installTouch(): void {
     this.touchGfx = this.add.graphics().setDepth(65);
     this.touchFireText = this.add.text(0, 0, 'TIRO', { fontFamily: FONT, fontSize: '10.5px', fontStyle: 'bold', color: '#fff8d4', stroke: '#081b38', strokeThickness: 2.5 }).setResolution(2).setOrigin(.5).setDepth(66);
+    this.touchChargeText = this.add.text(0, 0, 'CARGA', { fontFamily: FONT, fontSize: '8.2px', fontStyle: 'bold', color: '#a5f3fc', stroke: '#081b38', strokeThickness: 2.2 }).setResolution(2).setOrigin(.5).setDepth(66);
     this.touchSpecialText = this.add.text(0, 0, 'ESP', { fontFamily: FONT, fontSize: '9.5px', fontStyle: 'bold', color: '#ffe4dc', stroke: '#081b38', strokeThickness: 2.5 }).setResolution(2).setOrigin(.5).setDepth(66);
-    this.touchNodes = [this.touchGfx, this.touchFireText, this.touchSpecialText];
+    this.touchNodes = [this.touchGfx, this.touchFireText, this.touchChargeText, this.touchSpecialText];
     this.setTouchVisible(false);
 
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {

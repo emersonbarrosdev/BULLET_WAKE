@@ -178,7 +178,8 @@ export class TitleScene extends Phaser.Scene {
     return `
       <div class="bw-controls-list">
         <div><span>${pad?'ANALÓGICO / DIRECIONAL':'WASD / SETAS'}</span><strong>MOVIMENTO</strong></div>
-        <div><span>${pad?labels.shoot:'ESPAÇO'}</span><strong>ATIRAR</strong></div>
+        <div><span>${pad?labels.shoot:'ESPAÇO'}</span><strong>TIRO AUTOMÁTICO</strong></div>
+        <div><span>${pad?labels.charge:'Z'}</span><strong>TIRO CARREGADO (SEGURAR)</strong></div>
         <div><span>${pad?labels.special:'X'}</span><strong>ESPECIAL · 2 INICIAIS / MÁX. 5</strong></div>
         ${pad?`<div><span>${labels.confirm} / ${labels.cancel}</span><strong>CONFIRMAR / VOLTAR</strong></div>`:''}
         <div><span>${pad?labels.pause:'ESC'}</span><strong>PAUSA</strong></div>

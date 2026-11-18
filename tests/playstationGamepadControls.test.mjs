@@ -36,7 +36,7 @@ test('1 & 2. Círculo (1) e R1 (5) disparam continuamente com cadência idêntic
   for (const btn of [STANDARD_GAMEPAD_BUTTON.CIRCLE, STANDARD_GAMEPAD_BUTTON.R1]) {
     const reader = new GamepadReader();
     const pad = makePad();
-    const world = liveWorld(1); // Cidade Solar / continuous hold cadence
+    const world = liveWorld(1);
     let shots = 0;
 
     pad.buttons[btn] = { pressed: true, value: 1 };
@@ -57,7 +57,7 @@ test('3. Círculo + R1 simultâneos não duplicam cadência nem disparam rajada 
   const readerBoth = new GamepadReader();
   const padCircle = makePad();
   const padBoth = makePad();
-  const worldCircle = liveWorld(0, true); // Fenda Pelágica + accessibility continuous hold
+  const worldCircle = liveWorld(0, true);
   const worldBoth = liveWorld(0, true);
 
   padCircle.buttons[STANDARD_GAMEPAD_BUTTON.CIRCLE] = { pressed: true, value: 1 };
@@ -80,8 +80,8 @@ test('3. Círculo + R1 simultâneos não duplicam cadência nem disparam rajada 
   assert.equal(shotsBoth, shotsCircle, 'Holding ○ + R1 together must match single-button fire rate');
 });
 
-test('4, 5, 6 & 7. Quadrado (2) e R2 (7) acionam o mesmo especial sem consumo múltiplo ou duplicação', () => {
-  // 4 & 5: □ activates special, R2 above analog threshold activates same special
+test('4, 5, 6 & 7. Xis (0) e R2 (7) acionam o mesmo especial sem consumo múltiplo ou duplicação', () => {
+  // 4 & 5: × activates special, R2 above analog threshold activates same special
   const readerA = new GamepadReader();
   const padA = makePad();
   padA.buttons[STANDARD_GAMEPAD_BUTTON.SPECIAL_FACE] = { pressed: true, value: 1 };
@@ -89,10 +89,8 @@ test('4, 5, 6 & 7. Quadrado (2) e R2 (7) acionam o mesmo especial sem consumo m�
 
   const readerB = new GamepadReader();
   const padB = makePad();
-  // Below threshold does NOT misfire
   padB.buttons[STANDARD_GAMEPAD_BUTTON.R2] = { pressed: false, value: TRIGGER_PRESS_THRESHOLD - 0.1 };
   assert.equal(readerB.sample(padB).special, false);
-  // Pulling R2 past threshold triggers 1 special
   padB.buttons[STANDARD_GAMEPAD_BUTTON.R2] = { pressed: false, value: TRIGGER_PRESS_THRESHOLD + 0.1 };
   assert.equal(readerB.sample(padB).special, true);
 
@@ -109,18 +107,16 @@ test('4, 5, 6 & 7. Quadrado (2) e R2 (7) acionam o mesmo especial sem consumo m�
   }
   assert.equal(world.weapons.specialCharges, 1, 'Holding R2 continuously must spend at most 1 charge');
 
-  // 7: Simultaneous □ + R2 triggers only 1 special, and cannot retrigger until BOTH are released
+  // 7: Simultaneous × + R2 triggers only 1 special, and cannot retrigger until BOTH are released
   const duoReader = new GamepadReader();
   const duoPad = makePad();
   duoPad.buttons[STANDARD_GAMEPAD_BUTTON.SPECIAL_FACE] = { pressed: true, value: 1 };
   duoPad.buttons[STANDARD_GAMEPAD_BUTTON.R2] = { pressed: true, value: 1 };
   assert.equal(duoReader.sample(duoPad).special, true);
-  // Release □ only while keeping R2 held -> re-pressing □ while R2 is still held must NOT fire a 2nd special
   duoPad.buttons[STANDARD_GAMEPAD_BUTTON.SPECIAL_FACE] = { pressed: false, value: 0 };
   assert.equal(duoReader.sample(duoPad).special, false);
   duoPad.buttons[STANDARD_GAMEPAD_BUTTON.SPECIAL_FACE] = { pressed: true, value: 1 };
   assert.equal(duoReader.sample(duoPad).special, false);
-  // Release BOTH -> then pressing R2 triggers normally
   duoPad.buttons[STANDARD_GAMEPAD_BUTTON.SPECIAL_FACE] = { pressed: false, value: 0 };
   duoPad.buttons[STANDARD_GAMEPAD_BUTTON.R2] = { pressed: false, value: 0 };
   assert.equal(duoReader.sample(duoPad).special, false);
@@ -128,29 +124,34 @@ test('4, 5, 6 & 7. Quadrado (2) e R2 (7) acionam o mesmo especial sem consumo m�
   assert.equal(duoReader.sample(duoPad).special, true);
 });
 
-test('8 & 9. Xis (0) confirma em menus sem função em combate; Círculo (1) volta em menus e atira em combate', () => {
+test('8 & 9. Xis (0) confirma menus e aciona especial em combate; Quadrado (2) controla carga; Círculo (1) volta em menus e atira em combate', () => {
   const reader = new GamepadReader();
   const pad = makePad();
 
-  // Xis pressed: menu confirm = true, combat fire/special = false
-  pad.buttons[STANDARD_GAMEPAD_BUTTON.CONFIRM] = { pressed: true, value: 1 };
+  pad.buttons[STANDARD_GAMEPAD_BUTTON.SPECIAL_FACE] = { pressed: true, value: 1 };
   const xState = reader.sample(pad);
   assert.equal(xState.confirm, true);
+  assert.equal(xState.special, true);
   assert.equal(xState.firePrimary, false);
-  assert.equal(xState.special, false);
-  assert.equal(xState.cancel, false);
+  assert.equal(xState.chargeHeld, false);
 
-  // Release Xis, press Círculo: menu cancel/back = true, combat fire = true
-  pad.buttons[STANDARD_GAMEPAD_BUTTON.CONFIRM] = { pressed: false, value: 0 };
+  pad.buttons[STANDARD_GAMEPAD_BUTTON.SPECIAL_FACE] = { pressed: false, value: 0 };
+  pad.buttons[STANDARD_GAMEPAD_BUTTON.CHARGE] = { pressed: true, value: 1 };
+  const sqState = reader.sample(pad);
+  assert.equal(sqState.chargeHeld, true);
+  assert.equal(sqState.chargeJustDown, true);
+  assert.equal(sqState.chargeReleased, false);
+
+  pad.buttons[STANDARD_GAMEPAD_BUTTON.CHARGE] = { pressed: false, value: 0 };
   pad.buttons[STANDARD_GAMEPAD_BUTTON.CIRCLE] = { pressed: true, value: 1 };
   const oState = reader.sample(pad);
   assert.equal(oState.cancel, true);
   assert.equal(oState.back, true);
-  assert.equal(oState.confirm, false);
   assert.equal(oState.firePrimary, true);
+  assert.equal(oState.chargeReleased, true);
 });
 
-test('10 & 11. Start/Options (9) pausa/retoma normalmente e bloqueia disparo/especial enquanto pausado', () => {
+test('10 & 11. Start/Options (9) pausa/retoma normalmente e bloqueia disparo/especial/carga enquanto pausado', () => {
   const reader = new GamepadReader();
   const pad = makePad();
   pad.buttons[STANDARD_GAMEPAD_BUTTON.PAUSE] = { pressed: true, value: 1 };
@@ -159,14 +160,13 @@ test('10 & 11. Start/Options (9) pausa/retoma normalmente e bloqueia disparo/esp
   assert.equal(p1.menuOrBack, true);
   assert.equal(reader.sample(pad).pause, false);
 
-  // Verify ArcadeScene pause & unpause safety guards stay wired cleanly
   const sceneSrc = readFileSync(resolve('src/game/arcade/ArcadeScene.ts'), 'utf8');
-  assert.ok(sceneSrc.includes("this.screen === 'pause' && (pausePressed || backPressed)"), 'Start/Options or ○ resumes pause');
-  assert.ok(sceneSrc.includes("else if (escPressed || gp.pause) this.show('pause')"), 'Start/Options pauses gameplay');
-  assert.ok(sceneSrc.includes("if (this.world && this.screen === 'play' && !resumedFromMenu)"), 'Gameplay world never steps while paused or on resume frame');
-  assert.ok(sceneSrc.includes('suppressHeldFireUntilRelease'), 'Fire remains suppressed across pause resume until released');
-  assert.ok(sceneSrc.includes('suppressSpecialUntilRelease'), 'Special remains suppressed across pause resume until released');
-  assert.ok(!sceneSrc.includes('if (just(\'ENTER\') || gp.confirm) this.world.introTime = 0'), '× must have zero function during gameplay');
+  assert.ok(sceneSrc.includes("this.screen === 'pause' && (pausePressed || backPressed)"));
+  assert.ok(sceneSrc.includes("else if (escPressed || gp.pause) this.show('pause')"));
+  assert.ok(sceneSrc.includes("if (this.world && this.screen === 'play' && !resumedFromMenu)"));
+  assert.ok(sceneSrc.includes('suppressHeldFireUntilRelease'));
+  assert.ok(sceneSrc.includes('suppressChargeUntilRelease'));
+  assert.ok(sceneSrc.includes('suppressSpecialUntilRelease'));
 });
 
 test('12. Movimentação simultânea com disparo (Analógico esquerdo e D-Pad + ○/R1)', () => {
@@ -183,12 +183,12 @@ test('12. Movimentação simultânea com disparo (Analógico esquerdo e D-Pad + 
   const x0 = world.player.x;
   const y0 = world.player.y;
   world.step(1 / 60, { x: gp.moveX, y: gp.moveY, fire: gp.firePrimary, special: false });
-  assert.ok(world.player.x > x0, 'Ship moves right while firing');
-  assert.ok(world.player.y < y0, 'Ship moves up while firing');
-  assert.ok(world.events.some((e) => e.type === 'shot'), 'Shot fires while moving');
+  assert.ok(world.player.x > x0);
+  assert.ok(world.player.y < y0);
+  assert.ok(world.events.some((e) => e.type === 'shot'));
 });
 
-test('13. Teclado e Mobile (TouchInputController) permanecem intactos', () => {
+test('13. Teclado e Mobile (TouchInputController) permanecem intactos com suporte a CARGA', () => {
   const kb = processInputFrame({
     keyW: true, keyA: false, keyS: false, keyD: true,
     arrowUp: false, arrowDown: false, arrowLeft: false, arrowRight: false,
@@ -221,7 +221,8 @@ test('14. Perfis visuais (PlayStation vs Xbox) e tela CONTROLES refletem mapeame
   const ps = padLabels('PS5 DualSense 054c');
   assert.equal(ps.profile, 'playstation');
   assert.equal(ps.shoot, '○ / R1');
-  assert.equal(ps.special, '□ / R2');
+  assert.equal(ps.charge, '□');
+  assert.equal(ps.special, '× / R2');
   assert.equal(ps.confirm, '×');
   assert.equal(ps.cancel, '○');
   assert.equal(ps.pause, 'OPTIONS');
@@ -229,7 +230,8 @@ test('14. Perfis visuais (PlayStation vs Xbox) e tela CONTROLES refletem mapeame
   const xb = padLabels('Xbox Series XInput 045e');
   assert.equal(xb.profile, 'xbox');
   assert.equal(xb.shoot, 'B / RB');
-  assert.equal(xb.special, 'X / RT');
+  assert.equal(xb.charge, 'X');
+  assert.equal(xb.special, 'A / RT');
   assert.equal(xb.confirm, 'A');
   assert.equal(xb.cancel, 'B');
   assert.equal(xb.pause, 'START');
@@ -237,9 +239,9 @@ test('14. Perfis visuais (PlayStation vs Xbox) e tela CONTROLES refletem mapeame
   const sceneSrc = readFileSync(resolve('src/game/arcade/ArcadeScene.ts'), 'utf8');
   assert.ok(sceneSrc.includes('PS5 DUALSENSE'));
   assert.ok(sceneSrc.includes('COMANDOS PLAYSTATION'));
-  assert.ok(sceneSrc.includes('ATIRAR (disparo contínuo)'));
+  assert.ok(sceneSrc.includes('TIRO AUTOMÁTICO'));
+  assert.ok(sceneSrc.includes('TIRO CARREGADO (segurar)'));
   assert.ok(sceneSrc.includes('ESPECIAL (Tormenta)'));
-  assert.ok(sceneSrc.includes('CONFIRMAR (menus)'));
-  assert.ok(sceneSrc.includes('VOLTAR (menus)'));
+  assert.ok(sceneSrc.includes('CONFIRMAR / VOLTAR (menus)'));
   assert.ok(sceneSrc.includes('PAUSAR / RETOMAR'));
 });

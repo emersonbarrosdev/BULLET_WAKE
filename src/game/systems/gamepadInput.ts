@@ -6,20 +6,20 @@ export interface PadSnapshot {
   buttons: readonly { pressed: boolean; value: number }[];
 }
 
-export type LogicalAction = 'FIRE' | 'SPECIAL' | 'CONFIRM' | 'CANCEL' | 'PAUSE' | 'MOVE';
+export type LogicalAction = 'FIRE' | 'CHARGE' | 'SPECIAL' | 'CONFIRM' | 'CANCEL' | 'PAUSE' | 'MOVE';
 export type PadProfile = 'playstation' | 'xbox' | 'nintendo';
 
 /** W3C Standard Gamepad button indices. */
 export const STANDARD_GAMEPAD_BUTTON = {
-  CONFIRM: 0,       // PS: × (Xis)    | Xbox: A
-  CIRCLE: 1,        // PS: ○ (Círculo)| Xbox: B  -> gameplay FIRE, menu CANCEL
-  SPECIAL_FACE: 2,  // PS: □ (Quad.)  | Xbox: X  -> gameplay SPECIAL
-  NORTH: 3,         // PS: △ (Triân.) | Xbox: Y  -> reserved in combat / pilot profile preview
+  SPECIAL_FACE: 0, // PS: × (Xis)    | Xbox: A -> gameplay SPECIAL, menu CONFIRM
+  CIRCLE: 1,       // PS: ○ (Círculo)| Xbox: B -> gameplay FIRE, menu CANCEL
+  CHARGE: 2,       // PS: □ (Quad.)  | Xbox: X -> gameplay CHARGE (tiro carregado)
+  NORTH: 3,        // PS: △ (Triân.) | Xbox: Y -> reserved in combat / pilot profile preview
   L1: 4,
-  R1: 5,            // PS: R1         | Xbox: RB -> gameplay FIRE alternative
+  R1: 5,           // PS: R1         | Xbox: RB -> gameplay FIRE alternative
   L2: 6,
-  R2: 7,            // PS: R2         | Xbox: RT -> gameplay SPECIAL alternative
-  PAUSE: 9,         // PS: OPTIONS    | Xbox: START
+  R2: 7,           // PS: R2         | Xbox: RT -> gameplay SPECIAL alternative
+  PAUSE: 9,        // PS: OPTIONS    | Xbox: START
   DPAD_UP: 12,
   DPAD_DOWN: 13,
   DPAD_LEFT: 14,
@@ -45,13 +45,13 @@ export function padLabels(id = '') {
     return {
       profile,
       shoot: 'A / R',
-      special: 'Y / ZR',
+      charge: 'Y',
+      special: 'B / ZR',
       confirm: 'B',
       cancel: 'A',
       back: 'A',
       pause: '+',
       dash: 'L',
-      charge: 'ZL',
       missile: 'X',
     };
   }
@@ -59,26 +59,26 @@ export function padLabels(id = '') {
     return {
       profile,
       shoot: '○ / R1',
-      special: '□ / R2',
+      charge: '□',
+      special: '× / R2',
       confirm: '×',
       cancel: '○',
       back: '○',
       pause: 'OPTIONS',
       dash: 'L1',
-      charge: 'L2',
       missile: '△',
     };
   }
   return {
     profile,
     shoot: 'B / RB',
-    special: 'X / RT',
+    charge: 'X',
+    special: 'A / RT',
     confirm: 'A',
     cancel: 'B',
     back: 'B',
     pause: 'START',
     dash: 'LB',
-    charge: 'LT',
     missile: 'Y',
   };
 }
@@ -90,11 +90,12 @@ export interface GamepadInputState {
   moveY: number;
   firePrimary: boolean;
   firePrimaryTap: boolean;
+  chargeHeld: boolean;
+  chargeJustDown: boolean;
+  chargeReleased: boolean;
   special: boolean;
   specialHeld: boolean;
   dashTrigger: false;
-  chargeHeld: false;
-  chargeReleased: false;
   /** Preserved property name used by PilotSelectScene tests (`action.profile`). */
   profile: boolean;
   missile: false;
@@ -112,6 +113,7 @@ export interface GamepadInputState {
 export class GamepadReader {
   private previousButtons = new Set<number>();
   private prevFireHeld = false;
+  private prevChargeHeld = false;
   private prevSpecialHeld = false;
   private id = '';
   private nav = new Set<string>();
@@ -121,6 +123,7 @@ export class GamepadReader {
     if (!connected || this.id !== pad.id) {
       this.previousButtons.clear();
       this.prevFireHeld = false;
+      this.prevChargeHeld = false;
       this.prevSpecialHeld = false;
       this.nav.clear();
       this.id = connected ? pad.id : '';
@@ -162,18 +165,24 @@ export class GamepadReader {
     if (moveY < -0.55) nav.add('up');
     if (moveY > 0.55) nav.add('down');
 
-    // Logical FIRE (○ or R1 | Xbox B or RB): both map identically with no cadence doubling
+    // Logical FIRE (○ or R1 | Xbox B or RB): identical rapid/continuous fire without cadence doubling
     const firePrimary = buttonHeld(STANDARD_GAMEPAD_BUTTON.CIRCLE) || buttonHeld(STANDARD_GAMEPAD_BUTTON.R1);
     const firePrimaryTap = firePrimary && !this.prevFireHeld;
     this.prevFireHeld = firePrimary;
 
-    // Logical SPECIAL (□ or analog R2 | Xbox X or RT): single activation edge until BOTH are released
+    // Logical CHARGE (□ | Xbox X): hold to accumulate, release to unleash charged shot
+    const chargeHeld = buttonHeld(STANDARD_GAMEPAD_BUTTON.CHARGE);
+    const chargeJustDown = chargeHeld && !this.prevChargeHeld;
+    const chargeReleased = !chargeHeld && this.prevChargeHeld;
+    this.prevChargeHeld = chargeHeld;
+
+    // Logical SPECIAL (× or analog R2 | Xbox A or RT): single edge until BOTH are released
     const specialHeld = buttonHeld(STANDARD_GAMEPAD_BUTTON.SPECIAL_FACE) || triggerHeld(STANDARD_GAMEPAD_BUTTON.R2);
     const special = specialHeld && !this.prevSpecialHeld;
     this.prevSpecialHeld = specialHeld;
 
     // Logical MENU actions: × (0) = confirm, ○ (1) = cancel/back, Options/Start (9) = pause
-    const confirm = buttonDown(STANDARD_GAMEPAD_BUTTON.CONFIRM);
+    const confirm = buttonDown(STANDARD_GAMEPAD_BUTTON.SPECIAL_FACE);
     const cancel = buttonDown(STANDARD_GAMEPAD_BUTTON.CIRCLE);
     const pause = buttonDown(STANDARD_GAMEPAD_BUTTON.PAUSE);
     const northTap = buttonDown(STANDARD_GAMEPAD_BUTTON.NORTH);
@@ -197,11 +206,12 @@ export class GamepadReader {
       moveY,
       firePrimary,
       firePrimaryTap,
+      chargeHeld,
+      chargeJustDown,
+      chargeReleased,
       special,
       specialHeld,
       dashTrigger: false as const,
-      chargeHeld: false as const,
-      chargeReleased: false as const,
       profile: northTap,
       missile: false as const,
       pause,

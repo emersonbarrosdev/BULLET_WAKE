@@ -28,6 +28,9 @@
         "hasBayekInRadio": false,
         "bayekTextureKey": "ui-hud-bayek-halfbody",
         "rivetTextureKey": "pelagic-rivet-up",
+        "chargePercent": 0,
+        "chargePhase": "idle",
+        "chargeTier": "none",
         "arena": {
           "left": 160,
           "right": 608,
@@ -65,6 +68,9 @@
         "hasBayekInRadio": false,
         "bayekTextureKey": "ui-hud-bayek-halfbody",
         "rivetTextureKey": "pelagic-rivet-up",
+        "chargePercent": 0,
+        "chargePhase": "idle",
+        "chargeTier": "none",
         "arena": {
           "left": 160,
           "right": 608,
@@ -109,6 +115,9 @@
       "hasBayekInRadio": false,
       "bayekTextureKey": "ui-hud-bayek-halfbody",
       "rivetTextureKey": "pelagic-rivet-up",
+      "chargePercent": 0,
+      "chargePhase": "idle",
+      "chargeTier": "none",
       "arena": {
         "left": 160,
         "right": 608,
@@ -139,6 +148,9 @@
       "hasBayekInRadio": false,
       "bayekTextureKey": "ui-hud-bayek-halfbody",
       "rivetTextureKey": "pelagic-rivet-up",
+      "chargePercent": 0,
+      "chargePhase": "idle",
+      "chargeTier": "none",
       "arena": {
         "left": 160,
         "right": 608,
@@ -173,6 +185,9 @@
       "hasBayekInRadio": false,
       "bayekTextureKey": "ui-hud-bayek-halfbody",
       "rivetTextureKey": "pelagic-rivet-up",
+      "chargePercent": 0,
+      "chargePhase": "idle",
+      "chargeTier": "none",
       "arena": {
         "left": 160,
         "right": 608,
@@ -180,12 +195,146 @@
         "bottom": 424,
         "width": 448
       }
+    },
+    "chargedShot": {
+      "chargeEmpty": {
+        "visible": true,
+        "scoreText": "0",
+        "weaponLevel": 4,
+        "weaponLevelText": "POWER",
+        "lives": 3,
+        "livesText": "× 3",
+        "specialCharges": 2,
+        "radioActive": false,
+        "radioText": "",
+        "radioPageIndex": 0,
+        "radioPageCount": 0,
+        "radioExpression": 0,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 746,
+          "y": 18
+        },
+        "hasLogoInGameplay": false,
+        "hasBayekInRadio": false,
+        "bayekTextureKey": "ui-hud-bayek-halfbody",
+        "rivetTextureKey": "pelagic-rivet-up",
+        "chargePercent": 0,
+        "chargePhase": "idle",
+        "chargeTier": "none",
+        "arena": {
+          "left": 160,
+          "right": 608,
+          "top": 18,
+          "bottom": 424,
+          "width": 448
+        }
+      },
+      "chargePartial": {
+        "visible": true,
+        "scoreText": "0",
+        "weaponLevel": 4,
+        "weaponLevelText": "POWER",
+        "lives": 3,
+        "livesText": "× 3",
+        "specialCharges": 2,
+        "radioActive": false,
+        "radioText": "",
+        "radioPageIndex": 0,
+        "radioPageCount": 0,
+        "radioExpression": 0,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 746,
+          "y": 18
+        },
+        "hasLogoInGameplay": false,
+        "hasBayekInRadio": false,
+        "bayekTextureKey": "ui-hud-bayek-halfbody",
+        "rivetTextureKey": "pelagic-rivet-up",
+        "chargePercent": 57,
+        "chargePhase": "charging",
+        "chargeTier": "partial",
+        "arena": {
+          "left": 160,
+          "right": 608,
+          "top": 18,
+          "bottom": 424,
+          "width": 448
+        }
+      },
+      "chargeFull": {
+        "visible": true,
+        "scoreText": "0",
+        "weaponLevel": 4,
+        "weaponLevelText": "POWER",
+        "lives": 3,
+        "livesText": "× 3",
+        "specialCharges": 2,
+        "radioActive": false,
+        "radioText": "",
+        "radioPageIndex": 0,
+        "radioPageCount": 0,
+        "radioExpression": 0,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 746,
+          "y": 18
+        },
+        "hasLogoInGameplay": false,
+        "hasBayekInRadio": false,
+        "bayekTextureKey": "ui-hud-bayek-halfbody",
+        "rivetTextureKey": "pelagic-rivet-up",
+        "chargePercent": 100,
+        "chargePhase": "full",
+        "chargeTier": "full",
+        "arena": {
+          "left": 160,
+          "right": 608,
+          "top": 18,
+          "bottom": 424,
+          "width": 448
+        }
+      },
+      "chargeAfter": {
+        "visible": true,
+        "scoreText": "0",
+        "weaponLevel": 4,
+        "weaponLevelText": "POWER",
+        "lives": 3,
+        "livesText": "× 3",
+        "specialCharges": 2,
+        "radioActive": false,
+        "radioText": "",
+        "radioPageIndex": 0,
+        "radioPageCount": 0,
+        "radioExpression": 0,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 746,
+          "y": 18
+        },
+        "hasLogoInGameplay": false,
+        "hasBayekInRadio": false,
+        "bayekTextureKey": "ui-hud-bayek-halfbody",
+        "rivetTextureKey": "pelagic-rivet-up",
+        "chargePercent": 0,
+        "chargePhase": "recovery",
+        "chargeTier": "none",
+        "arena": {
+          "left": 160,
+          "right": 608,
+          "top": 18,
+          "bottom": 424,
+          "width": 448
+        }
+      }
     }
   },
   "fpsBenchmark": {
     "avgFrameMs": 16.69,
     "fps": 59.9,
-    "hudCpuMsPerFrame": 0.053
+    "hudCpuMsPerFrame": 0.06
   },
   "androidPortraitCheck": {
     "portraitUpActive": true,
@@ -211,6 +360,9 @@
       "hasBayekInRadio": false,
       "bayekTextureKey": "ui-hud-bayek-halfbody",
       "rivetTextureKey": "pelagic-rivet-up",
+      "chargePercent": 0,
+      "chargePhase": "idle",
+      "chargeTier": "none",
       "arena": {
         "left": 0,
         "right": 384,
@@ -236,7 +388,11 @@
     "01-start": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\01-start.png",
     "02-combat-radio-score": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\02-combat-radio-score.png",
     "03-power-especial-vidas": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\03-power-especial-vidas.png",
-    "04-boss-colosso": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\04-boss-colosso.png"
+    "04-boss-colosso": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\04-boss-colosso.png",
+    "05-charge-empty": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\05-charge-empty.png",
+    "06-charge-partial": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\06-charge-partial.png",
+    "07-charge-full": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\07-charge-full.png",
+    "08-charge-release": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\08-charge-release.png"
   },
   "errors": []
 }

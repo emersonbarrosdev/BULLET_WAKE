@@ -31,6 +31,9 @@ export interface PelagicHudStateSnapshot {
     hasBayekInRadio: boolean;
     bayekTextureKey: string;
     rivetTextureKey: string;
+    chargePercent: number;
+    chargePhase: string;
+    chargeTier: string;
     arena: { left: number; right: number; top: number; bottom: number; width: number };
 }
 
@@ -216,6 +219,8 @@ export class PelagicDesktopHud {
     private readonly rivetNameText: Phaser.GameObjects.Text;
     private readonly vanguardaText: Phaser.GameObjects.Text;
     private readonly powerHeaderText: Phaser.GameObjects.Text;
+    private readonly chargeLabelText: Phaser.GameObjects.Text;
+    private readonly chargeStateText: Phaser.GameObjects.Text;
     private readonly especialHeaderText: Phaser.GameObjects.Text;
     private readonly vidasHeaderText: Phaser.GameObjects.Text;
     private readonly vidasMultiplierText: Phaser.GameObjects.Text;
@@ -229,6 +234,7 @@ export class PelagicDesktopHud {
     private lastSpecialCharges = -1;
     private lastLives = -1;
     private lastRadioExpr = 0;
+    private lastChargeSig = '';
 
     private persistentRadioSource = '';
     private persistentRadioPages: string[] = [];
@@ -306,7 +312,7 @@ export class PelagicDesktopHud {
             .setDepth(43)
             .setVisible(false);
 
-        this.ammoIcon = scene.add.image(638, 199, ICON_AMMO).setDisplaySize(19, 15).setDepth(43).setVisible(false);
+        this.ammoIcon = scene.add.image(638, 195, ICON_AMMO).setDisplaySize(19, 15).setDepth(43).setVisible(false);
         this.specialIcon = scene.add.image(638, 279, ICON_SPECIAL).setDisplaySize(15, 17).setDepth(43).setVisible(false);
         this.heartMiniIcon = scene.add.image(638, 359, ICON_HEART).setDisplaySize(14, 13).setDepth(43).setVisible(false);
         this.heartMainIcon = scene.add.image(668, 391, ICON_HEART).setDisplaySize(24, 22).setDepth(43).setVisible(false);
@@ -339,7 +345,9 @@ export class PelagicDesktopHud {
             stroke: '#04224a',
             strokeThickness: 2.2,
         });
-        this.powerHeaderText = mkText(653, 199, 'POWER', 10.5, '#f2f9ff', { ox: 0, weight: 'bold', strokeThickness: 1.4 });
+        this.powerHeaderText = mkText(653, 195, 'POWER', 10.5, '#f2f9ff', { ox: 0, weight: 'bold', strokeThickness: 1.4 });
+        this.chargeLabelText = mkText(629, 239.5, 'CARGA', 7.2, '#7dd3fc', { ox: 0, weight: 'bold', strokeThickness: 1.2 });
+        this.chargeStateText = mkText(746, 239.5, '', 6.8, '#fde047', { ox: 1, weight: 'bold', strokeThickness: 1.2 });
         this.especialHeaderText = mkText(651, 279, 'ESPECIAL', 10.5, '#f2f9ff', { ox: 0, weight: 'bold', strokeThickness: 1.4 });
         this.vidasHeaderText = mkText(651, 359, 'VIDAS', 10.5, '#f2f9ff', { ox: 0, weight: 'bold', strokeThickness: 1.4 });
         this.vidasMultiplierText = mkText(687, 391, '× 3', 15.5, '#ffffff', { ox: 0, weight: 'bold', strokeThickness: 1.8 });
@@ -365,6 +373,8 @@ export class PelagicDesktopHud {
             this.rivetNameText,
             this.vanguardaText,
             this.powerHeaderText,
+            this.chargeLabelText,
+            this.chargeStateText,
             this.especialHeaderText,
             this.vidasHeaderText,
             this.vidasMultiplierText,
@@ -396,6 +406,7 @@ export class PelagicDesktopHud {
             this.lastLives = -1;
             this.lastBossSignature = '';
             this.lastRadioExpr = 0;
+            this.lastChargeSig = '';
         }
     }
 
@@ -469,7 +480,7 @@ export class PelagicDesktopHud {
 
         // B. POWER Card (chamfered octagon, NO inner divider line)
         drawCard(g, 621, 182, 134, 74, 12, 12, 12, 12);
-        drawSlashes(g, [725, 732, 739], 194, 204);
+        drawSlashes(g, [725, 732, 739], 190, 200);
 
         // C. ESPECIAL Card (chamfered octagon, NO inner divider line)
         drawCard(g, 621, 262, 134, 74, 12, 12, 12, 12);
@@ -565,15 +576,19 @@ export class PelagicDesktopHud {
             this.radioPageHint.setText(hintText);
         }
 
-        // Redraw dynamic gauges / boss HP only when state changes
+        // Redraw dynamic gauges / CARGA bar / boss HP only when state changes
         const bossSig = this.computeBossSignature(world);
+        const cSnap = world.chargedShot.snapshot();
+        const chargeSig = `${cSnap.phase}:${Math.round(cSnap.ratio * 100)}`;
         if (
             world.weapons.weaponLevel !== this.lastWeaponLevel ||
             world.weapons.specialCharges !== this.lastSpecialCharges ||
+            chargeSig !== this.lastChargeSig ||
             bossSig !== this.lastBossSignature
         ) {
             this.lastWeaponLevel = world.weapons.weaponLevel;
             this.lastSpecialCharges = world.weapons.specialCharges;
+            this.lastChargeSig = chargeSig;
             this.lastBossSignature = bossSig;
             this.redrawDynamicSlots(world, bossHudLabel);
         }
@@ -619,8 +634,31 @@ export class PelagicDesktopHud {
             }
         };
 
-        // 1. POWER: 5 horizontal rounded rectangles inside [621..755, y=219..234.5]
-        drawGaugeRow(219, world.weapons.weaponLevel);
+        // 1. POWER: 5 horizontal rounded rectangles inside [621..755, y=209..224]
+        drawGaugeRow(209, world.weapons.weaponLevel);
+
+        // 1b. Compact CARGA bar tucked cleanly inside lower strip of POWER card (y=236..243)
+        const cSnap = world.chargedShot.snapshot();
+        const barX = 664;
+        const barY = 236;
+        const barW = cSnap.isFull ? 58 : 82;
+        const barH = 7;
+        g.fillStyle(0x041430, 0.92).fillRoundedRect(barX, barY, barW, barH, 3);
+        if (cSnap.ratio > 0) {
+            const fillW = Math.max(4, barW * cSnap.ratio);
+            if (cSnap.isFull) {
+                g.fillGradientStyle(0xfef08a, 0xfef08a, 0xf59e0b, 0xf59e0b, 1).fillRoundedRect(barX, barY, barW, barH, 3);
+                g.fillStyle(0xffffff, 0.55).fillRoundedRect(barX + 1.5, barY + 1.2, barW - 3, 2.2, 1.5);
+            } else if (cSnap.ratio >= 0.72) {
+                g.fillGradientStyle(0x67e8f9, 0xfde047, 0x06b6d4, 0xf59e0b, 1).fillRoundedRect(barX, barY, fillW, barH, 3);
+            } else {
+                g.fillGradientStyle(0x67e8f9, 0x67e8f9, 0x0284c7, 0x0284c7, 1).fillRoundedRect(barX, barY, fillW, barH, 3);
+            }
+        }
+        g.lineStyle(1, cSnap.isFull ? 0xfef08a : cSnap.isPartialReady ? 0x67e8f9 : 0x2e6ba3, cSnap.isFull ? 0.98 : 0.85)
+            .strokeRoundedRect(barX, barY, barW, barH, 3);
+        this.chargeLabelText.setColor(cSnap.isFull ? '#fef08a' : cSnap.isHolding ? '#a5f3fc' : '#7dd3fc');
+        this.chargeStateText.setText(cSnap.isFull ? 'MAX' : '').setVisible(this.visible && cSnap.isFull);
 
         // 2. ESPECIAL: identical horizontal rounded rectangles inside [621..755, y=299..314.5]
         drawGaugeRow(299, world.weapons.specialCharges);
@@ -675,6 +713,7 @@ export class PelagicDesktopHud {
         world: ArcadeWorld,
         pauseBtn?: Phaser.GameObjects.Container,
     ): PelagicHudStateSnapshot {
+        const cSnap = world.chargedShot.snapshot();
         return {
             visible: this.visible,
             scoreText: this.scoreValue.text,
@@ -694,6 +733,9 @@ export class PelagicDesktopHud {
             hasBayekInRadio: false,
             bayekTextureKey: this.bayekPortrait.texture.key,
             rivetTextureKey: this.rivetSprite.texture.key,
+            chargePercent: cSnap.percent,
+            chargePhase: cSnap.phase,
+            chargeTier: cSnap.tier,
             arena: {
                 left: world.arena.left,
                 right: world.arena.right,

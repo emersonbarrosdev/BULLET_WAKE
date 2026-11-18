@@ -324,6 +324,42 @@ try {
   assert.equal(bossHud.livesText, '× 2');
   await shot('04-boss-colosso');
 
+  // 3b. Charged Shot live gameplay states via REAL keyboard Z hold/release: Empty (0%), Partial (~55%), Full (100% MAX) & Release bolt
+  await evaluate(`(() => {
+    const s = window.__GAME__.scene.getScene('ArcadeScene');
+    s.begin(0);
+    s.world.devInvincible = true;
+    s.world.state = 'play';
+    s.world.introTime = 0;
+    s.world.weapons.weaponLevel = 4;
+    s.renderWorld(1 / 60);
+  })()`);
+  await sleep(100);
+  const chargeEmpty = await evaluate(`window.__GAME__.scene.getScene('ArcadeScene').devPelagicHudState()`);
+  assert.equal(chargeEmpty.chargePercent, 0);
+  await shot('05-charge-empty');
+
+  // Press and hold REAL keyboard Z to charge
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'z', code: 'KeyZ', windowsVirtualKeyCode: 90 });
+  await sleep(680);
+  const chargePartial = await evaluate(`window.__GAME__.scene.getScene('ArcadeScene').devPelagicHudState()`);
+  assert.ok(chargePartial.chargePercent >= 35 && chargePartial.chargePercent < 100, `Expected partial charge, got ${chargePartial.chargePercent}`);
+  await shot('06-charge-partial');
+
+  // Keep holding Z past 1.2s until 100% MAX lock
+  await sleep(700);
+  const chargeFull = await evaluate(`window.__GAME__.scene.getScene('ArcadeScene').devPelagicHudState()`);
+  assert.equal(chargeFull.chargePercent, 100);
+  await shot('07-charge-full');
+
+  // Release Z to launch charged shot bolt
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'z', code: 'KeyZ', windowsVirtualKeyCode: 90 });
+  await sleep(90);
+  const chargeAfter = await evaluate(`window.__GAME__.scene.getScene('ArcadeScene').devPelagicHudState()`);
+  assert.equal(chargeAfter.chargePercent, 0);
+  await shot('08-charge-release');
+  report.functionalChecks.chargedShot = { chargeEmpty, chargePartial, chargeFull, chargeAfter };
+
   // 4. FPS & HUD CPU benchmark
   await evaluate(`window.__GAME__.scene.getScene('ArcadeScene').begin(0)`);
   await sleep(300);
