@@ -41,7 +41,7 @@ export class CombatBriefing {
     let title='PAUSADO',body='',actions:Array<[string,()=>void]>;
     if(this.page==='pause')actions=[['CONTINUAR',()=>this.finish(this.resume)],['CONTROLES',()=>this.show('controls')],['VOLTAR AO MENU',()=>this.show('exit')]];
     else if(this.page==='controls'){
-      title='CONTROLES';const rows=[['Movimentar',pad?'ANALÓGICO / DIRECIONAL':'WASD / SETAS'],['Disparar',pad?labels.shoot:'ESPAÇO'],['Especial',pad?labels.special:'X'],['Pausar',pad?labels.pause:'ESC']];
+      title='CONTROLES';const rows=[['Movimentar',pad?'ANALÓGICO / DIRECIONAL':'WASD / SETAS'],['Tiro Automático',pad?labels.shoot:'ESPAÇO'],['Tiro Carregado',pad?labels.charge:'Z'],['Especial',pad?labels.special:'X'],['Pausar',pad?labels.pause:'ESC']];
       body=`<div class="bw-brief-controls">${rows.map(([name,key])=>`<div><span>${name}</span><kbd>${key}</kbd></div>`).join('')}</div><p class="bw-brief-note">Segure o disparo. Colete P para evoluir a arma da sua nave.</p>`;
       actions=[['VOLTAR',()=>this.show('pause')]];
     }else{

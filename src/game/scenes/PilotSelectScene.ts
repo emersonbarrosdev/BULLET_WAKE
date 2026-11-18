@@ -265,13 +265,13 @@ export class PilotSelectScene extends Phaser.Scene {
     const chosen = this.chosenIndex === this.selectedIndex;
     this.root.querySelectorAll<HTMLButtonElement>('[data-confirm-index]').forEach((launch, index) => {
       launch.hidden = !chosen || index !== this.selectedIndex;
-      launch.innerHTML = 'CONFIRMAR ' + pilot.name.split(' ')[0].toUpperCase() + ' <span>['+(connectedPad()?padLabels(connectedPad()?.id).shoot:'ENTER')+']</span>';
+      launch.innerHTML = 'CONFIRMAR ' + pilot.name.split(' ')[0].toUpperCase() + ' <span>['+(connectedPad()?padLabels(connectedPad()?.id).confirm:'ENTER')+']</span>';
       launch.setAttribute('aria-label', 'Confirmar ' + pilot.name + ' e iniciar operação');
     });
     const awaiting = this.root.querySelector<HTMLElement>('.bw-pilot-awaiting');
     if (awaiting) awaiting.hidden = chosen || this.view === 'profile';
     const help = this.root.querySelector<HTMLElement>('.bw-pilot-help');
-    if (help && connectedPad()) { const l=padLabels(connectedPad()?.id);help.textContent='DIRECIONAL: PILOTO · '+l.shoot+': ESCOLHER / CONFIRMAR · '+l.missile+': PERFIL · '+l.back+': VOLTAR';return; }
+    if (help && connectedPad()) { const l=padLabels(connectedPad()?.id);help.textContent='DIRECIONAL: PILOTO · '+l.confirm+': ESCOLHER / CONFIRMAR · '+l.missile+': PERFIL · '+l.cancel+': VOLTAR';return; }
     if (help) help.textContent = this.view === 'profile'
       ? '[← →] TROCAR PILOTO · [ESC] FECHAR PERFIL'
       : chosen

@@ -1,6 +1,7 @@
 import type { CampaignFlight } from './campaignFlight.ts';
 import { CAMPAIGN_MAIN_STAGES, SECRET_PILOT_CODE, SECRET_STAGE_IDS } from '../data/pilotStories.ts';
 import { defaultTouchSettings, sanitizeTouchSettings, type TouchControlSettings } from '../arcade/TouchControls.ts';
+import { migrateLegacyDifficulty, type SavedDifficulty } from '../arcade/PelagicDifficulty.ts';
 /**
  * BULLET WAKE — Sistema de Salvamento e Persistência de Campanha.
  * Armazenamento versionado via localStorage com fallback em memória.
@@ -10,7 +11,7 @@ export interface GameSettings {
   sfxVolume: number;
   musicVolume: number;
   isMuted: boolean;
-  difficulty: 'normal' | 'hard' | 'arcade';
+  difficulty: SavedDifficulty;
   rapidFire: boolean;
   assisted: boolean;
   touch: TouchControlSettings;
@@ -35,7 +36,7 @@ export interface SaveData {
   settings: GameSettings;
 }
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 export const STORAGE_KEY = 'bullet_wake_save_data_v1';
 
 export function defaultSaveData(): SaveData {
@@ -71,7 +72,7 @@ export class SaveSystem {
         const raw = window.localStorage.getItem(STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (parsed && [1,CURRENT_SCHEMA_VERSION].includes(parsed.schemaVersion)) {
+          if (parsed && [1, 2, CURRENT_SCHEMA_VERSION].includes(parsed.schemaVersion)) {
             this.data = {
               ...defaultSaveData(),
               ...parsed,
@@ -81,6 +82,7 @@ export class SaveSystem {
               settings: {
                 ...defaultSaveData().settings,
                 ...(parsed.settings || {}),
+                difficulty: migrateLegacyDifficulty(parsed.settings?.difficulty, parsed.schemaVersion),
                 assisted: Boolean(parsed.settings?.assisted),
                 touch: sanitizeTouchSettings(parsed.settings?.touch),
               },

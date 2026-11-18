@@ -1,0 +1,132 @@
+{
+  "moments": {
+    "beforeEntry": {
+      "route": 146.59,
+      "phase": "idle",
+      "archY": -4429,
+      "bd": {
+        "coast": {
+          "visible": true,
+          "visibleCount": 2,
+          "stripCount": 2,
+          "texture": "pelagic-connected-coast-v2",
+          "strips": [
+            {
+              "x": 160,
+              "y": -1183.5166666666746,
+              "visible": true,
+              "width": 384,
+              "height": 2048
+            },
+            {
+              "x": 160,
+              "y": 864.4833333333254,
+              "visible": true,
+              "width": 384,
+              "height": 2048
+            }
+          ]
+        },
+        "water": {
+          "visible": true,
+          "texture": "pelagic-water-review",
+          "tilePositionY": -11142.494999999984,
+          "depthVisible": true,
+          "depthTexture": "pelagic-depth-review",
+          "swellVisible": true,
+          "causticsVisible": true,
+          "causticsTexture": "pelagic-caustics-review",
+          "activeWaves": 16
+        },
+        "menuSkyVisible": false
+      },
+      "st": {}
+    },
+    "approach": {
+      "route": 158.91,
+      "phase": "low-flight",
+      "altitude": 0,
+      "archY": -139,
+      "cannons": [
+        {
+          "x": 231,
+          "y": 406,
+          "hp": 14
+        },
+        {
+          "x": 537,
+          "y": 346,
+          "hp": 14
+        },
+        {
+          "x": 233,
+          "y": 186,
+          "hp": 14
+        },
+        {
+          "x": 535,
+          "y": 146,
+          "hp": 14
+        },
+        {
+          "x": 235,
+          "y": 26,
+          "hp": 14
+        },
+        {
+          "x": 533,
+          "y": -4,
+          "hp": 14
+        },
+        {
+          "x": 236,
+          "y": -65,
+          "hp": 14
+        },
+        {
+          "x": 532,
+          "y": -77,
+          "hp": 14
+        }
+      ],
+      "waterfallsVisible": 4,
+      "piersVisible": 8,
+      "backingVisible": 8,
+      "coastAlpha": 1
+    },
+    "traversal": {
+      "route": 173.09,
+      "phase": "under-arch",
+      "altitude": 0,
+      "archY": 354,
+      "playerY": 372,
+      "inBridgeBand": true,
+      "bridgeVisible": true,
+      "bridgeW": 556,
+      "bridgeH": 236,
+      "beaconVisible": true,
+      "waterfallsVisible": 2,
+      "coastAlpha": 1
+    },
+    "exit": {
+      "route": 178.11,
+      "phase": "ascent",
+      "crossedArch": true,
+      "altitude": 0.723,
+      "archY": 528,
+      "playerY": 372
+    }
+  },
+  "fpsBenchmark": {
+    "samples": 90,
+    "avgFrameMs": 16.69,
+    "avgFps": 59.9
+  },
+  "screenshots": {
+    "01-before-arch-entry": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\arch-waterfalls-fixed\\01-before-arch-entry.png",
+    "02-approach-islands-waterfalls": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\arch-waterfalls-fixed\\02-approach-islands-waterfalls.png",
+    "03-arch-traversal": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\arch-waterfalls-fixed\\03-arch-traversal.png",
+    "04-arch-exit": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\arch-waterfalls-fixed\\04-arch-exit.png"
+  },
+  "errors": []
+}

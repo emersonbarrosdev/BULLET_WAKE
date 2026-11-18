@@ -1,5 +1,6 @@
 import type { ArcadeScene } from '../game/arcade/ArcadeScene.ts';
 import { clamp } from '../game/arcade/geometry.ts';
+import type { GameDifficulty } from '../game/arcade/PelagicDifficulty.ts';
 import type { WeaponLevel } from '../game/systems/weaponSystem.ts';
 import type { DevScenarioOptions } from './types.ts';
 
@@ -43,7 +44,7 @@ export interface DevPlayerConfigPatch {
   lives?: number;
   specialCharges?: number;
   score?: number;
-  difficulty?: 'normal' | 'hard';
+  difficulty?: GameDifficulty;
   assisted?: boolean;
   rapidFire?: boolean;
   devInvincible?: boolean;
@@ -62,7 +63,7 @@ export class DevCombatControls {
     if (patch.lives !== undefined) w.lives = clamp(Math.round(patch.lives), 1, 5);
     if (patch.specialCharges !== undefined) w.weapons.specialCharges = clamp(Math.round(patch.specialCharges), 0, 5);
     if (patch.score !== undefined && Number.isFinite(patch.score)) w.score = Math.max(0, Math.round(patch.score));
-    if (patch.difficulty !== undefined) w.hard = patch.difficulty !== 'normal';
+    if (patch.difficulty !== undefined) w.setDifficulty(patch.difficulty);
     if (patch.assisted !== undefined) w.assisted = w.up && patch.assisted;
     if (patch.rapidFire !== undefined) w.accessibility = patch.rapidFire;
     if (patch.devInvincible !== undefined) w.devInvincible = patch.devInvincible;

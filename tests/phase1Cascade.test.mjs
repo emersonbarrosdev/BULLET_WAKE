@@ -27,14 +27,21 @@ test('keyboard special is X only; V/B and accidental R no longer trigger actions
     const result=processInputFrame({[key]:true});assert.equal(result.special,false);assert.equal(result.bomb,false);assert.equal(result.restart,false);
   }
 });
-test('gamepad deadzone, normalized diagonal, held fire and action edges',()=>{
-  const r=new GamepadReader();const pad={id:'Xbox',mapping:'standard',axes:[.1,.1],buttons:Array.from({length:17},()=>({pressed:false,value:0}))};
-  assert.equal(r.sample(pad).moveX,0);pad.axes=[1,1];pad.buttons[0].pressed=true;pad.buttons[2].pressed=true;
-  const first=r.sample(pad);assert.ok(Math.abs(Math.hypot(first.moveX,first.moveY)-1)<1e-9);assert.equal(first.special,true);assert.equal(first.firePrimaryTap,true);
-  const held=r.sample(pad);assert.equal(held.special,false);assert.equal(held.firePrimary,true);assert.equal(held.firePrimaryTap,false);
+test('gamepad deadzone, normalized diagonal, held fire (O/R1), charge (Square) and special edges (X/R2)',()=>{
+  const r=new GamepadReader();const pad={id:'DualSense 054c',mapping:'standard',axes:[.1,.1],buttons:Array.from({length:17},()=>({pressed:false,value:0}))};
+  assert.equal(r.sample(pad).moveX,0);pad.axes=[1,1];pad.buttons[1].pressed=true;pad.buttons[0].pressed=true;pad.buttons[2].pressed=true;
+  const first=r.sample(pad);assert.ok(Math.abs(Math.hypot(first.moveX,first.moveY)-1)<1e-9);assert.equal(first.special,true);assert.equal(first.firePrimaryTap,true);assert.equal(first.chargeHeld,true);assert.equal(first.chargeJustDown,true);assert.equal(first.cancel,true);assert.equal(first.confirm,true);
+  const held=r.sample(pad);assert.equal(held.special,false);assert.equal(held.firePrimary,true);assert.equal(held.firePrimaryTap,false);assert.equal(held.chargeHeld,true);assert.equal(held.chargeJustDown,false);assert.equal(held.cancel,false);
   assert.equal(r.sample(undefined).firePrimary,false);
   assert.equal(r.sample({...pad,mapping:''}).special,false);
-  assert.equal(padLabels('DualSense 054c').special,'□');assert.equal(padLabels('Xbox').special,'X');
+  assert.equal(padLabels('DualSense 054c').shoot,'○ / R1');
+  assert.equal(padLabels('DualSense 054c').charge,'□');
+  assert.equal(padLabels('DualSense 054c').special,'× / R2');
+  assert.equal(padLabels('DualSense 054c').confirm,'×');
+  assert.equal(padLabels('DualSense 054c').cancel,'○');
+  assert.equal(padLabels('Xbox').special,'A / RT');
+  assert.equal(padLabels('Xbox').charge,'X');
+  assert.equal(padLabels('Xbox').shoot,'B / RB');
 });
 test('red frontal beams reach arena ceiling from bottom at every level; maximum wings cover flanks',()=>{
   for(let level=1;level<=4;level++)for(const phase of [0,500,1700]){

@@ -1,5 +1,6 @@
 import { clamp } from './geometry.ts';
 import type { PelagicSpecialEventId } from './PelagicSpecialEvents.ts';
+import type { GameDifficulty } from './PelagicDifficulty.ts';
 import type { WeaponLevel } from '../systems/weaponSystem.ts';
 
 export type TideArchPhase =
@@ -59,6 +60,7 @@ export interface PelagicCheckpointSnapshot {
     powerMeter: number;
     specialCharges: number;
     hard: boolean;
+    difficulty?: GameDifficulty;
     assisted: boolean;
     tideArchCompleted: true;
     scoringState: {
@@ -119,24 +121,45 @@ export function computeArchOpening(arenaLeft: number, arenaRight: number): TideA
 }
 
 /**
+ * Shared world-space placement for both ArcadeWorld cannon logic and rocky platform art
+ * so cliffside platforms and turrets stay 100% locked across scroll & layout changes.
+ */
+export function resolveArchCannonWorldPos(
+    spec: TideArchCannonSpec,
+    archWorldY: number,
+    arenaLeft: number,
+    arenaRight: number,
+): { x: number; worldY: number; opening: TideArchOpening } {
+    const opening = computeArchOpening(arenaLeft, arenaRight);
+    const outerX = spec.side < 0 ? arenaLeft : arenaRight;
+    const edgeX = spec.side < 0 ? opening.left : opening.right;
+    return {
+        x: outerX + (edgeX - outerX) * spec.pierDepth,
+        worldY: archWorldY + spec.relWorldY,
+        opening,
+    };
+}
+
+/**
  * Cliffside cannon batteries placed symmetrically across approach, mid-canyon and exit piers.
- * Coordinates are anchored cleanly to `archWorldY` so cannons never drift independently of rocks.
+ * Coordinates are anchored cleanly to `archWorldY` and jut along the inner cliff margin
+ * so RIVET's vertical primary shots (even at Power 1) can reach and destroy every turret.
  */
 export const TIDE_ARCH_CANNONS: readonly TideArchCannonSpec[] = [
     // Positive relWorldY = ahead (south) of the arch bridge, encountered first during approach & descent.
-    // Turrets sit on jutting cliffside ledges along the water lip so RIVET can target and destroy them cleanly.
+    // Turrets sit on natural jutting rock platforms along the passage lip so RIVET can target and destroy them cleanly.
     // Alternating & aimed cliffside cannons maintain active pressure from approach through exit
-    { id: 'arch-app-l', side: -1, relWorldY: 545, pierDepth: 0.86, pattern: 'alternating', cooldownOffset: 0.50, stage: 'approach' },
-    { id: 'arch-app-r', side: 1, relWorldY: 485, pierDepth: 0.86, pattern: 'alternating', cooldownOffset: 1.10, stage: 'approach' },
-    { id: 'arch-des-l', side: -1, relWorldY: 325, pierDepth: 0.88, pattern: 'aimed-burst', cooldownOffset: 0.65, stage: 'descent' },
-    { id: 'arch-des-r', side: 1, relWorldY: 285, pierDepth: 0.88, pattern: 'fan3', cooldownOffset: 1.28, stage: 'descent' },
-    { id: 'arch-low-l', side: -1, relWorldY: 165, pierDepth: 0.90, pattern: 'alternating', cooldownOffset: 0.60, stage: 'low-flight' },
-    { id: 'arch-low-r', side: 1, relWorldY: 135, pierDepth: 0.90, pattern: 'alternating', cooldownOffset: 1.22, stage: 'low-flight' },
-    { id: 'arch-mouth-l', side: -1, relWorldY: 74, pierDepth: 0.92, pattern: 'sweep', cooldownOffset: 0.78, stage: 'low-flight' },
-    { id: 'arch-mouth-r', side: 1, relWorldY: 62, pierDepth: 0.92, pattern: 'alternating', cooldownOffset: 1.38, stage: 'low-flight' },
+    { id: 'arch-app-l', side: -1, relWorldY: 545, pierDepth: 0.95, pattern: 'alternating', cooldownOffset: 0.50, stage: 'approach' },
+    { id: 'arch-app-r', side: 1, relWorldY: 485, pierDepth: 0.95, pattern: 'alternating', cooldownOffset: 1.10, stage: 'approach' },
+    { id: 'arch-des-l', side: -1, relWorldY: 325, pierDepth: 0.96, pattern: 'aimed-burst', cooldownOffset: 0.65, stage: 'descent' },
+    { id: 'arch-des-r', side: 1, relWorldY: 285, pierDepth: 0.96, pattern: 'fan3', cooldownOffset: 1.28, stage: 'descent' },
+    { id: 'arch-low-l', side: -1, relWorldY: 165, pierDepth: 0.98, pattern: 'alternating', cooldownOffset: 0.60, stage: 'low-flight' },
+    { id: 'arch-low-r', side: 1, relWorldY: 135, pierDepth: 0.98, pattern: 'alternating', cooldownOffset: 1.22, stage: 'low-flight' },
+    { id: 'arch-mouth-l', side: -1, relWorldY: 74, pierDepth: 1.00, pattern: 'sweep', cooldownOffset: 0.78, stage: 'low-flight' },
+    { id: 'arch-mouth-r', side: 1, relWorldY: 62, pierDepth: 1.00, pattern: 'alternating', cooldownOffset: 1.38, stage: 'low-flight' },
     // Negative relWorldY = north/exit side emerging right as RIVET passes under & clears the arch.
-    { id: 'arch-exit-l', side: -1, relWorldY: -98, pierDepth: 0.88, pattern: 'aimed-burst', cooldownOffset: 0.65, stage: 'under-arch' },
-    { id: 'arch-exit-r', side: 1, relWorldY: -128, pierDepth: 0.88, pattern: 'alternating', cooldownOffset: 1.28, stage: 'under-arch' },
+    { id: 'arch-exit-l', side: -1, relWorldY: -98, pierDepth: 0.98, pattern: 'aimed-burst', cooldownOffset: 0.65, stage: 'under-arch' },
+    { id: 'arch-exit-r', side: 1, relWorldY: -128, pierDepth: 0.98, pattern: 'alternating', cooldownOffset: 1.28, stage: 'under-arch' },
 ];
 
 export const TIDE_ARCH_BOATS: readonly TideArchBoatSpec[] = [

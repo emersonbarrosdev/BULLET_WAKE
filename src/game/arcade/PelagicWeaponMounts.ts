@@ -190,13 +190,19 @@ export function resolveHullVisualTransform(e: MountActorInput, time: number): Hu
   }
   if (e.family.startsWith('heli_')) {
     const vx = e.vx ?? 0;
-    const yaw = Math.max(-0.26, Math.min(0.26, vx * 0.0014));
+    const vy = e.vy ?? 0;
+    const heavy = e.family === 'heli_warhawk' || e.family === 'heli_utility';
+    const maxYaw = e.family === 'heli_warhawk' ? 0.16 : e.family === 'heli_utility' ? 0.22 : 0.34;
+    // Keep nose oriented toward forward combat corridor (PI) with bounded smooth yaw so hover reverses never spin backwards.
+    const effVy = Math.max(115, vy);
+    const desiredDelta = Math.atan2(effVy, vx) + Math.PI / 2 - Math.PI;
+    const boundedDelta = Math.max(-maxYaw, Math.min(maxYaw, desiredDelta));
     return {
       drawX: e.x,
       drawY: e.y,
       displayW: e.size,
       displayH: e.size,
-      rotation: Math.PI + yaw,
+      rotation: Math.PI + boundedDelta * (heavy ? 0.9 : 1),
       flipX: false,
       depth: 8.2,
       alpha: 1,
@@ -256,7 +262,7 @@ export function resolveActorMounts(
   return specs.map((spec, i) => {
     const lx = isCliffBunker ? -0.01 : spec.localX;
     const ly = isCliffBunker ? -0.06 : spec.localY;
-    const tScale = isCliffBunker ? 0.64 : spec.turretScale;
+    const tScale = isCliffBunker ? 0.78 : spec.turretScale;
     const pivot = localToWorldPoint(hull, lx, ly);
     const defaultAim = spec.canRotate
       ? Math.atan2(playerY - pivot.y, playerX - pivot.x)

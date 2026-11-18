@@ -1,0 +1,398 @@
+{
+  "resolutions": {
+    "1280x720": {
+      "rect": {
+        "w": 1280,
+        "h": 720,
+        "aspect": 1.778
+      },
+      "hud": {
+        "visible": true,
+        "scoreText": "0",
+        "weaponLevel": 1,
+        "weaponLevelText": "POWER",
+        "lives": 3,
+        "livesText": "× 3",
+        "specialCharges": 2,
+        "radioActive": true,
+        "radioText": "Entrando na Fenda Pelágica. Radar limpo por enquanto... Mas fiquem atentos, é uma rota instável!",
+        "radioPageIndex": 0,
+        "radioPageCount": 1,
+        "radioExpression": 0,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 746,
+          "y": 18
+        },
+        "hasLogoInGameplay": false,
+        "hasBayekInRadio": false,
+        "bayekTextureKey": "ui-hud-bayek-halfbody",
+        "rivetTextureKey": "pelagic-rivet-up",
+        "chargePercent": 0,
+        "chargePhase": "idle",
+        "chargeTier": "none",
+        "arena": {
+          "left": 160,
+          "right": 608,
+          "top": 18,
+          "bottom": 424,
+          "width": 448
+        }
+      }
+    },
+    "1920x1080": {
+      "rect": {
+        "w": 1920,
+        "h": 1080,
+        "aspect": 1.778
+      },
+      "hud": {
+        "visible": true,
+        "scoreText": "0",
+        "weaponLevel": 1,
+        "weaponLevelText": "POWER",
+        "lives": 3,
+        "livesText": "× 3",
+        "specialCharges": 2,
+        "radioActive": true,
+        "radioText": "Entrando na Fenda Pelágica. Radar limpo por enquanto... Mas fiquem atentos, é uma rota instável!",
+        "radioPageIndex": 0,
+        "radioPageCount": 1,
+        "radioExpression": 0,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 746,
+          "y": 18
+        },
+        "hasLogoInGameplay": false,
+        "hasBayekInRadio": false,
+        "bayekTextureKey": "ui-hud-bayek-halfbody",
+        "rivetTextureKey": "pelagic-rivet-up",
+        "chargePercent": 0,
+        "chargePhase": "idle",
+        "chargeTier": "none",
+        "arena": {
+          "left": 160,
+          "right": 608,
+          "top": 18,
+          "bottom": 424,
+          "width": 448
+        }
+      }
+    }
+  },
+  "functionalChecks": {
+    "menus": {
+      "titleState": {
+        "screen": "title",
+        "planeCount": 3
+      },
+      "pilotState": {
+        "screen": "pilot",
+        "topDownCount": 1,
+        "frame": 3
+      }
+    },
+    "startHud": {
+      "visible": true,
+      "scoreText": "0",
+      "weaponLevel": 1,
+      "weaponLevelText": "POWER",
+      "lives": 3,
+      "livesText": "× 3",
+      "specialCharges": 2,
+      "radioActive": true,
+      "radioText": "Entrando na Fenda Pelágica. Radar limpo por enquanto... Mas fiquem atentos, é uma rota instável!",
+      "radioPageIndex": 0,
+      "radioPageCount": 1,
+      "radioExpression": 0,
+      "assisted": false,
+      "pauseCenter": {
+        "x": 746,
+        "y": 18
+      },
+      "hasLogoInGameplay": false,
+      "hasBayekInRadio": false,
+      "bayekTextureKey": "ui-hud-bayek-halfbody",
+      "rivetTextureKey": "pelagic-rivet-up",
+      "chargePercent": 0,
+      "chargePhase": "idle",
+      "chargeTier": "none",
+      "arena": {
+        "left": 160,
+        "right": 608,
+        "top": 18,
+        "bottom": 424,
+        "width": 448
+      }
+    },
+    "combatScoreAndRadio": {
+      "visible": true,
+      "scoreText": "4260",
+      "weaponLevel": 1,
+      "weaponLevelText": "POWER",
+      "lives": 3,
+      "livesText": "× 3",
+      "specialCharges": 2,
+      "radioActive": true,
+      "radioText": "Warhawk militar no ar! Cuidado com o míssil!",
+      "radioPageIndex": 0,
+      "radioPageCount": 1,
+      "radioExpression": 0,
+      "assisted": false,
+      "pauseCenter": {
+        "x": 746,
+        "y": 18
+      },
+      "hasLogoInGameplay": false,
+      "hasBayekInRadio": false,
+      "bayekTextureKey": "ui-hud-bayek-halfbody",
+      "rivetTextureKey": "pelagic-rivet-up",
+      "chargePercent": 0,
+      "chargePhase": "idle",
+      "chargeTier": "none",
+      "arena": {
+        "left": 160,
+        "right": 608,
+        "top": 18,
+        "bottom": 424,
+        "width": 448
+      }
+    },
+    "pauseClickAndResume": {
+      "pausedScreen": "pause",
+      "resumedScreen": "play"
+    },
+    "evolvedHud": {
+      "visible": true,
+      "scoreText": "128450",
+      "weaponLevel": 4,
+      "weaponLevelText": "POWER",
+      "lives": 5,
+      "livesText": "× 5",
+      "specialCharges": 4,
+      "radioActive": true,
+      "radioText": "COLOSSO ABISSAL emerso na fenda!",
+      "radioPageIndex": 0,
+      "radioPageCount": 1,
+      "radioExpression": 3,
+      "assisted": false,
+      "pauseCenter": {
+        "x": 746,
+        "y": 18
+      },
+      "hasLogoInGameplay": false,
+      "hasBayekInRadio": false,
+      "bayekTextureKey": "ui-hud-bayek-halfbody",
+      "rivetTextureKey": "pelagic-rivet-up",
+      "chargePercent": 0,
+      "chargePhase": "idle",
+      "chargeTier": "none",
+      "arena": {
+        "left": 160,
+        "right": 608,
+        "top": 18,
+        "bottom": 424,
+        "width": 448
+      }
+    },
+    "chargedShot": {
+      "chargeEmpty": {
+        "visible": true,
+        "scoreText": "0",
+        "weaponLevel": 4,
+        "weaponLevelText": "POWER",
+        "lives": 3,
+        "livesText": "× 3",
+        "specialCharges": 2,
+        "radioActive": false,
+        "radioText": "",
+        "radioPageIndex": 0,
+        "radioPageCount": 0,
+        "radioExpression": 0,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 746,
+          "y": 18
+        },
+        "hasLogoInGameplay": false,
+        "hasBayekInRadio": false,
+        "bayekTextureKey": "ui-hud-bayek-halfbody",
+        "rivetTextureKey": "pelagic-rivet-up",
+        "chargePercent": 0,
+        "chargePhase": "idle",
+        "chargeTier": "none",
+        "arena": {
+          "left": 160,
+          "right": 608,
+          "top": 18,
+          "bottom": 424,
+          "width": 448
+        }
+      },
+      "chargePartial": {
+        "visible": true,
+        "scoreText": "0",
+        "weaponLevel": 4,
+        "weaponLevelText": "POWER",
+        "lives": 3,
+        "livesText": "× 3",
+        "specialCharges": 2,
+        "radioActive": false,
+        "radioText": "",
+        "radioPageIndex": 0,
+        "radioPageCount": 0,
+        "radioExpression": 0,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 746,
+          "y": 18
+        },
+        "hasLogoInGameplay": false,
+        "hasBayekInRadio": false,
+        "bayekTextureKey": "ui-hud-bayek-halfbody",
+        "rivetTextureKey": "pelagic-rivet-up",
+        "chargePercent": 57,
+        "chargePhase": "charging",
+        "chargeTier": "partial",
+        "arena": {
+          "left": 160,
+          "right": 608,
+          "top": 18,
+          "bottom": 424,
+          "width": 448
+        }
+      },
+      "chargeFull": {
+        "visible": true,
+        "scoreText": "0",
+        "weaponLevel": 4,
+        "weaponLevelText": "POWER",
+        "lives": 3,
+        "livesText": "× 3",
+        "specialCharges": 2,
+        "radioActive": false,
+        "radioText": "",
+        "radioPageIndex": 0,
+        "radioPageCount": 0,
+        "radioExpression": 0,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 746,
+          "y": 18
+        },
+        "hasLogoInGameplay": false,
+        "hasBayekInRadio": false,
+        "bayekTextureKey": "ui-hud-bayek-halfbody",
+        "rivetTextureKey": "pelagic-rivet-up",
+        "chargePercent": 100,
+        "chargePhase": "full",
+        "chargeTier": "full",
+        "arena": {
+          "left": 160,
+          "right": 608,
+          "top": 18,
+          "bottom": 424,
+          "width": 448
+        }
+      },
+      "chargeAfter": {
+        "visible": true,
+        "scoreText": "0",
+        "weaponLevel": 4,
+        "weaponLevelText": "POWER",
+        "lives": 3,
+        "livesText": "× 3",
+        "specialCharges": 2,
+        "radioActive": false,
+        "radioText": "",
+        "radioPageIndex": 0,
+        "radioPageCount": 0,
+        "radioExpression": 0,
+        "assisted": false,
+        "pauseCenter": {
+          "x": 746,
+          "y": 18
+        },
+        "hasLogoInGameplay": false,
+        "hasBayekInRadio": false,
+        "bayekTextureKey": "ui-hud-bayek-halfbody",
+        "rivetTextureKey": "pelagic-rivet-up",
+        "chargePercent": 0,
+        "chargePhase": "recovery",
+        "chargeTier": "none",
+        "arena": {
+          "left": 160,
+          "right": 608,
+          "top": 18,
+          "bottom": 424,
+          "width": 448
+        }
+      }
+    }
+  },
+  "fpsBenchmark": {
+    "avgFrameMs": 16.69,
+    "fps": 59.9,
+    "hudCpuMsPerFrame": 0.06
+  },
+  "androidPortraitCheck": {
+    "portraitUpActive": true,
+    "hud": {
+      "visible": false,
+      "scoreText": "35850",
+      "weaponLevel": 1,
+      "weaponLevelText": "POWER",
+      "lives": 3,
+      "livesText": "× 3",
+      "specialCharges": 2,
+      "radioActive": false,
+      "radioText": "Entrando na Fenda Pelágica. Radar limpo por enquanto... Mas fiquem atentos, é uma rota instável!",
+      "radioPageIndex": 0,
+      "radioPageCount": 1,
+      "radioExpression": 0,
+      "assisted": false,
+      "pauseCenter": {
+        "x": 364,
+        "y": 17
+      },
+      "hasLogoInGameplay": false,
+      "hasBayekInRadio": false,
+      "bayekTextureKey": "ui-hud-bayek-halfbody",
+      "rivetTextureKey": "pelagic-rivet-up",
+      "chargePercent": 0,
+      "chargePhase": "idle",
+      "chargeTier": "none",
+      "arena": {
+        "left": 0,
+        "right": 384,
+        "top": 34,
+        "bottom": 839,
+        "width": 384
+      }
+    }
+  },
+  "solarIsolationCheck": {
+    "mission": 2,
+    "up": false,
+    "desktopHudVisible": false
+  },
+  "devToolsCheck": {
+    "devModeEnabled": null,
+    "hasStageJump": false
+  },
+  "screenshots": {
+    "00-title-check": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\00-title-check.png",
+    "00b-pilot-select": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\00b-pilot-select.png",
+    "00c-controls-ps5": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\00c-controls-ps5.png",
+    "01-start": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\01-start.png",
+    "02-combat-radio-score": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\02-combat-radio-score.png",
+    "03-power-especial-vidas": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\03-power-especial-vidas.png",
+    "04-boss-colosso": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\04-boss-colosso.png",
+    "05-charge-empty": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\05-charge-empty.png",
+    "06-charge-partial": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\06-charge-partial.png",
+    "07-charge-full": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\07-charge-full.png",
+    "08-charge-release": "C:\\Users\\emers\\PROJETOS\\GAMES\\BULLET_WAKE\\docs\\screenshots\\hud-final-approved\\08-charge-release.png"
+  },
+  "errors": []
+}

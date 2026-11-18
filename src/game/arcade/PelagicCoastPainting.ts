@@ -133,10 +133,15 @@ export function installCoastPainting(scene: Phaser.Scene): string {
             if (sampleLow && (x & 1) === 0) {
                 const wx = x >> 1;
                 const blueLead = bl - r;
-                // Detect real rock, sand, quay, piling and vegetation pixels (exclude bright white ocean sparkles/surf & blue sea)
-                const isWarmTerrain = (blueLead < 26 || (g > bl + 3)) && r < 225;
-                const isNearEdge = wx <= newL * .5 + 24 || wx >= newR * .5 - 24;
-                if ((wx <= 3 || wx >= W - 3) || (isNearEdge && isWarmTerrain)) rawMask[wy * W + wx] = 1;
+                const leftWall = newL * .5;
+                const rightWall = newR * .5;
+                const isDeepInland = wx <= leftWall - 5 || wx >= rightWall + 5;
+                // Detect real rock (including cool/dark shaded cliff crevices), sand, quay, piling and vegetation pixels
+                const isTerrainPixel =
+                    ((blueLead < 26 || g > bl + 3) && r < 225) ||
+                    (r < 95 && g < 115 && blueLead < 55);
+                const isNearEdge = wx <= leftWall + 24 || wx >= rightWall - 24;
+                if (isDeepInland || (isNearEdge && isTerrainPixel)) rawMask[wy * W + wx] = 1;
             }
         }
     }

@@ -16,13 +16,14 @@ import {
 } from './PelagicCoastAtlas';
 import { coastWorldEdgeX } from './PelagicCoastGeometry';
 import { PelagicCoastPainting } from './PelagicCoastPainting';
+import { computeArchOpening } from './PelagicTideArch';
 import { PelagicTideArchRenderer } from './PelagicTideArchArt';
 import { installMenuAnims, UI_TEX } from './ArcadeMenuArt';
 import { clamp } from './geometry';
 import { getCombatVirtualSize } from '../render/combatResolution';
 import { SUB_BEAM_HALF_W, SUB_SECTION_HEIGHT, subSectionCenterY } from './PelagicSubmarineBoss';
 
-const STAGE1_LEFT = 192, STAGE1_WIDTH = 384;
+const STAGE1_LEFT = 160, STAGE1_WIDTH = 448;
 export const MENU_HORIZON = 300;
 const FAMILIES = ['fighter', 'interceptor', 'acrobat', 'bomber', 'boat', 'ship', 'tank', 'tower'];
 
@@ -103,9 +104,9 @@ export class ArcadeBackdrop {
     }
     this.waterSwell = scene.add.tileSprite(384, 216, STAGE1_WIDTH, 432, 'pelagic-water-review').setDepth(-19.35).setAlpha(.30).setVisible(false).setTileScale(WATER_SCALE * 1.45, WATER_SCALE * 1.45);
     this.water = scene.add.tileSprite(384, 216, STAGE1_WIDTH, 432, 'pelagic-water-review').setDepth(-19.2).setAlpha(.78).setTint(0xd0e9ff).setVisible(false).setTileScale(WATER_SCALE, WATER_SCALE);
-    this.oceanCaustics = scene.add.tileSprite(384, 216, STAGE1_WIDTH, 432, installOceanCausticsTexture(scene)).setDepth(-18.9).setAlpha(.12).setBlendMode(Phaser.BlendModes.ADD).setVisible(false).setTileScale(.42, .42);
-    this.waveSprites = Array.from({ length: 16 }, (_, i) => scene.add.image(0, 0, waveKey, i % 8).setDepth(-18.75).setVisible(false));
-    this.waterGlint = scene.add.graphics().setDepth(-18.74);
+    this.oceanCaustics = scene.add.tileSprite(384, 216, STAGE1_WIDTH, 432, installOceanCausticsTexture(scene)).setDepth(-19.10).setAlpha(.12).setBlendMode(Phaser.BlendModes.ADD).setVisible(false).setTileScale(.42, .42);
+    this.waveSprites = Array.from({ length: 16 }, (_, i) => scene.add.image(0, 0, waveKey, i % 8).setDepth(-19.02).setVisible(false));
+    this.waterGlint = scene.add.graphics().setDepth(-19.00);
     for (let i = 0; i < 8; i++) this.scenery.push(scene.add.image(0, 0, 'arc-scenery', i % 4).setDepth(-15));
     this.seaFx = scene.add.graphics().setDepth(-1);
     this.surfaceSplash = scene.add.graphics().setDepth(2.4);
@@ -146,7 +147,7 @@ export class ArcadeBackdrop {
     const areaCenter = areaLeft + areaWidth * 0.5;
     const viewH = Math.max(432, vSize.h);
     const openOcean = up ? (world?.boss?.sub || world?.state === 'exit' ? 1 : clamp(((world?.route ?? 0) - 285) / 11, 0, 1)) : 0;
-    const coastAlpha = (1 - openOcean) * (up && world!.tideArch.isActive ? 0.55 : 1);
+    const coastAlpha = 1 - openOcean;
     this.coastPainting.draw(world?.scroll ?? 0, up, coastAlpha, world?.elapsed ?? time, quality, areaLeft, areaWidth);
     this.oceanDepth.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up);
     this.waterSwell.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up && quality >= 1);
@@ -236,14 +237,19 @@ export class ArcadeBackdrop {
     }
 
     // Animated 2.5D wave crests with natural birth -> peak -> dissipate lifecycle even when scroll pauses
+    const archOpening = w.tideArch.isActive ? computeArchOpening(areaLeft, areaLeft + areaWidth) : null;
     const waveCount = quality > 1 ? 16 : quality === 1 ? 10 : 0;
     const wavePeriod = Math.max(460, viewH + 40);
     for (let i = 0; i < waveCount; i++) {
       const wy = ((i * 29 + w.scroll * 1.02 + time * 9.5) % wavePeriod + wavePeriod) % wavePeriod - 20;
       const cLeft = coastWorldEdgeX(wy - w.scroll, -1, areaLeft, areaWidth) + 22;
       const cRight = coastWorldEdgeX(wy - w.scroll, 1, areaLeft, areaWidth) - 22;
-      const leftEdge = cLeft + (areaLeft + 18 - cLeft) * openOcean;
-      const rightEdge = cRight + (areaLeft + areaWidth - 18 - cRight) * openOcean;
+      let leftEdge = cLeft + (areaLeft + 18 - cLeft) * openOcean;
+      let rightEdge = cRight + (areaLeft + areaWidth - 18 - cRight) * openOcean;
+      if (archOpening) {
+        leftEdge = Math.max(leftEdge, archOpening.left + 16);
+        rightEdge = Math.min(rightEdge, archOpening.right - 16);
+      }
       if (rightEdge - leftEdge < 42) continue;
       const lane = ((i * 0.37 + Math.sin(i * 1.9) * .22) % 1 + 1) % 1;
       const wx = leftEdge + lane * (rightEdge - leftEdge) + Math.sin(time * .8 + i * 1.4) * 5.2;
@@ -256,7 +262,7 @@ export class ArcadeBackdrop {
       this.waveSprites[i].setVisible(true).setFrame(frame).setPosition(wx, wy).setDisplaySize(wSize, wSize * .46).setAlpha(pulse);
     }
 
-    // Soft underwater sunlight glints (strictly beneath ships/shots at depth -18.74, never orange/red)
+    // Soft underwater sunlight glints (strictly beneath coast strips at depth -19.00, never orange/red)
     if (quality >= 1) {
       const glintCount = quality > 1 ? 14 : 7;
       const glintPeriod = Math.max(460, viewH + 40);
@@ -265,8 +271,12 @@ export class ArcadeBackdrop {
         const gy = ((i * 37 + w.scroll * 1.08 + time * 14) % glintPeriod + glintPeriod) % glintPeriod - 14;
         const cLeft = coastWorldEdgeX(gy - w.scroll, -1, areaLeft, areaWidth) + 18;
         const cRight = coastWorldEdgeX(gy - w.scroll, 1, areaLeft, areaWidth) - 18;
-        const leftEdge = cLeft + (areaLeft + 14 - cLeft) * openOcean;
-        const rightEdge = cRight + (areaLeft + areaWidth - 14 - cRight) * openOcean;
+        let leftEdge = cLeft + (areaLeft + 14 - cLeft) * openOcean;
+        let rightEdge = cRight + (areaLeft + areaWidth - 14 - cRight) * openOcean;
+        if (archOpening) {
+          leftEdge = Math.max(leftEdge, archOpening.left + 14);
+          rightEdge = Math.min(rightEdge, archOpening.right - 14);
+        }
         if (rightEdge - leftEdge < 34) continue;
         const u = ((i * .618 + Math.cos(i * 2.3) * .18) % 1 + 1) % 1;
         const gx = leftEdge + u * (rightEdge - leftEdge) + Math.sin(time * 1.4 + i) * 4;
@@ -288,7 +298,7 @@ export class ArcadeBackdrop {
       const rotation = naval ? heading : e.ground ? heading - Math.PI : e.family === 'alien' ? 0 : Math.PI;
       const texture = e.family === 'alien' ? 'arc-ufo' : 'arc-enemies';
       const frame = e.family === 'alien' ? 0 : e.family === 'airship' ? 12 : (w.up && e.family === 'tank' ? 7 : FAMILIES.indexOf(e.family));
-      if (!naval && !e.submarine && e.navigation?.anchor === undefined) {
+      if (!naval && !e.submarine && e.navigation?.anchor === undefined && !e.navigation?.customAnchor) {
         this.shadows[shadow++].setVisible(true).setTexture(texture, Math.max(0, frame))
           .setPosition(e.x + (e.ground ? 3 : 12), e.y + (e.ground ? 4 : 16))
           .setDisplaySize(e.size * (e.ground ? .96 : .82), e.size * (e.ground ? .96 : .82))

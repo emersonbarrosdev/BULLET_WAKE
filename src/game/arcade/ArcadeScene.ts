@@ -3,13 +3,13 @@ import { ArcadeWorld, type Actor, type WorldEvent, type Controls } from './Arcad
 import { ArcadeBackdrop } from './ArcadeBackdrop';
 import { ArcadeAudio } from './ArcadeAudio';
 import { MISSIONS, type Encounter, type Family } from './content';
-import { connectedPad, GamepadReader } from '../systems/gamepadInput';
+import { connectedPad, detectPadProfile, GamepadReader, padLabels, type PadProfile } from '../systems/gamepadInput';
 import { globalSave } from '../systems/saveSystem';
 import { globalAudio } from '../audio/audioSystem';
 import { stageFlightSnapshot, type CampaignFlight } from '../systems/campaignFlight';
 import { spriteContact } from '../render/SpriteSilhouette';
 import { enableCombatResolution, getCombatVirtualSize, setCombatVirtualSize } from '../render/combatResolution';
-import { clamp } from './geometry';
+import { clamp, sweepEllipse } from './geometry';
 import { readArcadeProgress, recordArcadeClear } from './progress';
 import { pelagicShotSize } from './PelagicPresentation';
 import { rivetShotPresentation } from '../render/rivetPresentation';
@@ -17,6 +17,7 @@ import { SUPPLY_ART, SUB_ART, BOMB_ART, BLAST_ART, SUB_HULL_ART, SUB_SUBMERGED_A
 import { subTotalHp } from './PelagicSubmarineBoss';
 import { EMPLACEMENT_TEXTURE, GUN_SMOKE_TEXTURE, TOWER_TEXTURE, PelagicEmplacements } from './PelagicEmplacements';
 import { PelagicActorAnims, preloadPelagicActorAnims } from './PelagicActorAnims';
+import { PELAGIC_RIVET_SHEET } from './PelagicActorAnimsMath';
 import { preloadTideArchArt } from './PelagicTideArchArt';
 import type { PelagicCheckpointSnapshot, TideArchPhase } from './PelagicTideArch';
 import {
@@ -27,6 +28,7 @@ import {
 } from './PelagicWeaponMounts';
 import { PelagicComms } from './PelagicComms';
 import { PelagicDesktopHud } from './PelagicDesktopHud';
+import { DIFFICULTY_PROFILES, normalizeGameDifficulty, stepGameDifficulty } from './PelagicDifficulty';
 import {
   TouchInputController,
   computeWorldSafeInsets,
@@ -62,17 +64,19 @@ export class ArcadeScene extends Phaser.Scene {
   private introSkipFade?: number;
   private loadStartMs = 0; private loadCompleteAtMs?: number; private loadRealProgress = 0; private loadVisualProgress = 0;
   private splashHandoffCommitted = false; private bootOverlayDismissed = false; private loadErrors: string[] = [];
-  private controlsTab: ControlsTab = 'pc'; private lastControlsPadId = ''; private nextControlsFocus?: number;
+  private controlsTab: ControlsTab = 'pc'; private lastControlsPadId = ''; private nextControlsFocus?: number; private controlsPadPreview: 'auto' | 'playstation' | 'xbox' = 'auto';
   private enemySprites = new Map<number, Phaser.GameObjects.Sprite>(); private cargoSprites = new Map<number, Phaser.GameObjects.Sprite>(); private partSprites = new Map<number, Phaser.GameObjects.Sprite>(); private bulletSprites: Phaser.GameObjects.Sprite[] = []; private effects: Effect[] = [];
   private bonusPopups: BonusPopup[] = []; private bonusPopupPool: Phaser.GameObjects.Text[] = [];
   private turrets = new Map<number, Phaser.GameObjects.Sprite>(); private effectPool: Phaser.GameObjects.Sprite[] = [];
   private controls!: Record<string, Phaser.Input.Keyboard.Key>; private pad = new GamepadReader(); buttons: MenuButton[] = []; private focus = 0;
   private clock = 0; private introClock = 0; private accumulator = 0; private lastHud = ''; private messageUntil = 0; private pauseOrigin: Screen = 'pause'; private carried?: CampaignFlight; private currentMission = 0; private stageClearSaved = false;
   private touchController = new TouchInputController(globalSave.getSettings().touch);
-  private touchGfx!: Phaser.GameObjects.Graphics; private touchFireText!: Phaser.GameObjects.Text; private touchSpecialText!: Phaser.GameObjects.Text;
+  private touchGfx!: Phaser.GameObjects.Graphics; private touchFireText!: Phaser.GameObjects.Text; private touchChargeText!: Phaser.GameObjects.Text; private touchSpecialText!: Phaser.GameObjects.Text;
   private touchNodes: (Phaser.GameObjects.Graphics | Phaser.GameObjects.Text)[] = [];
   private touchShown = false; private touchDeviceActive = false; private pauseBtn?: Phaser.GameObjects.Container;
   private suppressHeldFireUntilRelease = false;
+  private suppressChargeUntilRelease = false;
+  private suppressSpecialUntilRelease = false;
   private mute = false;
   private pelagicLevel!: Phaser.GameObjects.Text; private pelagicAssistBadge!: Phaser.GameObjects.Text; private pelagicCheckpointBadge!: Phaser.GameObjects.Text; private pelagicSpecialText!: Phaser.GameObjects.Text; private bossHudLabel!: Phaser.GameObjects.Text;
   private checkpointBannerUntil = 0; private activeCheckpointSnapshot?: PelagicCheckpointSnapshot; private portraitUpActive = false;
@@ -154,7 +158,7 @@ export class ArcadeScene extends Phaser.Scene {
     }
   }
   private criticalOpeningAssetsReady(): boolean {
-    return [UI_TEX.logo, UI_TEX.skyPanorama, UI_TEX.wingmenAnim, UI_TEX.menuHeliSide, UI_TEX.menuHeliPatrolSide, UI_TEX.padDualSense, UI_TEX.mobileLandscape, UI_TEX.icons, UI_TEX.glow, UI_TEX.hudPelagicSky, UI_TEX.hudPelagicChassis, UI_TEX.hudRoutePelagic]
+    return [UI_TEX.logo, UI_TEX.skyPanorama, UI_TEX.wingmenAnim, UI_TEX.menuHeliSide, UI_TEX.menuHeliPatrolSide, UI_TEX.padDualSense, UI_TEX.mobileLandscape, UI_TEX.icons, UI_TEX.glow, UI_TEX.hudPelagicSky, UI_TEX.hudBayekPortrait, UI_TEX.hudRoutePelagic]
       .every(key => this.textures.exists(key));
   }
   private syncLoadVisual(p: number, visible = true): void {
@@ -167,7 +171,7 @@ export class ArcadeScene extends Phaser.Scene {
   }
   create(): void {
     enableCombatResolution(this); this.input.addPointer(3);
-    this.controls = this.input.keyboard!.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D,SPACE,X,ESC,ENTER,ONE,TWO,THREE') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.controls = this.input.keyboard!.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D,SPACE,X,Z,ESC,ENTER,ONE,TWO,THREE') as Record<string, Phaser.Input.Keyboard.Key>;
     this.input.keyboard!.addCapture(['SPACE', 'UP', 'DOWN', 'LEFT', 'RIGHT', 'ENTER']);
     const settings = globalSave.getSettings(); this.mute = settings.isMuted; this.audio.setMix(settings.musicVolume, settings.sfxVolume, this.mute);
     try { const stored = localStorage.getItem('bullet_wake_visual'); if (stored !== null) this.quality = clamp(Number(stored) || 0, 0, 2); } catch {/* Optional preference. */ }
@@ -197,7 +201,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.pelagicSpecialText = this.add.text(224, 15, '', { fontFamily: FONT, fontSize: '10px', fontStyle: 'bold', color: '#ffe159', stroke: '#041430', strokeThickness: 2 }).setResolution(2).setOrigin(0, .5).setDepth(46).setVisible(false);
     this.bossHudLabel = this.add.text(207, 16, '', { fontFamily: FONT, fontSize: '9.5px', fontStyle: 'bold', color: '#ffe654', stroke: '#041430', strokeThickness: 2 }).setResolution(2).setOrigin(0, .5).setDepth(46).setVisible(false);
     this.radio = this.add.text(384, 66, '', { fontFamily: FONT, fontSize: '12px', color: '#16385b', backgroundColor: '#fff7cb', padding: { x: 8, y: 5 }, wordWrap: { width: 280 }, align: 'center' }).setResolution(2).setOrigin(.5).setDepth(48).setVisible(false);
-    for (let i = 0; i < 640; i++)this.bulletSprites.push(this.add.sprite(0, 0, 'arc-red').setVisible(false).setDepth(19.5));
+    for (let i = 0; i < 960; i++)this.bulletSprites.push(this.add.sprite(0, 0, 'arc-red').setVisible(false).setDepth(19.5));
     this.makeOrbTextures(); this.installTouch(); this.show('loading');
     const blur = () => { this.touchController.clearAll(); this.input.keyboard?.resetKeys(); this.renderTouchOverlay(); if (this.screen === 'play') this.show('pause'); };
     const onResize = () => { this.touchController.clearAll(); this.syncResponsiveViewport(); this.refreshTouchLayout(); };
@@ -218,17 +222,44 @@ export class ArcadeScene extends Phaser.Scene {
     });
   }
   private makeOrbTextures(): void {
+    // Sonic Wings-inspired circular orange-red energy orbs with hot yellow-white core, sharp dark-red rim, and subtle halo
+    const size = 64;
+    const mid = size * 0.5;
     for (const i of [0, 1, 2]) {
-      const tex = this.textures.createCanvas('arc-orb-' + i, 32, 32)!, c = tex.context;
-      // Illustrated cel-shaded coral-ruby orb matching aircraft line art (#182948) and sunlit sea/sky scenery
-      c.fillStyle = '#182948'; c.beginPath(); c.arc(16, 16, 14.8, 0, Math.PI * 2); c.fill();
-      c.fillStyle = '#ffe8e2'; c.beginPath(); c.arc(16, 16, 13.1, 0, Math.PI * 2); c.fill();
-      const body = c.createRadialGradient(13.5, 13, 1, 16, 16, 11.6);
-      body.addColorStop(0, '#ff665e');
-      body.addColorStop(.45, '#f43542');
-      body.addColorStop(1, '#ce1b2e');
-      c.fillStyle = body; c.beginPath(); c.arc(16, 16, 11.6, 0, Math.PI * 2); c.fill();
-      c.fillStyle = '#fff6ea'; c.beginPath(); c.arc(13, 12.5, 3.2, 0, Math.PI * 2); c.fill();
+      const tex = this.textures.createCanvas('arc-orb-' + i, size, size)!;
+      const c = tex.context;
+      c.clearRect(0, 0, size, size);
+
+      // 1. Subtle outer thermal glow (does not inflate gameplay hitbox)
+      const halo = c.createRadialGradient(mid, mid, 21.5, mid, mid, 31.2);
+      halo.addColorStop(0, 'rgba(255, 86, 18, 0.40)');
+      halo.addColorStop(0.52, 'rgba(255, 52, 8, 0.16)');
+      halo.addColorStop(1, 'rgba(200, 18, 0, 0)');
+      c.fillStyle = halo;
+      c.beginPath();
+      c.arc(mid, mid, 31.2, 0, Math.PI * 2);
+      c.fill();
+
+      // 2. Crisp dark-crimson outline ring for immediate contrast over blue ocean, foam, islands & explosions
+      c.fillStyle = '#5c0602';
+      c.beginPath();
+      c.arc(mid, mid, 24.4, 0, Math.PI * 2);
+      c.fill();
+
+      // 3. Spherical orange-red energy core smoothly radiating from bright near-white yellow center
+      const coreTint = i === 2 ? '#ffe96b' : i === 1 ? '#fff294' : '#fff7ae';
+      const midOrange = i === 2 ? '#ff640c' : i === 1 ? '#ff7c10' : '#ff8c14';
+      const body = c.createRadialGradient(mid, mid, 0.8, mid, mid, 22.8);
+      body.addColorStop(0, '#ffffff');
+      body.addColorStop(0.24, coreTint);
+      body.addColorStop(0.50, midOrange);
+      body.addColorStop(0.80, '#ea2b08');
+      body.addColorStop(1, '#8c0d04');
+      c.fillStyle = body;
+      c.beginPath();
+      c.arc(mid, mid, 22.8, 0, Math.PI * 2);
+      c.fill();
+
       tex.refresh();
     }
   }
@@ -330,7 +361,7 @@ export class ArcadeScene extends Phaser.Scene {
       this.world.setArenaBounds(
         usePortraitPlay
           ? { left: 0, right: 384, top: 34, bottom: targetH - 14 }
-          : { left: 192, right: 576, top: 28, bottom: 420 },
+          : { left: 160, right: 608, top: 18, bottom: 424 },
       );
       this.lastHud = '';
     }
@@ -379,7 +410,9 @@ export class ArcadeScene extends Phaser.Scene {
     if (screen === 'play' && old !== 'play') {
       this.audio.resume();
       this.accumulator = 0;
-      this.suppressHeldFireUntilRelease = !['loading', 'intro', 'missions'].includes(old);
+      this.suppressHeldFireUntilRelease = true;
+      this.suppressChargeUntilRelease = true;
+      this.suppressSpecialUntilRelease = true;
     }
 
     if (screen === 'loading' || screen === 'intro') {
@@ -418,38 +451,39 @@ export class ArcadeScene extends Phaser.Scene {
         this.setOpeningPhase('TITLE_VISIBLE');
       }
     } else if (screen === 'pilot') {
-      this.audio.play('select'); this.addModalBackdrop(0x041530, .36, false);
-      makeRibbon(this, 384, 28, 332, 38, 'gold', this.ui);
-      this.text(384, 28, 'ESCOLHA SEU PILOTO', 17, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
-      makePanel(this, 384, 146, 678, 174, 'cobalt', this.ui);
-      makePanel(this, 132, 144, 136, 136, 'gold', this.ui);
-      this.ui.add(this.add.image(132, 140, 'arc-pilots', 3).setDisplaySize(114, 114));
-      makeRibbon(this, 132, 206, 114, 24, 'gold', this.ui);
-      this.text(132, 206, 'BAYEK', 12, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 1 });
+      this.audio.play('select'); this.addModalBackdrop(0x030d22, .60, false);
+      makeRibbon(this, 384, 30, 316, 36, 'gold', this.ui);
+      this.text(384, 30, 'ESCOLHA SEU PILOTO', 16.5, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
+      makePanel(this, 384, 144, 644, 154, 'cobalt', this.ui);
+      makePanel(this, 134, 142, 124, 124, 'gold', this.ui);
+      this.ui.add(this.add.image(134, 138, 'arc-pilots', 3).setDisplaySize(104, 104));
+      makeRibbon(this, 134, 198, 106, 22, 'gold', this.ui);
+      this.text(134, 198, 'BAYEK', 11.5, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 1 });
       const bay = this.add.graphics()
-        .fillStyle(0x05214d, .82).fillRoundedRect(218, 72, 188, 92, 10)
-        .lineStyle(1.4, UI.cyan, .62).strokeRoundedRect(218, 72, 188, 92, 10)
-        .lineStyle(1, UI.cyan, .22).lineBetween(428, 74, 428, 218);
+        .fillStyle(0x05214d, .84).fillRoundedRect(241, 80, 164, 92, 10)
+        .lineStyle(1.3, UI.cyan, .62).strokeRoundedRect(241, 80, 164, 92, 10)
+        .lineStyle(0.8, UI.cyan, .22).strokeCircle(323, 126, 34).strokeCircle(323, 126, 20)
+        .lineStyle(0.7, UI.cyan, .18).lineBetween(275, 126, 371, 126).lineBetween(323, 88, 323, 164)
+        .lineStyle(1, UI.cyan, .24).lineBetween(448, 80, 448, 206);
       this.ui.add(bay);
-      const plane = this.add.image(312, 118, UI_TEX.rivetProfile).setDisplaySize(134, 80);
+      const plane = this.add.sprite(323, 126, PELAGIC_RIVET_SHEET, 3).setDisplaySize(66, 66);
       this.ui.add(plane);
-      this.text(312, 176, 'RIVET  •  VANGUARDA', 12, UI.cyanHex);
-      this.text(312, 193, 'Asas da Vanguarda. Um destino: trazer todos.', 9.5, UI.silver);
-      makeIcon(this, 224, 212, UI_ICON.lightning, 16, this.ui);
-      this.text(318, 212, 'ESPECIAL: TORMENTA ESCARLATE', 9.5, UI.goldHex);
-      const stats: [string, number, number, number][] = [['VELOCIDADE', 4, UI_PIP.cyan, 96], ['ARMAMENTO', 5, UI_PIP.gold, 140], ['BLINDAGEM', 3, UI_PIP.green, 184]];
+      this.text(323, 184, 'RIVET  •  VANGUARDA', 11, UI.cyanHex);
+      makeIcon(this, 241, 202, UI_ICON.lightning, 14, this.ui);
+      this.text(328, 202, 'ESPECIAL: TORMENTA ESCARLATE', 8.8, UI.goldHex);
+      const stats: [string, number, number, number][] = [['VELOCIDADE', 4, UI_PIP.cyan, 98], ['ARMAMENTO', 5, UI_PIP.gold, 140], ['BLINDAGEM', 3, UI_PIP.green, 182]];
       for (const [lbl, val, pip, sy] of stats) {
-        this.text(566, sy - 16, lbl, 9.5, UI.silver);
-        makeGaugeMeter(this, 566, sy + 3, 170, 22, 5, val, pip, this.ui);
+        this.text(572, sy - 14, lbl, 9, UI.silver);
+        makeGaugeMeter(this, 572, sy + 2, 154, 19, 5, val, pip, this.ui);
       }
       const portraits = [0, 4, 5, 6, 7], names = ['BAYEK', 'TITA', 'LEONA', 'OSVALD', 'HIEN'];
       for (let i = 0; i < 5; i++) {
         const cx = 112 + i * 136;
-        makePanel(this, cx, 290, 124, 96, i === 0 ? 'gold' : 'cobalt', this.ui);
-        this.ui.add(this.add.image(cx, 274, 'arc-pilots', portraits[i]).setDisplaySize(50, 50).setAlpha(i ? .52 : 1));
-        if (i) makeIcon(this, cx + 40, 256, UI_ICON.padlock, 21, this.ui);
-        this.text(cx, 307, names[i], 11, i ? UI.silver : UI.goldHex);
-        this.text(cx, 320, i ? 'EM BREVE' : 'PRONTO', 7.5, i ? UI.slate : UI.cyanHex);
+        makePanel(this, cx, 282, 122, 90, i === 0 ? 'gold' : 'cobalt', this.ui);
+        this.ui.add(this.add.image(cx, 267, 'arc-pilots', portraits[i]).setDisplaySize(48, 48).setAlpha(i ? .52 : 1));
+        if (i) makeIcon(this, cx + 38, 250, UI_ICON.padlock, 20, this.ui);
+        this.text(cx, 299, names[i], 10.5, i ? UI.silver : UI.goldHex);
+        this.text(cx, 312, i ? 'EM BREVE' : 'PRONTO', 7.5, i ? UI.slate : UI.cyanHex);
       }
       this.button(468, 384, 'DECOLAR COM BAYEK', () => this.show('missions'), 286, 40, { fontSize: 14 });
       this.button(154, 384, 'VOLTAR', () => this.show('title'), 156, 36, { fontSize: 13 });
@@ -472,8 +506,9 @@ export class ArcadeScene extends Phaser.Scene {
         this.text(cx + 62, 202, avail ? `RECORDE\n${best}` : 'CONCLUA A\nROTA 01 ANTES', 10, avail ? UI.white : UI.crimsonHex, { wrap: 156 });
         if (i === 0) {
           const st = globalSave.getSettings();
-          const modeLabel = st.assisted ? 'MODO ASSISTIDO ATIVO' : st.difficulty !== 'normal' ? 'MODO DIFÍCIL' : 'MODO NORMAL';
-          const modeCol = st.assisted ? '#88fff2' : st.difficulty !== 'normal' ? UI.goldHex : UI.silver;
+          const diff = normalizeGameDifficulty(st.difficulty);
+          const modeLabel = st.assisted ? 'MODO ASSISTIDO ATIVO' : `MODO ${DIFFICULTY_PROFILES[diff].label}`;
+          const modeCol = st.assisted ? '#88fff2' : diff === 'hard' ? UI.goldHex : diff === 'normal' ? UI.cyanHex : UI.silver;
           this.text(cx, 266, modeLabel, 9.5, modeCol);
         }
         this.button(cx, 304, avail ? 'INICIAR MISSÃO' : 'BLOQUEADA', () => { if (!avail) return; const carry = i ? prog.flights[1] : undefined; this.begin(i, carry); }, 264, 38, { fontSize: 13 });
@@ -500,14 +535,16 @@ export class ArcadeScene extends Phaser.Scene {
       const w = this.world;
       if (w) {
         makeGaugeMeter(this, 384, 110, 322, 26, 0, 0, UI_PIP.cyan, this.ui);
-        const modeTag = w.up ? (w.isAssisted ? '  •  ASSISTIDO' : w.hard ? '  •  DIFÍCIL' : '') : '';
+        const modeTag = w.up ? (w.isAssisted ? '  •  ASSISTIDO' : `  •  ${w.difficultyProfile.label}`) : '';
         this.text(384, 110, `ROTA 0${this.currentMission + 1}${modeTag}  •  ${w.score} PTS  •  NV ${w.weapons.weaponLevel}`, 10, UI.cyanHex);
       }
       this.button(384, 162, 'CONTINUAR', () => this.show('play'), 266, 38);
       this.button(384, 209, 'CONTROLES', () => this.show('controls'), 266, 38);
       this.button(384, 256, 'OPÇÕES', () => { this.pauseOrigin = 'pause'; this.show('settings'); }, 266, 38);
       this.button(384, 303, 'SAIR DA MISSÃO', () => this.show('confirm-exit'), 266, 38);
-      this.text(384, 358, 'ESC: RETOMAR VOO', 9.5, UI.slate);
+      const pPad = connectedPad();
+      const pLabels = padLabels(pPad?.id);
+      this.text(384, 358, pPad ? `${pLabels.pause}: RETOMAR  •  ${pLabels.confirm}: CONFIRMAR  •  ${pLabels.cancel}: VOLTAR` : 'ESC: RETOMAR VOO', 9, UI.slate);
     } else if (screen === 'controls') {
       this.addModalBackdrop(0x031129, .62, true);
       const pad = connectedPad();
@@ -559,34 +596,99 @@ export class ArcadeScene extends Phaser.Scene {
         makeKeyBadge(this, 218, 198, '↓', { size: 24, fontSize: 10.5, container: this.ui });
         makeKeyBadge(this, 246, 198, '→', { size: 24, fontSize: 10.5, container: this.ui });
         makeKeyBadge(this, 198, 238, 'ESPAÇO', { wide: true, size: 26, fontSize: 9, container: this.ui });
-        makeKeyBadge(this, 168, 276, 'X', { gold: true, size: 26, fontSize: 10.5, container: this.ui });
-        makeKeyBadge(this, 226, 276, 'ESC', { wide: true, size: 26, fontSize: 8.5, container: this.ui });
+        makeKeyBadge(this, 148, 276, 'Z', { size: 24, fontSize: 10.5, container: this.ui });
+        makeKeyBadge(this, 184, 276, 'X', { gold: true, size: 24, fontSize: 10.5, container: this.ui });
+        makeKeyBadge(this, 238, 276, 'ESC', { wide: true, size: 24, fontSize: 8.5, container: this.ui });
         this.text(198, 312, 'MOUSE NÃO MOVE NEM ATIRA EM COMBATE', 8, UI.cyanHex, { wrap: 204 });
 
         makePanel(this, 504, 224, 344, 222, 'cobalt', this.ui);
-        this.text(504, 128, 'DISPARO ARCADE MANUAL', 11.5, UI.goldHex);
-        cmdRow(378, 162, 'WASD/SETAS', 'Mover RIVET em 8 direções', { wide: true, badgeFont: 7.5 });
-        cmdRow(378, 198, 'ESPAÇO', 'Rajada manual (3 pulsos por toque)', { wide: true, descColor: UI.goldHex, badgeFont: 8 });
-        cmdRow(378, 234, 'TECLA X', 'Tormenta Escarlate (Especial)', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8 });
-        cmdRow(378, 270, 'ESC / ENTER', 'Pausar / Confirmar menus', { wide: true, badgeFont: 7.5 });
-        this.text(504, 310, 'Segurar ESPAÇO não repete no modo padrão.\nTiro contínuo só com Disparo Acessível ativo.', 8.2, UI.silver, { wrap: 318 });
+        this.text(504, 128, 'TIRO AUTOMÁTICO E CARREGADO', 11, UI.goldHex);
+        cmdRow(378, 158, 'WASD/SETAS', 'Mover RIVET em 8 direções', { wide: true, badgeFont: 7.5 });
+        cmdRow(378, 190, 'ESPAÇO', 'Tiro automático / rajada principal', { wide: true, descColor: UI.goldHex, badgeFont: 8 });
+        cmdRow(378, 222, 'TECLA Z', 'Tiro carregado (segurar / soltar)', { wide: true, descColor: '#67e8f9', badgeFont: 8 });
+        cmdRow(378, 254, 'TECLA X', 'Especial — Tormenta Escarlate', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8 });
+        cmdRow(378, 286, 'ESC / ENTER', 'Pausar / Confirmar menus', { wide: true, badgeFont: 7.5 });
+        this.text(504, 316, 'Segure Z para carregar energia e solte para disparar.', 8.2, UI.silver, { wrap: 318 });
       } else if (this.controlsTab === 'gamepad') {
-        const idLower = (pad?.id ?? '').toLowerCase();
-        const isXbox = /xbox|xinput|045e/.test(idLower);
+        const detected = pad ? detectPadProfile(pad.id) : 'playstation';
+        const activeProfile: Extract<PadProfile, 'playstation' | 'xbox'> =
+          this.controlsPadPreview === 'auto'
+            ? (detected === 'xbox' ? 'xbox' : 'playstation')
+            : this.controlsPadPreview;
+        const isXbox = activeProfile === 'xbox';
         const padTex = isXbox ? UI_TEX.padXbox : UI_TEX.padDualSense;
         makePanel(this, 212, 224, 256, 222, 'cobalt', this.ui);
         this.text(212, 126, isXbox ? 'CONTROLE XBOX / PC' : 'PS5 DUALSENSE', 11, UI.goldHex);
-        this.ui.add(this.add.image(212, 214, padTex).setDisplaySize(226, 134));
-        this.text(212, 305, pad ? `CONECTADO: ${pad.id.slice(0, 20).toUpperCase()}` : 'DUALSENSE VIA USB / BLUETOOTH', 8, pad ? UI.cyanHex : UI.silver, { wrap: 232 });
+        this.ui.add(this.add.image(212, 206, padTex).setDisplaySize(222, 130));
+        this.text(212, 282, pad ? `CONECTADO: ${pad.id.slice(0, 22).toUpperCase()}` : (isXbox ? 'PERFIL XBOX / XINPUT' : 'DUALSENSE VIA USB / BLUETOOTH'), 7.6, pad ? UI.cyanHex : UI.silver, { wrap: 232 });
+        this.button(212, 310, isXbox ? 'VER PLAYSTATION ⇄' : 'VER XBOX ⇄', () => {
+          this.controlsPadPreview = isXbox ? 'playstation' : 'xbox';
+          this.nextControlsFocus = 1;
+          this.show('controls');
+        }, 172, 24, { fontSize: 9.5 });
 
         makePanel(this, 518, 224, 320, 222, 'cobalt', this.ui);
-        this.text(518, 126, isXbox ? 'COMANDOS XBOX / DUALSENSE' : 'COMANDOS PS5 DUALSENSE', 10.5, UI.goldHex);
-        cmdRow(400, 158, 'L / D-PAD', 'Mover nave (analógico ou direcional)', { wide: true, badgeFont: 7.5 });
-        cmdRow(400, 190, isXbox ? 'A' : '✕', 'Disparar rajada (3 pulsos) / Confirmar', { wide: false, descColor: UI.goldHex, badgeFont: isXbox ? 11 : 13.5 });
-        cmdRow(400, 222, isXbox ? 'X' : '□', 'Tormenta Escarlate (Especial)', { wide: false, gold: true, descColor: UI.cyanHex, badgeFont: isXbox ? 11 : 14 });
-        cmdRow(400, 254, isXbox ? 'START' : 'OPTIONS', 'Pausar / Retomar partida', { wide: true, badgeFont: 7.5 });
-        cmdRow(400, 286, isXbox ? 'B' : '○', 'Voltar nos menus', { wide: false, badgeFont: isXbox ? 11 : 14 });
-        this.text(518, 316, 'Botão △ e gatilhos sem função ativa neste modo.', 8, UI.silver, { wrap: 296 });
+        this.text(518, 126, isXbox ? 'COMANDOS XBOX' : 'COMANDOS PLAYSTATION', 10.5, UI.goldHex);
+
+        const drawFaceOrb = (cx: number, cy: number, sym: string, ringColor: number, textColor: string, r = 9.5, fontSize = 10.5) => {
+          const g = this.add.graphics()
+            .fillStyle(0x091933, 0.96).fillCircle(cx, cy, r)
+            .lineStyle(1.8, ringColor, 0.98).strokeCircle(cx, cy, r);
+          this.ui.add(g);
+          this.text(cx, cy - 0.5, sym, fontSize, textColor, { stroke: '#040d1e', strokeThickness: 1.5 });
+        };
+        const drawShoulderPill = (cx: number, cy: number, lbl: string, w = 26) => {
+          const g = this.add.graphics()
+            .fillStyle(0x1e293b, 0.96).fillRoundedRect(cx - w / 2, cy - 8, w, 16, 4)
+            .lineStyle(1.3, 0x94a3b8, 0.92).strokeRoundedRect(cx - w / 2, cy - 8, w, 16, 4);
+          this.ui.add(g);
+          this.text(cx, cy, lbl, lbl.length > 4 ? 7 : 8.5, '#f8fafc');
+        };
+        const padRow = (y: number, drawIcons: () => void, actionLabel: string, detailColor: string = UI.white) => {
+          drawIcons();
+          this.text(448, y, actionLabel, 9.5, detailColor, { originX: 0, wrap: 224 });
+        };
+
+        padRow(152, () => drawShoulderPill(404, 152, 'L / D-PAD', 58), 'MOVIMENTAR NAVE');
+        if (isXbox) {
+          padRow(179, () => {
+            drawFaceOrb(386, 179, 'B', 0xef4444, '#fca5a5');
+            this.text(401, 179, '/', 9, UI.slate);
+            drawShoulderPill(420, 179, 'RB', 24);
+          }, 'TIRO AUTOMÁTICO', UI.goldHex);
+          padRow(206, () => drawFaceOrb(404, 206, 'X', 0x3b82f6, '#93c5fd'), 'TIRO CARREGADO (segurar)', '#67e8f9');
+          padRow(233, () => {
+            drawFaceOrb(386, 233, 'A', 0x22c55e, '#86efac');
+            this.text(401, 233, '/', 9, UI.slate);
+            drawShoulderPill(420, 233, 'RT', 24);
+          }, 'ESPECIAL (Tormenta)', UI.cyanHex);
+          padRow(260, () => {
+            drawFaceOrb(386, 260, 'B', 0xef4444, '#fca5a5', 8.5, 9.5);
+            this.text(401, 260, '/', 9, UI.slate);
+            drawFaceOrb(418, 260, 'A', 0x22c55e, '#86efac', 8.5, 9.5);
+          }, 'CONFIRMAR / VOLTAR (menus)');
+          padRow(287, () => drawShoulderPill(404, 287, 'START', 48), 'PAUSAR / RETOMAR');
+          this.text(518, 316, 'Segure X para carregar (1.2s máx) e solte para disparar  •  Y reservado', 7.6, UI.silver, { wrap: 296 });
+        } else {
+          padRow(179, () => {
+            drawFaceOrb(386, 179, '○', 0xff4f7a, '#ff8aa8', 9.5, 11);
+            this.text(401, 179, '/', 9, UI.slate);
+            drawShoulderPill(420, 179, 'R1', 24);
+          }, 'TIRO AUTOMÁTICO', UI.goldHex);
+          padRow(206, () => drawFaceOrb(404, 206, '□', 0xf472b6, '#f9a8d4', 9.5, 11), 'TIRO CARREGADO (segurar)', '#67e8f9');
+          padRow(233, () => {
+            drawFaceOrb(386, 233, '×', 0x4ea8ff, '#93c5fd', 9.5, 12.5);
+            this.text(401, 233, '/', 9, UI.slate);
+            drawShoulderPill(420, 233, 'R2', 24);
+          }, 'ESPECIAL (Tormenta)', UI.cyanHex);
+          padRow(260, () => {
+            drawFaceOrb(386, 260, '○', 0xff4f7a, '#ff8aa8', 8.5, 10);
+            this.text(401, 260, '/', 9, UI.slate);
+            drawFaceOrb(418, 260, '×', 0x4ea8ff, '#93c5fd', 8.5, 11);
+          }, 'CONFIRMAR / VOLTAR (menus)');
+          padRow(287, () => drawShoulderPill(404, 287, 'OPTIONS', 54), 'PAUSAR / RETOMAR');
+          this.text(518, 316, 'Segure □ para carregar (1.2s máx) e solte para disparar  •  △ reservado', 7.6, UI.silver, { wrap: 296 });
+        }
       } else {
         makePanel(this, 222, 224, 276, 222, 'cobalt', this.ui);
         this.text(222, 126, 'ANDROID TOUCH (PAISAGEM)', 10.5, UI.goldHex);
@@ -595,11 +697,12 @@ export class ArcadeScene extends Phaser.Scene {
 
         makePanel(this, 528, 224, 300, 222, 'cobalt', this.ui);
         this.text(528, 126, 'COMANDOS NA TELA', 11, UI.goldHex);
-        cmdRow(414, 160, 'JOYSTICK', 'Voo preciso em 8 direções', { wide: true, badgeFont: 7.5 });
-        cmdRow(414, 196, 'TIRO', 'Toque no botão para rajada', { wide: true, descColor: UI.goldHex, badgeFont: 8.5 });
-        cmdRow(414, 232, 'ESP', 'Ativar especial sem erro', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8.5 });
-        cmdRow(414, 268, 'PAUSA', 'Botão no topo direito', { wide: true, badgeFont: 8 });
-        this.text(528, 310, 'Personalize tamanho, lado e transparência\nem OPÇÕES > CONTROLES TOUCH.', 8.2, UI.silver, { wrap: 280 });
+        cmdRow(414, 156, 'JOYSTICK', 'Voo preciso em 8 direções', { wide: true, badgeFont: 7.5 });
+        cmdRow(414, 188, 'TIRO', 'Segure para tiro automático', { wide: true, descColor: UI.goldHex, badgeFont: 8.5 });
+        cmdRow(414, 220, 'CARGA', 'Segure e solte (quando disponível)', { wide: true, descColor: '#67e8f9', badgeFont: 8 });
+        cmdRow(414, 252, 'ESP', 'Ativar especial sem erro', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8.5 });
+        cmdRow(414, 284, 'PAUSA', 'Botão no topo direito', { wide: true, badgeFont: 8 });
+        this.text(528, 316, 'Personalize tamanho, lado e transparência em OPÇÕES.', 8, UI.silver, { wrap: 280 });
       }
 
       this.button(384, 372, 'VOLTAR', () => { this.nextControlsFocus = undefined; this.show(this.world ? 'pause' : this.pauseOrigin); }, 204, 34, { fontSize: 13 });
@@ -614,7 +717,7 @@ export class ArcadeScene extends Phaser.Scene {
         if (!this.world) return;
         const cur = globalSave.getSettings();
         this.world.assisted = this.currentMission === 0 && cur.assisted;
-        this.world.hard = (this.currentMission > 0 || !cur.assisted) && cur.difficulty !== 'normal';
+        this.world.setDifficulty(cur.difficulty);
         this.pelagicAssistBadge.setVisible(!!this.world.up && this.world.isAssisted);
       };
       const addVolumeRow = (y: number, iconFrame: number, label: string, isMusic: boolean) => {
@@ -656,16 +759,22 @@ export class ArcadeScene extends Phaser.Scene {
       addToggleRow(172, UI_ICON.lightning, 'DISPARO ACESSÍVEL', 2, UI_PIP.green, () => {
         const on = globalSave.getSettings().rapidFire; return { text: on ? 'ATIVADO' : 'DESATIVADO', filled: on ? 2 : 0 };
       }, () => { const next = !globalSave.getSettings().rapidFire; globalSave.updateSettings({ rapidFire: next }); if (this.world) this.world.accessibility = next; });
-      addToggleRow(212, UI_ICON.crown, 'DIFICULDADE', 2, UI_PIP.gold, () => {
-        const hard = globalSave.getSettings().difficulty !== 'normal'; return { text: hard ? 'DIFÍCIL' : 'NORMAL', filled: hard ? 2 : 1 };
-      }, () => { const next = globalSave.getSettings().difficulty === 'normal' ? 'hard' : 'normal'; globalSave.updateSettings({ difficulty: next }); syncWorldDifficulty(); });
+      addToggleRow(212, UI_ICON.crown, 'DIFICULDADE', 3, UI_PIP.gold, () => {
+        const diff = normalizeGameDifficulty(globalSave.getSettings().difficulty);
+        const filled = diff === 'hard' ? 3 : diff === 'normal' ? 2 : 1;
+        return { text: DIFFICULTY_PROFILES[diff].label, filled };
+      }, () => {
+        const next = stepGameDifficulty(globalSave.getSettings().difficulty, 1);
+        globalSave.updateSettings({ difficulty: next });
+        syncWorldDifficulty();
+      });
       addToggleRow(252, UI_ICON.botan, 'MODO ASSISTIDO', 2, UI_PIP.cyan, () => {
         const on = globalSave.getSettings().assisted; return { text: on ? 'ATIVADO' : 'DESATIVADO', filled: on ? 2 : 0 };
       }, () => { const next = !globalSave.getSettings().assisted; globalSave.updateSettings({ assisted: next }); syncWorldDifficulty(); });
       addToggleRow(292, UI_ICON.radar, 'QUALIDADE VISUAL', 3, UI_PIP.cyan, () => {
         return { text: ['BAIXA', 'MÉDIA', 'ALTA'][this.quality], filled: this.quality + 1 };
       }, (dir) => { this.quality = (this.quality + (dir < 0 ? 2 : 1)) % 3; try { localStorage.setItem('bullet_wake_visual', String(this.quality)); } catch {/* Optional */ } });
-      this.text(384, 326, 'Modo Assistido (Rota 01): recuperação facilitada sem alterar Normal/Difícil.', 9, UI.silver);
+      this.text(384, 326, 'Modo Assistido (Rota 01): recuperação facilitada sem alterar Fácil/Normal/Difícil.', 9, UI.silver);
       this.button(262, 362, 'CONTROLES TOUCH', () => this.show('touch-settings'), 228, 36, { fontSize: 12.5 });
       this.button(506, 362, 'VOLTAR', () => this.show(this.pauseOrigin), 214, 36);
     } else if (screen === 'touch-settings') {
@@ -843,19 +952,29 @@ export class ArcadeScene extends Phaser.Scene {
     const portH = usePortrait ? this.portraitCanvasHeight() : 432;
     this.world = new ArcadeWorld(MISSIONS[index], carry, index === 0 ? {
       upLayout: usePortrait ? 'portrait' : 'pc',
-      arena: usePortrait ? { left: 0, right: 384, top: 34, bottom: portH - 14 } : { left: 192, right: 576, top: 28, bottom: 420 },
+      arena: usePortrait ? { left: 0, right: 384, top: 34, bottom: portH - 14 } : { left: 160, right: 608, top: 18, bottom: 424 },
     } : undefined);
     this.world.accessibility = settings.rapidFire;
     this.world.assisted = index === 0 && settings.assisted;
-    this.world.hard = (index > 0 || !settings.assisted) && settings.difficulty !== 'normal';
+    this.world.setDifficulty(settings.difficulty);
     this.accumulator = 0;
     this.world.bossContact = (_boss, ax, ay, bx, by, radius) => spriteContact(this.bossSprite, ax, ay, bx, by, radius);
     this.world.subHullContact = (_sub, secIdx, ax, ay, bx, by, radius) => this.subBossArt.hullContact(secIdx, ax, ay, bx, by, radius);
-    this.world.contact = (e, ax, ay, bx, by, radius) => { const sprite = this.enemySprites.get(e.id), turret = this.turrets.get(e.id); const hits = [sprite ? spriteContact(sprite, ax, ay, bx, by, radius) : null, turret ? spriteContact(turret, ax, ay, bx, by, radius) : null].filter((v): v is number => v !== null); return hits.length ? Math.min(...hits) : null; };
+    this.world.contact = (e, ax, ay, bx, by, radius) => {
+      const sprite = this.enemySprites.get(e.id), turret = this.turrets.get(e.id), mounts = this.pelagicAnims?.mountSpritesFor(e.id);
+      const customBase = e.navigation?.customAnchor ? sweepEllipse(ax, ay, bx, by, e.x, e.y, e.size * 0.34 + radius, e.size * 0.38 + radius) : null;
+      const hits = [
+        sprite ? spriteContact(sprite, ax, ay, bx, by, radius) : null,
+        turret ? spriteContact(turret, ax, ay, bx, by, radius) : null,
+        customBase,
+        ...(mounts ? mounts.map(ms => spriteContact(ms, ax, ay, bx, by, radius)) : []),
+      ].filter((v): v is number => v !== null);
+      return hits.length ? Math.min(...hits) : null;
+    };
     this.player.setVisible(true); this.audio.play(index ? 'stage2' : 'stage1'); this.show('play');
   }
   private disposeWorld(): void {
-    this.touchController?.clearAll(); this.emplacements?.clear(); this.hitOverlays?.clear(); this.bombArt?.draw(); this.subBossArt?.clear(); this.bossHudLabel?.setVisible(false); this.pelagicAssistBadge?.setVisible(false); this.pelagicCheckpointBadge?.setVisible(false); this.pelagicSpecialText?.setVisible(false); this.pelagicAnims?.clear(); this.pelagicComms.reset();
+    this.touchController?.clearAll(); this.emplacements?.clear(); this.hitOverlays?.clear(); this.bombArt?.draw(); this.subBossArt?.clear(); this.bossHudLabel?.setVisible(false); this.pelagicAssistBadge?.setVisible(false); this.pelagicCheckpointBadge?.setVisible(false); this.pelagicSpecialText?.setVisible(false); this.pelagicAnims?.clear(); this.pelagicComms.reset(); this.pelagicDesktopHud?.resetComms();
     this.clearBonusPopups();
     this.world = undefined; this.pelagicDesktopHud?.setVisible(false); this.player?.setVisible(false); this.bossSprite?.setVisible(false); this.lifeIcons.forEach(s => s.setVisible(false)); this.hud?.setText(''); this.radio?.setVisible(false); this.combatInk?.clear(); this.decor?.clear(); this.lastHud = '';
     for (const map of [this.enemySprites, this.partSprites, this.turrets]) { for (const s of map.values()) s.destroy(); map.clear(); } for (const s of this.cargoSprites.values()) s.destroy(); this.cargoSprites.clear(); for (const s of this.bulletSprites) s.setVisible(false); for (const e of this.effects) { e.sprite.setVisible(false); this.effectPool.push(e.sprite); } this.effects = []; globalAudio.stopCombatEffects();
@@ -924,20 +1043,37 @@ export class ArcadeScene extends Phaser.Scene {
       if (just('RIGHT') || gp.right) { this.audio.unlock(); if (active?.onRight) active.onRight(); else { this.focus = (this.focus + 1) % Math.max(1, this.buttons.length); this.focusButtons(); globalAudio.playArcade('navigate'); } }
       if (just('LEFT') || gp.left) { this.audio.unlock(); if (active?.onLeft) active.onLeft(); else { this.focus = (this.focus + this.buttons.length - 1) % Math.max(1, this.buttons.length); this.focusButtons(); globalAudio.playArcade('navigate'); } }
       const confirm = just('ENTER') || just('SPACE') || gp.confirm;
+      const backPressed = escPressed || gp.cancel;
+      const pausePressed = gp.pause;
       if (confirm) { this.audio.unlock(); globalAudio.playArcade('confirm'); this.buttons[this.focus]?.action(); }
-      else if (escPressed || gp.back || gp.menuOrBack) { if (this.screen === 'pause') this.show('play'); else if (this.screen === 'confirm-exit') this.show('pause'); else if (this.screen === 'controls') this.show(this.world ? 'pause' : this.pauseOrigin); else if (this.screen === 'touch-settings') this.show('settings'); else if (this.screen === 'settings') this.show(this.pauseOrigin); else if (this.screen === 'missions') this.show('pilot'); else if (this.screen === 'pilot') this.show('title'); }
-    } else if (escPressed || gp.menuOrBack) this.show('pause');
+      else if (this.screen === 'pause' && (pausePressed || backPressed)) { this.show('play'); }
+      else if (backPressed || pausePressed) {
+        if (this.screen === 'confirm-exit') this.show('pause');
+        else if (this.screen === 'controls') this.show(this.world ? 'pause' : this.pauseOrigin);
+        else if (this.screen === 'touch-settings') this.show('settings');
+        else if (this.screen === 'settings') this.show(this.pauseOrigin);
+        else if (this.screen === 'missions') this.show('pilot');
+        else if (this.screen === 'pilot') this.show('title');
+        else if (backPressed && ['result', 'defeat', 'ending'].includes(this.screen)) { this.disposeWorld(); this.show('title'); }
+      }
+    } else if (escPressed || gp.pause) this.show('pause');
     const resumedFromMenu = !startedInPlay && this.screen === 'play';
     if (this.world && this.screen === 'play' && !resumedFromMenu) {
-      if (just('ENTER') || gp.confirm) this.world.introTime = 0;
+      if (just('ENTER')) this.world.introTime = 0;
       const held = (k: string) => !domInputFocused && this.controls[k].isDown;
       const touchCmd = this.touchController.consumeStep();
       const rawFire = held('SPACE') || gp.firePrimary || touchCmd.fire;
       if (this.suppressHeldFireUntilRelease && !rawFire) this.suppressHeldFireUntilRelease = false;
       const fireInput = this.suppressHeldFireUntilRelease ? false : rawFire;
+      const rawCharge = held('Z') || gp.chargeHeld || touchCmd.charge;
+      if (this.suppressChargeUntilRelease && !rawCharge) this.suppressChargeUntilRelease = false;
+      const chargeInput = this.suppressChargeUntilRelease ? false : rawCharge;
+      const rawSpecialHeld = held('X') || gp.specialHeld || touchCmd.special;
+      if (this.suppressSpecialUntilRelease && !rawSpecialHeld) this.suppressSpecialUntilRelease = false;
+      const specialInput = this.suppressSpecialUntilRelease ? false : (held('X') || gp.special || touchCmd.special);
       const moveX = clamp(Number(held('D') || held('RIGHT')) - Number(held('A') || held('LEFT')) + gp.moveX + touchCmd.x, -1, 1);
       const moveY = clamp(Number(held('S') || held('DOWN')) - Number(held('W') || held('UP')) + gp.moveY + touchCmd.y, -1, 1);
-      const input: Controls = { x: moveX, y: moveY, fire: fireInput, special: held('X') || gp.special || touchCmd.special };
+      const input: Controls = { x: moveX, y: moveY, fire: fireInput, special: specialInput, charge: chargeInput };
       this.lastInput = input;
       if (!this.devSimulationPaused) {
         this.accumulator += dt * this.devTimeScale;
@@ -1058,15 +1194,32 @@ export class ArcadeScene extends Phaser.Scene {
       // Temporary invulnerability remains readable without making the ship translucent.
       if (w.player.invulnerable > 0) this.player.setAlpha(.72 + .28 * Math.cos(time * 18) ** 2);
     }
+    if (w.chargedShot.isHolding && w.state === 'play') {
+      const cSnap = w.chargedShot.snapshot();
+      const nx = w.player.x + (w.up ? 0 : 18);
+      const ny = w.player.y + (w.up ? -18 : 0);
+      const col = cSnap.isFull ? 0xfef08a : cSnap.ratio >= 0.72 ? 0x99f6e4 : 0x38bdf8;
+      const pulse = 1 + Math.sin(this.clock * (cSnap.isFull ? 22 : 12)) * 0.16;
+      const rCore = (3.5 + cSnap.ratio * 6.5) * pulse;
+      g.fillStyle(col, 0.25 + cSnap.ratio * 0.35).fillCircle(nx, ny, rCore * 1.45);
+      g.fillStyle(0xffffff, 0.65 + cSnap.ratio * 0.3).fillCircle(nx, ny, rCore * 0.6);
+      if (cSnap.isFull) {
+        g.lineStyle(1.4, 0xfde047, 0.88).strokeCircle(w.player.x, w.player.y, 19 + Math.sin(this.clock * 16) * 2.5);
+      } else if (cSnap.isPartialReady) {
+        g.lineStyle(1.1, 0x67e8f9, 0.55).strokeCircle(nx, ny, rCore * 1.8);
+      }
+    }
     const alive = new Set<number>();
     this.emplacements.draw(w, this.quality);
     for (const e of w.enemies) {
       if (e.hp <= 0) continue; alive.add(e.id); let s = this.enemySprites.get(e.id); if (!s) { s = this.add.sprite(e.x, e.y, 'arc-enemies').setDepth(e.ground ? 2 : 8); this.enemySprites.set(e.id, s); } const enemyFrame = e.family === 'alien' ? (w.up ? 0 : 2) + Math.floor(time * 5) % 2 : e.family === 'airship' ? 12 : (w.up && e.family === 'tank' ? 7 : Math.max(0, FAMILY_ORDER.indexOf(e.family))) + (w.up ? 0 : 8); s.setOrigin(.5, .5).setFlipX(false).setPosition(e.x, e.y).setTexture(e.family === 'alien' ? 'arc-ufo' : 'arc-enemies', enemyFrame).setDisplaySize(e.size, e.size).setRotation(w.up && !e.ground && e.family !== 'alien' ? Math.PI : 0);
-      if (w.up && (e.navigation?.anchor !== undefined || e.navigation?.customAnchor)) {
-        const isFortressTower = e.family === 'tower' && !e.navigation?.customAnchor;
+      if (w.up && e.navigation?.customAnchor) {
+        s.setVisible(false);
+      } else if (w.up && e.navigation?.anchor !== undefined) {
+        const isFortressTower = e.family === 'tower';
         const towerTex = this.textures.exists(PELAGIC_TOWER_CLEAN_SHEET) ? PELAGIC_TOWER_CLEAN_SHEET : TOWER_TEXTURE;
-        const scl = isFortressTower ? 1.8 : e.navigation?.customAnchor ? 1.38 : 1.3;
-        s.setTexture(isFortressTower ? towerTex : EMPLACEMENT_TEXTURE, 0).setOrigin(.5, isFortressTower ? .78 : .5).setDisplaySize(e.size * scl, e.size * scl);
+        const scl = isFortressTower ? 1.8 : 1.3;
+        s.setVisible(true).setTexture(isFortressTower ? towerTex : EMPLACEMENT_TEXTURE, 0).setOrigin(.5, isFortressTower ? .78 : .5).setDisplaySize(e.size * scl, e.size * scl);
       }
       s.clearTint().setTintMode(Phaser.TintModes.MULTIPLY).setAlpha(1);
       if (w.up && (e.family === 'boat' || e.family === 'ship')) {
@@ -1094,18 +1247,33 @@ export class ArcadeScene extends Phaser.Scene {
       this.pelagicAnims.updateEnemies(w, this.enemySprites, this.turrets, dt, this.quality, (sp, fl) => this.hitOverlays.draw(sp, fl), this.devWeaponDebug);
       for (const e of w.enemies) {
         if (e.hp <= 0) continue;
-        const s = this.enemySprites.get(e.id); if (s) this.hitOverlays.draw(s, e.flash);
+        const s = this.enemySprites.get(e.id); if (s && s.visible) this.hitOverlays.draw(s, e.flash);
       }
     }
     this.renderBoss(g);
     for (let i = 0; i < w.bullets.length; i++) {
       const b = w.bullets[i], s = this.bulletSprites[i]; s.setVisible(b.active); if (!b.active) continue;
       if (b.enemy && b.enemyMissile && this.textures.exists(PELAGIC_ENEMY_MISSILE_SHEET)) {
-        s.setTexture(PELAGIC_ENEMY_MISSILE_SHEET, Math.floor(b.age * 18) % 4).setDisplaySize(18, 28).setRotation(Math.atan2(b.vy, b.vx) - Math.PI / 2);
+        s.clearTint().setTexture(PELAGIC_ENEMY_MISSILE_SHEET, Math.floor(b.age * 18) % 4).setDisplaySize(18, 28).setRotation(Math.atan2(b.vy, b.vx) - Math.PI / 2);
       } else if (b.enemy) {
-        s.setTexture('arc-orb-' + b.color).setDisplaySize(b.radius * 2 + 1.2, b.radius * 2 + 1.2).setRotation(0);
+        s.clearTint().setTexture('arc-orb-' + b.color).setDisplaySize(b.radius * 2 + 2.0, b.radius * 2 + 2.0).setRotation(0);
+      } else if (b.charged) {
+        const isFull = b.chargeTier === 'full';
+        const art = w.up ? pelagicShotSize(w.weapons.weaponLevel) : rivetShotPresentation(w.weapons.weaponLevel);
+        const bw = art.width * Math.max(1.25, b.scale * 0.9);
+        const bh = art.height * Math.max(1.4, b.scale * 1.05);
+        s.setTexture(w.up ? 'pelagic-plasma' : 'arc-red', w.up ? undefined : Math.floor(b.age * 20) % 8)
+          .setDisplaySize(bw, bh)
+          .setTint(isFull ? 0xfef08a : 0x67e8f9)
+          .setRotation(Math.atan2(b.vy, b.vx) + Math.PI / 2);
+        const spd = Math.max(1, Math.hypot(b.vx, b.vy));
+        const dx = (b.vx / spd) * (b.radius * 2.2 + 8);
+        const dy = (b.vy / spd) * (b.radius * 2.2 + 8);
+        g.lineStyle(b.radius * 1.1, isFull ? 0xfde047 : 0x38bdf8, 0.35).lineBetween(b.x, b.y, b.x - dx, b.y - dy);
+        g.fillStyle(isFull ? 0xfef08a : 0xa5f3fc, 0.72).fillCircle(b.x, b.y, b.radius * 0.78);
+        g.fillStyle(0xffffff, 0.92).fillCircle(b.x, b.y, b.radius * 0.38);
       } else {
-        const art = w.up ? pelagicShotSize(w.weapons.weaponLevel) : rivetShotPresentation(w.weapons.weaponLevel); s.setTexture(b.missile ? 'arc-missile' : w.up ? 'pelagic-plasma' : 'arc-red', w.up && !b.missile ? undefined : Math.floor(b.age * 20) % 8).setDisplaySize(b.missile ? 17 : art.width, b.missile ? 25 : art.height).setRotation(Math.atan2(b.vy, b.vx) + Math.PI / 2);
+        const art = w.up ? pelagicShotSize(w.weapons.weaponLevel) : rivetShotPresentation(w.weapons.weaponLevel); s.clearTint().setTexture(b.missile ? 'arc-missile' : w.up ? 'pelagic-plasma' : 'arc-red', w.up && !b.missile ? undefined : Math.floor(b.age * 20) % 8).setDisplaySize(b.missile ? 17 : art.width, b.missile ? 25 : art.height).setRotation(Math.atan2(b.vy, b.vx) + Math.PI / 2);
       }
       s.setPosition(b.x, b.y);
     }
@@ -1114,30 +1282,10 @@ export class ArcadeScene extends Phaser.Scene {
     for (const fx of this.effects) { fx.age += dt; fx.sprite.setPosition(fx.sprite.x + fx.vx * dt, fx.sprite.y + fx.vy * dt).setRotation(fx.sprite.rotation + fx.spin * dt).setAlpha(1 - fx.age / fx.duration * .7); fx.sprite.setFrame(Math.min(15, Math.floor(fx.age / fx.duration * 16))); }
     this.effects = this.effects.filter(f => { if (f.age >= f.duration) { f.sprite.setVisible(false); this.effectPool.push(f.sprite); return false; } return true; });
     this.updateBonusPopups(dt);
-    this.renderHud();
+    this.renderHud(dt);
     if (w.up) {
-      if (w.state !== 'intro') {
-        const comms = this.pelagicComms.current();
-        if (comms && !this.portraitUpActive && !['result', 'defeat'].includes(this.screen)) {
-          this.radio.setOrigin(0, 0).setPosition(602, 281)
-            .setStyle({
-              fontFamily: FONT,
-              fontSize: '9.5px',
-              fontStyle: 'bold italic',
-              color: '#eef8ff',
-              stroke: '#031029',
-              strokeThickness: 2,
-              lineSpacing: 2.2,
-              wordWrap: { width: 146 },
-              align: 'left',
-            })
-            .setText(comms.text.replace(/\n/g, ' ')).setVisible(true);
-        } else {
-          this.radio.setVisible(false);
-        }
-      } else if (this.portraitUpActive) {
-        this.radio.setVisible(false);
-      }
+      // Desktop Fenda Pelágica owns persistent radio inside Left Panel via PelagicDesktopHud
+      this.radio.setVisible(false);
     } else if (this.clock > this.messageUntil) {
       this.radio.setVisible(false);
     }
@@ -1195,7 +1343,7 @@ export class ArcadeScene extends Phaser.Scene {
       if (o.warning > 0 || o.x > 735) { g.fillStyle(0xff6857, .85).fillTriangle(731, o.y - 8, 731, o.y + 8, 718, o.y); }
     }
   }
-  private renderHud(): void {
+  private renderHud(dt = 0): void {
     const w = this.world!, g = this.decor; g.clear();
     if (w.up) {
       const cpVisible = this.clock < this.checkpointBannerUntil && this.screen === 'play';
@@ -1214,6 +1362,11 @@ export class ArcadeScene extends Phaser.Scene {
         const sx = 188;
         g.fillStyle(0xffdc39).beginPath().moveTo(sx + 2, 8).lineTo(sx - 3, 16).lineTo(sx, 16).lineTo(sx - 2, 24).lineTo(sx + 5, 14).lineTo(sx + 1, 14).closePath().fillPath();
         this.pelagicSpecialText.setPosition(sx + 9, 16).setText(`${w.weapons.specialCharges}`).setVisible(true);
+        const cPort = w.chargedShot.snapshot();
+        if (cPort.ratio > 0) {
+          g.fillStyle(0x051936, 0.9).fillRoundedRect(122, 23, 53, 4, 2);
+          g.fillStyle(cPort.isFull ? 0xfef08a : 0x38bdf8, 0.96).fillRoundedRect(122, 23, Math.max(3, 53 * cPort.ratio), 4, 2);
+        }
         const scoreLine = String(w.score).padStart(6, '0');
         if (scoreLine !== this.lastHud) {
           this.hud.setFontSize(13).setColor('#ffe654').setStroke('#032f74', 2).setOrigin(1, .5);
@@ -1234,20 +1387,22 @@ export class ArcadeScene extends Phaser.Scene {
         return;
       }
 
-      // PC Horizontal Layout: unified 3-region arcade HUD (Left 192u | Center 384u + Top Bar | Right 192u)
+      // PC Horizontal Layout: 160 / 448 / 160 modular arcade HUD (X = 160..608, Y = 0..432)
       this.hud.setVisible(false);
+      this.radio.setVisible(false);
       this.pelagicSpecialText.setVisible(false);
-      this.pelagicCheckpointBadge.setPosition(384, 44).setVisible(cpVisible);
+      this.pelagicCheckpointBadge.setPosition(384, 40).setVisible(cpVisible);
       this.pelagicDesktopHud.draw(
         w,
-        g,
         this.lifeIcons,
         this.pelagicLevel,
         this.pelagicAssistBadge,
         this.bossHudLabel,
         this.pelagicComms.current(),
+        '',
         w.state === 'intro',
         this.clock,
+        dt,
       );
     } else {
       this.pelagicDesktopHud.setVisible(false);
@@ -1270,26 +1425,14 @@ export class ArcadeScene extends Phaser.Scene {
         const x = 589 + i * 20; g.fillStyle(i < w.weapons.specialCharges ? 0xffd95a : 0x45718a);
         g.beginPath().moveTo(x + 2, 9).lineTo(x - 5, 20).lineTo(x, 20).lineTo(x - 2, 29).lineTo(x + 7, 16).lineTo(x + 2, 16).closePath().fillPath();
       }
+      const cSide = w.chargedShot.snapshot();
+      if (cSide.ratio > 0) {
+        g.fillStyle(0x041430, 0.92).fillRoundedRect(326, 22, 96, 6, 3);
+        g.fillStyle(cSide.isFull ? 0xfef08a : 0x38bdf8, 0.96).fillRoundedRect(326, 22, Math.max(4, 96 * cSide.ratio), 6, 3);
+        g.lineStyle(0.9, cSide.isFull ? 0xfef08a : 0x67e8f9, 0.9).strokeRoundedRect(326, 22, 96, 6, 3);
+      }
     }
-    if (w.state === 'intro' && w.up && !this.portraitUpActive) {
-      this.radio
-        .setOrigin(0, 0)
-        .setStyle({
-          fontFamily: FONT,
-          fontSize: '9.5px',
-          fontStyle: 'bold italic',
-          color: '#eef8ff',
-          stroke: '#031029',
-          strokeThickness: 2,
-          lineSpacing: 2.5,
-          wordWrap: { width: 132 },
-          align: 'left',
-        })
-        .setText('Entrando na Fenda Pelágica. Radar limpo por enquanto... Mas fiquem atentos, é uma rota instável!')
-        .setPosition(606, 267)
-        .setVisible(true);
-      this.messageUntil = this.clock + .5;
-    } else if (w.state === 'intro' && !w.up) {
+    if (w.state === 'intro' && !w.up) {
       g.fillStyle(0xffe77d, .95).fillRoundedRect(220, 170, 328, 75, 12);
       const label = w.mission.name;
       this.radio.setOrigin(.5).setText(`MISSÃO ${this.currentMission + 1}\n${label}`).setPosition(384, 207).setVisible(true);
@@ -1299,6 +1442,14 @@ export class ArcadeScene extends Phaser.Scene {
   private consumeEvents(): void {
     const w = this.world!; for (const e of w.events) {
       if (e.type === 'shot') { globalAudio.playShot('nolan', w.weapons.weaponLevel); if (w.up) this.pelagicAnims.triggerShot(); }
+      else if (e.type === 'charge-windup') { globalAudio.playChargeWindup(e.size ?? 0); }
+      else if (e.type === 'charge-full') { globalAudio.playArcade('bonus'); }
+      else if (e.type === 'charged-shot') {
+        const intensity = e.size ?? 1;
+        globalAudio.playChargedShot('nolan', intensity >= 1.5 ? 2 : 1);
+        if (w.up) this.pelagicAnims.triggerShot();
+        this.explosion(e.x, e.y, intensity >= 1.5 ? 18 : 12, .16);
+      }
       else if (e.type === 'missile') { globalAudio.playMissile(); if (w.up) this.pelagicAnims.triggerMissile(); }
       else if (e.type === 'death') { if (w.up) { this.pelagicAnims.triggerPlayerDamage(); this.pelagicComms.trigger({ category: 'damage', detail: w.lives <= 1 ? 'low-lives' : undefined }); } }
       else if (e.type === 'enemy-shot') { globalAudio.playArcade(w.boss ? 'cannon' : 'orb'); if (w.up) this.pelagicAnims.triggerEnemyShot(e.x, e.y, e.size ?? 1); }
@@ -1444,18 +1595,18 @@ export class ArcadeScene extends Phaser.Scene {
     const isDesktopPelagic = !!this.world.up && !this.touchShown && !this.portraitUpActive;
     const container = this.add.container(0, 0).setDepth(68);
     if (isDesktopPelagic) {
-      // Top-right Pause arcade badge inside right panel header (`y = 0..32`, above ROTA 01)
-      container.setPosition(739, 16).setSize(40, 26);
+      // Discrete futuristic top-right Pause button inside Right Panel [608..768], clear of RIVET/VANGUARDA
+      container.setPosition(746, 18).setSize(32, 24);
       const bg = this.add.graphics();
       const drawCompactPc = (focused: boolean) => {
         bg.clear()
-          .fillStyle(focused ? 0x10407c : 0x061e4a, .96)
-          .fillRoundedRect(-15, -10.5, 30, 21, 10)
-          .lineStyle(1.6, focused ? 0xffe46b : 0x3ce5ff, .98)
-          .strokeRoundedRect(-15, -10.5, 30, 21, 10)
-          .fillStyle(focused ? 0xffffff : 0xffe033, 1)
-          .fillRoundedRect(-5, -5, 3.2, 10, 1)
-          .fillRoundedRect(1.8, -5, 3.2, 10, 1);
+          .fillStyle(focused ? 0x0f3b76 : 0x041a44, .96)
+          .fillRoundedRect(-11, -8, 22, 16, 4.5)
+          .lineStyle(1.4, focused ? 0xffe46b : 0x4ee6ff, .96)
+          .strokeRoundedRect(-11, -8, 22, 16, 4.5)
+          .fillStyle(focused ? 0xffffff : 0xffdf33, 1)
+          .fillRoundedRect(-3.6, -4.2, 2.4, 8.4, 0.8)
+          .fillRoundedRect(1.2, -4.2, 2.4, 8.4, 0.8);
       };
       drawCompactPc(false);
       container.add(bg);
@@ -1535,12 +1686,28 @@ export class ArcadeScene extends Phaser.Scene {
     g.fillStyle(out.specialPressed ? 0xff6e52 : 0x261018, op * (out.specialPressed ? 0.76 : 0.36)).fillCircle(sx, sy, sr);
     g.lineStyle(1.8, specColor, Math.min(0.96, op * (hasSpecial ? 1.2 : 0.6))).strokeCircle(sx, sy, sr);
     this.touchSpecialText.setPosition(sx, sy).setFontSize(`${Math.round(9.5 * l.scale)}px`).setAlpha(Math.min(1, hasSpecial ? op + 0.28 : op * 0.7)).setScale(out.specialPressed ? 0.92 : 1);
+
+    // 4. Optional ergonomic CHARGED SHOT button (shown when touch layout provides room)
+    if (l.charge) {
+      const cx = l.charge.x, cy = l.charge.y, cr = l.charge.radius;
+      const chargeRatio = this.world?.chargedShot.ratio ?? 0;
+      const activeCol = chargeRatio >= 0.99 ? 0xfef08a : 0x38bdf8;
+      g.fillStyle(out.chargePressed ? 0x0ea5e9 : 0x082246, op * (out.chargePressed ? 0.75 : 0.38)).fillCircle(cx, cy, cr);
+      g.lineStyle(1.7, activeCol, Math.min(0.96, op * (out.chargePressed ? 1.5 : 1.1))).strokeCircle(cx, cy, cr);
+      if (chargeRatio > 0) {
+        g.lineStyle(2.4, activeCol, 0.95).beginPath().arc(cx, cy, cr - 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * chargeRatio, false).strokePath();
+      }
+      this.touchChargeText.setVisible(true).setPosition(cx, cy).setFontSize(`${Math.round(8.2 * l.scale)}px`).setAlpha(Math.min(1, op + 0.28)).setScale(out.chargePressed ? 0.92 : 1);
+    } else {
+      this.touchChargeText.setVisible(false);
+    }
   }
   private installTouch(): void {
     this.touchGfx = this.add.graphics().setDepth(65);
     this.touchFireText = this.add.text(0, 0, 'TIRO', { fontFamily: FONT, fontSize: '10.5px', fontStyle: 'bold', color: '#fff8d4', stroke: '#081b38', strokeThickness: 2.5 }).setResolution(2).setOrigin(.5).setDepth(66);
+    this.touchChargeText = this.add.text(0, 0, 'CARGA', { fontFamily: FONT, fontSize: '8.2px', fontStyle: 'bold', color: '#a5f3fc', stroke: '#081b38', strokeThickness: 2.2 }).setResolution(2).setOrigin(.5).setDepth(66);
     this.touchSpecialText = this.add.text(0, 0, 'ESP', { fontFamily: FONT, fontSize: '9.5px', fontStyle: 'bold', color: '#ffe4dc', stroke: '#081b38', strokeThickness: 2.5 }).setResolution(2).setOrigin(.5).setDepth(66);
-    this.touchNodes = [this.touchGfx, this.touchFireText, this.touchSpecialText];
+    this.touchNodes = [this.touchGfx, this.touchFireText, this.touchChargeText, this.touchSpecialText];
     this.setTouchVisible(false);
 
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
@@ -1712,29 +1879,13 @@ export class ArcadeScene extends Phaser.Scene {
   devTriggerPilotComms(category: 'start' | 'threat' | 'submarine' | 'pickup' | 'damage' | 'miniboss' | 'boss' | 'victory' | 'special-event', detail?: string, text?: string): void {
     if (!this.world?.up) return;
     this.pelagicComms.trigger({ category, detail, text });
-    const cur = this.pelagicComms.current();
-    if (cur && !this.portraitUpActive) {
-      this.radio
-        .setOrigin(0, 0)
-        .setStyle({
-          fontFamily: FONT,
-          fontSize: '9.5px',
-          fontStyle: 'bold italic',
-          color: '#eef8ff',
-          stroke: '#031029',
-          strokeThickness: 2,
-          lineSpacing: 2.2,
-          wordWrap: { width: 146 },
-          align: 'left',
-        })
-        .setPosition(602, 281)
-        .setText(cur.text.replace(/\n/g, ' '))
-        .setVisible(true);
+    if (!this.portraitUpActive) {
+      this.renderHud(0);
     }
   }
   devPelagicHudState() {
     if (!this.world) return null;
-    return this.pelagicDesktopHud.snapshot(this.world, this.pelagicLevel, this.radio, this.pauseBtn);
+    return this.pelagicDesktopHud.snapshot(this.world, this.pauseBtn);
   }
   refreshHudVisual(): void {
     if (!this.world) return;

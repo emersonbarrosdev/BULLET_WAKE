@@ -71,6 +71,31 @@ test('pilot saves isolate chapters, records and endings; Phase 1 never clears th
 test('v1 save migration preserves settings and records without pretending the old five-stage prototype was a full campaign',()=>{
  const previous=globalThis.window;
  const old={schemaVersion:1,unlockedStages:[1,2],bestScores:{1:{score:4200,pilotId:'nolan',clearedAt:1}},completedCampaignPilots:['nolan'],settings:{musicVolume:.3}};
- try{globalThis.window={localStorage:{getItem:()=>JSON.stringify(old),setItem:()=>{}}};const s=new SaveSystem();assert.equal(s.getData().schemaVersion,2);assert.equal(s.getPilotProgress('nolan').bestScores[1],4200);assert.equal(s.getSettings().musicVolume,.3);assert.deepEqual(s.getData().completedCampaignPilots,[]);assert.equal(s.enterSecretCode('WAKEHIEN'),false);}
+ try{globalThis.window={localStorage:{getItem:()=>JSON.stringify(old),setItem:()=>{}}};const s=new SaveSystem();assert.equal(s.getData().schemaVersion,3);assert.equal(s.getPilotProgress('nolan').bestScores[1],4200);assert.equal(s.getSettings().musicVolume,.3);assert.equal(s.getSettings().difficulty,'easy');assert.deepEqual(s.getData().completedCampaignPilots,[]);assert.equal(s.enterSecretCode('WAKEHIEN'),false);}
  finally{if(previous===undefined)delete globalThis.window;else globalThis.window=previous;}
+});
+
+test('v2 save migration maps legacy normal->easy and legacy hard->normal without losing progress',()=>{
+ const previous=globalThis.window;
+ try{
+  const v2Normal={schemaVersion:2,unlockedStages:[1,2,3],lastPilotId:'cora',settings:{difficulty:'normal',sfxVolume:0.6,assisted:true}};
+  globalThis.window={localStorage:{getItem:()=>JSON.stringify(v2Normal),setItem:()=>{}}};
+  const s1=new SaveSystem();
+  assert.equal(s1.getData().schemaVersion,3);
+  assert.equal(s1.getSettings().difficulty,'easy');
+  assert.equal(s1.getSettings().assisted,true);
+  assert.equal(s1.getSettings().sfxVolume,0.6);
+  assert.equal(s1.getData().lastPilotId,'cora');
+  assert.deepEqual(s1.getData().unlockedStages,[1,2,3]);
+
+  const v2Hard={schemaVersion:2,unlockedStages:[1,2],settings:{difficulty:'hard'}};
+  globalThis.window={localStorage:{getItem:()=>JSON.stringify(v2Hard),setItem:()=>{}}};
+  const s2=new SaveSystem();
+  assert.equal(s2.getSettings().difficulty,'normal');
+
+  const v2Arcade={schemaVersion:2,settings:{difficulty:'arcade'}};
+  globalThis.window={localStorage:{getItem:()=>JSON.stringify(v2Arcade),setItem:()=>{}}};
+  const s3=new SaveSystem();
+  assert.equal(s3.getSettings().difficulty,'arcade');
+ }finally{if(previous===undefined)delete globalThis.window;else globalThis.window=previous;}
 });

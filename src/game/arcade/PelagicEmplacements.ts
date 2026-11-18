@@ -36,8 +36,9 @@ export class PelagicEmplacements {
     this.remnants.set(wreck.id,node);
    }
    const {x,y,size,age}=wreck;
-   const tower=wreck.family==='tower',scale=tower?1.8:1.3;
+   const tower=wreck.family==='tower',scale=tower?1.8:wreck.customAnchor?0.76:1.3;
    node.base.setTexture(tower?TOWER_TEXTURE:EMPLACEMENT_TEXTURE,1).setOrigin(.5,tower?.78:.5).setPosition(x,y).setDisplaySize(size*scale,size*scale);
+   if(wreck.customAnchor)node.base.setTint(0xd6c7b2);else node.base.clearTint();
    const heat=Math.max(.16,1-age/12);
    node.fire.setPosition(x,y+size*.04).setDisplaySize(size*.7,size*.7).setFrame(4+Math.floor(age*9+ wreck.id)%4).setAlpha(heat*.8);
    const phase=age*5+wreck.id*.37,frame=Math.floor(phase)%8,mix=phase-Math.floor(phase);

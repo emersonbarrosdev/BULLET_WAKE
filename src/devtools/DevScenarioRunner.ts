@@ -64,7 +64,7 @@ export class DevScenarioRunner {
           powerMeter: options.powerMeter,
           lives: options.lives,
           specialCharges: options.specialCharges,
-          difficulty: options.difficulty === 'normal' ? 'normal' : options.difficulty ? 'hard' : undefined,
+          difficulty: options.difficulty ? (options.difficulty === 'arcade' ? 'hard' : options.difficulty) : undefined,
           assisted: options.assisted,
           rapidFire: options.rapidFire,
           devInvincible: options.invincible,
@@ -88,7 +88,7 @@ export class DevScenarioRunner {
         scene.world.clearArenaEntities();
       }
       const w = scene.world!;
-      w.hard = cfg.difficulty === 'hard';
+      w.setDifficulty(cfg.difficulty);
       w.enemyFireRateScale = clamp(cfg.fireRateScale, 0.25, 4);
       w.enemyShotSpeedScale = clamp(cfg.shotSpeedScale, 0.25, 3);
 

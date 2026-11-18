@@ -133,6 +133,10 @@ export class PelagicActorAnims {
     this.prevInvuln = 0; this.prevLives = 3; this.playerSmoothVx = 0; this.playerSmoothVy = 0;
   }
 
+  mountSpritesFor(enemyId: number): ReadonlyArray<Phaser.GameObjects.Sprite> | undefined {
+    return this.mountSprites.get(enemyId);
+  }
+
   hide(): void {
     this.speedGfx.clear().setVisible(false);
     this.shadowGfx.clear().setVisible(false);
@@ -219,6 +223,7 @@ export class PelagicActorAnims {
     }
 
     g.setVisible(true);
+    this.shadowGfx.clear().setVisible(true);
     const safeDt = Math.max(dt, 1 / 240);
     const rawVx = dt > 0 ? (w.player.x - this.playerPrevX) / safeDt : 0;
     const rawVy = dt > 0 ? (w.player.y - this.playerPrevY) / safeDt : 0;
@@ -278,6 +283,15 @@ export class PelagicActorAnims {
     } else {
       playerSprite.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
     }
+
+    // 2.5D altitude-linked cast shadow over ocean surface (`depth 4.5`): tightens & darkens during low-flight
+    const shOffX = 6 + alt * 12;
+    const shOffY = 8 + alt * 16;
+    const shScale = clamp(1.04 - alt * 0.24, 0.72, 1.04);
+    const shAlpha = underBridge ? 0.14 : clamp(0.30 - alt * 0.10, 0.16, 0.32);
+    const shW = 28 * Math.max(0.52, Math.cos(bank * 0.95)) * shScale;
+    const shH = 20 * shScale;
+    this.shadowGfx.fillStyle(0x04152d, shAlpha).fillEllipse(w.player.x + shOffX, w.player.y + shOffY, shW, shH);
 
     // Low-altitude ocean wave wake spray beneath RIVET when skimming near the waves
     if (alt < 0.72 && quality > 0) {
@@ -456,7 +470,7 @@ export class PelagicActorAnims {
     const g = this.speedGfx;
     const sh = this.shadowGfx;
     const gsh = this.groundShadowGfx;
-    sh.clear().setVisible(true);
+    sh.setVisible(true);
     gsh.clear().setVisible(true);
     const seen = new Set<number>();
 
@@ -473,10 +487,18 @@ export class PelagicActorAnims {
         const invDt = 1 / Math.max(dt, 1 / 240);
         const vx = e.vx !== undefined ? e.vx : (e.x - tr.x) * invDt;
         const vy = e.vy !== undefined ? e.vy : (e.y - tr.y) * invDt;
+        const isHeliUnit = isHelicopterFamily(e.family);
         if (Math.hypot(e.x - tr.x, e.y - tr.y) < 95) {
-          tr.vx = vx; tr.vy = vy;
-          const targetBank = clamp(vx / (e.family === 'bomber' ? 55 : 82), -1, 1);
-          const bankRate = e.family === 'bomber' ? 5.5 : e.family === 'acrobat' ? 13 : 9.5;
+          if (isHeliUnit) {
+            const velLerp = Math.min(1, dt * 8.5);
+            tr.vx += (vx - tr.vx) * velLerp;
+            tr.vy += (vy - tr.vy) * velLerp;
+          } else {
+            tr.vx = vx; tr.vy = vy;
+          }
+          const bankDivisor = e.family === 'bomber' ? 55 : isHeliUnit ? (e.family === 'heli_warhawk' ? 105 : 96) : 82;
+          const targetBank = clamp(tr.vx / bankDivisor, -1, 1);
+          const bankRate = e.family === 'bomber' ? 5.5 : e.family === 'acrobat' ? 13 : isHeliUnit ? 6.5 : 9.5;
           tr.smoothBank += (targetBank - tr.smoothBank) * Math.min(1, dt * bankRate);
         }
         if (e.cooldown > tr.cooldown + .22) { tr.shotFlash = .13; tr.recoil = 1; }
@@ -490,7 +512,7 @@ export class PelagicActorAnims {
 
       const isAir = !e.ground;
       const isHeli = isHelicopterFamily(e.family);
-      const hull = resolveHullVisualTransform(e, time);
+      const hull = resolveHullVisualTransform(isHeli ? { ...e, vx: tr.vx, vy: tr.vy } : e, time);
 
       if (isHeli && this.scene.textures.exists(PELAGIC_HELI_SHEET)) {
         let bankEff = tr.smoothBank;
@@ -584,11 +606,13 @@ export class PelagicActorAnims {
 
       // Rock/island contact shadow beneath anchored coastal turrets & bunkers
       if (e.family === 'tank' || e.family === 'tower') {
-        const isCastle = e.family === 'tower' && !e.navigation?.customAnchor;
-        const shW = e.size * (isCastle ? 1.55 : 1.24);
-        const shH = e.size * (isCastle ? 0.68 : 0.86);
-        const shY = e.y + (isCastle ? 4 : 3);
-        gsh.fillStyle(0x041224, .34).fillEllipse(e.x + 3, shY, shW, shH);
+        const customAnchor = !!e.navigation?.customAnchor;
+        const isCastle = e.family === 'tower' && !customAnchor;
+        const shW = e.size * (isCastle ? 1.55 : customAnchor ? 0.76 : 1.24);
+        const shH = e.size * (isCastle ? 0.68 : customAnchor ? 0.64 : 0.86);
+        const shX = e.x + (customAnchor ? 1.5 : 3);
+        const shY = e.y + (isCastle ? 4 : customAnchor ? 2 : 3);
+        gsh.fillStyle(0x041224, customAnchor ? .38 : .34).fillEllipse(shX, shY, shW, shH);
       }
 
       // Articulated cannon & launcher turret rendering synced with PelagicWeaponMounts

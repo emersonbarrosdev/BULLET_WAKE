@@ -36,6 +36,7 @@ export interface TouchLayout {
     joystick: TouchJoystickGeometry;
     fire: TouchButtonGeometry;
     special: TouchButtonGeometry;
+    charge: TouchButtonGeometry | null;
     pause: TouchButtonGeometry;
     moveZoneSplitX: number;
     scale: number;
@@ -46,6 +47,7 @@ export interface TouchOutput {
     x: number;
     y: number;
     fire: boolean;
+    charge: boolean;
     special: boolean;
     stickActive: boolean;
     stickOriginX: number;
@@ -53,15 +55,16 @@ export interface TouchOutput {
     knobX: number;
     knobY: number;
     firePressed: boolean;
+    chargePressed: boolean;
     specialPressed: boolean;
 }
 
-export type TouchDownAction = 'none' | 'pause' | 'move' | 'fire' | 'special';
+export type TouchDownAction = 'none' | 'pause' | 'move' | 'fire' | 'charge' | 'special';
 
 export const WORLD_WIDTH = 768;
 export const WORLD_HEIGHT = 432;
-export const CENTER_ARENA_LEFT = 192;
-export const CENTER_ARENA_RIGHT = 576;
+export const CENTER_ARENA_LEFT = 160;
+export const CENTER_ARENA_RIGHT = 608;
 
 const ZERO_INSETS: SafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 
@@ -178,10 +181,19 @@ export function computeTouchLayout(
         const pauseX = clamp(pw - Math.max(20, safeRight + 20), 344, pw - 16);
         const pauseY = clamp(Math.max(17, safeTop + 15), 16, 26);
 
+        const chargeRadius = Math.round(19 * scale * 10) / 10;
+        const chargeX = clamp(fireX + (mirrorX ? 1 : -1) * (fireRadius + chargeRadius + 16), safeLeft + chargeRadius + 8, pw - safeRight - chargeRadius - 8);
+        const chargeY = clamp(fireY - 4, minControlY, ph - safeBottom - chargeRadius - 10);
+        const chargeClear =
+            Math.hypot(chargeX - joyX, chargeY - joyY) >= joyRadius + chargeRadius + 16 &&
+            Math.hypot(chargeX - fireX, chargeY - fireY) >= fireRadius + chargeRadius + 12 &&
+            Math.hypot(chargeX - specX, chargeY - specY) >= specialRadius + chargeRadius + 12;
+
         return {
             joystick: { x: joyX, y: joyY, radius: joyRadius, hitRadius: joyRadius + 16, travelRadius, knobRadius },
             fire: { x: fireX, y: fireY, radius: fireRadius, hitRadius: fireRadius + 10 },
             special: { x: specX, y: specY, radius: specialRadius, hitRadius: specialRadius + 6 },
+            charge: chargeClear ? { x: chargeX, y: chargeY, radius: chargeRadius, hitRadius: chargeRadius + 6 } : null,
             pause: { x: pauseX, y: pauseY, radius: 17, hitRadius: 23 },
             moveZoneSplitX: pw / 2,
             scale,
@@ -241,18 +253,33 @@ export function computeTouchLayout(
     if (dist < minButtonDist) {
         const dir = joyClusterLeft ? -1 : 1;
         specX = actionClampX(fireX + dir * minButtonDist, specialRadius);
+        const postHorizDist = Math.hypot(fireX - specX, fireY - specY);
+        if (postHorizDist < minButtonDist) {
+            const dx = Math.abs(fireX - specX);
+            const neededDy = Math.ceil(Math.sqrt(Math.max(0, minButtonDist * minButtonDist - dx * dx))) + 2;
+            specY = Math.max(safeTop + specialRadius + 16, fireY - neededDy);
+        }
     }
 
-    // Keep the pause trigger clear of the HUD score readout (centered around 680, 50)
+    // Keep the pause trigger cleanly inside right panel header (`>= 608`)
     // even when landscape safe-area cutouts push controls inward from the top-right bezel.
-    const defaultPauseX = WORLD_WIDTH - Math.max(24, safeRight + 24);
-    const pauseHitsScoreBox = defaultPauseX < 732 && safeTop + 16 > 28;
+    const defaultPauseX = WORLD_WIDTH - Math.max(22, safeRight + 22);
+    const pauseHitsScoreBox = defaultPauseX < 728 && safeTop + 16 > 28;
     const pauseX = pauseHitsScoreBox
-        ? 596
-        : clamp(defaultPauseX, 732, WORLD_WIDTH - 24);
+        ? 622
+        : clamp(defaultPauseX, 728, WORLD_WIDTH - 20);
     const pauseY = pauseHitsScoreBox
-        ? clamp(Math.max(20, safeTop + 12), 18, 34)
-        : clamp(Math.max(18, safeTop + 14), 18, 30);
+        ? clamp(Math.max(17, safeTop * 0.55), 16, 24)
+        : clamp(Math.max(17, safeTop + 12), 16, 28);
+
+    const chargeRadius = Math.round(18 * scale * 10) / 10;
+    const chargeX = actionClampX(fireX, chargeRadius);
+    const chargeY = fireY - fireRadius - chargeRadius - 14;
+    const chargeClear =
+        chargeY - chargeRadius >= safeTop + 68 &&
+        Math.hypot(chargeX - specX, chargeY - specY) >= specialRadius + chargeRadius + 10 &&
+        Math.hypot(chargeX - fireX, chargeY - fireY) >= fireRadius + chargeRadius + 10 &&
+        Math.hypot(chargeX - pauseX, chargeY - pauseY) >= chargeRadius + 28;
 
     return {
         joystick: {
@@ -275,6 +302,14 @@ export function computeTouchLayout(
             radius: specialRadius,
             hitRadius: specialRadius + 4,
         },
+        charge: chargeClear
+            ? {
+                x: chargeX,
+                y: chargeY,
+                radius: chargeRadius,
+                hitRadius: chargeRadius + 6,
+            }
+            : null,
         pause: {
             x: pauseX,
             y: pauseY,
@@ -327,6 +362,7 @@ export class TouchInputController {
     private settings: TouchControlSettings;
     private moveId: number | null = null;
     private fireId: number | null = null;
+    private chargeId: number | null = null;
     private specialId: number | null = null;
     private stickOriginX: number;
     private stickOriginY: number;
@@ -368,6 +404,7 @@ export class TouchInputController {
     clearAll(): void {
         this.moveId = null;
         this.fireId = null;
+        this.chargeId = null;
         this.specialId = null;
         this.vecX = 0;
         this.vecY = 0;
@@ -392,11 +429,16 @@ export class TouchInputController {
         if (!inMoveHalf) {
             const distSpec = Math.hypot(x - l.special.x, y - l.special.y);
             const distFire = Math.hypot(x - l.fire.x, y - l.fire.y);
+            const distCharge = l.charge ? Math.hypot(x - l.charge.x, y - l.charge.y) : Infinity;
             // Special activates only on direct down-press strictly inside its dedicated circle, never via swipe.
-            if (this.specialId === null && distSpec <= l.special.hitRadius && distSpec <= distFire) {
+            if (this.specialId === null && distSpec <= l.special.hitRadius && distSpec <= distFire && distSpec <= distCharge) {
                 this.specialId = pointerId;
                 this.specialPulsePending = true;
                 return 'special';
+            }
+            if (l.charge && this.chargeId === null && distCharge <= l.charge.hitRadius && distCharge < distFire) {
+                this.chargeId = pointerId;
+                return 'charge';
             }
             if (this.fireId === null && distFire <= l.fire.hitRadius) {
                 this.fireId = pointerId;
@@ -444,6 +486,9 @@ export class TouchInputController {
         if (this.fireId === pointerId) {
             this.fireId = null;
         }
+        if (this.chargeId === pointerId) {
+            this.chargeId = null;
+        }
         if (this.specialId === pointerId) {
             this.specialId = null;
         }
@@ -455,6 +500,7 @@ export class TouchInputController {
             x: this.vecX,
             y: this.vecY,
             fire: this.fireId !== null || this.firePulsePending,
+            charge: this.chargeId !== null,
             special: this.specialId !== null || this.specialPulsePending,
             stickActive: this.moveId !== null,
             stickOriginX: this.stickOriginX,
@@ -462,6 +508,7 @@ export class TouchInputController {
             knobX: this.knobX,
             knobY: this.knobY,
             firePressed: this.fireId !== null,
+            chargePressed: this.chargeId !== null,
             specialPressed: this.specialId !== null,
         };
     }

@@ -259,7 +259,7 @@ test('Teste J — Múltiplos dispositivos (GamepadReader, TouchInputController d
     id: 'Xbox Standard',
     mapping: 'standard',
     axes: [0.8, -0.8],
-    buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: i === 0, value: i === 0 ? 1 : 0 })),
+    buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: i === 1, value: i === 1 ? 1 : 0 })),
   };
   const burst = new BurstController();
   let padPulses = 0;
