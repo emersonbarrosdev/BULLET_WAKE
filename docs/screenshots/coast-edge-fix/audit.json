@@ -1,0 +1,330 @@
+{
+  "coast": {
+    "key": "pelagic-connected-coast-v2",
+    "W": 768,
+    "H": 4096,
+    "splitLeftNonZero": 0,
+    "splitRightNonZero": 0,
+    "splitRowsSample": [],
+    "detachedCount": 0,
+    "detachedTop": [],
+    "detachedHiCount": 0,
+    "detachedHiTop": [],
+    "seamAvgDiff": 23.43,
+    "seamMaxDiff": 511
+  },
+  "shoal": {
+    "key": "pelagic-coast-shoal-v1",
+    "W": 384,
+    "H": 2048,
+    "splitLeftNonZero": 0,
+    "splitRightNonZero": 0,
+    "splitRowsSample": [],
+    "detachedCount": 0,
+    "detachedTop": [],
+    "detachedHiCount": 0,
+    "detachedHiTop": [],
+    "seamAvgDiff": 14.59,
+    "seamMaxDiff": 648
+  },
+  "surf": {
+    "key": "pelagic-coast-surf-v1",
+    "W": 384,
+    "H": 2048,
+    "splitLeftNonZero": 0,
+    "splitRightNonZero": 0,
+    "splitRowsSample": [],
+    "detachedCount": 0,
+    "detachedTop": [],
+    "detachedHiCount": 784,
+    "detachedHiTop": [
+      {
+        "x": 6,
+        "y": 1941,
+        "w": 10,
+        "h": 15,
+        "area": 51,
+        "maxA": 148,
+        "avgR": 241,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 266,
+        "y": 345,
+        "w": 15,
+        "h": 21,
+        "area": 48,
+        "maxA": 148,
+        "avgR": 238,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 364,
+        "y": 1735,
+        "w": 10,
+        "h": 15,
+        "area": 47,
+        "maxA": 148,
+        "avgR": 242,
+        "avgG": 255,
+        "avgB": 255
+      },
+      {
+        "x": 311,
+        "y": 1437,
+        "w": 11,
+        "h": 17,
+        "area": 45,
+        "maxA": 148,
+        "avgR": 242,
+        "avgG": 255,
+        "avgB": 255
+      },
+      {
+        "x": 69,
+        "y": 487,
+        "w": 12,
+        "h": 14,
+        "area": 40,
+        "maxA": 148,
+        "avgR": 242,
+        "avgG": 255,
+        "avgB": 255
+      },
+      {
+        "x": 268,
+        "y": 667,
+        "w": 10,
+        "h": 22,
+        "area": 40,
+        "maxA": 148,
+        "avgR": 240,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 56,
+        "y": 1535,
+        "w": 11,
+        "h": 13,
+        "area": 40,
+        "maxA": 148,
+        "avgR": 245,
+        "avgG": 255,
+        "avgB": 255
+      },
+      {
+        "x": 65,
+        "y": 35,
+        "w": 11,
+        "h": 10,
+        "area": 38,
+        "maxA": 148,
+        "avgR": 240,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 61,
+        "y": 274,
+        "w": 10,
+        "h": 12,
+        "area": 38,
+        "maxA": 148,
+        "avgR": 242,
+        "avgG": 255,
+        "avgB": 255
+      },
+      {
+        "x": 282,
+        "y": 327,
+        "w": 14,
+        "h": 17,
+        "area": 38,
+        "maxA": 148,
+        "avgR": 239,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 263,
+        "y": 1796,
+        "w": 11,
+        "h": 23,
+        "area": 38,
+        "maxA": 148,
+        "avgR": 240,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 26,
+        "y": 1821,
+        "w": 11,
+        "h": 12,
+        "area": 38,
+        "maxA": 148,
+        "avgR": 239,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 340,
+        "y": 48,
+        "w": 12,
+        "h": 15,
+        "area": 36,
+        "maxA": 133,
+        "avgR": 245,
+        "avgG": 255,
+        "avgB": 255
+      },
+      {
+        "x": 291,
+        "y": 1107,
+        "w": 6,
+        "h": 19,
+        "area": 36,
+        "maxA": 148,
+        "avgR": 240,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 298,
+        "y": 2026,
+        "w": 8,
+        "h": 17,
+        "area": 36,
+        "maxA": 148,
+        "avgR": 240,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 356,
+        "y": 486,
+        "w": 11,
+        "h": 11,
+        "area": 35,
+        "maxA": 148,
+        "avgR": 241,
+        "avgG": 255,
+        "avgB": 255
+      },
+      {
+        "x": 14,
+        "y": 1976,
+        "w": 9,
+        "h": 15,
+        "area": 35,
+        "maxA": 148,
+        "avgR": 239,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 375,
+        "y": 1761,
+        "w": 6,
+        "h": 20,
+        "area": 34,
+        "maxA": 148,
+        "avgR": 240,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 32,
+        "y": 38,
+        "w": 5,
+        "h": 20,
+        "area": 33,
+        "maxA": 148,
+        "avgR": 239,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 48,
+        "y": 294,
+        "w": 11,
+        "h": 12,
+        "area": 33,
+        "maxA": 148,
+        "avgR": 241,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 33,
+        "y": 693,
+        "w": 11,
+        "h": 12,
+        "area": 33,
+        "maxA": 148,
+        "avgR": 239,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 21,
+        "y": 840,
+        "w": 12,
+        "h": 13,
+        "area": 33,
+        "maxA": 148,
+        "avgR": 241,
+        "avgG": 255,
+        "avgB": 255
+      },
+      {
+        "x": 51,
+        "y": 940,
+        "w": 7,
+        "h": 13,
+        "area": 33,
+        "maxA": 148,
+        "avgR": 240,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 300,
+        "y": 1088,
+        "w": 13,
+        "h": 16,
+        "area": 32,
+        "maxA": 148,
+        "avgR": 240,
+        "avgG": 254,
+        "avgB": 255
+      },
+      {
+        "x": 269,
+        "y": 1932,
+        "w": 6,
+        "h": 20,
+        "area": 32,
+        "maxA": 148,
+        "avgR": 241,
+        "avgG": 254,
+        "avgB": 255
+      }
+    ],
+    "seamAvgDiff": 16.36,
+    "seamMaxDiff": 822
+  },
+  "surfAlignment": {
+    "total": 37311,
+    "orphan": 0,
+    "samples": []
+  },
+  "shoalAlignment": {
+    "total": 109794,
+    "orphan": 0,
+    "samples": []
+  }
+}

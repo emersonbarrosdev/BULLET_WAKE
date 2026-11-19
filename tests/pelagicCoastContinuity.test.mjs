@@ -72,5 +72,8 @@ test('visual automation validates current Pelagic backdrop contract without obso
  const paintingSrc=readFileSync(resolve('src/game/arcade/PelagicCoastPainting.ts'),'utf8');
  assert(paintingSrc.includes('pelagic-coast-shoal-v1'),'PelagicCoastPainting must provide pelagic-coast-shoal-v1');
  assert(paintingSrc.includes('pelagic-coast-surf-v1'),'PelagicCoastPainting must provide pelagic-coast-surf-v1');
+ assert(paintingSrc.includes('COAST_SPLIT_X'),'PelagicCoastPainting must split left/right bank crops on an open-water column');
+ assert(paintingSrc.includes('floodBank'),'PelagicCoastPainting must flood-fill terrain strictly from outer mainland borders');
+ assert(paintingSrc.includes('shoreContact'),'PelagicCoastPainting must gate solidMask to immediate shoreline contact');
  assert(!checkSrc.includes("if(process.env.BW_CAPTURE_LOG==='1'){const proof"),'Pelagic backdrop assertions must execute even when BW_CAPTURE_LOG is unset');
 });
