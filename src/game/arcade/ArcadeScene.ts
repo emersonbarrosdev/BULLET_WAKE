@@ -820,12 +820,12 @@ export class ArcadeScene extends Phaser.Scene {
             drawShoulderPill(420, 233, 'RT', 24);
           }, 'ESPECIAL (Tormenta)', UI.cyanHex);
           padRow(260, () => {
-            drawFaceOrb(386, 260, 'B', 0xef4444, '#fca5a5', 8.5, 9.5);
+            drawFaceOrb(386, 260, 'A', 0x22c55e, '#86efac', 8.5, 9.5);
             this.text(401, 260, '/', 9, UI.slate);
-            drawFaceOrb(418, 260, 'A', 0x22c55e, '#86efac', 8.5, 9.5);
+            drawFaceOrb(418, 260, 'B', 0xef4444, '#fca5a5', 8.5, 9.5);
           }, 'CONFIRMAR / VOLTAR (menus)');
           padRow(287, () => drawShoulderPill(404, 287, 'START', 48), 'PAUSAR / RETOMAR');
-          this.text(518, 316, 'Segure X para carregar (1.2s máx) e solte para disparar  •  Y reservado', 7.6, UI.silver, { wrap: 296 });
+          this.text(518, 316, 'Segure X para carregar (1.2s máx) e solte para disparar  •  LB: movimento preciso', 7.6, UI.silver, { wrap: 296 });
         } else {
           padRow(179, () => {
             drawFaceOrb(386, 179, '○', 0xff4f7a, '#ff8aa8', 9.5, 11);
@@ -839,12 +839,12 @@ export class ArcadeScene extends Phaser.Scene {
             drawShoulderPill(420, 233, 'R2', 24);
           }, 'ESPECIAL (Tormenta)', UI.cyanHex);
           padRow(260, () => {
-            drawFaceOrb(386, 260, '○', 0xff4f7a, '#ff8aa8', 8.5, 10);
+            drawFaceOrb(386, 260, '×', 0x4ea8ff, '#93c5fd', 8.5, 11);
             this.text(401, 260, '/', 9, UI.slate);
-            drawFaceOrb(418, 260, '×', 0x4ea8ff, '#93c5fd', 8.5, 11);
+            drawFaceOrb(418, 260, '○', 0xff4f7a, '#ff8aa8', 8.5, 10);
           }, 'CONFIRMAR / VOLTAR (menus)');
           padRow(287, () => drawShoulderPill(404, 287, 'OPTIONS', 54), 'PAUSAR / RETOMAR');
-          this.text(518, 316, 'Segure □ para carregar (1.2s máx) e solte para disparar  •  △ reservado', 7.6, UI.silver, { wrap: 296 });
+          this.text(518, 316, 'Segure □ para carregar (1.2s máx) e solte para disparar  •  L1: movimento preciso', 7.6, UI.silver, { wrap: 296 });
         }
       } else {
         if (preGame) makeVectorPanel(this, this.ui, 222, 220, 276, 218, { kind: 'sub' });

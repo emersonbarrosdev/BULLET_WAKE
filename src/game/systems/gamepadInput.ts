@@ -11,15 +11,15 @@ export type PadProfile = 'playstation' | 'xbox' | 'nintendo';
 
 /** W3C Standard Gamepad button indices. */
 export const STANDARD_GAMEPAD_BUTTON = {
-  SPECIAL_FACE: 0, // PS: × (Xis)    | Xbox: A -> gameplay SPECIAL, menu CANCEL / BACK
-  CIRCLE: 1,       // PS: ○ (Círculo)| Xbox: B -> gameplay FIRE, menu CONFIRM / SELECT
+  SPECIAL_FACE: 0, // PS: × (Xis)    | Xbox: A -> gameplay SPECIAL, menu CONFIRM / SELECT
+  CIRCLE: 1,       // PS: ○ (Círculo)| Xbox: B -> gameplay FIRE, menu CANCEL / BACK
   CHARGE: 2,       // PS: □ (Quad.)  | Xbox: X -> gameplay CHARGE (tiro carregado)
   NORTH: 3,        // PS: △ (Triân.) | Xbox: Y -> reserved in combat / pilot profile preview
-  L1: 4,
+  L1: 4,           // PS: L1         | Xbox: LB -> gameplay FOCUS (movimento preciso)
   R1: 5,           // PS: R1         | Xbox: RB -> gameplay FIRE alternative
   L2: 6,
   R2: 7,           // PS: R2         | Xbox: RT -> gameplay SPECIAL alternative
-  PAUSE: 9,        // PS: OPTIONS    | Xbox: START
+  PAUSE: 9,        // PS: OPTIONS    | Xbox: START / MENU
   DPAD_UP: 12,
   DPAD_DOWN: 13,
   DPAD_LEFT: 14,
@@ -52,6 +52,7 @@ export function padLabels(id = '') {
       back: 'B',
       pause: '+',
       dash: 'L',
+      focus: 'L',
       missile: 'X',
     };
   }
@@ -61,11 +62,12 @@ export function padLabels(id = '') {
       shoot: '○ / R1',
       charge: '□',
       special: '× / R2',
-      confirm: '○',
-      cancel: '×',
-      back: '×',
+      confirm: '×',
+      cancel: '○',
+      back: '○',
       pause: 'OPTIONS',
       dash: 'L1',
+      focus: 'L1',
       missile: '△',
     };
   }
@@ -74,11 +76,12 @@ export function padLabels(id = '') {
     shoot: 'B / RB',
     charge: 'X',
     special: 'A / RT',
-    confirm: 'B',
-    cancel: 'A',
-    back: 'A',
+    confirm: 'A',
+    cancel: 'B',
+    back: 'B',
     pause: 'START',
     dash: 'LB',
+    focus: 'LB',
     missile: 'Y',
   };
 }
@@ -95,6 +98,7 @@ export interface GamepadInputState {
   chargeReleased: boolean;
   special: boolean;
   specialHeld: boolean;
+  focusHeld: boolean;
   dashTrigger: false;
   /** Preserved property name used by PilotSelectScene tests (`action.profile`). */
   profile: boolean;
@@ -181,11 +185,12 @@ export class GamepadReader {
     const special = specialHeld && !this.prevSpecialHeld;
     this.prevSpecialHeld = specialHeld;
 
-    // Logical MENU actions: ○ (1) = confirm, × (0) = cancel/back, Options/Start (9) = pause
-    const confirm = buttonDown(STANDARD_GAMEPAD_BUTTON.CIRCLE);
-    const cancel = buttonDown(STANDARD_GAMEPAD_BUTTON.SPECIAL_FACE);
+    // Logical MENU actions (Western PS/Xbox standard): ×/A (0) = confirm, ○/B (1) = cancel/back, Options/Start (9) = pause
+    const confirm = buttonDown(STANDARD_GAMEPAD_BUTTON.SPECIAL_FACE);
+    const cancel = buttonDown(STANDARD_GAMEPAD_BUTTON.CIRCLE);
     const pause = buttonDown(STANDARD_GAMEPAD_BUTTON.PAUSE);
     const northTap = buttonDown(STANDARD_GAMEPAD_BUTTON.NORTH);
+    const focusHeld = buttonHeld(STANDARD_GAMEPAD_BUTTON.L1);
 
     const prevNav = this.nav;
     this.nav = nav;
@@ -211,6 +216,7 @@ export class GamepadReader {
       chargeReleased,
       special,
       specialHeld,
+      focusHeld,
       dashTrigger: false as const,
       profile: northTap,
       missile: false as const,
