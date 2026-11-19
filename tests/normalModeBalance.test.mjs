@@ -164,10 +164,9 @@ test('02. Normal supply schedule anticipates early POWER 2, bridges Tide Arch ga
   assert.equal(w.cargo.length, 1, 'First Normal POWER crate spawns at 11s');
   const crate = w.cargo[0];
   assert.ok(crate.drone, 'Supply carrier spawns as animated supply drone');
-  assert.ok(crate.drone.targetX >= w.arena.left + 20 && crate.drone.targetX <= w.arena.right - 20);
-  // Let drone fly briskly into central delivery point, then shoot it open and collect
-  for (let i = 0; i < 80 && crate.drone?.phase === 'enter'; i++) w.step(1 / 60, { x: 0, y: 0, fire: false, special: false });
+  assert.equal(crate.drone.entrySide, 'top', 'Supply drone enters from top');
   assert.ok(crate.x >= w.arena.left + 20 && crate.x <= w.arena.right - 20);
+  // Shoot drone open from player position and collect
   w.player.x = crate.x;
   crate.y = w.player.y - 40;
   for (let i = 0; i < 40 && crate.crate; i++) w.step(1 / 60, { x: 0, y: 0, fire: true, special: false });
@@ -177,7 +176,7 @@ test('02. Normal supply schedule anticipates early POWER 2, bridges Tide Arch ga
   w.step(1 / 60, { x: 0, y: 0, fire: false, special: false });
   assert.equal(w.weapons.powerMeter, 1);
 
-  // Verify ALL 12 Normal supplies spawn with accessible delivery targets and reach POWER 5 FULL cleanly
+  // Verify ALL 12 Normal supplies spawn inside playable arena from top and reach POWER 5 FULL cleanly
   const allW = makeNormalWorld();
   allW.waveIndex = 999;
   for (let idx = 0; idx < FENDA_NORMAL_SUPPLIES.length; idx++) {
@@ -186,11 +185,9 @@ test('02. Normal supply schedule anticipates early POWER 2, bridges Tide Arch ga
     allW.step(0.05, { x: 0, y: 0, fire: false, special: false });
     const c = allW.cargo.at(-1);
     assert.ok(c, `Supply #${idx + 1} (${sup.kind} @ ${sup.at}s) must spawn`);
-    const targetX = c.drone ? c.drone.targetX : c.x;
-    assert.ok(targetX >= allW.arena.left + 20 && targetX <= allW.arena.right - 20, `Supply @ ${sup.at}s must target playable arena`);
+    assert.ok(c.x >= allW.arena.left + 20 && c.x <= allW.arena.right - 20, `Supply @ ${sup.at}s must spawn inside playable arena`);
     c.crate = false;
     c.drone = undefined;
-    c.x = targetX;
     allW.player.x = c.x;
     allW.player.y = allW.playerHomeY;
     c.y = allW.playerHomeY;

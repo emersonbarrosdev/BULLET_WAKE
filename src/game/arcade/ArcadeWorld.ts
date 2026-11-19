@@ -117,13 +117,10 @@ import {
 import { PelagicCombatDirector, type PelagicPacingSnapshot } from './PelagicCombatDirector.ts';
 import {
     SUPPLY_DRONE_HIT_RADIUS,
-    SUPPLY_DRONE_MAX_RETRIES,
     SUPPLY_DRONE_PLAYER_COLLISION_RADIUS,
-    SUPPLY_DRONE_RETRY_DELAY,
     createSupplyDronePlan,
     stepSupplyDrone,
     type SupplyDroneState,
-    type SupplyEntrySide,
 } from './SupplyDrone.ts';
 
 export interface Controls { x: number; y: number; fire: boolean; special: boolean; charge?: boolean; }
@@ -179,7 +176,6 @@ export class ArcadeWorld {
     private rngState = 1337;
     private burst = new BurstController(); private sequence = 0; private waveIndex = 0; private supplyIndex = 0; private supplySpawnCounter = 0; private miniStarted = false; private bossStarted = false; private nextObstacle = 98;
     private normalRecentAttacks: Array<{ at: number; enemyId: number; squadId?: number; targetX: number; isFan: boolean }> = [];
-    private pendingSupplyRetries: Array<{ at: number; kind: Cargo['kind']; avoidSide: SupplyEntrySide; retryCount: number; supplyKey?: string }> = [];
     private rareSpawnCount = 0; private rareRewardClaimed = false; private convoyBonusClaimed = false; private assistedDeathHinted = false;
     private stepEnemyShots = 0; private directorPaused = false;
     readonly mission: Mission;
@@ -379,24 +375,6 @@ export class ArcadeWorld {
                 if (iso && iso !== supId) continue;
                 this.spawnSupplyDrone(c.kind, { supplyKey: supId });
                 this.stageDirector.markSupplyTriggered(idx, this.route);
-            }
-            if (!iso && !this.boss && !this.tideArch.isActive && this.pendingSupplyRetries.length > 0) {
-                const inArchBand = this.up && this.route >= 148 && this.route <= 178;
-                if (!inArchBand) {
-                    const remaining: typeof this.pendingSupplyRetries = [];
-                    for (const retry of this.pendingSupplyRetries) {
-                        if (this.elapsed >= retry.at) {
-                            this.spawnSupplyDrone(retry.kind, {
-                                avoidSide: retry.avoidSide,
-                                retryCount: retry.retryCount,
-                                supplyKey: retry.supplyKey,
-                            });
-                        } else {
-                            remaining.push(retry);
-                        }
-                    }
-                    this.pendingSupplyRetries = remaining;
-                }
             }
             if (!this.up && this.route >= 155 && !this.miniStarted && (!iso || iso === `stage-${this.mission.id}-miniboss`)) {
                 this.miniStarted = true;
@@ -1529,9 +1507,9 @@ export class ArcadeWorld {
     }
     private spawnSupplyDrone(
         kind: Cargo['kind'],
-        opts?: { forcedSide?: SupplyEntrySide; avoidSide?: SupplyEntrySide; retryCount?: number; supplyKey?: string },
+        opts?: { supplyKey?: string },
     ): Cargo {
-        const plan = createSupplyDronePlan(this.arena, this.up, this.supplySpawnCounter++, this.player.x, opts);
+        const plan = createSupplyDronePlan(this.arena, this.up, this.supplySpawnCounter++, opts);
         const entry: Cargo = {
             id: ++this.sequence,
             x: plan.x,
@@ -1543,7 +1521,6 @@ export class ArcadeWorld {
             hp: 3,
             age: 0,
             flash: 0,
-            retryCount: opts?.retryCount ?? 0,
             drone: plan.drone,
         };
         this.cargo.push(entry);
@@ -1597,20 +1574,6 @@ export class ArcadeWorld {
                 c.x = res.x; c.y = res.y; c.vx = res.vx; c.vy = res.vy;
                 if (res.escaped) {
                     c.expired = true;
-                    if (
-                        (c.retryCount ?? 0) < SUPPLY_DRONE_MAX_RETRIES &&
-                        !this.boss &&
-                        !this.tideArch.isActive &&
-                        !this.devIsolatedEventId
-                    ) {
-                        this.pendingSupplyRetries.push({
-                            at: this.elapsed + SUPPLY_DRONE_RETRY_DELAY,
-                            kind: c.kind,
-                            avoidSide: c.drone.entrySide,
-                            retryCount: (c.retryCount ?? 0) + 1,
-                            supplyKey: c.drone.supplyKey,
-                        });
-                    }
                     continue;
                 }
                 if (Math.hypot(c.x - this.player.x, c.y - this.player.y) < SUPPLY_DRONE_PLAYER_COLLISION_RADIUS) {
@@ -1909,7 +1872,6 @@ export class ArcadeWorld {
     clearArenaEntities(): void {
         this.chargedShot.cancel();
         this.normalRecentAttacks = [];
-        this.pendingSupplyRetries = [];
         this.enemies = [];
         this.cargo = [];
         this.obstacles = [];
@@ -2178,8 +2140,8 @@ export class ArcadeWorld {
         this.emit('special');
     }
 
-    devSpawnSupplyDrone(kind: Cargo['kind'], forcedSide?: SupplyEntrySide): Cargo {
-        return this.spawnSupplyDrone(kind, { forcedSide });
+    devSpawnSupplyDrone(kind: Cargo['kind']): Cargo {
+        return this.spawnSupplyDrone(kind);
     }
 
     devSpawnCargoItem(kind: Cargo['kind']): void {

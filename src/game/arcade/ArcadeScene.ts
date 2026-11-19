@@ -14,6 +14,7 @@ import { readArcadeProgress, recordArcadeClear } from './progress';
 import { pelagicShotSize } from './PelagicPresentation';
 import { rivetShotPresentation } from '../render/rivetPresentation';
 import { SUPPLY_ART, SUPPLY_DRONE_BODY_ART, SUPPLY_DRONE_PROP_ART, SUPPLY_GLOW_ART, SUPPLY_SHADOW_ART, SUB_ART, BOMB_ART, BLAST_ART, SUB_HULL_ART, SUB_SUBMERGED_ART, SUB_PARTS_ART, installCombatArt, HitOverlays, BombArt, SubmarineBossArt } from './ArcadeCombatArt';
+import { SUPPLY_DRONE_DISPLAY_SIZE, SUPPLY_DRONE_PROP_SIZE } from './SupplyDrone';
 import { subTotalHp } from './PelagicSubmarineBoss';
 import { EMPLACEMENT_TEXTURE, GUN_SMOKE_TEXTURE, TOWER_TEXTURE, PelagicEmplacements } from './PelagicEmplacements';
 import { PelagicActorAnims, preloadPelagicActorAnims } from './PelagicActorAnims';
@@ -1605,19 +1606,15 @@ export class ArcadeScene extends Phaser.Scene {
 
       if (c.crate) {
         const d = c.drone;
-        const retreating = d?.phase === 'retreat';
-        const departWarn = d?.phase === 'deliver' && d.phaseTime >= d.deliverDuration - 0.85;
-        const retreatK = retreating ? clamp(d.phaseTime / 1.15, 0, 1) : 0;
-        const hoverBob = Math.sin(c.age * 7.2 + c.id) * 1.4;
-        const microVibX = Math.sin(c.age * 28 + c.id) * 0.45 + (d ? Math.sin(c.age * 62) * d.hitRecoil * 2.4 : 0);
-        const microVibY = Math.cos(c.age * 24 + c.id) * 0.35 - (d ? d.hitRecoil * 1.8 : 0);
-        const rx = c.x + microVibX;
-        const ry = c.y + hoverBob + microVibY;
-        const liftScale = 1 + Math.sin(c.age * 6.5 + c.id) * 0.025 + retreatK * 0.16;
-        const bodySize = 44 * liftScale;
-        const propSize = 42 * liftScale;
-        const droneAlpha = retreating ? clamp(1 - Math.max(0, retreatK - 0.35) / 0.65, 0.25, 1) : 1;
-        const tiltDeg = clamp(c.vx * 0.042, -9, 9);
+        const hoverBob = Math.sin(c.age * 4.8 + c.id) * 1.1;
+        const recoilX = d ? Math.sin(c.age * 55) * d.hitRecoil * 1.8 : 0;
+        const recoilY = d ? -d.hitRecoil * 1.4 : 0;
+        const rx = c.x + recoilX;
+        const ry = c.y + hoverBob + recoilY;
+        const breathe = 1 + Math.sin(c.age * 4.5 + c.id) * 0.02;
+        const bodySize = SUPPLY_DRONE_DISPLAY_SIZE * breathe;
+        const propSize = SUPPLY_DRONE_PROP_SIZE * breathe;
+        const tiltDeg = clamp(c.vx * 0.14, -5, 5);
 
         if (sprite.texture.key !== SUPPLY_DRONE_BODY_ART) sprite.setTexture(SUPPLY_DRONE_BODY_ART);
         sprite
@@ -1625,35 +1622,33 @@ export class ArcadeScene extends Phaser.Scene {
           .setPosition(rx, ry)
           .setDisplaySize(bodySize, bodySize)
           .setAngle(tiltDeg)
-          .setAlpha(droneAlpha)
+          .setAlpha(1)
           .clearTint();
-        if (departWarn && Math.floor(c.age * 14) % 2 === 0) sprite.setTint(0xfff1a8);
         this.hitOverlays.draw(sprite, c.flash ?? 0);
 
-        const rotorAngle = d ? d.rotorAngle : (c.age * 18.5) % (Math.PI * 2);
+        const rotorAngle = d ? d.rotorAngle : (c.age * 14.5) % (Math.PI * 2);
         extras.prop
           .setVisible(true)
           .setOrigin(0.5, 0.5)
           .setPosition(rx, ry)
           .setDisplaySize(propSize, propSize)
           .setRotation(rotorAngle)
-          .setAlpha(droneAlpha)
+          .setAlpha(1)
           .clearTint();
 
-        const washPulse = 0.24 + Math.sin(c.age * 16 + c.id) * 0.08;
+        const washPulse = 0.22 + Math.sin(c.age * 11 + c.id) * 0.06;
         extras.glow
           .setVisible(true)
           .setPosition(rx, ry)
-          .setDisplaySize(bodySize * 1.48, bodySize * 1.48)
-          .setTint(departWarn ? 0xffd24a : 0x3ce6ff)
-          .setAlpha(washPulse * droneAlpha);
+          .setDisplaySize(bodySize * 1.42, bodySize * 1.42)
+          .setTint(0x3ce6ff)
+          .setAlpha(washPulse);
 
-        const shadowOffset = 9 + hoverBob * 0.4 + retreatK * 14;
         extras.shadow
           .setVisible(true)
-          .setPosition(c.x + 4 + retreatK * 5, c.y + shadowOffset)
-          .setDisplaySize(bodySize * (1.05 - retreatK * 0.2), bodySize * (0.82 - retreatK * 0.16))
-          .setAlpha(0.75 * (1 - retreatK * 0.65));
+          .setPosition(c.x + 3, c.y + 7 + hoverBob * 0.35)
+          .setDisplaySize(bodySize * 0.96, bodySize * 0.74)
+          .setAlpha(0.68);
       } else {
         // Released supply icon (rows 1..3 of supply-items.png: P, Heart, Bomb — never balloon row 0)
         const start = c.kind === 'power' ? 4 : c.kind === 'life' ? 8 : 12;
