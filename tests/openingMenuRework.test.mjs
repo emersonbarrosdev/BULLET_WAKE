@@ -85,9 +85,10 @@ test('ArcadeScene implements LOADING -> STUDIO_SPLASH -> MAIN_MENU sequence, ato
   assert.ok(!sceneSrc.includes('drawLoadBar(') && !sceneSrc.includes('this.loadBg'), 'Must have a single unified loading overlay without duplicate canvas bar');
   assert.ok(html.includes('100dvh') && html.includes('tabular-nums'), 'Boot loading screen must cover full 100dvh viewport with non-shifting metrics');
   assert.ok(sceneSrc.includes('this.hero.setVisible(false);'), 'Title screen must never place giant hero plane over buttons');
-  assert.ok(sceneSrc.includes("this.button(384, 264, 'INICIAR JORNADA'"), 'Centered INICIAR JORNADA button must exist');
-  assert.ok(sceneSrc.includes("this.button(384, 306, 'CONTROLES'"), 'Centered CONTROLES button must exist');
-  assert.ok(sceneSrc.includes("this.button(384, 348, 'OPÇÕES'"), 'Centered OPÇÕES button must exist');
+  assert.ok(sceneSrc.includes("this.button(384, 244, 'INICIAR JORNADA'"), 'Centered INICIAR JORNADA button must exist');
+  assert.ok(sceneSrc.includes("this.button(384, 280, 'CONTROLES'"), 'Centered CONTROLES button must exist');
+  assert.ok(sceneSrc.includes("this.button(384, 313, 'OPÇÕES'"), 'Centered OPÇÕES button must exist');
+  assert.ok(sceneSrc.includes("this.button(384, 346, 'CRÉDITOS'"), 'Centered CRÉDITOS button must exist below OPÇÕES');
   assert.ok(!sceneSrc.includes('Segure o disparo para rajada contínua'), 'Legacy false autofire description must be removed');
   assert.ok(sceneSrc.includes("'PS5 DUALSENSE'") || sceneSrc.includes('PS5 DUALSENSE'));
   assert.ok(sceneSrc.includes("id: 'pc'") && sceneSrc.includes("id: 'gamepad'") && sceneSrc.includes("id: 'android'"));
