@@ -275,16 +275,16 @@ export function resolveEnemyMaxHp(family: Family, difficulty: GameDifficulty): n
 export const FENDA_NORMAL_SUPPLIES: readonly SupplyEntry[] = [
   { at: 14, kind: 'power' },
   { at: 36, kind: 'power' },
-  { at: 68, kind: 'power' },
-  { at: 98, kind: 'power' },
-  { at: 132, kind: 'power' },
+  { at: 66, kind: 'power' },
+  { at: 96, kind: 'power' },
+  { at: 130, kind: 'power' },
   { at: 164, kind: 'power' },
   { at: 174, kind: 'special' },
   { at: 220, kind: 'power' },
-  { at: 256, kind: 'power' },
-  { at: 286, kind: 'life' },
-  { at: 308, kind: 'power' },
-  { at: 338, kind: 'power' },
+  { at: 244, kind: 'power' },
+  { at: 268, kind: 'power' },
+  { at: 294, kind: 'life' },
+  { at: 322, kind: 'power' },
 ];
 
 export function buildMissionSupplies(

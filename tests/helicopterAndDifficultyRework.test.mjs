@@ -223,13 +223,15 @@ test('Difficulty tiering, HP multipliers, menu cycling, and v1/v2->v3 save migra
     assert.equal(fresh.getSettings().difficulty, 'normal');
     assert.equal(fresh.getSettings().assisted, false);
 
-    // Assisted overrides effective difficulty without mutating saved setting
+    // Assisted preserves selected difficulty profile without downgrading Normal/Hard to Easy, while flagging non-competitive run
     const w = new ArcadeWorld(MISSIONS[0], undefined, { difficulty: 'hard' });
     w.assisted = true;
     assert.equal(w.difficulty, 'hard');
-    assert.equal(w.effectiveDifficulty, 'easy');
+    assert.equal(w.effectiveDifficulty, 'hard');
+    assert.equal(w.competitiveEligible, false);
     w.assisted = false;
     assert.equal(w.effectiveDifficulty, 'hard');
+    assert.equal(w.competitiveEligible, true);
   } finally {
     if (previous !== undefined) globalThis.window = previous;
   }

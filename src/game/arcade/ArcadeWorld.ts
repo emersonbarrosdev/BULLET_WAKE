@@ -116,6 +116,9 @@ import {
 } from './PelagicTideArch.ts';
 import { PelagicCombatDirector, type PelagicPacingSnapshot } from './PelagicCombatDirector.ts';
 import { isFamilyUnlockedAtFendaRoute, stageDurationFor } from './PelagicProgression.ts';
+import { getPilotContract, type PilotCombatContract, type PilotId } from './ArcadeContracts.ts';
+import { evaluateArcadeRun, type RunEvaluationResult } from './ArcadeRanking.ts';
+import { evaluateSimulationAchievements, type AchievementId } from './ArcadeAchievements.ts';
 import {
     SUPPLY_DRONE_HIT_RADIUS,
     SUPPLY_DRONE_PLAYER_COLLISION_RADIUS,
@@ -124,7 +127,7 @@ import {
     type SupplyDroneState,
 } from './SupplyDrone.ts';
 
-export interface Controls { x: number; y: number; fire: boolean; special: boolean; charge?: boolean; }
+export interface Controls { x: number; y: number; fire: boolean; special: boolean; charge?: boolean; focus?: boolean; }
 export interface SubmarineState { phase: 'emerge' | 'hold' | 'submerge'; exposure: number; side: -1 | 1; }
 export interface Actor {
     id: number; x: number; y: number; size: number; hp: number; maxHp: number; age: number; flash: number;
@@ -136,14 +139,14 @@ export interface Actor {
     specialEvent?: PelagicSpecialEventId; eventRole?: PelagicEventRole;
 }
 export interface ArcadeBomb { id: number; x: number; y: number; age: number; phase: 'flight' | 'blast'; radius: number; }
-export interface Bullet { active: boolean; x: number; y: number; px: number; py: number; vx: number; vy: number; damage: number; radius: number; enemy: boolean; missile: boolean; enemyMissile?: boolean; homing: boolean; age: number; scale: number; color: number; charged?: boolean; chargeTier?: 'partial' | 'full'; pierceRemaining?: number; hitTargetIds?: Set<number>; }
+export interface Bullet { active: boolean; x: number; y: number; px: number; py: number; vx: number; vy: number; damage: number; radius: number; enemy: boolean; missile: boolean; enemyMissile?: boolean; homing: boolean; age: number; scale: number; color: number; charged?: boolean; chargeTier?: 'partial' | 'full'; pierceRemaining?: number; hitTargetIds?: Set<number>; grazed?: boolean; waveAmp?: number; waveFreq?: number; wavePhase?: number; presentation?: 'violet' | 'emerald' | 'amber' | 'celestial'; }
 export interface Cargo { id: number; x: number; y: number; vx: number; vy: number; kind: 'power' | 'life' | 'special'; crate: boolean; hp: number; age: number; recoveryP?: number; drone?: SupplyDroneState; flash?: number; dropPop?: number; retryCount?: number; expired?: boolean; }
 export interface Component { id: number; x: number; y: number; dx: number; dy: number; hp: number; maxHp: number; radius: number; flash: number; warning: number; angle: number; }
 export interface Boss { mini: boolean; x: number; y: number; size: number; age: number; phase: 'enter' | 'fight' | 'retreat' | 'absent' | 'return' | 'sink'; configuration: number; timer: number; attack: number; attackTime: number; volley: number; aimX: number; aimY: number; parts: Component[]; flash?: number; sub?: SubmarineBossState; }
 export interface Obstacle { id: number; x: number; y: number; width: number; height: number; kind: 'roof' | 'gate' | 'barrier'; warning: number; hp: number; age: number; }
 /** A destroyed coastal emplacement remains attached to its original terrain. */
 export interface CoastalWreck { anchor?: number; customAnchor?: boolean; family?: 'tank' | 'tower'; id: number; x: number; y: number; worldY: number; size: number; age: number; }
-export interface WorldEvent { type: 'shot' | 'charged-shot' | 'charge-start' | 'charge-windup' | 'charge-full' | 'missile' | 'enemy-shot' | 'impact' | 'explosion' | 'pickup' | 'death' | 'special' | 'boss' | 'return' | 'mini' | 'victory' | 'defeat' | 'radio' | 'bonus' | 'comms' | 'arch' | 'checkpoint'; x: number; y: number; size?: number; text?: string; }
+export interface WorldEvent { type: 'shot' | 'charged-shot' | 'charge-start' | 'charge-windup' | 'charge-full' | 'missile' | 'enemy-shot' | 'impact' | 'explosion' | 'pickup' | 'death' | 'special' | 'boss' | 'boss-warning' | 'return' | 'mini' | 'victory' | 'defeat' | 'radio' | 'bonus' | 'comms' | 'arch' | 'checkpoint' | 'graze' | 'level-up'; x: number; y: number; size?: number; text?: string; }
 export type BossContactQuery = (boss: Boss, ax: number, ay: number, bx: number, by: number, radius: number) => number | null;
 export type SubHullContactQuery = (sub: SubmarineBossState, sectionIndex: number, ax: number, ay: number, bx: number, by: number, radius: number) => number | null;
 export type ContactQuery = (actor: Actor, ax: number, ay: number, bx: number, by: number, radius: number) => number | null;
@@ -156,12 +159,17 @@ export interface ArcadeWorldOptions {
     arena?: Box;
     seed?: number;
     difficulty?: GameDifficulty | 'arcade';
+    pilotId?: PilotId;
+    practiceMode?: boolean;
 }
 
 export class ArcadeWorld {
     readonly arena: Box; readonly bullets: Bullet[] = Array.from({ length: 960 }, () => ({ active: false, x: 0, y: 0, px: 0, py: 0, vx: 0, vy: 0, damage: 0, radius: 0, enemy: false, missile: false, enemyMissile: false, homing: false, age: 0, scale: 1, color: 0 }));
     enemies: Actor[] = []; cargo: Cargo[] = []; obstacles: Obstacle[] = []; wrecks: CoastalWreck[] = []; boss?: Boss; bomb?: ArcadeBomb; events: WorldEvent[] = [];
-    weapons: PlayerWeaponsState = createPlayerWeapons('nolan'); lives = 3; score = 0; kills = 0; deaths = 0; collected = 0; elapsed = 0; route = 0; scroll = 0; scrollSpeed = 38; region = 0; player = { x: 384, y: 368, invulnerable: 2.5, bank: 0, altitude: 1 };
+    readonly pilotId: PilotId;
+    readonly pilotContract: PilotCombatContract;
+    practiceMode = false;
+    weapons: PlayerWeaponsState = createPlayerWeapons('nolan'); lives = 3; score = 0; kills = 0; deaths = 0; collected = 0; specialsUsed = 0; continuesUsed = 0; grazeCount = 0; chain = 0; maxChain = 0; chainTimer = 0; bossElapsed = 0; elapsed = 0; route = 0; scroll = 0; scrollSpeed = 38; region = 0; player = { x: 384, y: 368, invulnerable: 2.5, bank: 0, altitude: 1, focusActive: false };
     state: 'intro' | 'play' | 'exit' | 'victory' | 'defeat' = 'intro'; introTime = 2.2; exitTime = 0; specialTime = 0; missileTime = 0; specialEdge = false; specialImpact?: { x: number; y: number };
     contact?: ContactQuery; bossContact?: BossContactQuery; subHullContact?: SubHullContactQuery; accessibility = false; assisted = false;
     private _difficulty: GameDifficulty = 'easy';
@@ -175,7 +183,7 @@ export class ArcadeWorld {
     readonly stageDirector: ArcadeStageDirector;
     checkpoint?: PelagicCheckpointSnapshot;
     private rngState = 1337;
-    private burst = new BurstController(); private sequence = 0; private waveIndex = 0; private supplyIndex = 0; private supplySpawnCounter = 0; private miniStarted = false; private bossStarted = false; private nextObstacle = 98;
+    private burst = new BurstController(); private sequence = 0; private waveIndex = 0; private supplyIndex = 0; private supplySpawnCounter = 0; private miniStarted = false; private bossStarted = false; private bossWarningEmitted = false; private nextObstacle = 98;
     private normalRecentAttacks: Array<{ at: number; enemyId: number; squadId?: number; targetX: number; isFan: boolean }> = [];
     private rareSpawnCount = 0; private rareRewardClaimed = false; private convoyBonusClaimed = false; private assistedDeathHinted = false;
     private stepEnemyShots = 0; private directorPaused = false;
@@ -183,6 +191,9 @@ export class ArcadeWorld {
     readonly upLayout: UpLayoutMode;
     constructor(mission: Mission, carry?: CampaignFlight, options?: ArcadeWorldOptions) {
         this.mission = mission;
+        this.pilotId = getPilotContract(options?.pilotId ?? carry?.pilotId ?? 'nolan').id;
+        this.pilotContract = getPilotContract(this.pilotId);
+        this.practiceMode = Boolean(options?.practiceMode);
         const mIdx = Math.max(0, MISSIONS.indexOf(mission));
         this.stageDirector = new ArcadeStageDirector(mission, mIdx);
         this.setSeed(options?.seed ?? 1337);
@@ -199,7 +210,7 @@ export class ArcadeWorld {
         } else {
             this.arena = { left: 16, right: 752, top: 40, bottom: 414 };
         }
-        const restored = enterStage('nolan', mission.id, carry); this.weapons = restored.weapons; this.lives = restored.health.lives; this.score = restored.score;
+        const restored = enterStage(this.pilotId, mission.id, carry); this.weapons = restored.weapons; this.lives = restored.health.lives; this.score = restored.score;
         this.player.x = this.arenaCenterX; this.player.y = this.playerHomeY;
     }
     setSeed(seed: number): void {
@@ -215,6 +226,7 @@ export class ArcadeWorld {
     }
     get up(): boolean { return this.mission.perspective === 'UP'; }
     get stageDuration(): number { return stageDurationFor(this.mission.perspective); }
+    get progressRatio(): number { return clamp(this.route / Math.max(1, this.stageDuration), 0, 1); }
     get arenaWidth(): number { return this.arena.right - this.arena.left; }
     get arenaCenterX(): number { return (this.arena.left + this.arena.right) * 0.5; }
     get playerHomeY(): number { return this.up ? this.arena.bottom - 52 : 228; }
@@ -224,8 +236,66 @@ export class ArcadeWorld {
     set difficulty(mode: GameDifficulty) { this.setDifficulty(mode); }
     get hard(): boolean { return this._difficulty !== 'easy'; }
     set hard(val: boolean) { this.setDifficulty(val ? 'normal' : 'easy'); }
-    get effectiveDifficulty(): GameDifficulty { return this.isAssisted ? 'easy' : this._difficulty; }
+    /** Assisted mode eases death recovery without silently downgrading Easy/Normal/Hard difficulty profiles. */
+    get effectiveDifficulty(): GameDifficulty { return this._difficulty; }
     get difficultyProfile(): DifficultyProfile { return DIFFICULTY_PROFILES[this.effectiveDifficulty]; }
+    get competitiveEligible(): boolean { return !this.isAssisted && !this.practiceMode && this.continuesUsed === 0; }
+    evaluateRun(victory = this.state === 'victory'): { evaluation: RunEvaluationResult; achievements: AchievementId[] } {
+        const b = this.pelagicScoring.snapshot();
+        const evaluation = evaluateArcadeRun({
+            missionId: this.mission.id,
+            pilotId: this.pilotId,
+            difficulty: this.effectiveDifficulty,
+            score: this.score,
+            deaths: this.deaths,
+            specialsUsed: this.specialsUsed,
+            continuesUsed: this.continuesUsed,
+            assisted: this.isAssisted,
+            practiceMode: this.practiceMode,
+            formationsCleared: b.formationsCleared,
+            sectorsClean: b.sectorsClean,
+            totalSectors: this.mission.regions.length,
+            bossSeconds: this.bossElapsed,
+            grazeCount: this.grazeCount,
+            maxChain: this.maxChain,
+            victory,
+            progressRatio: this.progressRatio,
+        });
+        const achievements = evaluateSimulationAchievements({
+            missionId: this.mission.id,
+            pilotId: this.pilotId,
+            difficulty: this.effectiveDifficulty,
+            victory,
+            competitiveEligible: evaluation.competitiveEligible,
+            deaths: this.deaths,
+            specialsUsed: this.specialsUsed,
+            sectorsClean: b.sectorsClean,
+            totalSectors: this.mission.regions.length,
+            archClean: this.up && this.tideArch.crossedArch && !this.tideArch.hadDamageDuringArch,
+            bossSeconds: this.bossElapsed,
+            score: this.score,
+            grazeCount: this.grazeCount,
+            rank: evaluation.rank,
+        });
+        return { evaluation, achievements };
+    }
+    /** Allows casual continue from current route/boss while marking run non-1CC cleanly. */
+    continueFromDefeat(): boolean {
+        if (this.state !== 'defeat') return false;
+        this.continuesUsed++;
+        this.lives = 3;
+        this.weapons.specialCharges = Math.max(this.weapons.specialCharges, 2);
+        this.weapons.weaponLevel = Math.max(1, Math.min(this.weapons.weaponLevel, 2)) as PlayerWeaponsState['weaponLevel'];
+        this.weapons.powerMeter = 0;
+        this.player.x = this.arenaCenterX;
+        this.player.y = this.playerHomeY;
+        this.player.invulnerable = 4.0;
+        this.clearHostileBullets();
+        this.chain = 0;
+        this.chainTimer = 0;
+        this.state = 'play';
+        return true;
+    }
     private get effectiveHard(): boolean { return this.effectiveDifficulty !== 'easy'; }
     private get effectiveExtreme(): boolean { return this.effectiveDifficulty === 'hard'; }
     private get activeEncounters(): readonly Encounter[] { return buildMissionEncounters(this.mission, this.effectiveDifficulty); }
@@ -274,15 +344,24 @@ export class ArcadeWorld {
             }
         }
         this.player.invulnerable = Math.max(0, this.player.invulnerable - dt);
+        if (this.chainTimer > 0) {
+            this.chainTimer = Math.max(0, this.chainTimer - dt);
+            if (this.chainTimer === 0) this.chain = 0;
+        }
+        if (this.boss && !this.boss.mini && this.boss.phase === 'fight') {
+            this.bossElapsed += dt;
+        }
+        this.player.focusActive = Boolean(input.focus);
         const speedMul = this.playerSpeedScale !== 1 ? clamp(this.playerSpeedScale, 0.35, 2.5) : 1;
-        const n = Math.max(1, Math.hypot(input.x, input.y)), speed = 174 * speedMul;
+        const focusMul = this.player.focusActive ? this.pilotContract.focusSpeedFactor : 1;
+        const n = Math.max(1, Math.hypot(input.x, input.y)), speed = this.pilotContract.moveSpeed * focusMul * speedMul;
         this.player.x = clamp(this.player.x + input.x / n * speed * dt, this.arena.left + 14, this.arena.right - 14);
         const yRange = this.up
             ? this.tideArch.playerLongitudinalClamp(this.arena.top, this.arena.bottom, this.playerHomeY)
             : { minY: this.arena.top + 16, maxY: this.arena.bottom - 15 };
         this.player.y = clamp(this.player.y + input.y / n * speed * dt, yRange.minY, yRange.maxY);
         this.player.bank += ((this.up ? input.x : -input.y) - this.player.bank) * Math.min(1, dt * 10.5);
-        const chargeStep = this.chargedShot.step(dt, Boolean(input.charge), this.weapons.weaponLevel, 'nolan');
+        const chargeStep = this.chargedShot.step(dt, Boolean(input.charge), this.weapons.weaponLevel, this.pilotId);
         if (chargeStep.justStarted) this.emit('charge-start');
         if (chargeStep.shouldPlayWindup) this.emit('charge-windup', this.player.x, this.player.y, this.chargedShot.ratio);
         if (chargeStep.justReachedFull) this.emit('charge-full');
@@ -300,14 +379,17 @@ export class ArcadeWorld {
         const missileTrigger = this.up ? burstStep.burstStarted : effectiveAutoFire;
         if (missileTrigger && this.weapons.weaponLevel >= 3 && this.missileTime <= 0) {
             this.fireMissiles();
-            this.missileTime = this.weapons.weaponLevel === 5 ? 1.1 : 1.5;
+            this.missileTime = this.weapons.weaponLevel >= this.pilotContract.maxWeaponLevel ? 1.1 : 1.5;
         }
         if (input.special && !this.specialEdge && this.weapons.specialCharges > 0 && this.specialTime <= 0) {
             this.weapons.specialCharges--;
+            this.specialsUsed++;
             const durMul = this.specialDurationScale !== 1 ? clamp(this.specialDurationScale, 0.3, 2.5) : 1;
-            this.specialTime = 2.75 * durMul;
-            this.bomb = { id: ++this.sequence, x: this.player.x, y: this.player.y, age: 0, phase: 'flight', radius: 0 };
-            this.emit('special');
+            const baseDur = this.pilotContract.specialDurationSec;
+            this.specialTime = baseDur * durMul;
+            const immediateBlast = this.pilotContract.specialType === 'nova' || this.pilotContract.specialType === 'phantom' || this.pilotContract.specialType === 'orbital';
+            this.bomb = { id: ++this.sequence, x: this.player.x, y: this.player.y, age: 0, phase: immediateBlast ? 'blast' : 'flight', radius: 0 };
+            this.emit('special', this.player.x, this.player.y, 1, this.pilotContract.specialType);
         }
         this.specialEdge = input.special;
         if (this.specialTime > 0) { this.specialImpact = undefined; this.applySpecial(dt); }
@@ -383,6 +465,10 @@ export class ArcadeWorld {
             if (!this.up && this.route >= 155 && !this.miniStarted && (!iso || iso === `stage-${this.mission.id}-miniboss`)) {
                 this.miniStarted = true;
                 this.startBoss(true);
+            }
+            if (!this.bossWarningEmitted && !this.bossStarted && this.route >= this.stageDuration - 3.2) {
+                this.bossWarningEmitted = true;
+                this.emit('boss-warning', this.arenaCenterX, this.arena.top + 80, 1, this.mission.boss);
             }
             if (this.route >= this.stageDuration && !this.bossStarted && !this.boss && (!iso || iso === `stage-${this.mission.id}-boss`)) {
                 this.bossStarted = true;
@@ -1191,22 +1277,39 @@ export class ArcadeWorld {
         color?: number,
         enemyMissile = false,
         charged?: { tier: 'partial' | 'full'; pierceRemaining: number },
+        extra?: { waveAmp?: number; waveFreq?: number; wavePhase?: number; presentation?: Bullet['presentation']; pierceRemaining?: number },
     ): void {
         const b = this.bullets.find(b => !b.active); if (!b) return;
+        const pierce = charged?.pierceRemaining ?? extra?.pierceRemaining ?? 1;
         Object.assign(b, {
             active: true, x, y, px: x, py: y, vx, vy, damage, radius, enemy, missile, enemyMissile, scale, homing, age: 0,
             color: color ?? (radius > 7 ? 2 : radius > 4 ? 1 : 0),
             charged: Boolean(charged),
             chargeTier: charged?.tier,
-            pierceRemaining: charged?.pierceRemaining ?? 1,
-            hitTargetIds: charged ? new Set<number>() : undefined,
+            pierceRemaining: pierce,
+            hitTargetIds: pierce > 1 ? new Set<number>() : undefined,
+            grazed: false,
+            waveAmp: extra?.waveAmp,
+            waveFreq: extra?.waveFreq,
+            wavePhase: extra?.wavePhase,
+            presentation: extra?.presentation,
         });
     }
     private firePrimary(): void {
-        for (const p of getPrimaryProjectiles('nolan', this.weapons.weaponLevel, 0, 0)) {
+        for (const p of getPrimaryProjectiles(this.pilotId, this.weapons.weaponLevel, 0, 0)) {
             const x = this.player.x + (this.up ? p.x : 17 - p.y), y = this.player.y + (this.up ? p.y - 15 : p.x);
-            this.bullet(x, y, this.up ? p.velocityX : -p.velocityY, this.up ? p.velocityY : p.velocityX, p.damage, 3.6, false, false, p.scale);
-        } this.emit('shot');
+            const vx = this.up ? p.velocityX : -p.velocityY;
+            const vy = this.up ? p.velocityY : p.velocityX;
+            const radius = this.pilotId === 'nolan' ? 3.6 : clamp(p.hitRadius * 0.65, 3.2, 6.2);
+            const pierce = p.piercing ? 2 : 1;
+            this.bullet(x, y, vx, vy, p.damage, radius, false, false, p.scale, Boolean(p.homing), undefined, false, undefined, {
+                waveAmp: p.waveAmplitude,
+                waveFreq: p.waveFrequency,
+                wavePhase: p.wavePhase,
+                presentation: p.presentation,
+                pierceRemaining: pierce,
+            });
+        } this.emit('shot', this.player.x, this.player.y, 1, this.pilotId);
     }
     private fireChargedShot(spec: ChargedReleaseSpec): void {
         const ox = this.player.x + (this.up ? 0 : 18);
@@ -1224,7 +1327,7 @@ export class ArcadeWorld {
         const spdScale = this.enemyShotSpeedScale !== 1 ? clamp(this.enemyShotSpeedScale, .25, 3) : 1;
         return baseNormalSpeed * diffMult * spdScale;
     }
-    private fireMissiles(): void { for (const p of getSecondaryProjectiles('nolan', 0, 0, this.weapons.weaponLevel)) this.bullet(this.player.x + (this.up ? p.x : -p.y), this.player.y + (this.up ? p.y : p.x), this.up ? p.velocityX : -p.velocityY, this.up ? p.velocityY : p.velocityX, p.damage, p.hitRadius, false, true, p.scale, p.homing); this.emit('missile'); }
+    private fireMissiles(): void { for (const p of getSecondaryProjectiles(this.pilotId, 0, 0, this.weapons.weaponLevel)) this.bullet(this.player.x + (this.up ? p.x : -p.y), this.player.y + (this.up ? p.y : p.x), this.up ? p.velocityX : -p.velocityY, this.up ? p.velocityY : p.velocityX, p.damage, p.hitRadius, false, true, p.scale, p.homing); this.emit('missile'); }
     private hostile(x: number, y: number, angle: number, speed: number, radius: number, color?: number, enemyMissile = false): void { this.bullet(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed, 1, radius, true, false, 1, false, color, enemyMissile); }
     private updateBullets(dt: number): void {
         for (const b of this.bullets) {
@@ -1239,9 +1342,26 @@ export class ArcadeWorld {
                 if (!best && subFight && subSec && subSec.hullHp > 0 && this.boss) best = { x: this.boss.x, y: subSectionCenterY(subFight, subFight.activeSection) };
                 if (best) { const a = Math.atan2(best.y - b.y, best.x - b.x); b.vx += (Math.cos(a) * 330 - b.vx) * dt * 4; b.vy += (Math.sin(a) * 330 - b.vy) * dt * 4; }
             }
+            if (b.waveAmp && b.waveFreq) {
+                const lateral = Math.cos(b.age * b.waveFreq * 1000 + (b.wavePhase ?? 0)) * b.waveAmp * b.waveFreq * 1000;
+                if (this.up) b.x += lateral * dt; else b.y += lateral * dt;
+            }
             b.x += b.vx * dt; b.y += b.vy * dt;
-            if (b.enemy) { if (this.bomb?.phase === 'blast' && Math.hypot(b.x - this.bomb.x, b.y - this.bomb.y) < this.bomb.radius) { b.active = false; continue; } if (sweepEllipse(b.px, b.py, b.x, b.y, this.player.x, this.player.y, 5 + b.radius, 7 + b.radius) !== null) { b.active = false; this.hurtPlayer(); } }
-            else {
+            if (b.enemy) {
+                if (this.bomb?.phase === 'blast' && Math.hypot(b.x - this.bomb.x, b.y - this.bomb.y) < this.bomb.radius) { b.active = false; continue; }
+                if (sweepEllipse(b.px, b.py, b.x, b.y, this.player.x, this.player.y, 5 + b.radius, 7 + b.radius) !== null) {
+                    b.active = false;
+                    this.hurtPlayer();
+                } else if (!b.grazed && this.state === 'play' && this.player.invulnerable <= 0 && this.specialTime <= 0) {
+                    const gd = Math.hypot(b.x - this.player.x, b.y - this.player.y);
+                    if (gd < 18 + b.radius) {
+                        b.grazed = true;
+                        this.grazeCount++;
+                        this.score += 25;
+                        this.emit('graze', this.player.x, this.player.y, 1);
+                    }
+                }
+            } else {
                 this.collideFriendly(b);
                 if (b.active && this.up && this.tideArch.isPillarCollisionActive(this.scroll, b.y)) {
                     const opening = computeArchOpening(this.arena.left, this.arena.right);
@@ -1287,7 +1407,7 @@ export class ArcadeWorld {
         const hx = b.px + (b.x - b.px) * nearest;
         const hy = b.py + (b.y - b.py) * nearest;
         b.hitTargetIds?.add(hitKey);
-        const piercesActor = b.charged && !subHit && target && !('parts' in target) && !('crate' in target) && !('kind' in target) && (b.pierceRemaining ?? 1) > 1;
+        const piercesActor = (b.charged || b.presentation === 'emerald') && !subHit && target && !('parts' in target) && !('crate' in target) && !('kind' in target) && (b.pierceRemaining ?? 1) > 1;
         if (piercesActor) {
             b.pierceRemaining = (b.pierceRemaining ?? 1) - 1;
         } else {
@@ -1319,6 +1439,17 @@ export class ArcadeWorld {
             if ('family' in target) {
                 this.score += FAMILY[target.family].score;
                 this.kills++;
+                this.chain++;
+                this.chainTimer = 3.2;
+                if (this.chain > this.maxChain) this.maxChain = this.chain;
+                if (this.chain > 0 && this.chain % 10 === 0) {
+                    const chainBonus = Math.min(600, 150 + this.chain * 10);
+                    this.score += chainBonus;
+                    if (this.up) {
+                        this.pelagicScoring.recordSpecialBonus(chainBonus);
+                        this.emit('bonus', x, y - 12, chainBonus, `CHAIN ×${this.chain}`);
+                    }
+                }
                 if (this.up && target.squadId) {
                     const squadAward = this.pelagicScoring.onSquadMemberKilled(target.squadId);
                     if (squadAward) {
@@ -1407,9 +1538,10 @@ export class ArcadeWorld {
     }
     private applySpecial(dt: number): void {
         const bomb = this.bomb; if (!bomb) return;
+        const specType = this.pilotContract.specialType;
         const durScale = this.specialDurationScale !== 1 ? clamp(this.specialDurationScale, 0.3, 2.5) : 1;
-        const flightEnd = 0.65 * durScale;
-        const totalDur = 2.75 * durScale;
+        const totalDur = this.pilotContract.specialDurationSec * durScale;
+        const flightEnd = (specType === 'nova' || specType === 'phantom' || specType === 'orbital') ? 0 : (specType === 'comet' ? 0.32 : 0.65) * durScale;
         const before = bomb.age; bomb.age += dt;
         if (bomb.phase === 'flight') {
             const travel = Math.min(dt, Math.max(0, flightEnd - before)) * (280 / durScale);
@@ -1418,12 +1550,45 @@ export class ArcadeWorld {
         }
         if (bomb.phase === 'blast') {
             const start = Math.max(flightEnd, before), end = Math.min(totalDur, bomb.age), blastDt = Math.max(0, end - start) / durScale;
-            const age = Math.min(2.1 * durScale, bomb.age - flightEnd);
-            bomb.radius = (this.up ? 155 : 180) * Math.min(1, age / (0.35 * durScale)); this.specialImpact = { x: bomb.x, y: bomb.y };
+            const age = Math.min(totalDur - flightEnd, bomb.age - flightEnd);
+            const baseRadius = this.up ? this.pilotContract.specialRadius : Math.round(this.pilotContract.specialRadius * 1.16);
+            // Distinct spatial behavior per pilot special:
+            if (specType === 'phantom') {
+                // Tita (MOTH): Salto Fantasma — invulnerable phase field follows player ship dynamically
+                bomb.x = this.player.x;
+                bomb.y = this.player.y;
+                bomb.radius = baseRadius * (0.78 + 0.22 * Math.sin(age * 9));
+            } else if (specType === 'nova') {
+                // Osvald (KNUCKLE): Ruptura Nova — massive centered kinetic shockwave expanding rapidly around ship
+                bomb.x = this.player.x;
+                bomb.y = this.player.y;
+                bomb.radius = baseRadius * Math.min(1, age / (0.24 * durScale));
+            } else if (specType === 'orbital') {
+                // Leona (KESTREL): Coroa Orbital — locks smoothly onto highest-priority live threat or sweeps ahead of ship
+                const priorityTarget = this.boss?.phase === 'fight'
+                    ? { x: this.boss.x, y: this.boss.y }
+                    : this.enemies.filter(e => e.hp > 0 && (!e.submarine || e.submarine.exposure >= .6)).sort((a, b) => b.maxHp - a.maxHp)[0];
+                const tx = priorityTarget ? priorityTarget.x : this.player.x;
+                const ty = priorityTarget ? priorityTarget.y : Math.max(this.arena.top + 80, this.player.y - 110);
+                bomb.x += (tx - bomb.x) * Math.min(1, dt * 8);
+                bomb.y += (ty - bomb.y) * Math.min(1, dt * 8);
+                bomb.radius = baseRadius * Math.min(1, age / (0.28 * durScale));
+            } else if (specType === 'comet') {
+                // Hien (PEREGRINE): Chuva de Cometas — remote squadron sweeps diagonally across arena
+                const sweep = Math.sin(age * 4.2);
+                bomb.x = this.arenaCenterX + sweep * (this.arenaWidth * 0.34);
+                bomb.y = this.up ? this.arena.top + 115 + Math.cos(age * 3.1) * 58 : this.arena.top + 180 + Math.cos(age * 3.1) * 75;
+                bomb.radius = baseRadius * Math.min(1, age / (0.28 * durScale));
+            } else {
+                // Bayek (RIVET): Tormenta Escarlate — canonical launched tactical bomb blast
+                bomb.radius = baseRadius * Math.min(1, age / (0.35 * durScale));
+            }
+            this.specialImpact = { x: bomb.x, y: bomb.y };
+            const dps = specType === 'nova' ? 112 : specType === 'orbital' ? 102 : specType === 'comet' ? 96 : specType === 'phantom' ? 92 : 90;
             for (const target of this.enemies) {
                 if (target.hp <= 0 || (target.submarine && target.submarine.exposure < .6)) continue;
                 const d = Math.hypot(target.x - bomb.x, target.y - bomb.y);
-                if (d < bomb.radius + target.size * .3) this.damage(target, 90 * blastDt, target.x, target.y, false);
+                if (d < bomb.radius + target.size * .3) this.damage(target, dps * blastDt, target.x, target.y, false);
             }
             if (this.boss?.sub) {
                 const sub = this.boss.sub;
@@ -1435,13 +1600,13 @@ export class ArcadeWorld {
                         if (remSec <= 0) break;
                         if (target.hp > 0 && Math.hypot(target.x - bomb.x, target.y - bomb.y) < bomb.radius + target.radius) {
                             const done = rec.parts[target.id] ?? 0, partRem = Math.min(remSec, Math.max(0, SUB_MAX_BOMB_PART_DAMAGE - done));
-                            const amt = Math.min(partRem, 90 * blastDt, target.hp);
+                            const amt = Math.min(partRem, dps * blastDt, target.hp);
                             if (amt > 0) { rec.parts[target.id] = done + amt; rec.total += amt; remSec -= amt; this.damageSubModule(sub, sec, target, amt, target.x, target.y, false); bossHit = true; }
                         }
                     }
                     if (remSec > 0 && sec.hullHp > 0 && Math.abs(bomb.x - this.boss.x) < bomb.radius + SUB_BEAM_HALF_W && Math.abs(bomb.y - secY) < bomb.radius + SUB_SECTION_HEIGHT * .45) {
                         const hullRem = Math.min(remSec, Math.max(0, SUB_MAX_BOMB_HULL_DAMAGE - rec.hull));
-                        const amt = Math.min(hullRem, 90 * blastDt, sec.hullHp);
+                        const amt = Math.min(hullRem, dps * blastDt, sec.hullHp);
                         if (amt > 0) { rec.hull += amt; rec.total += amt; remSec -= amt; this.damageSubHull(sub, sec, amt, clamp(bomb.x, this.boss.x - 60, this.boss.x + 60), secY, false); bossHit = true; }
                     }
                     if (bossHit) this.boss.flash = .095;
@@ -1449,7 +1614,7 @@ export class ArcadeWorld {
             } else if (this.boss?.phase === 'fight') {
                 let bossHit = false;
                 for (const target of this.boss.parts) {
-                    if (target.hp > 0 && Math.hypot(target.x - bomb.x, target.y - bomb.y) < bomb.radius + target.radius) { this.damage(target, 90 * blastDt, target.x, target.y, false); bossHit = true; }
+                    if (target.hp > 0 && Math.hypot(target.x - bomb.x, target.y - bomb.y) < bomb.radius + target.radius) { this.damage(target, dps * blastDt, target.x, target.y, false); bossHit = true; }
                 }
                 if (bossHit) this.boss.flash = .095;
             }
@@ -1461,6 +1626,8 @@ export class ArcadeWorld {
     private hurtPlayer(): void {
         if (this.devInvincible || this.player.invulnerable > 0 || this.specialTime > 0 || this.state !== 'play') return;
         this.chargedShot.cancel();
+        this.chain = 0;
+        this.chainTimer = 0;
         this.lives--; this.deaths++; this.emit('death'); this.emit('explosion', this.player.x, this.player.y, 1.2);
         if (this.up) {
             this.pelagicScoring.onPlayerDeath();
@@ -1582,7 +1749,11 @@ export class ArcadeWorld {
                             const result = collectPowerItem(this.weapons);
                             this.weapons = result.state;
                             this.score += result.meterIncreased ? 100 : 5000;
-                            if (this.up && prevWeaponLevel < 5 && this.weapons.weaponLevel === 5) this.emit('comms', c.x, c.y, 1, 'pickup:full');
+                            const cap = this.pilotContract.maxWeaponLevel;
+                            if (result.levelIncreased) {
+                                this.emit('level-up', c.x, c.y, this.weapons.weaponLevel, this.weapons.weaponLevel >= cap ? 'MAX POWER!' : `POWER NV ${this.weapons.weaponLevel}`);
+                            }
+                            if (this.up && prevWeaponLevel < cap && this.weapons.weaponLevel === cap) this.emit('comms', c.x, c.y, 1, 'pickup:full');
                         }
                     } else if (c.kind === 'life') { this.score += this.lives === 5 ? 5000 : 250; this.lives = Math.min(5, this.lives + 1); if (this.up) this.emit('comms', c.x, c.y, 1, 'pickup:life'); }
                     else { this.score += this.weapons.specialCharges === 5 ? 5000 : 250; this.weapons.specialCharges = Math.min(5, this.weapons.specialCharges + 1); if (this.up) this.emit('comms', c.x, c.y, 1, 'pickup:special'); }

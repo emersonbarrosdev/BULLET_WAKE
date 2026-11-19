@@ -11,7 +11,7 @@ export interface Encounter { at: number; family: Family; formation: Formation; m
 export interface Mission { id: number; name: string; perspective: Perspective; kind: StageKind; allowedPilots: string[]; boss: string; regions: string[]; encounters: Encounter[]; }
 const wave = (at: number, family: Family, formation: Formation, motion: Motion, lane: number, speed?: number, entry?: EntrySide): Encounter => ({ at, family, formation, motion, lane, speed, ...(entry ? { entry } : {}) });
 export const FENDA: Mission = {
-    id: 1, name: 'FENDA PELÁGICA', perspective: 'UP', kind: 'main', allowedPilots: ['nolan'], boss: SUB_BOSS_NAME, regions: ['CÉU ABERTO', 'COSTA CORAL', 'ARQUIPÉLAGO', 'CORRENTE EXPRESSA', 'ARCO DAS MARÉS', 'MAR DAS TURBINAS', 'FENDA PELÁGICA'], encounters: [
+    id: 1, name: 'FENDA PELÁGICA', perspective: 'UP', kind: 'main', allowedPilots: ['nolan', 'cora', 'lyra', 'harlan', 'bento'], boss: SUB_BOSS_NAME, regions: ['CÉU ABERTO', 'COSTA CORAL', 'ARQUIPÉLAGO', 'CORRENTE EXPRESSA', 'ARCO DAS MARÉS', 'MAR DAS TURBINAS', 'FENDA PELÁGICA'], encounters: [
         // 0–60s: Região 1 — CÉU ABERTO (somente aviões convencionais: fighter, acrobat, bomber moderado; zero jato amarelo/barcos/costa/helis/subs)
         wave(1.5, 'fighter', 'solo', 'straight', .50, 96),
         wave(4.8, 'fighter', 'pair', 'straight', .36, 100),
@@ -121,7 +121,7 @@ export const FENDA: Mission = {
     ]
 };
 export const SOLAR: Mission = {
-    id: 2, name: 'CIDADE SOLAR', perspective: 'SIDE', kind: 'main', allowedPilots: ['nolan'], boss: 'MEGA DIRIGÍVEL GIRO', regions: ['HORIZONTE SOLAR', 'AVENIDA AÉREA', 'PONTES DO AMANHÃ', 'VIA EXPRESSA', 'ESCOLTA GIRO', 'DISTRITO DAS CORES', 'ALTOS DA CIDADE'], encounters: [
+    id: 2, name: 'CIDADE SOLAR', perspective: 'SIDE', kind: 'main', allowedPilots: ['nolan', 'cora', 'lyra', 'harlan', 'bento'], boss: 'MEGA DIRIGÍVEL GIRO', regions: ['HORIZONTE SOLAR', 'AVENIDA AÉREA', 'PONTES DO AMANHÃ', 'VIA EXPRESSA', 'ESCOLTA GIRO', 'DISTRITO DAS CORES', 'ALTOS DA CIDADE'], encounters: [
         wave(4, 'fighter', 'pair', 'sine', .35), wave(14, 'acrobat', 'trio', 'curve', .65), wave(26, 'interceptor', 'pair', 'diagonal', .3), wave(36, 'fighter', 'stagger', 'straight', .55),
         wave(47, 'tank', 'pair', 'stationary', .9), wave(54, 'bomber', 'escort', 'straight', .25), wave(65, 'tower', 'solo', 'stationary', .9), wave(73, 'acrobat', 'quartet', 'turn', .45), wave(83, 'interceptor', 'pair', 'dive', .2),
         wave(94, 'fighter', 'trio', 'straight', .35), wave(107, 'acrobat', 'pair', 'sine', .55), wave(120, 'fighter', 'stagger', 'curve', .4),
@@ -138,7 +138,7 @@ SOLAR.encounters.sort((a, b) => a.at - b.at);
 /** Reserved data is deliberately not a playable/unlocked mission. */
 export const FUTURE_ROUTES = [{ id: 'secret-side', kind: 'secret', perspective: 'SIDE', duration: 120, unlock: null }, { id: 'secret-up-a', kind: 'secret', perspective: 'UP', duration: 180, unlock: null }, { id: 'secret-up-b', kind: 'secret', perspective: 'UP', duration: 180, unlock: null }, { id: 'sixth-campaign', kind: 'extra', perspective: 'SIDE', unlock: 'campaign-complete' }, { id: 'remix', kind: 'remix', perspective: null, unlock: null }] as const;
 export const SUPPLIES = [{ at: 18, kind: 'power' }, { at: 42, kind: 'power' }, { at: 68, kind: 'power' }, { at: 94, kind: 'power' }, { at: 118, kind: 'power' }, { at: 145, kind: 'special' }, { at: 201, kind: 'power' }, { at: 219, kind: 'power' }, { at: 239, kind: 'life' }, { at: 253, kind: 'power' }, { at: 275, kind: 'power' }] as const;
-export const FENDA_BASE_SUPPLIES = [{ at: 20, kind: 'power' }, { at: 50, kind: 'power' }, { at: 84, kind: 'power' }, { at: 118, kind: 'power' }, { at: 150, kind: 'power' }, { at: 174, kind: 'special' }, { at: 224, kind: 'power' }, { at: 262, kind: 'power' }, { at: 288, kind: 'life' }, { at: 312, kind: 'power' }, { at: 340, kind: 'power' }] as const;
+export const FENDA_BASE_SUPPLIES = [{ at: 18, kind: 'power' }, { at: 44, kind: 'power' }, { at: 72, kind: 'power' }, { at: 102, kind: 'power' }, { at: 130, kind: 'power' }, { at: 156, kind: 'power' }, { at: 174, kind: 'special' }, { at: 218, kind: 'power' }, { at: 242, kind: 'power' }, { at: 268, kind: 'power' }, { at: 296, kind: 'life' }] as const;
 export const FAMILY = {
     fighter: { hp: 2, size: 20, score: 160, fire: .80 }, interceptor: { hp: 3, size: 22, score: 220, fire: .64 }, acrobat: { hp: 3, size: 21, score: 200, fire: .86 }, bomber: { hp: 16, size: 38, score: 700, fire: 1.00 },
     boat: { hp: 11, size: 41, score: 600, fire: 1.06 }, ship: { hp: 25, size: 63, score: 1200, fire: .96 }, tank: { hp: 12, size: 34, score: 500, fire: 1.04 }, tower: { hp: 14, size: 36, score: 550, fire: 1.02 },

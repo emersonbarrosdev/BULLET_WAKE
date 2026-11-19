@@ -173,7 +173,9 @@ test('05. Assisted mode & DEV enemyShotSpeedScale integrate cleanly without corr
   const assisted = spawnAndFire('fighter', 'normal', { assisted: true });
   const scaled = spawnAndFire('fighter', 'normal', { devShotScale: 1.5 });
   const spd = b => Math.hypot(b.vx, b.vy);
-  assert(Math.abs(spd(assisted.shots[0]) - spd(normal.shots[0]) * 0.75) < 1e-6);
+  assert.equal(assisted.world.effectiveDifficulty, 'normal');
+  assert.equal(assisted.world.competitiveEligible, false);
+  assert(Math.abs(spd(assisted.shots[0]) - spd(normal.shots[0])) < 1e-6);
   assert(Math.abs(spd(scaled.shots[0]) - spd(normal.shots[0]) * 1.5) < 1e-6);
   assert.equal(DIFFICULTY_PROFILES.normal.shotSpeedMultiplier, 1.0);
 });
