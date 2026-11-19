@@ -45,8 +45,12 @@ import {
   ArcadeMenuButton, makeMenuHintBar, makeStatusPill, playMenuScreenEntrance,
   type MenuButtonVariant,
 } from './ArcadeMenuUI';
+import {
+  makeVectorBanner, makeVectorGauge, makeVectorIconSprite, makeVectorKeycap,
+  makeVectorPanel, makeVectorTogglePill, type VectorIconId,
+} from './ArcadeMenuVector';
 
-type Screen = 'loading' | 'intro' | 'title' | 'pilot' | 'missions' | 'play' | 'pause' | 'controls' | 'settings' | 'touch-settings' | 'confirm-exit' | 'result' | 'defeat' | 'ending';
+type Screen = 'loading' | 'intro' | 'title' | 'pilot' | 'missions' | 'play' | 'pause' | 'controls' | 'settings' | 'touch-settings' | 'credits' | 'confirm-exit' | 'result' | 'defeat' | 'ending';
 type OpeningState = 'LOADING' | 'STUDIO_SPLASH' | 'MAIN_MENU' | 'READY';
 type OpeningPhase = 'BOOT' | 'LOADING' | 'LOADING_COMPLETE' | 'STUDIO_SPLASH' | 'STUDIO_EXIT' | 'TITLE_READY' | 'TITLE_VISIBLE';
 type ControlsTab = 'pc' | 'gamepad' | 'android';
@@ -277,14 +281,14 @@ export class ArcadeScene extends Phaser.Scene {
     this.ui.add(node); return node;
   }
   private isPreGameplayMenu(): boolean {
-    return !this.world && ['title', 'pilot', 'missions', 'controls', 'settings', 'touch-settings'].includes(this.screen);
+    return !this.world && ['title', 'pilot', 'missions', 'controls', 'settings', 'touch-settings', 'credits'].includes(this.screen);
   }
   private button(
     x: number, y: number, label: string, action: () => void, width = 230, height = 38,
     opts?: {
       fontSize?: number; extras?: Phaser.GameObjects.Text[]; onLeft?: () => void; onRight?: () => void;
       noLabel?: boolean; primaryGold?: boolean; titleSecondary?: boolean;
-      variant?: MenuButtonVariant; disabled?: boolean; activeTab?: boolean; showArrows?: boolean;
+      variant?: MenuButtonVariant; icon?: VectorIconId; disabled?: boolean; activeTab?: boolean; showArrows?: boolean;
     },
   ): MenuButton {
     const index = this.buttons.length;
@@ -300,6 +304,7 @@ export class ArcadeScene extends Phaser.Scene {
       };
       const modern = new ArcadeMenuButton(this, {
         x, y, width, height, label, variant,
+        icon: opts?.icon,
         fontSize: opts?.fontSize,
         disabled: opts?.disabled,
         activeTab: opts?.activeTab,
@@ -487,15 +492,16 @@ export class ArcadeScene extends Phaser.Scene {
       }
     } else if (screen === 'title') {
       this.audio.play('menu');
-      const b0 = this.button(384, 264, 'INICIAR JORNADA', () => this.show('pilot'), 248, 38, { fontSize: 14, variant: 'primary' });
-      const b1 = this.button(384, 306, 'CONTROLES', () => { this.pauseOrigin = 'title'; this.show('controls'); }, 248, 36, { fontSize: 13.5, variant: 'secondary' });
-      const b2 = this.button(384, 348, 'OPÇÕES', () => { this.pauseOrigin = 'title'; this.show('settings'); }, 248, 36, { fontSize: 13.5, variant: 'secondary' });
+      const b0 = this.button(384, 244, 'INICIAR JORNADA', () => this.show('pilot'), 214, 32, { fontSize: 12.5, variant: 'primary', icon: 'play' });
+      const b1 = this.button(384, 280, 'CONTROLES', () => { this.pauseOrigin = 'title'; this.show('controls'); }, 200, 29, { fontSize: 12, variant: 'secondary', icon: 'gamepad' });
+      const b2 = this.button(384, 313, 'OPÇÕES', () => { this.pauseOrigin = 'title'; this.show('settings'); }, 200, 29, { fontSize: 12, variant: 'secondary', icon: 'gear' });
+      const b3 = this.button(384, 346, 'CRÉDITOS', () => this.show('credits'), 200, 29, { fontSize: 12, variant: 'secondary', icon: 'star' });
       if (!this.isPortraitMobileMode()) {
-        const hint = makeMenuHintBar(this, this.ui, 404, connectedPad()?.id, { noBack: true });
+        const hint = makeMenuHintBar(this, this.ui, 400, connectedPad()?.id, { noBack: true });
         hint.setAlpha(0);
-        this.tweens.add({ targets: hint, alpha: 1, duration: 280, delay: 160, ease: 'Cubic.easeOut' });
+        this.tweens.add({ targets: hint, alpha: 1, duration: 260, delay: 150, ease: 'Cubic.easeOut' });
       }
-      [b0, b1, b2].forEach((btn, idx) => btn.modern?.animateEntrance(idx * 48, 0, 10));
+      [b0, b1, b2, b3].forEach((btn, idx) => btn.modern?.animateEntrance(idx * 42, 0, 10));
       if (old === 'intro') {
         const vSize = getCombatVirtualSize(this);
         const veil = this.add.rectangle(vSize.w * 0.5, vSize.h * 0.5, vSize.w + 16, vSize.h + 16, 0x040d21, 1).setDepth(85);
@@ -511,69 +517,116 @@ export class ArcadeScene extends Phaser.Scene {
       } else {
         this.setOpeningPhase('TITLE_VISIBLE');
       }
+    } else if (screen === 'credits') {
+      this.addModalBackdrop(0x030e24, .60, false);
+      makeVectorPanel(this, this.ui, 384, 210, 650, 340, { kind: 'main' });
+      makeVectorBanner(this, this.ui, 384, 38, 224, 34, 'CRÉDITOS', { icon: 'star', fontSize: 16 });
+
+      // Left sub-panel: Studio & Direction
+      makeVectorPanel(this, this.ui, 216, 194, 280, 224, { kind: 'sub' });
+      const crest = makeIcon(this, 216, 118, UI_ICON.botan, 52, this.ui);
+      this.tweens.add({ targets: crest, y: { from: 116, to: 120 }, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.text(216, 155, 'BOTAN STUDIO', 15, UI.goldHex);
+      this.text(216, 173, 'BULLET WAKE  •  VERSÃO 0.1.0', 9, UI.cyanHex);
+      const leftCredits: [string, string, number][] = [
+        ['DIREÇÃO & CRIAÇÃO', 'Emerson Barros', 206],
+        ['GAME DESIGN & BALANCEAMENTO', 'Emerson Barros', 240],
+        ['PROGRAMAÇÃO & ARQUITETURA', 'Emerson Barros', 274],
+      ];
+      for (const [role, person, cy] of leftCredits) {
+        this.text(216, cy - 8, role, 8, UI.cyanHex);
+        this.text(216, cy + 5, person, 11.5, UI.white);
+      }
+
+      // Right sub-panel: Production, Audio, Platforms & Tech
+      makeVectorPanel(this, this.ui, 530, 194, 314, 224, { kind: 'sub' });
+      const rightCredits: [string, string, number][] = [
+        ['ARTE, PERSONAGENS & CENÁRIOS', 'Botan Studio • Direção Visual Cartoon/Anime', 112],
+        ['TRILHA SONORA & EFEITOS (SFX)', 'Botan Studio Audio • Sintetização Web Audio', 148],
+        ['CONTROLES & PLATAFORMAS', 'PC Teclado • PlayStation • Xbox • Android Touch', 184],
+        ['TECNOLOGIA & ENGINE', 'Phaser 4 • TypeScript • Vite • HTML5 WebGL', 220],
+        ['AGRADECIMENTO ESPECIAL', 'Aos fãs de shoot \'em ups arcade clássicos e a todos\nque acompanham o desenvolvimento de Bullet Wake.', 262],
+      ];
+      for (const [role, detail, cy] of rightCredits) {
+        const multiline = detail.includes('\n');
+        this.text(530, cy - (multiline ? 12 : 9), role, 8.2, UI.goldHex);
+        this.text(530, cy + (multiline ? 9 : 6), detail, 9.2, UI.silver, { wrap: 288 });
+      }
+
+      const cBack = this.button(384, 344, 'VOLTAR', () => this.show('title'), 200, 34, { fontSize: 13, variant: 'back' });
+      cBack.modern?.animateEntrance(70, 0, 8);
+      makeMenuHintBar(this, this.ui, 412, connectedPad()?.id);
+      playMenuScreenEntrance(this, this.ui, 210);
     } else if (screen === 'pilot') {
       this.audio.play('select'); this.addModalBackdrop(0x030d22, .60, false);
-      makeRibbon(this, 384, 30, 316, 36, 'gold', this.ui);
-      this.text(384, 30, 'ESCOLHA SEU PILOTO', 16.5, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
-      makePanel(this, 384, 142, 644, 152, 'cobalt', this.ui);
-      makePanel(this, 134, 140, 124, 124, 'gold', this.ui);
-      this.ui.add(this.add.image(134, 136, 'arc-pilots', 3).setDisplaySize(104, 104));
-      makeRibbon(this, 134, 196, 106, 22, 'gold', this.ui);
-      this.text(134, 196, 'BAYEK', 11.5, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 1 });
+      makeVectorPanel(this, this.ui, 384, 214, 672, 356, { kind: 'main' });
+      makeVectorBanner(this, this.ui, 384, 36, 272, 34, 'ESCOLHA SEU PILOTO', { icon: 'helmet', fontSize: 15.5 });
+
+      // Portrait frame (left)
+      makeVectorPanel(this, this.ui, 134, 130, 122, 122, { kind: 'gold', cut: 10 });
+      this.ui.add(this.add.image(134, 127, 'arc-pilots', 3).setDisplaySize(102, 102));
+      makeVectorBanner(this, this.ui, 134, 188, 106, 21, 'BAYEK', { fontSize: 11, wings: false });
+
+      // RIVET hangar bay (center)
+      makeVectorPanel(this, this.ui, 336, 120, 214, 92, { kind: 'sub', cut: 10 });
       const bay = this.add.graphics()
-        .fillStyle(0x05214d, .84).fillRoundedRect(241, 78, 164, 92, 10)
-        .lineStyle(1.3, UI.cyan, .62).strokeRoundedRect(241, 78, 164, 92, 10)
-        .lineStyle(0.8, UI.cyan, .22).strokeCircle(323, 124, 34).strokeCircle(323, 124, 20)
-        .lineStyle(0.7, UI.cyan, .18).lineBetween(275, 124, 371, 124).lineBetween(323, 86, 323, 162)
-        .lineStyle(1, UI.cyan, .24).lineBetween(448, 78, 448, 204);
+        .lineStyle(0.9, UI.cyan, .22).strokeCircle(336, 120, 34).strokeCircle(336, 120, 20)
+        .lineStyle(0.7, UI.cyan, .18).lineBetween(282, 120, 390, 120).lineBetween(336, 82, 336, 158);
       this.ui.add(bay);
-      const radarPulse = this.add.graphics().lineStyle(1.4, UI.cyan, 0.55).strokeCircle(0, 0, 16).setPosition(323, 124);
+      const radarPulse = this.add.graphics().lineStyle(1.4, UI.cyan, 0.55).strokeCircle(0, 0, 16).setPosition(336, 120);
       this.ui.add(radarPulse);
       this.tweens.add({ targets: radarPulse, scaleX: 2.25, scaleY: 2.25, alpha: 0, duration: 1650, repeat: -1, ease: 'Sine.easeOut' });
-      const plane = this.add.sprite(323, 124, PELAGIC_RIVET_SHEET, 3).setDisplaySize(66, 66);
+      const plane = this.add.sprite(336, 120, PELAGIC_RIVET_SHEET, 3).setDisplaySize(66, 66);
       this.ui.add(plane);
-      this.tweens.add({ targets: plane, y: { from: 121.5, to: 126.5 }, duration: 1450, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-      this.text(323, 182, 'RIVET  •  VANGUARDA', 11, UI.cyanHex);
-      makeIcon(this, 241, 200, UI_ICON.lightning, 14, this.ui);
-      this.text(328, 200, 'ESPECIAL: TORMENTA ESCARLATE', 8.8, UI.goldHex);
-      const stats: [string, number, number, number][] = [['VELOCIDADE', 4, UI_PIP.cyan, 96], ['ARMAMENTO', 5, UI_PIP.gold, 138], ['BLINDAGEM', 3, UI_PIP.green, 180]];
-      for (const [lbl, val, pip, sy] of stats) {
-        this.text(572, sy - 14, lbl, 9, UI.silver);
-        makeGaugeMeter(this, 572, sy + 2, 154, 19, 5, val, pip, this.ui);
+      this.tweens.add({ targets: plane, y: { from: 117.5, to: 122.5 }, duration: 1450, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.text(336, 179, 'RIVET  •  VANGUARDA', 11, UI.cyanHex);
+      makeVectorIconSprite(this, this.ui, 250, 196, 'lightning', 13, UI.goldHex);
+      this.text(340, 196, 'ESPECIAL: TORMENTA ESCARLATE', 8.8, UI.goldHex);
+
+      // Slanted vector stat meters (right)
+      const stats: [string, number, 'cyan' | 'gold' | 'green', number][] = [
+        ['VELOCIDADE', 4, 'cyan', 94],
+        ['ARMAMENTO', 5, 'gold', 134],
+        ['BLINDAGEM', 3, 'green', 174],
+      ];
+      for (const [lbl, val, kind, sy] of stats) {
+        this.text(584, sy - 13, lbl, 9, UI.silver);
+        makeVectorGauge(this, this.ui, 584, sy + 3, 162, 18, 5, val, kind);
       }
+
+      // 5 Vector pilot cards
       const portraits = [0, 4, 5, 6, 7], names = ['BAYEK', 'TITA', 'LEONA', 'OSVALD', 'HIEN'];
       for (let i = 0; i < 5; i++) {
-        const cx = 112 + i * 136;
-        const card = this.add.container(cx, 276);
-        makePanel(this, 0, 0, 122, 88, i === 0 ? 'gold' : 'cobalt', card);
-        card.add(this.add.image(0, -15, 'arc-pilots', portraits[i]).setDisplaySize(48, 48).setAlpha(i ? .50 : 1));
-        if (i) makeIcon(this, 38, -31, UI_ICON.padlock, 19, card);
-        card.add(this.add.text(0, 17, names[i], { fontFamily: FONT, fontSize: '10.5px', fontStyle: 'bold', color: i ? UI.silver : UI.goldHex, stroke: '#061938', strokeThickness: 3 }).setResolution(2).setOrigin(.5));
-        card.add(this.add.text(0, 30, i ? 'EM BREVE' : 'PRONTO', { fontFamily: FONT, fontSize: '7.5px', fontStyle: 'bold', color: i ? UI.slate : UI.cyanHex, stroke: '#061938', strokeThickness: 2.5 }).setResolution(2).setOrigin(.5));
+        const cx = 128 + i * 128;
+        const card = this.add.container(cx, 266);
+        makeVectorPanel(this, card, 0, 0, 114, 86, { kind: i === 0 ? 'cardActive' : 'card', cut: 9 });
+        card.add(this.add.image(0, -14, 'arc-pilots', portraits[i]).setDisplaySize(46, 46).setAlpha(i ? .48 : 1));
+        if (i) makeVectorIconSprite(this, card, 40, -28, 'lock', 14, UI.goldHex);
+        card.add(this.add.text(0, 16, names[i], { fontFamily: FONT, fontSize: '10.5px', fontStyle: 'bold', color: i ? UI.silver : UI.goldHex, stroke: '#061938', strokeThickness: 3 }).setResolution(2).setOrigin(.5));
+        card.add(this.add.text(0, 29, i ? 'EM BREVE' : 'PRONTO', { fontFamily: FONT, fontSize: '7.5px', fontStyle: 'bold', color: i ? UI.slate : UI.cyanHex, stroke: '#061938', strokeThickness: 2.5 }).setResolution(2).setOrigin(.5));
         this.ui.add(card);
-        card.setAlpha(0).setY(285);
-        this.tweens.add({ targets: card, alpha: 1, y: 276, duration: 220, delay: 40 + i * 32, ease: 'Cubic.easeOut' });
+        card.setAlpha(0).setY(275);
+        this.tweens.add({ targets: card, alpha: 1, y: 266, duration: 210, delay: 36 + i * 30, ease: 'Cubic.easeOut' });
       }
-      const pLaunch = this.button(476, 366, 'DECOLAR COM BAYEK', () => this.show('missions'), 288, 40, { fontSize: 14, variant: 'primary' });
-      const pBack = this.button(158, 366, 'VOLTAR', () => this.show('title'), 160, 38, { fontSize: 13, variant: 'back' });
-      pLaunch.modern?.animateEntrance(90, 0, 10);
-      pBack.modern?.animateEntrance(50, 0, 10);
+
+      const pLaunch = this.button(482, 352, 'DECOLAR COM BAYEK', () => this.show('missions'), 294, 38, { fontSize: 13.5, variant: 'primary', icon: 'jet' });
+      const pBack = this.button(176, 352, 'VOLTAR', () => this.show('title'), 166, 36, { fontSize: 13, variant: 'back' });
+      pLaunch.modern?.animateEntrance(85, 0, 8);
+      pBack.modern?.animateEntrance(50, 0, 8);
       makeMenuHintBar(this, this.ui, 412, connectedPad()?.id);
       playMenuScreenEntrance(this, this.ui, 210);
     } else if (screen === 'missions') {
-      this.addModalBackdrop(0x041530, .38, false);
-      makeRibbon(this, 384, 30, 318, 38, 'gold', this.ui);
-      this.text(384, 30, 'ESCOLHA A ROTA', 18, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
+      this.addModalBackdrop(0x041530, .40, false);
+      makeVectorBanner(this, this.ui, 384, 30, 266, 36, 'ESCOLHA A ROTA', { icon: 'route', fontSize: 17 });
       this.text(384, 60, 'DUAS PERSPECTIVAS. UMA OPERAÇÃO DE RESGATE.', 10.5, UI.white);
       const prog = this.arcadeProgress(), unlocked = prog.cleared.includes(1);
       for (let i = 0; i < 2; i++) {
         const cx = i ? 562 : 206, m = MISSIONS[i], avail = i === 0 || unlocked, best = this.bestScoreFor(m.id);
-        makePanel(this, cx, 210, 324, 252, 'cobalt', this.ui);
-        makeRibbon(this, cx, 92, 160, 26, avail ? 'gold' : 'red', this.ui);
-        this.text(cx, 92, `ROTA 0${i + 1}`, 12, avail ? UI.cobaltHex : '#fff5f7', { stroke: avail ? '#fff6b0' : '#4b0816', strokeThickness: 2 });
-        makePanel(this, cx - 84, 184, 120, 120, avail ? 'gold' : 'cobalt', this.ui);
-        this.ui.add(this.add.image(cx - 84, 184, i ? 'arc-scenery' : UI_TEX.routePelagic, i ? 5 : undefined).setDisplaySize(104, 104).setAlpha(avail ? 1 : .42));
-        if (!avail) makeIcon(this, cx - 84, 184, UI_ICON.padlock, 44, this.ui);
+        makeVectorPanel(this, this.ui, cx, 212, 326, 252, { kind: 'main', cut: 14 });
+        makeVectorBanner(this, this.ui, cx, 92, 152, 24, `ROTA 0${i + 1}`, { kind: avail ? 'gold' : 'red', fontSize: 11.5, wings: false });
+        makeVectorPanel(this, this.ui, cx - 84, 184, 118, 118, { kind: avail ? 'gold' : 'sub', cut: 10 });
+        this.ui.add(this.add.image(cx - 84, 184, i ? 'arc-scenery' : UI_TEX.routePelagic, i ? 5 : undefined).setDisplaySize(102, 102).setAlpha(avail ? 1 : .40));
+        if (!avail) makeVectorIconSprite(this, this.ui, cx - 84, 184, 'lock', 36, UI.goldHex);
         this.text(cx + 62, 144, m.name, 15, avail ? UI.goldHex : UI.silver, { wrap: 162 });
         this.text(cx + 62, 172, i ? 'SIDE • CIDADE SOLAR' : 'UP • FENDA PELÁGICA', 9.5, UI.cyanHex, { wrap: 160 });
         this.text(cx + 62, 200, avail ? `RECORDE\n${best}` : 'CONCLUA A\nROTA 01 ANTES', 10, avail ? UI.white : UI.crimsonHex, { wrap: 156 });
@@ -585,17 +638,18 @@ export class ArcadeScene extends Phaser.Scene {
           const modeCol = st.assisted ? '#88fff2' : diff === 'hard' ? UI.goldHex : diff === 'normal' ? UI.cyanHex : UI.silver;
           makeStatusPill(this, this.ui, cx, 262, modeLabel, modeHex, modeCol);
         }
-        const mBtn = this.button(cx, 300, avail ? 'INICIAR MISSÃO' : 'BLOQUEADA', () => { if (!avail) return; const carry = i ? prog.flights[1] : undefined; this.begin(i, carry); }, 264, 38, {
-          fontSize: 13.5,
+        const mBtn = this.button(cx, 300, avail ? 'INICIAR MISSÃO' : 'BLOQUEADA', () => { if (!avail) return; const carry = i ? prog.flights[1] : undefined; this.begin(i, carry); }, 252, 36, {
+          fontSize: 13,
           variant: avail ? 'primary' : 'secondary',
+          icon: avail ? 'play' : 'lock',
           disabled: !avail,
         });
-        mBtn.modern?.animateEntrance(70 + i * 55, i ? 12 : -12, 0);
+        mBtn.modern?.animateEntrance(65 + i * 50, i ? 12 : -12, 0);
       }
-      const mBack = this.button(122, 374, 'VOLTAR', () => this.show('pilot'), 156, 36, { fontSize: 13, variant: 'back' });
-      mBack.modern?.animateEntrance(110, 0, 8);
+      const mBack = this.button(122, 374, 'VOLTAR', () => this.show('pilot'), 156, 34, { fontSize: 13, variant: 'back' });
+      mBack.modern?.animateEntrance(105, 0, 8);
       makeMenuHintBar(this, this.ui, 412, connectedPad()?.id);
-      playMenuScreenEntrance(this, this.ui, 220);
+      playMenuScreenEntrance(this, this.ui, 210);
     } else if (screen === 'play') {
       if (this.world?.up) {
         this.radio.setStyle({ fontFamily: FONT, fontSize: '10px', color: '#f2fff9', backgroundColor: 'rgba(0,0,0,0)', padding: { x: 0, y: 0 }, wordWrap: { width: 105 }, align: 'left' });
@@ -629,6 +683,7 @@ export class ArcadeScene extends Phaser.Scene {
       this.text(384, 358, pPad ? `${pLabels.pause}: RETOMAR  •  ${pLabels.confirm}: CONFIRMAR  •  ${pLabels.cancel}: VOLTAR` : 'ESC: RETOMAR VOO', 9, UI.slate);
     } else if (screen === 'controls') {
       this.addModalBackdrop(0x031129, .62, true);
+      const preGame = !this.world;
       const pad = connectedPad();
       this.lastControlsPadId = pad?.id ?? '';
       if (old !== 'controls') {
@@ -637,13 +692,18 @@ export class ArcadeScene extends Phaser.Scene {
         else if (hasTouchOnly) this.controlsTab = 'android';
         else this.controlsTab = 'pc';
       }
-      makePanel(this, 384, 218, 678, 368, 'cobalt', this.ui);
-      makeRibbon(this, 384, 42, 260, 34, 'gold', this.ui);
-      this.text(384, 42, 'CONTROLES', 17, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
-      const tabs: Array<{ id: ControlsTab; label: string; x: number }> = [
-        { id: 'pc', label: 'PC', x: 224 },
-        { id: 'gamepad', label: 'CONTROLE', x: 384 },
-        { id: 'android', label: 'ANDROID', x: 544 },
+      if (preGame) {
+        makeVectorPanel(this, this.ui, 384, 212, 678, 356, { kind: 'main' });
+        makeVectorBanner(this, this.ui, 384, 36, 232, 34, 'CONTROLES', { icon: 'gamepad', fontSize: 16 });
+      } else {
+        makePanel(this, 384, 218, 678, 368, 'cobalt', this.ui);
+        makeRibbon(this, 384, 42, 260, 34, 'gold', this.ui);
+        this.text(384, 42, 'CONTROLES', 17, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
+      }
+      const tabs: Array<{ id: ControlsTab; label: string; x: number; icon: VectorIconId }> = [
+        { id: 'pc', label: 'PC', x: 224, icon: 'monitor' },
+        { id: 'gamepad', label: 'CONTROLE', x: 384, icon: 'gamepad' },
+        { id: 'android', label: 'ANDROID', x: 544, icon: 'phone' },
       ];
       const switchTab = (next: ControlsTab, focusIdx: number) => {
         if (this.controlsTab === next) return;
@@ -654,45 +714,52 @@ export class ArcadeScene extends Phaser.Scene {
       tabs.forEach((t, idx) => {
         const active = this.controlsTab === t.id;
         if (active && this.world) makePanel(this, t.x, 80, 152, 32, 'gold', this.ui);
-        this.button(t.x, 80, active ? (this.world ? `▸ ${t.label} ◂` : t.label) : t.label, () => switchTab(t.id, idx), 148, this.world ? 26 : 28, {
+        this.button(t.x, preGame ? 78 : 80, active ? (this.world ? `▸ ${t.label} ◂` : t.label) : t.label, () => switchTab(t.id, idx), 148, preGame ? 28 : 26, {
           fontSize: 11.5,
           variant: 'tab',
+          icon: t.icon,
           activeTab: active,
           onLeft: () => { const prev = (idx + 2) % 3; switchTab(tabs[prev].id, prev); },
           onRight: () => { const nxt = (idx + 1) % 3; switchTab(tabs[nxt].id, nxt); },
         });
       });
 
+      const drawKey = (kx: number, ky: number, lbl: string, opts?: { wide?: boolean; gold?: boolean; size?: number; fontSize?: number; width?: number }) => {
+        if (preGame) makeVectorKeycap(this, this.ui, kx, ky, lbl, opts);
+        else makeKeyBadge(this, kx, ky, lbl, { wide: opts?.wide, gold: opts?.gold, size: opts?.size, fontSize: opts?.fontSize, container: this.ui });
+      };
       const cmdRow = (xBadge: number, y: number, badgeText: string, desc: string, opts?: { wide?: boolean; gold?: boolean; descColor?: string; badgeFont?: number }) => {
-        makeKeyBadge(this, xBadge, y, badgeText, { wide: opts?.wide ?? badgeText.length > 3, gold: opts?.gold, size: 24, fontSize: opts?.badgeFont ?? 8.5, container: this.ui });
-        this.text(xBadge + 42, y, desc, 10, opts?.descColor ?? UI.white, { originX: 0, wrap: 230 });
+        drawKey(xBadge, y, badgeText, { wide: opts?.wide ?? badgeText.length > 3, gold: opts?.gold, size: 22, width: preGame ? 72 : undefined, fontSize: opts?.badgeFont ?? 8.2 });
+        this.text(xBadge + 44, y, desc, 10, opts?.descColor ?? UI.white, { originX: 0, wrap: 230 });
       };
 
       if (this.controlsTab === 'pc') {
-        makePanel(this, 198, 224, 228, 222, 'cobalt', this.ui);
+        if (preGame) makeVectorPanel(this, this.ui, 198, 220, 228, 218, { kind: 'sub' });
+        else makePanel(this, 198, 224, 228, 222, 'cobalt', this.ui);
         this.text(198, 128, 'TECLADO PC', 11.5, UI.goldHex);
-        makeKeyBadge(this, 162, 162, 'W', { size: 24, fontSize: 10, container: this.ui });
-        makeKeyBadge(this, 190, 162, 'A', { size: 24, fontSize: 10, container: this.ui });
-        makeKeyBadge(this, 218, 162, 'S', { size: 24, fontSize: 10, container: this.ui });
-        makeKeyBadge(this, 246, 162, 'D', { size: 24, fontSize: 10, container: this.ui });
-        makeKeyBadge(this, 162, 198, '↑', { size: 24, fontSize: 10.5, container: this.ui });
-        makeKeyBadge(this, 190, 198, '←', { size: 24, fontSize: 10.5, container: this.ui });
-        makeKeyBadge(this, 218, 198, '↓', { size: 24, fontSize: 10.5, container: this.ui });
-        makeKeyBadge(this, 246, 198, '→', { size: 24, fontSize: 10.5, container: this.ui });
-        makeKeyBadge(this, 198, 238, 'ESPAÇO', { wide: true, size: 26, fontSize: 9, container: this.ui });
-        makeKeyBadge(this, 148, 276, 'Z', { size: 24, fontSize: 10.5, container: this.ui });
-        makeKeyBadge(this, 184, 276, 'X', { gold: true, size: 24, fontSize: 10.5, container: this.ui });
-        makeKeyBadge(this, 238, 276, 'ESC', { wide: true, size: 24, fontSize: 8.5, container: this.ui });
-        this.text(198, 312, 'MOUSE NÃO MOVE NEM ATIRA EM COMBATE', 8, UI.cyanHex, { wrap: 204 });
+        drawKey(158, 160, 'W', { size: 24, fontSize: 10 });
+        drawKey(186, 160, 'A', { size: 24, fontSize: 10 });
+        drawKey(214, 160, 'S', { size: 24, fontSize: 10 });
+        drawKey(242, 160, 'D', { size: 24, fontSize: 10 });
+        drawKey(158, 194, '↑', { size: 24, fontSize: 11 });
+        drawKey(186, 194, '←', { size: 24, fontSize: 11 });
+        drawKey(214, 194, '↓', { size: 24, fontSize: 11 });
+        drawKey(242, 194, '→', { size: 24, fontSize: 11 });
+        drawKey(198, 232, 'ESPAÇO', { wide: true, size: 24, width: 92, fontSize: 9.5 });
+        drawKey(148, 268, 'Z', { size: 24, fontSize: 10.5 });
+        drawKey(182, 268, 'X', { gold: true, size: 24, fontSize: 10.5 });
+        drawKey(236, 268, 'ESC', { wide: true, size: 24, width: 58, fontSize: 9 });
+        this.text(198, 306, 'MOUSE NÃO MOVE NEM ATIRA EM COMBATE', 7.8, UI.cyanHex, { wrap: 204 });
 
-        makePanel(this, 504, 224, 344, 222, 'cobalt', this.ui);
+        if (preGame) makeVectorPanel(this, this.ui, 504, 220, 344, 218, { kind: 'sub' });
+        else makePanel(this, 504, 224, 344, 222, 'cobalt', this.ui);
         this.text(504, 128, 'TIRO AUTOMÁTICO E CARREGADO', 11, UI.goldHex);
-        cmdRow(378, 158, 'WASD/SETAS', 'Mover RIVET em 8 direções', { wide: true, badgeFont: 7.5 });
-        cmdRow(378, 190, 'ESPAÇO', 'Tiro automático / rajada principal', { wide: true, descColor: UI.goldHex, badgeFont: 8 });
-        cmdRow(378, 222, 'TECLA Z', 'Tiro carregado (segurar / soltar)', { wide: true, descColor: '#67e8f9', badgeFont: 8 });
-        cmdRow(378, 254, 'TECLA X', 'Especial — Tormenta Escarlate', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8 });
-        cmdRow(378, 286, 'ESC / ENTER', 'Pausar / Confirmar menus', { wide: true, badgeFont: 7.5 });
-        this.text(504, 316, 'Segure Z para carregar energia e solte para disparar.', 8.2, UI.silver, { wrap: 318 });
+        cmdRow(380, 158, 'WASD/SETAS', 'Mover RIVET em 8 direções', { wide: true, badgeFont: 7.2 });
+        cmdRow(380, 189, 'ESPAÇO', 'Tiro automático / rajada principal', { wide: true, descColor: UI.goldHex, badgeFont: 8 });
+        cmdRow(380, 220, 'TECLA Z', 'Tiro carregado (segurar / soltar)', { wide: true, descColor: '#67e8f9', badgeFont: 8 });
+        cmdRow(380, 251, 'TECLA X', 'Especial — Tormenta Escarlate', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8 });
+        cmdRow(380, 282, 'ESC / ENTER', 'Pausar / Confirmar menus', { wide: true, badgeFont: 7.2 });
+        this.text(504, 312, 'Segure Z para carregar energia e solte para disparar.', 8.2, UI.silver, { wrap: 318 });
       } else if (this.controlsTab === 'gamepad') {
         const detected = pad ? detectPadProfile(pad.id) : 'playstation';
         const activeProfile: Extract<PadProfile, 'playstation' | 'xbox'> =
@@ -701,17 +768,19 @@ export class ArcadeScene extends Phaser.Scene {
             : this.controlsPadPreview;
         const isXbox = activeProfile === 'xbox';
         const padTex = isXbox ? UI_TEX.padXbox : UI_TEX.padDualSense;
-        makePanel(this, 212, 224, 256, 222, 'cobalt', this.ui);
+        if (preGame) makeVectorPanel(this, this.ui, 212, 220, 256, 218, { kind: 'sub' });
+        else makePanel(this, 212, 224, 256, 222, 'cobalt', this.ui);
         this.text(212, 126, isXbox ? 'CONTROLE XBOX / PC' : 'PS5 DUALSENSE', 11, UI.goldHex);
-        this.ui.add(this.add.image(212, 206, padTex).setDisplaySize(222, 130));
-        this.text(212, 282, pad ? `CONECTADO: ${pad.id.slice(0, 22).toUpperCase()}` : (isXbox ? 'PERFIL XBOX / XINPUT' : 'DUALSENSE VIA USB / BLUETOOTH'), 7.6, pad ? UI.cyanHex : UI.silver, { wrap: 232 });
-        this.button(212, 310, isXbox ? 'VER PLAYSTATION ⇄' : 'VER XBOX ⇄', () => {
+        this.ui.add(this.add.image(212, 202, padTex).setDisplaySize(220, 128));
+        this.text(212, 276, pad ? `CONECTADO: ${pad.id.slice(0, 22).toUpperCase()}` : (isXbox ? 'PERFIL XBOX / XINPUT' : 'DUALSENSE VIA USB / BLUETOOTH'), 7.6, pad ? UI.cyanHex : UI.silver, { wrap: 232 });
+        this.button(212, 304, isXbox ? 'VER PLAYSTATION ⇄' : 'VER XBOX ⇄', () => {
           this.controlsPadPreview = isXbox ? 'playstation' : 'xbox';
           this.nextControlsFocus = 1;
           this.show('controls');
-        }, 178, 26, { fontSize: 9.5, variant: 'secondary' });
+        }, 178, 25, { fontSize: 9.2, variant: 'secondary' });
 
-        makePanel(this, 518, 224, 320, 222, 'cobalt', this.ui);
+        if (preGame) makeVectorPanel(this, this.ui, 518, 220, 320, 218, { kind: 'sub' });
+        else makePanel(this, 518, 224, 320, 222, 'cobalt', this.ui);
         this.text(518, 126, isXbox ? 'COMANDOS XBOX' : 'COMANDOS PLAYSTATION', 10.5, UI.goldHex);
 
         const drawFaceOrb = (cx: number, cy: number, sym: string, ringColor: number, textColor: string, r = 9.5, fontSize = 10.5) => {
@@ -774,34 +843,41 @@ export class ArcadeScene extends Phaser.Scene {
           this.text(518, 316, 'Segure □ para carregar (1.2s máx) e solte para disparar  •  △ reservado', 7.6, UI.silver, { wrap: 296 });
         }
       } else {
-        makePanel(this, 222, 224, 276, 222, 'cobalt', this.ui);
+        if (preGame) makeVectorPanel(this, this.ui, 222, 220, 276, 218, { kind: 'sub' });
+        else makePanel(this, 222, 224, 276, 222, 'cobalt', this.ui);
         this.text(222, 126, 'ANDROID TOUCH (PAISAGEM)', 10.5, UI.goldHex);
-        this.ui.add(this.add.image(222, 214, UI_TEX.mobileLandscape).setDisplaySize(248, 140));
-        this.text(222, 306, 'MULTITOQUE LIVRE  •  ÁREA SEGURA ATIVA', 8, UI.cyanHex, { wrap: 256 });
+        this.ui.add(this.add.image(222, 210, UI_TEX.mobileLandscape).setDisplaySize(244, 138));
+        this.text(222, 302, 'MULTITOQUE LIVRE  •  ÁREA SEGURA ATIVA', 8, UI.cyanHex, { wrap: 256 });
 
-        makePanel(this, 528, 224, 300, 222, 'cobalt', this.ui);
+        if (preGame) makeVectorPanel(this, this.ui, 528, 220, 300, 218, { kind: 'sub' });
+        else makePanel(this, 528, 224, 300, 222, 'cobalt', this.ui);
         this.text(528, 126, 'COMANDOS NA TELA', 11, UI.goldHex);
         cmdRow(414, 156, 'JOYSTICK', 'Voo preciso em 8 direções', { wide: true, badgeFont: 7.5 });
-        cmdRow(414, 188, 'TIRO', 'Segure para tiro automático', { wide: true, descColor: UI.goldHex, badgeFont: 8.5 });
-        cmdRow(414, 220, 'CARGA', 'Segure e solte (quando disponível)', { wide: true, descColor: '#67e8f9', badgeFont: 8 });
-        cmdRow(414, 252, 'ESP', 'Ativar especial sem erro', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8.5 });
-        cmdRow(414, 284, 'PAUSA', 'Botão no topo direito', { wide: true, badgeFont: 8 });
-        this.text(528, 316, 'Personalize tamanho, lado e transparência em OPÇÕES.', 8, UI.silver, { wrap: 280 });
+        cmdRow(414, 187, 'TIRO', 'Segure para tiro automático', { wide: true, descColor: UI.goldHex, badgeFont: 8.5 });
+        cmdRow(414, 218, 'CARGA', 'Segure e solte (quando disponível)', { wide: true, descColor: '#67e8f9', badgeFont: 8 });
+        cmdRow(414, 249, 'ESP', 'Ativar especial sem erro', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8.5 });
+        cmdRow(414, 280, 'PAUSA', 'Botão no topo direito', { wide: true, badgeFont: 8 });
+        this.text(528, 312, 'Personalize tamanho, lado e transparência em OPÇÕES.', 8, UI.silver, { wrap: 280 });
       }
 
-      this.button(384, 372, 'VOLTAR', () => { this.nextControlsFocus = undefined; this.show(this.world ? 'pause' : this.pauseOrigin); }, 204, 34, { fontSize: 13, variant: 'back' });
+      this.button(384, preGame ? 360 : 372, 'VOLTAR', () => { this.nextControlsFocus = undefined; this.show(this.world ? 'pause' : this.pauseOrigin); }, 204, 34, { fontSize: 13, variant: 'back' });
       this.focus = this.nextControlsFocus ?? tabs.findIndex(t => t.id === this.controlsTab);
       this.nextControlsFocus = undefined;
       if (!this.world) {
-        makeMenuHintBar(this, this.ui, 414, connectedPad()?.id);
+        makeMenuHintBar(this, this.ui, 412, connectedPad()?.id);
         playMenuScreenEntrance(this, this.ui, old === 'controls' ? 120 : 210);
       }
     } else if (screen === 'settings') {
       this.addModalBackdrop(0x031129, .60, true);
       const preGame = !this.world;
-      makePanel(this, 384, preGame ? 214 : 222, 620, preGame ? 354 : 368, 'cobalt', this.ui);
-      makeRibbon(this, 384, preGame ? 38 : 42, 232, 36, 'gold', this.ui);
-      this.text(384, preGame ? 38 : 42, 'OPÇÕES', 18, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
+      if (preGame) {
+        makeVectorPanel(this, this.ui, 384, 212, 634, 352, { kind: 'main' });
+        makeVectorBanner(this, this.ui, 384, 36, 224, 34, 'OPÇÕES', { icon: 'gear', fontSize: 16.5 });
+      } else {
+        makePanel(this, 384, 222, 620, 368, 'cobalt', this.ui);
+        makeRibbon(this, 384, 42, 232, 36, 'gold', this.ui);
+        this.text(384, 42, 'OPÇÕES', 18, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
+      }
       const syncWorldDifficulty = () => {
         if (!this.world) return;
         const cur = globalSave.getSettings();
@@ -809,9 +885,13 @@ export class ArcadeScene extends Phaser.Scene {
         this.world.setDifficulty(cur.difficulty);
         this.pelagicAssistBadge.setVisible(!!this.world.up && this.world.isAssisted);
       };
-      const addVolumeRow = (y: number, iconFrame: number, label: string, isMusic: boolean) => {
+      const addRowIcon = (y: number, iconFrame: number, vecIcon: VectorIconId, color: string) => {
+        if (preGame) makeVectorIconSprite(this, this.ui, 134, y, vecIcon, 17, color);
+        else makeIcon(this, 136, y, iconFrame, 22, this.ui);
+      };
+      const addVolumeRow = (y: number, iconFrame: number, vecIcon: VectorIconId, label: string, isMusic: boolean) => {
         const get = () => isMusic ? globalSave.getSettings().musicVolume : globalSave.getSettings().sfxVolume;
-        let meter!: ReturnType<typeof makeGaugeMeter>, valText!: Phaser.GameObjects.Text;
+        let meter!: { setValue: (n: number) => void }, valText!: Phaser.GameObjects.Text;
         const apply = (next: number) => {
           const clamped = clamp(Math.round(next * 10) / 10, 0, 1);
           globalSave.updateSettings(isMusic ? { musicVolume: clamped } : { sfxVolume: clamped });
@@ -820,44 +900,76 @@ export class ArcadeScene extends Phaser.Scene {
           const steps = Math.round(clamped * 10);
           meter?.setValue(steps); valText?.setText(`${steps * 10}%`);
         };
-        const btn = this.button(384, y, '', () => apply(get() >= .99 ? 0 : get() + .1), 554, 33, {
+        const btn = this.button(384, y, '', () => apply(get() >= .99 ? 0 : get() + .1), 564, 33, {
           noLabel: true,
           variant: 'optionRow',
           showArrows: true,
           onLeft: () => { globalAudio.playArcade('navigate'); apply(get() - .1); },
           onRight: () => { globalAudio.playArcade('navigate'); apply(get() + .1); },
         });
-        makeIcon(this, 136, y, iconFrame, 22, this.ui);
-        const title = this.text(168, y, label, 11.5, UI.white, { originX: 0 });
-        meter = makeGaugeMeter(this, 456, y, 192, 22, 10, Math.round(get() * 10), isMusic ? UI_PIP.cyan : UI_PIP.gold, this.ui);
+        addRowIcon(y, iconFrame, vecIcon, isMusic ? UI.cyanHex : UI.goldHex);
+        const title = this.text(164, y, label, 11.5, UI.white, { originX: 0 });
+        meter = preGame
+          ? makeVectorGauge(this, this.ui, 456, y, 198, 20, 10, Math.round(get() * 10), isMusic ? 'cyan' : 'gold')
+          : makeGaugeMeter(this, 456, y, 192, 22, 10, Math.round(get() * 10), isMusic ? UI_PIP.cyan : UI_PIP.gold, this.ui);
         const initSteps = Math.round(get() * 10);
-        valText = this.text(592, y, `${initSteps * 10}%`, 11.5, UI.cyanHex);
+        valText = this.text(596, y, `${initSteps * 10}%`, 11.5, UI.cyanHex);
         btn.extras = [title, valText];
       };
-      const addToggleRow = (y: number, iconFrame: number, label: string, pipCount: number, pipFrame: number, readState: () => { text: string; filled: number }, stepState: (dir: number) => void) => {
+      const addBoolRow = (y: number, iconFrame: number, vecIcon: VectorIconId, iconCol: string, label: string, readOn: () => boolean, toggle: () => void) => {
+        const initOn = readOn();
+        let pill!: { setValue: (on: boolean) => void }, meter!: { setValue: (n: number) => void }, valText!: Phaser.GameObjects.Text;
+        const flip = () => {
+          toggle();
+          const on = readOn();
+          pill?.setValue(on);
+          meter?.setValue(on ? 2 : 0);
+          valText?.setText(on ? 'ATIVADO' : 'DESATIVADO');
+        };
+        const btn = this.button(384, y, '', flip, 564, 33, {
+          noLabel: true,
+          variant: 'optionRow',
+          showArrows: true,
+          onLeft: () => { globalAudio.playArcade('navigate'); flip(); },
+          onRight: () => { globalAudio.playArcade('navigate'); flip(); },
+        });
+        addRowIcon(y, iconFrame, vecIcon, iconCol);
+        const title = this.text(164, y, label, 11.5, UI.white, { originX: 0 });
+        if (preGame) {
+          pill = makeVectorTogglePill(this, this.ui, 536, y, 148, 22, initOn, ['NÃO', 'SIM']);
+          btn.extras = [title];
+        } else {
+          meter = makeGaugeMeter(this, 438, y, 118, 20, 2, initOn ? 2 : 0, UI_PIP.green, this.ui);
+          valText = this.text(578, y, initOn ? 'ATIVADO' : 'DESATIVADO', 11, UI.goldHex);
+          btn.extras = [title, valText];
+        }
+      };
+      const addToggleRow = (y: number, iconFrame: number, vecIcon: VectorIconId, iconCol: string, label: string, pipCount: number, pipFrame: number, gaugeKind: 'cyan' | 'gold' | 'green', readState: () => { text: string; filled: number }, stepState: (dir: number) => void) => {
         const st0 = readState();
-        let meter!: ReturnType<typeof makeGaugeMeter>, valText!: Phaser.GameObjects.Text;
+        let meter!: { setValue: (n: number) => void }, valText!: Phaser.GameObjects.Text;
         const update = (dir: number) => { stepState(dir); const st = readState(); meter.setValue(st.filled); valText.setText(st.text); };
-        const btn = this.button(384, y, '', () => update(1), 554, 33, {
+        const btn = this.button(384, y, '', () => update(1), 564, 33, {
           noLabel: true,
           variant: 'optionRow',
           showArrows: true,
           onLeft: () => { globalAudio.playArcade('navigate'); update(-1); },
           onRight: () => { globalAudio.playArcade('navigate'); update(1); },
         });
-        makeIcon(this, 136, y, iconFrame, 22, this.ui);
-        const title = this.text(168, y, label, 11.5, UI.white, { originX: 0 });
-        meter = makeGaugeMeter(this, 438, y, 118, 20, pipCount, st0.filled, pipFrame, this.ui);
-        valText = this.text(578, y, st0.text, 11, UI.goldHex);
+        addRowIcon(y, iconFrame, vecIcon, iconCol);
+        const title = this.text(164, y, label, 11.5, UI.white, { originX: 0 });
+        meter = preGame
+          ? makeVectorGauge(this, this.ui, 436, y, 134, 19, pipCount, st0.filled, gaugeKind)
+          : makeGaugeMeter(this, 438, y, 118, 20, pipCount, st0.filled, pipFrame, this.ui);
+        valText = this.text(576, y, st0.text, 11, UI.goldHex);
         btn.extras = [title, valText];
       };
-      const yOff = preGame ? -6 : 0;
-      addVolumeRow(92 + yOff, UI_ICON.music, 'MÚSICA', true);
-      addVolumeRow(132 + yOff, UI_ICON.speaker, 'EFEITOS', false);
-      addToggleRow(172 + yOff, UI_ICON.lightning, 'DISPARO ACESSÍVEL', 2, UI_PIP.green, () => {
-        const on = globalSave.getSettings().rapidFire; return { text: on ? 'ATIVADO' : 'DESATIVADO', filled: on ? 2 : 0 };
-      }, () => { const next = !globalSave.getSettings().rapidFire; globalSave.updateSettings({ rapidFire: next }); if (this.world) this.world.accessibility = next; });
-      addToggleRow(212 + yOff, UI_ICON.crown, 'DIFICULDADE', 3, UI_PIP.gold, () => {
+      const yOff = preGame ? -7 : 0;
+      addVolumeRow(92 + yOff, UI_ICON.music, 'music', 'MÚSICA', true);
+      addVolumeRow(131 + yOff, UI_ICON.speaker, 'speaker', 'EFEITOS', false);
+      addBoolRow(170 + yOff, UI_ICON.lightning, 'lightning', UI.goldHex, 'DISPARO ACESSÍVEL',
+        () => globalSave.getSettings().rapidFire,
+        () => { const next = !globalSave.getSettings().rapidFire; globalSave.updateSettings({ rapidFire: next }); if (this.world) this.world.accessibility = next; });
+      addToggleRow(209 + yOff, UI_ICON.crown, 'crown', UI.goldHex, 'DIFICULDADE', 3, UI_PIP.gold, 'gold', () => {
         const diff = normalizeGameDifficulty(globalSave.getSettings().difficulty);
         const filled = diff === 'hard' ? 3 : diff === 'normal' ? 2 : 1;
         return { text: DIFFICULTY_PROFILES[diff].label, filled };
@@ -866,24 +978,30 @@ export class ArcadeScene extends Phaser.Scene {
         globalSave.updateSettings({ difficulty: next });
         syncWorldDifficulty();
       });
-      addToggleRow(252 + yOff, UI_ICON.botan, 'MODO ASSISTIDO', 2, UI_PIP.cyan, () => {
-        const on = globalSave.getSettings().assisted; return { text: on ? 'ATIVADO' : 'DESATIVADO', filled: on ? 2 : 0 };
-      }, () => { const next = !globalSave.getSettings().assisted; globalSave.updateSettings({ assisted: next }); syncWorldDifficulty(); });
-      addToggleRow(292 + yOff, UI_ICON.radar, 'QUALIDADE VISUAL', 3, UI_PIP.cyan, () => {
+      addBoolRow(248 + yOff, UI_ICON.botan, 'shield', UI.cyanHex, 'MODO ASSISTIDO',
+        () => globalSave.getSettings().assisted,
+        () => { const next = !globalSave.getSettings().assisted; globalSave.updateSettings({ assisted: next }); syncWorldDifficulty(); });
+      addToggleRow(287 + yOff, UI_ICON.radar, 'monitor', UI.cyanHex, 'QUALIDADE VISUAL', 3, UI_PIP.cyan, 'cyan', () => {
         return { text: ['BAIXA', 'MÉDIA', 'ALTA'][this.quality], filled: this.quality + 1 };
       }, (dir) => { this.quality = (this.quality + (dir < 0 ? 2 : 1)) % 3; try { localStorage.setItem('bullet_wake_visual', String(this.quality)); } catch {/* Optional */ } });
-      this.text(384, 324 + yOff, 'Modo Assistido (Rota 01): recuperação facilitada sem alterar Fácil/Normal/Difícil.', 9, UI.silver);
-      this.button(262, 358 + yOff, 'CONTROLES TOUCH', () => this.show('touch-settings'), 228, 36, { fontSize: 12.5, variant: 'secondary' });
-      this.button(506, 358 + yOff, 'VOLTAR', () => this.show(this.pauseOrigin), 214, 36, { variant: 'back' });
+      this.text(384, 320 + yOff, 'Modo Assistido (Rota 01): recuperação facilitada sem alterar Fácil/Normal/Difícil.', 8.8, UI.silver);
+      this.button(258, 355 + yOff, 'CONTROLES TOUCH', () => this.show('touch-settings'), 226, 35, { fontSize: 12, variant: 'secondary', icon: 'touch' });
+      this.button(508, 355 + yOff, 'VOLTAR', () => this.show(this.pauseOrigin), 214, 35, { variant: 'back' });
       if (preGame) {
-        makeMenuHintBar(this, this.ui, 413, connectedPad()?.id, { adjust: true });
+        makeMenuHintBar(this, this.ui, 412, connectedPad()?.id, { adjust: true });
         playMenuScreenEntrance(this, this.ui, 210);
       }
     } else if (screen === 'touch-settings') {
       this.addModalBackdrop(0x031129, .54, true);
-      makePanel(this, 384, 170, 524, 290, 'cobalt', this.ui);
-      makeRibbon(this, 384, 32, 276, 34, 'gold', this.ui);
-      this.text(384, 32, 'CONTROLES TOUCH', 16, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
+      const preGame = !this.world;
+      if (preGame) {
+        makeVectorPanel(this, this.ui, 384, 170, 536, 290, { kind: 'main' });
+        makeVectorBanner(this, this.ui, 384, 30, 260, 32, 'CONTROLES TOUCH', { icon: 'phone', fontSize: 15 });
+      } else {
+        makePanel(this, 384, 170, 524, 290, 'cobalt', this.ui);
+        makeRibbon(this, 384, 32, 276, 34, 'gold', this.ui);
+        this.text(384, 32, 'CONTROLES TOUCH', 16, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
+      }
       const patchTouch = (patch: Partial<TouchControlSettings>) => {
         const cur = globalSave.getSettings().touch;
         globalSave.updateSettings({ touch: { ...cur, ...patch } });
@@ -892,36 +1010,42 @@ export class ArcadeScene extends Phaser.Scene {
       const addTouchRow = (
         y: number,
         iconFrame: number,
+        vecIcon: VectorIconId,
+        iconCol: string,
         label: string,
         pipCount: number,
         pipFrame: number,
+        gaugeKind: 'cyan' | 'gold' | 'green',
         readState: () => { text: string; filled: number },
         stepState: (dir: number) => void,
       ) => {
         const st0 = readState();
-        let meter!: ReturnType<typeof makeGaugeMeter>, valText!: Phaser.GameObjects.Text;
+        let meter!: { setValue: (n: number) => void }, valText!: Phaser.GameObjects.Text;
         const update = (dir: number) => { stepState(dir); const st = readState(); meter.setValue(st.filled); valText.setText(st.text); };
-        const btn = this.button(384, y, '', () => update(1), 472, 30, {
+        const btn = this.button(384, y, '', () => update(1), 478, 30, {
           noLabel: true,
           variant: 'optionRow',
           showArrows: true,
           onLeft: () => { globalAudio.playArcade('navigate'); update(-1); },
           onRight: () => { globalAudio.playArcade('navigate'); update(1); },
         });
-        makeIcon(this, 174, y, iconFrame, 20, this.ui);
-        const title = this.text(200, y, label, 10.5, UI.white, { originX: 0 });
-        meter = makeGaugeMeter(this, 418, y, 104, 18, pipCount, st0.filled, pipFrame, this.ui);
+        if (preGame) makeVectorIconSprite(this, this.ui, 172, y, vecIcon, 16, iconCol);
+        else makeIcon(this, 174, y, iconFrame, 20, this.ui);
+        const title = this.text(198, y, label, 10.5, UI.white, { originX: 0 });
+        meter = preGame
+          ? makeVectorGauge(this, this.ui, 418, y, 110, 18, pipCount, st0.filled, gaugeKind)
+          : makeGaugeMeter(this, 418, y, 104, 18, pipCount, st0.filled, pipFrame, this.ui);
         valText = this.text(542, y, st0.text, 10.5, UI.goldHex);
         btn.extras = [title, valText];
       };
-      addTouchRow(76, UI_ICON.gamepad, 'MÃO DOMINANTE', 2, UI_PIP.gold, () => {
+      addTouchRow(76, UI_ICON.gamepad, 'gamepad', UI.goldHex, 'MÃO DOMINANTE', 2, UI_PIP.gold, 'gold', () => {
         const left = globalSave.getSettings().touch.handedness === 'left';
         return { text: left ? 'CANHOTO' : 'DESTRO', filled: left ? 2 : 1 };
       }, () => patchTouch({ handedness: globalSave.getSettings().touch.handedness === 'left' ? 'right' : 'left' }));
 
       const posOrder: TouchControlSettings['position'][] = ['corner', 'raised', 'wide'];
       const posNames = { corner: 'CANTO', raised: 'ELEVADA', wide: 'ABERTA' } as const;
-      addTouchRow(112, UI_ICON.radar, 'POSIÇÃO (MÃO)', 3, UI_PIP.cyan, () => {
+      addTouchRow(112, UI_ICON.radar, 'route', UI.cyanHex, 'POSIÇÃO (MÃO)', 3, UI_PIP.cyan, 'cyan', () => {
         const pos = globalSave.getSettings().touch.position;
         return { text: posNames[pos], filled: posOrder.indexOf(pos) + 1 };
       }, (dir) => {
@@ -931,7 +1055,7 @@ export class ArcadeScene extends Phaser.Scene {
 
       const sizeOrder: TouchControlSettings['size'][] = ['compact', 'standard', 'large'];
       const sizeNames = { compact: 'PEQUENO', standard: 'PADRÃO', large: 'GRANDE' } as const;
-      addTouchRow(148, UI_ICON.lightning, 'TAMANHO', 3, UI_PIP.green, () => {
+      addTouchRow(148, UI_ICON.lightning, 'lightning', '#67ff8c', 'TAMANHO', 3, UI_PIP.green, 'green', () => {
         const sz = globalSave.getSettings().touch.size;
         return { text: sizeNames[sz], filled: sizeOrder.indexOf(sz) + 1 };
       }, (dir) => {
@@ -940,7 +1064,7 @@ export class ArcadeScene extends Phaser.Scene {
       });
 
       const opSteps = [0.30, 0.45, 0.60, 0.75];
-      addTouchRow(184, UI_ICON.botan, 'TRANSPARÊNCIA', 4, UI_PIP.cyan, () => {
+      addTouchRow(184, UI_ICON.botan, 'shield', UI.cyanHex, 'TRANSPARÊNCIA', 4, UI_PIP.cyan, 'cyan', () => {
         const op = globalSave.getSettings().touch.opacity;
         const filled = opSteps.reduce((best, v, i) => (Math.abs(v - op) < Math.abs(opSteps[best] - op) ? i : best), 0) + 1;
         return { text: `${Math.round(op * 100)}%`, filled };
@@ -952,7 +1076,7 @@ export class ArcadeScene extends Phaser.Scene {
 
       const ySteps = [-24, -12, 0, 12];
       const yNames = ['ALTA', 'MÉDIA', 'PADRÃO', 'BAIXA'];
-      addTouchRow(220, UI_ICON.crown, 'ALTURA FINA', 4, UI_PIP.gold, () => {
+      addTouchRow(220, UI_ICON.crown, 'crown', UI.goldHex, 'ALTURA FINA', 4, UI_PIP.gold, 'gold', () => {
         const oy = globalSave.getSettings().touch.offsetY;
         const idx = ySteps.reduce((best, v, i) => (Math.abs(v - oy) < Math.abs(ySteps[best] - oy) ? i : best), 2);
         return { text: yNames[idx], filled: idx + 1 };
@@ -968,7 +1092,7 @@ export class ArcadeScene extends Phaser.Scene {
         this.show('touch-settings');
       }, 206, 34, { fontSize: 11.5, variant: 'secondary' });
       this.button(496, 272, 'VOLTAR', () => this.show('settings'), 190, 34, { fontSize: 12.5, variant: 'back' });
-      if (!this.world) playMenuScreenEntrance(this, this.ui, 200);
+      if (preGame) playMenuScreenEntrance(this, this.ui, 200);
     } else if (screen === 'confirm-exit') {
       this.addModalBackdrop(0x031129, .64, true);
       makePanel(this, 384, 218, 434, 256, 'gold', this.ui);
@@ -1188,7 +1312,7 @@ export class ArcadeScene extends Phaser.Scene {
           else if (this.screen === 'touch-settings') this.show('settings');
           else if (this.screen === 'settings') this.show(this.pauseOrigin);
           else if (this.screen === 'missions') this.show('pilot');
-          else if (this.screen === 'pilot') this.show('title');
+          else if (this.screen === 'pilot' || this.screen === 'credits') this.show('title');
           else if (backPressed && ['result', 'defeat', 'ending'].includes(this.screen)) { this.disposeWorld(); this.show('title'); }
         }
       }

@@ -1,6 +1,15 @@
 import Phaser from 'phaser';
 import { UI, UI_FONT } from './ArcadeMenuArt';
-import { padLabels } from '../systems/gamepadInput';
+import {
+  drawVectorIcon,
+  getOrMakeVectorTex,
+  makeVectorHintBar,
+  traceAeroPlaque,
+  traceChamferRect,
+  traceRoundedRect,
+  traceWingedHex,
+  type VectorIconId,
+} from './ArcadeMenuVector';
 
 export type MenuButtonVariant = 'primary' | 'secondary' | 'back' | 'tab' | 'optionRow';
 
@@ -11,6 +20,7 @@ export interface ArcadeMenuButtonConfig {
   height: number;
   label: string;
   variant: MenuButtonVariant;
+  icon?: VectorIconId;
   fontSize?: number;
   disabled?: boolean;
   activeTab?: boolean;
@@ -23,271 +33,184 @@ export interface ArcadeMenuButtonConfig {
   onRight?: () => void;
 }
 
-interface Palette {
-  fillTop: number;
-  fillBot: number;
-  border: number;
-  innerRim: number;
-  accent: number;
-  text: string;
-  stroke: string;
-  strokeThickness: number;
-}
+const DPR = 2;
 
-const PALETTES: Record<MenuButtonVariant, { idle: Palette; focus: Palette; disabled: Palette }> = {
-  primary: {
-    idle: {
-      fillTop: 0x164488,
-      fillBot: 0x0a224d,
-      border: 0xffd24a,
-      innerRim: 0x5be8ff,
-      accent: 0xffdf5a,
-      text: '#fff8d6',
-      stroke: '#061938',
-      strokeThickness: 3,
-    },
-    focus: {
-      fillTop: 0xffe96b,
-      fillBot: 0xf4a11a,
-      border: 0xfff8cc,
-      innerRim: 0x4ce6ff,
-      accent: 0x082147,
-      text: '#071a38',
-      stroke: '#fff6b8',
-      strokeThickness: 2.2,
-    },
-    disabled: {
-      fillTop: 0x12223d,
-      fillBot: 0x0a1529,
-      border: 0x355078,
-      innerRim: 0x203556,
-      accent: 0x4f6d96,
-      text: '#7f99bd',
-      stroke: '#040d1e',
-      strokeThickness: 2.5,
-    },
-  },
-  secondary: {
-    idle: {
-      fillTop: 0x133873,
-      fillBot: 0x081d42,
-      border: 0x3dc8f5,
-      innerRim: 0x7aeaff,
-      accent: 0x4ce6ff,
-      text: '#edf7ff',
-      stroke: '#05142e',
-      strokeThickness: 3,
-    },
-    focus: {
-      fillTop: 0x1e60b8,
-      fillBot: 0x0e3470,
-      border: 0xffdf5a,
-      innerRim: 0x8ef3ff,
-      accent: 0xffdf5a,
-      text: '#fff5b8',
-      stroke: '#05142e',
-      strokeThickness: 3.2,
-    },
-    disabled: {
-      fillTop: 0x101f38,
-      fillBot: 0x091326,
-      border: 0x2e466b,
-      innerRim: 0x1f3352,
-      accent: 0x4b688f,
-      text: '#7a94b8',
-      stroke: '#040d1e',
-      strokeThickness: 2.5,
-    },
-  },
-  back: {
-    idle: {
-      fillTop: 0x112d5c,
-      fillBot: 0x081838,
-      border: 0x4aa8d8,
-      innerRim: 0x7cd8ff,
-      accent: 0x7cd8ff,
-      text: '#d6ecff',
-      stroke: '#05142e',
-      strokeThickness: 2.8,
-    },
-    focus: {
-      fillTop: 0x1b4e96,
-      fillBot: 0x0d2b5c,
-      border: 0xffdf5a,
-      innerRim: 0x62ecff,
-      accent: 0xffdf5a,
-      text: '#fff4b5',
-      stroke: '#05142e',
-      strokeThickness: 3,
-    },
-    disabled: {
-      fillTop: 0x101f38,
-      fillBot: 0x091326,
-      border: 0x2e466b,
-      innerRim: 0x1f3352,
-      accent: 0x4b688f,
-      text: '#7a94b8',
-      stroke: '#040d1e',
-      strokeThickness: 2.5,
-    },
-  },
-  tab: {
-    idle: {
-      fillTop: 0x102e61,
-      fillBot: 0x081a3d,
-      border: 0x3596cc,
-      innerRim: 0x5cd8ff,
-      accent: 0x4ce6ff,
-      text: '#cde7ff',
-      stroke: '#05142e',
-      strokeThickness: 2.5,
-    },
-    focus: {
-      fillTop: 0xffe462,
-      fillBot: 0xf29f18,
-      border: 0xfff8cc,
-      innerRim: 0x4ce6ff,
-      accent: 0x071b3b,
-      text: '#071a38',
-      stroke: '#fff5b0',
-      strokeThickness: 2,
-    },
-    disabled: {
-      fillTop: 0x101f38,
-      fillBot: 0x091326,
-      border: 0x2e466b,
-      innerRim: 0x1f3352,
-      accent: 0x4b688f,
-      text: '#7a94b8',
-      stroke: '#040d1e',
-      strokeThickness: 2.5,
-    },
-  },
-  optionRow: {
-    idle: {
-      fillTop: 0x0f2d5e,
-      fillBot: 0x081c40,
-      border: 0x2b7cb3,
-      innerRim: 0x54d6ff,
-      accent: 0x4ce6ff,
-      text: '#eaf6ff',
-      stroke: '#05142e',
-      strokeThickness: 2.8,
-    },
-    focus: {
-      fillTop: 0x1c539e,
-      fillBot: 0x0d2f68,
-      border: 0xffdf5a,
-      innerRim: 0x7ef2ff,
-      accent: 0xffdf5a,
-      text: '#fff5ba',
-      stroke: '#05142e',
-      strokeThickness: 3,
-    },
-    disabled: {
-      fillTop: 0x101f38,
-      fillBot: 0x091326,
-      border: 0x2e466b,
-      innerRim: 0x1f3352,
-      accent: 0x4b688f,
-      text: '#7a94b8',
-      stroke: '#040d1e',
-      strokeThickness: 2.5,
-    },
-  },
-};
-
-function drawChamferPath(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number, cut: number): void {
-  const c = Math.min(cut, w * 0.25, h * 0.45);
-  g.beginPath();
-  g.moveTo(x + c, y);
-  g.lineTo(x + w - c, y);
-  g.lineTo(x + w, y + c);
-  g.lineTo(x + w, y + h - c);
-  g.lineTo(x + w - c, y + h);
-  g.lineTo(x + c, y + h);
-  g.lineTo(x, y + h - c);
-  g.lineTo(x, y + c);
-  g.closePath();
-}
-
-function renderButtonSurface(
-  g: Phaser.GameObjects.Graphics,
+function buildButtonTexture(
+  scene: Phaser.Scene,
+  variant: MenuButtonVariant,
   w: number,
   h: number,
-  pal: Palette,
-  variant: MenuButtonVariant,
-  isFocused: boolean,
-  isActiveTab = false,
-): void {
-  const hw = w * 0.5;
-  const hh = h * 0.5;
-  const cut = variant === 'optionRow' ? 7 : variant === 'tab' ? 8 : Math.min(11, Math.round(h * 0.28));
+  state: 'idle' | 'focus' | 'disabled' | 'activeTab',
+): { key: string; padX: number; padY: number } {
+  const isAero = variant === 'primary' || variant === 'secondary' || variant === 'back';
+  const padX = isAero ? 22 : 10;
+  const padY = 10;
+  const tw = Math.ceil(w + padX * 2);
+  const th = Math.ceil(h + padY * 2);
+  const key = `mv-btn-${variant}-${state}-${Math.round(w)}x${Math.round(h)}`;
 
-  g.clear();
+  getOrMakeVectorTex(scene, key, tw, th, (ctx) => {
+    const x = padX;
+    const y = padY;
+    const isYellow = (state === 'focus' && variant !== 'optionRow') || (state === 'activeTab' && variant === 'tab');
+    const isDisabled = state === 'disabled';
+    const isRowFocus = state === 'focus' && variant === 'optionRow';
 
-  // Outer dark comic/anime ink contour
-  g.fillStyle(0x030c1f, 0.94);
-  drawChamferPath(g, -hw - 1.5, -hh - 1.5, w + 3, h + 3, cut + 1);
-  g.fillPath();
+    const traceShape = (inset = 0) => {
+      const ix = x + inset;
+      const iy = y + inset;
+      const iw = w - inset * 2;
+      const ih = h - inset * 2;
+      if (variant === 'tab') {
+        traceRoundedRect(ctx, ix, iy, iw, ih, Math.min(12, ih * 0.48));
+      } else if (variant === 'optionRow') {
+        traceChamferRect(ctx, ix, iy, iw, ih, 8);
+      } else if (variant === 'primary') {
+        traceWingedHex(ctx, ix, iy, iw, ih, Math.min(13, ih * 0.42));
+      } else {
+        traceAeroPlaque(ctx, ix, iy, iw, ih, Math.min(10, ih * 0.30), Math.min(6, ih * 0.22));
+      }
+    };
 
-  // Lower bevel fill
-  g.fillStyle(pal.fillBot, 0.98);
-  drawChamferPath(g, -hw, -hh, w, h, cut);
-  g.fillPath();
-
-  // Upper cel-shaded half fill (classic arcade two-tone lighting)
-  const splitY = variant === 'optionRow' ? h * 0.46 : h * 0.52;
-  g.fillStyle(pal.fillTop, 0.98);
-  g.beginPath();
-  g.moveTo(-hw + cut, -hh);
-  g.lineTo(hw - cut, -hh);
-  g.lineTo(hw, -hh + cut);
-  g.lineTo(hw, -hh + splitY);
-  g.lineTo(-hw, -hh + splitY);
-  g.lineTo(-hw, -hh + cut);
-  g.closePath();
-  g.fillPath();
-
-  // Top glossy specular strip
-  g.fillStyle(0xffffff, isFocused ? 0.34 : 0.16);
-  g.fillRect(-hw + cut + 4, -hh + 2.5, Math.max(8, w - (cut + 4) * 2), Math.max(2, h * 0.1));
-
-  // Bottom shadow edge inside plaque
-  g.fillStyle(0x020a1a, isFocused ? 0.18 : 0.28);
-  g.fillRect(-hw + cut + 2, hh - 4, Math.max(8, w - (cut + 2) * 2), 2.5);
-
-  // Subtle aerospace side accent bars
-  if (variant === 'primary' || variant === 'secondary' || variant === 'optionRow') {
-    const barH = Math.max(10, h - 14);
-    const barW = isFocused ? 4.2 : 3;
-    g.fillStyle(pal.accent, isFocused ? 0.98 : 0.62);
-    g.fillRoundedRect(-hw + 6, -barH * 0.5, barW, barH, 1.5);
-    if (variant !== 'optionRow') {
-      g.fillRoundedRect(hw - 6 - barW, -barH * 0.5, barW, barH, 1.5);
+    // Golden speed-slashes `//` flanking selected yellow buttons (faithful to Bullet Wake prints 3-5!)
+    if (isYellow && isAero) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(255, 214, 64, 0.72)';
+      ctx.shadowBlur = 6;
+      const sg = ctx.createLinearGradient(0, y, 0, y + h);
+      sg.addColorStop(0, '#fff382');
+      sg.addColorStop(1, '#f4900a');
+      ctx.fillStyle = sg;
+      ctx.strokeStyle = '#05122b';
+      ctx.lineWidth = 1.4;
+      const sh = Math.max(12, h * 0.56);
+      const sy = y + (h - sh) * 0.5;
+      // Left slashes
+      for (const ox of [-10, -16]) {
+        ctx.beginPath();
+        ctx.moveTo(x + ox + 4, sy);
+        ctx.lineTo(x + ox + 8, sy);
+        ctx.lineTo(x + ox + 3, sy + sh);
+        ctx.lineTo(x + ox - 1, sy + sh);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+      // Right slashes
+      for (const ox of [3, 9]) {
+        ctx.beginPath();
+        ctx.moveTo(x + w + ox + 4, sy);
+        ctx.lineTo(x + w + ox + 8, sy);
+        ctx.lineTo(x + w + ox + 3, sy + sh);
+        ctx.lineTo(x + w + ox - 1, sy + sh);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
     }
-  }
 
-  // Active tab gold bottom indicator rail
-  if (variant === 'tab' && isActiveTab) {
-    g.fillStyle(isFocused ? 0x071a38 : 0xffdf5a, 0.96);
-    g.fillRoundedRect(-hw + 14, hh - 4.5, w - 28, 3, 1.5);
-  }
+    // Outer glow & drop shadow
+    ctx.save();
+    if (isYellow || isRowFocus) {
+      ctx.shadowColor = 'rgba(255, 216, 68, 0.72)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 1;
+    } else {
+      ctx.shadowColor = 'rgba(2, 9, 26, 0.72)';
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetY = 3;
+    }
+    traceShape(-1.2);
+    ctx.fillStyle = '#041028';
+    ctx.fill();
+    ctx.restore();
 
-  // Crisp inner highlight bevel
-  g.lineStyle(1, pal.innerRim, isFocused ? 0.72 : 0.35);
-  drawChamferPath(g, -hw + 2, -hh + 2, w - 4, h - 4, Math.max(4, cut - 1.5));
-  g.strokePath();
+    // Rich multi-stop anime gradient body
+    const grad = ctx.createLinearGradient(x, y, x, y + h);
+    if (isDisabled) {
+      grad.addColorStop(0, '#142542');
+      grad.addColorStop(1, '#0a1529');
+    } else if (isYellow) {
+      grad.addColorStop(0, '#fff37d');
+      grad.addColorStop(0.46, '#ffd22b');
+      grad.addColorStop(0.86, '#f69910');
+      grad.addColorStop(1, '#df7606');
+    } else if (isRowFocus) {
+      grad.addColorStop(0, '#1c56a8');
+      grad.addColorStop(0.55, '#113a78');
+      grad.addColorStop(1, '#092252');
+    } else if (variant === 'optionRow') {
+      grad.addColorStop(0, '#0f3066');
+      grad.addColorStop(1, '#071c42');
+    } else {
+      grad.addColorStop(0, '#1b64c9');
+      grad.addColorStop(0.48, '#0f3f8c');
+      grad.addColorStop(1, '#082254');
+    }
 
-  // Outer stylized border
-  g.lineStyle(isFocused ? 2.2 : 1.6, pal.border, isFocused ? 1 : 0.88);
-  drawChamferPath(g, -hw, -hh, w, h, cut);
-  g.strokePath();
+    traceShape(0);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Glossy anime cel-shaded top reflection clipped inside button
+    ctx.save();
+    traceShape(1.5);
+    ctx.clip();
+    const gloss = ctx.createLinearGradient(x, y, x, y + h * 0.48);
+    gloss.addColorStop(0, isYellow ? 'rgba(255, 255, 240, 0.56)' : isDisabled ? 'rgba(180, 215, 255, 0.08)' : 'rgba(145, 238, 255, 0.30)');
+    gloss.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = gloss;
+    ctx.fillRect(x, y + 1, w, h * 0.46);
+
+    // Subtle bottom energy rim inside button
+    ctx.fillStyle = isYellow ? 'rgba(160, 56, 0, 0.20)' : 'rgba(3, 12, 32, 0.34)';
+    ctx.fillRect(x, y + h - 4, w, 4);
+
+    // Left vertical golden energy bar on focused option rows
+    if (variant === 'optionRow') {
+      ctx.fillStyle = isRowFocus ? '#ffdf5a' : '#3ed4ff';
+      ctx.fillRect(x + 5, y + 5, isRowFocus ? 4 : 2.6, h - 10);
+    }
+    ctx.restore();
+
+    // Crisp inner highlight bevel
+    traceShape(2);
+    ctx.strokeStyle = isDisabled
+      ? 'rgba(72, 108, 156, 0.32)'
+      : isYellow
+        ? 'rgba(255, 253, 224, 0.85)'
+        : isRowFocus
+          ? 'rgba(255, 236, 138, 0.65)'
+          : 'rgba(128, 238, 255, 0.42)';
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+
+    // Crisp outer border contour
+    traceShape(0);
+    ctx.strokeStyle = isDisabled
+      ? '#344f78'
+      : isYellow
+        ? '#fff6ba'
+        : isRowFocus
+          ? '#ffdf5a'
+          : '#43d9ff';
+    ctx.lineWidth = isYellow || isRowFocus ? 2.2 : 1.7;
+    ctx.stroke();
+
+    // Outer dark ink stroke for razor cartoon contrast
+    traceShape(-1.2);
+    ctx.strokeStyle = 'rgba(4, 15, 36, 0.92)';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+  });
+
+  return { key, padX, padY };
 }
 
 /**
- * Reusable dynamic Phaser menu button with cartoon/anime arcade styling,
- * unified hover/focus/pressed/disabled/confirm states, and zero texture distortion.
+ * Pure-vector cartoon/anime arcade button with unified hover/focus/pressed/disabled/confirm states.
+ * Selected/hovered buttons glow radiant arcade yellow-gold; unselected buttons stay sleek cobalt-blue.
  */
 export class ArcadeMenuButton {
   readonly container: Phaser.GameObjects.Container;
@@ -305,11 +228,12 @@ export class ArcadeMenuButton {
   action: () => void;
 
   private readonly scene: Phaser.Scene;
-  private readonly focusGfx: Phaser.GameObjects.Graphics;
-  private readonly glowGfx: Phaser.GameObjects.Graphics;
-  private readonly flashGfx: Phaser.GameObjects.Graphics;
+  private readonly idleImg: Phaser.GameObjects.Image;
+  private readonly focusImg: Phaser.GameObjects.Image;
+  private readonly idleIcon?: Phaser.GameObjects.Image;
+  private readonly focusIcon?: Phaser.GameObjects.Image;
   private readonly sheenGfx: Phaser.GameObjects.Graphics;
-  private readonly leftIndicator?: Phaser.GameObjects.Text;
+  private readonly flashGfx: Phaser.GameObjects.Graphics;
   private readonly rightIndicator?: Phaser.GameObjects.Text;
   private readonly activeTab: boolean;
   private focused = false;
@@ -332,112 +256,92 @@ export class ArcadeMenuButton {
     this.action = cfg.onClick;
     this.onLeft = cfg.onLeft;
     this.onRight = cfg.onRight;
-    this.focusScale = cfg.variant === 'optionRow' ? 1.016 : cfg.variant === 'tab' ? 1.03 : 1.04;
-
-    const paletteSet = PALETTES[cfg.variant];
-    const idlePal = this.disabled
-      ? paletteSet.disabled
-      : this.activeTab && cfg.variant === 'tab'
-        ? { ...paletteSet.idle, fillTop: 0x1a539c, fillBot: 0x0d2d63, border: 0xffdf5a, text: '#ffef9c' }
-        : paletteSet.idle;
-    const focusPal = this.disabled
-      ? { ...paletteSet.disabled, border: 0x5c84b5, innerRim: 0x406594 }
-      : paletteSet.focus;
+    this.focusScale = cfg.variant === 'optionRow' ? 1.015 : cfg.variant === 'tab' ? 1.03 : 1.045;
 
     this.container = scene.add.container(cfg.x, cfg.y);
     cfg.parent?.add(this.container);
 
-    // Subtle grounded drop shadow
-    const shadow = scene.add.graphics();
-    shadow.fillStyle(0x020817, 0.45);
-    const cut = cfg.variant === 'optionRow' ? 7 : cfg.variant === 'tab' ? 8 : Math.min(11, Math.round(cfg.height * 0.28));
-    drawChamferPath(shadow, -cfg.width * 0.5 + 1.5, -cfg.height * 0.5 + 3.5, cfg.width, cfg.height, cut);
-    shadow.fillPath();
-    this.container.add(shadow);
+    const idleState = this.disabled ? 'disabled' : this.activeTab && cfg.variant === 'tab' ? 'activeTab' : 'idle';
+    const focusState = this.disabled ? 'disabled' : 'focus';
 
-    // Outer luminous glow layer (visible on hover/focus)
-    this.glowGfx = scene.add.graphics().setAlpha(0);
-    const glowColor = this.disabled ? 0x4a76ad : cfg.variant === 'primary' || cfg.variant === 'tab' ? 0xffdf5a : 0x4ce6ff;
-    this.glowGfx.lineStyle(5, glowColor, 0.24);
-    drawChamferPath(this.glowGfx, -cfg.width * 0.5 - 2.5, -cfg.height * 0.5 - 2.5, cfg.width + 5, cfg.height + 5, cut + 2);
-    this.glowGfx.strokePath();
-    this.glowGfx.lineStyle(2.2, glowColor, 0.55);
-    drawChamferPath(this.glowGfx, -cfg.width * 0.5 - 1, -cfg.height * 0.5 - 1, cfg.width + 2, cfg.height + 2, cut + 1);
-    this.glowGfx.strokePath();
-    this.container.add(this.glowGfx);
+    const idleTex = buildButtonTexture(scene, cfg.variant, cfg.width, cfg.height, idleState);
+    const focusTex = buildButtonTexture(scene, cfg.variant, cfg.width, cfg.height, focusState);
 
-    // Idle surface
-    const idleGfx = scene.add.graphics();
-    renderButtonSurface(idleGfx, cfg.width, cfg.height, idlePal, cfg.variant, false, this.activeTab);
-    this.container.add(idleGfx);
+    this.idleImg = scene.add.image(0, 0, idleTex.key).setScale(1 / DPR);
+    this.focusImg = scene.add.image(0, 0, focusTex.key).setScale(1 / DPR).setAlpha(0);
+    this.container.add([this.idleImg, this.focusImg]);
 
-    // Focus/Hover surface (cross-faded smoothly with alpha tween)
-    this.focusGfx = scene.add.graphics().setAlpha(0);
-    renderButtonSurface(this.focusGfx, cfg.width, cfg.height, focusPal, cfg.variant, true, this.activeTab);
-    this.container.add(this.focusGfx);
-
-    // Lightweight sheen sweep bar (animated once on entering hover/focus)
+    // Lightweight sheen sweep bar on entering hover/focus
     this.sheenGfx = scene.add.graphics().setAlpha(0);
-    this.sheenGfx.fillStyle(0xffffff, 0.32);
-    const shH = Math.max(8, cfg.height - 8);
+    this.sheenGfx.fillStyle(0xffffff, 0.36);
+    const shH = Math.max(8, cfg.height - 6);
     this.sheenGfx.beginPath();
-    this.sheenGfx.moveTo(-8, -shH * 0.5);
-    this.sheenGfx.lineTo(10, -shH * 0.5);
-    this.sheenGfx.lineTo(2, shH * 0.5);
-    this.sheenGfx.lineTo(-16, shH * 0.5);
+    this.sheenGfx.moveTo(-6, -shH * 0.5);
+    this.sheenGfx.lineTo(12, -shH * 0.5);
+    this.sheenGfx.lineTo(4, shH * 0.5);
+    this.sheenGfx.lineTo(-14, shH * 0.5);
     this.sheenGfx.closePath();
     this.sheenGfx.fillPath();
     this.container.add(this.sheenGfx);
 
-    // Confirm flash overlay
+    // Specular confirm flash overlay
     this.flashGfx = scene.add.graphics().setAlpha(0);
-    this.flashGfx.fillStyle(0xfffbe0, 0.85);
-    drawChamferPath(this.flashGfx, -cfg.width * 0.5, -cfg.height * 0.5, cfg.width, cfg.height, cut);
-    this.flashGfx.fillPath();
+    this.flashGfx.fillStyle(0xfffde6, 0.78);
+    this.flashGfx.fillRoundedRect(-cfg.width * 0.46, -cfg.height * 0.42, cfg.width * 0.92, cfg.height * 0.84, 6);
     this.container.add(this.flashGfx);
 
-    // Directional focus chevrons or option-row step arrows
-    if (cfg.variant === 'optionRow' && cfg.showArrows) {
-      const arrowX = cfg.width * 0.5 - 14;
-      this.leftIndicator = scene.add.text(-arrowX + 18, 0, '', { fontFamily: UI_FONT, fontSize: '12px', fontStyle: 'bold', color: UI.goldHex }).setResolution(2).setOrigin(0.5).setAlpha(0);
-      this.rightIndicator = scene.add.text(arrowX, 0, '◂▸', {
-        fontFamily: UI_FONT, fontSize: '9.5px', fontStyle: 'bold', color: UI.cyanHex, stroke: '#041028', strokeThickness: 2,
-      }).setResolution(2).setOrigin(0.5).setAlpha(0.45);
-      this.container.add([this.leftIndicator, this.rightIndicator]);
-    } else if (cfg.variant === 'back') {
-      this.leftIndicator = scene.add.text(-cfg.width * 0.5 + 19, 0.5, '‹', {
-        fontFamily: UI_FONT, fontSize: '17px', fontStyle: 'bold', color: UI.cyanHex, stroke: '#041028', strokeThickness: 2.5,
-      }).setResolution(2).setOrigin(0.5).setAlpha(0.85);
-      this.container.add(this.leftIndicator);
-    } else if (!this.disabled && cfg.variant !== 'optionRow') {
-      const edgePad = cfg.variant === 'tab' ? 14 : 18;
-      const chevCol = cfg.variant === 'primary' || cfg.variant === 'tab' ? '#071a38' : UI.goldHex;
-      const chevStroke = cfg.variant === 'primary' || cfg.variant === 'tab' ? '#fff4ad' : '#05142e';
-      this.leftIndicator = scene.add.text(-cfg.width * 0.5 + edgePad, 0.5, '▸', {
-        fontFamily: UI_FONT, fontSize: cfg.variant === 'tab' ? '10px' : '12px', fontStyle: 'bold', color: chevCol, stroke: chevStroke, strokeThickness: 1.5,
-      }).setResolution(2).setOrigin(0.5).setAlpha(0);
-      this.rightIndicator = scene.add.text(cfg.width * 0.5 - edgePad, 0.5, '◂', {
-        fontFamily: UI_FONT, fontSize: cfg.variant === 'tab' ? '10px' : '12px', fontStyle: 'bold', color: chevCol, stroke: chevStroke, strokeThickness: 1.5,
-      }).setResolution(2).setOrigin(0.5).setAlpha(0);
-      this.container.add([this.leftIndicator, this.rightIndicator]);
-    }
-
-    // Label text (positioned in world coordinates inside container; keep world-aligned getter compatibility via node!)
-    // NOTE: External tests inspect `b.node.text` and `b.node.x/y`! Putting `node` directly in parent at (cfg.x, cfg.y)
-    // would desync scale tweens; instead we keep `node` inside `this.container` at (0, 0.5) AND mirror world coords on container.
+    // Label text
+    const isYellowIdle = idleState === 'activeTab';
     const labelText = cfg.noLabel ? '' : cfg.label;
-    this.node = scene.add.text(cfg.variant === 'back' ? 5 : 0, 0.5, labelText, {
+    const iconId: VectorIconId | undefined = this.disabled ? (cfg.icon ?? 'lock') : cfg.icon ?? (cfg.variant === 'back' ? 'back' : undefined);
+    const textShiftX = iconId && !cfg.noLabel ? (cfg.variant === 'tab' ? 9 : 11) : 0;
+
+    this.node = scene.add.text(textShiftX, 0.5, labelText, {
       fontFamily: UI_FONT,
-      fontSize: `${cfg.fontSize ?? 13.5}px`,
+      fontSize: `${cfg.fontSize ?? 13}px`,
       fontStyle: 'bold',
-      color: idlePal.text,
-      stroke: idlePal.stroke,
-      strokeThickness: idlePal.strokeThickness,
+      color: this.disabled ? '#7f99bd' : isYellowIdle ? '#071a38' : '#f2f9ff',
+      stroke: this.disabled ? '#040d1e' : isYellowIdle ? '#fff6bd' : '#051530',
+      strokeThickness: isYellowIdle ? 1.8 : 2.8,
       align: 'center',
     }).setResolution(2).setOrigin(0.5);
     this.container.add(this.node);
 
-    // Interactive hit zone placed directly in parent (avoids Phaser nested-Container hit-test issues)
+    // Crisp vector icon inside button (dual color: bright white/cyan when idle -> bold dark-navy on yellow focus!)
+    if (iconId && !cfg.noLabel) {
+      const icoSize = Math.min(18, Math.max(12, cfg.height * 0.5));
+      const icoX = cfg.variant === 'tab'
+        ? -this.node.width * 0.5 - 3
+        : Math.max(-cfg.width * 0.5 + 28, -this.node.width * 0.5 - 8);
+      const idleCol = this.disabled ? '#7f99bd' : isYellowIdle ? '#071a38' : '#e8f7ff';
+      const focusCol = this.disabled ? '#9db6d6' : '#071a38';
+      const mkIco = (col: string) => {
+        const k = `mv-bico-${iconId}-${Math.round(icoSize)}-${col.replace('#', '')}`;
+        const dim = Math.ceil(icoSize + 8);
+        getOrMakeVectorTex(scene, k, dim, dim, (ctx) => {
+          drawVectorIcon(ctx, iconId, dim * 0.5, dim * 0.5, icoSize, col, col === '#071a38' ? '#ffe066' : '#4ce6ff');
+        });
+        return scene.add.image(icoX, 0.5, k).setScale(1 / DPR);
+      };
+      this.idleIcon = mkIco(idleCol);
+      this.focusIcon = mkIco(focusCol).setAlpha(0);
+      this.container.add([this.idleIcon, this.focusIcon]);
+    }
+
+    // Right-side indicator (`»` chevron on focused primary/aero buttons, `◂▸` on option rows)
+    if (cfg.variant === 'optionRow' && cfg.showArrows) {
+      this.rightIndicator = scene.add.text(cfg.width * 0.5 - 15, 0.5, '◂▸', {
+        fontFamily: UI_FONT, fontSize: '9.5px', fontStyle: 'bold', color: UI.cyanHex, stroke: '#041028', strokeThickness: 2,
+      }).setResolution(2).setOrigin(0.5).setAlpha(0.5);
+      this.container.add(this.rightIndicator);
+    } else if (!this.disabled && (cfg.variant === 'primary' || cfg.variant === 'secondary')) {
+      this.rightIndicator = scene.add.text(cfg.width * 0.5 - 20, 0, '»', {
+        fontFamily: UI_FONT, fontSize: `${Math.min(16, cfg.height * 0.52)}px`, fontStyle: 'bold', color: '#071a38', stroke: '#fff7bd', strokeThickness: 1.5,
+      }).setResolution(2).setOrigin(0.5).setAlpha(0);
+      this.container.add(this.rightIndicator);
+    }
+
+    // Hit zone directly in parent container (reliable Phaser 4 hit-testing across all viewports)
     this.zone = scene.add.zone(cfg.x, cfg.y, cfg.width, cfg.height).setInteractive({ useHandCursor: !this.disabled });
     cfg.parent?.add(this.zone);
 
@@ -467,8 +371,8 @@ export class ArcadeMenuButton {
       this.scaleTween?.stop();
       this.scaleTween = this.scene.tweens.add({
         targets: this.container,
-        scaleX: 0.965,
-        scaleY: 0.965,
+        scaleX: 0.962,
+        scaleY: 0.962,
         y: this.baseY + 1.5,
         duration: 80,
         ease: 'Quad.easeOut',
@@ -499,9 +403,7 @@ export class ArcadeMenuButton {
     });
   }
 
-  /** World X center for external inspection & layout helpers. */
   get worldX(): number { return this.baseX; }
-  /** World Y center for external inspection & layout helpers. */
   get worldY(): number { return this.baseY; }
 
   setFocused(focused: boolean, immediate = false): void {
@@ -509,43 +411,50 @@ export class ArcadeMenuButton {
     const entering = focused && !this.focused;
     this.focused = focused;
 
-    const paletteSet = PALETTES[this.variant];
-    const pal = this.disabled
-      ? (focused ? { ...paletteSet.disabled, border: 0x5c84b5 } : paletteSet.disabled)
-      : focused
-        ? paletteSet.focus
-        : (this.activeTab && this.variant === 'tab'
-          ? { ...paletteSet.idle, text: '#ffef9c', border: 0xffdf5a }
-          : paletteSet.idle);
+    const isYellow = (!this.disabled && focused && this.variant !== 'optionRow') || (!this.disabled && this.activeTab && this.variant === 'tab');
 
-    this.node.setColor(pal.text).setStroke(pal.stroke, pal.strokeThickness);
+    if (this.disabled) {
+      this.node.setColor(focused ? '#9cb6d9' : '#7f99bd').setStroke('#040d1e', 2.5);
+    } else if (isYellow) {
+      this.node.setColor('#071a38').setStroke('#fff6bd', 1.8);
+    } else {
+      this.node.setColor('#f2f9ff').setStroke('#051530', 2.8);
+    }
+
     this.extras.forEach((t, idx) => {
       if (this.variant === 'optionRow') {
-        const valCol = focused ? (idx === 0 ? '#ffffff' : UI.goldHex) : (idx === 0 ? UI.white : UI.cyanHex);
-        t.setColor(valCol).setStroke('#05142e', focused ? 3 : 2.6);
+        const col = focused ? (idx === 0 ? '#ffffff' : UI.goldHex) : (idx === 0 ? '#e6f4ff' : UI.cyanHex);
+        t.setColor(col).setStroke('#05142e', focused ? 3 : 2.4);
       } else {
-        t.setColor(pal.text).setStroke(pal.stroke, pal.strokeThickness);
+        t.setColor(isYellow ? '#071a38' : '#f2f9ff');
       }
     });
 
     const targetScale = focused && !this.disabled ? this.focusScale : 1;
-    const dur = immediate ? 0 : 145;
+    const dur = immediate ? 0 : 140;
 
     this.pulseTween?.stop();
     this.pulseTween = undefined;
-    this.scene.tweens.killTweensOf([this.focusGfx, this.glowGfx, this.sheenGfx]);
+    this.scene.tweens.killTweensOf([this.focusImg, this.sheenGfx]);
+    if (this.idleIcon && this.focusIcon) this.scene.tweens.killTweensOf([this.idleIcon, this.focusIcon]);
     if (!this.pressed && !this.confirming) {
       this.scaleTween?.stop();
       this.scaleTween = undefined;
     }
+
+    const focusAlpha = !this.disabled && focused ? 1 : 0;
+    const iconSwap = isYellow && !(this.activeTab && this.variant === 'tab');
 
     if (immediate) {
       if (!this.pressed && !this.confirming) {
         this.container.setScale(targetScale);
         if (!this.entranceTween) this.container.setPosition(this.baseX, this.baseY);
       }
-      this.focusGfx.setAlpha(focused ? 1 : 0);
-      this.glowGfx.setAlpha(focused ? 0.92 : 0);
+      this.focusImg.setAlpha(focusAlpha);
+      if (this.idleIcon && this.focusIcon) {
+        this.idleIcon.setAlpha(iconSwap ? 0 : 1);
+        this.focusIcon.setAlpha(iconSwap ? 1 : 0);
+      }
     } else {
       if (!this.pressed && !this.confirming) {
         this.scaleTween = this.scene.tweens.add({
@@ -557,39 +466,34 @@ export class ArcadeMenuButton {
         });
       }
       this.scene.tweens.add({
-        targets: this.focusGfx,
-        alpha: focused ? 1 : 0,
+        targets: this.focusImg,
+        alpha: focusAlpha,
         duration: dur,
         ease: 'Cubic.easeOut',
       });
-      this.scene.tweens.add({
-        targets: this.glowGfx,
-        alpha: focused ? 0.92 : 0,
-        duration: dur + 20,
-        ease: 'Cubic.easeOut',
-      });
+      if (this.idleIcon && this.focusIcon) {
+        this.scene.tweens.add({ targets: this.idleIcon, alpha: iconSwap ? 0 : 1, duration: dur, ease: 'Cubic.easeOut' });
+        this.scene.tweens.add({ targets: this.focusIcon, alpha: iconSwap ? 1 : 0, duration: dur, ease: 'Cubic.easeOut' });
+      }
     }
 
-    if (this.variant === 'back' && this.leftIndicator) {
-      this.leftIndicator.setColor(focused ? UI.goldHex : UI.cyanHex).setAlpha(focused ? 1 : 0.78);
-    } else if (this.variant === 'optionRow' && this.rightIndicator) {
-      this.rightIndicator.setColor(focused ? UI.goldHex : UI.cyanHex).setAlpha(focused ? 0.98 : 0.42);
-    } else if (this.leftIndicator && this.rightIndicator) {
-      this.scene.tweens.killTweensOf([this.leftIndicator, this.rightIndicator]);
-      if (immediate) {
-        this.leftIndicator.setAlpha(focused ? 1 : 0);
-        this.rightIndicator.setAlpha(focused ? 1 : 0);
+    if (this.rightIndicator) {
+      this.scene.tweens.killTweensOf(this.rightIndicator);
+      if (this.variant === 'optionRow') {
+        this.rightIndicator.setColor(focused ? UI.goldHex : UI.cyanHex).setAlpha(focused ? 1 : 0.48);
+      } else if (immediate) {
+        this.rightIndicator.setAlpha(focused ? 0.92 : 0);
       } else {
         this.scene.tweens.add({
-          targets: [this.leftIndicator, this.rightIndicator],
-          alpha: focused ? 1 : 0,
+          targets: this.rightIndicator,
+          alpha: focused ? 0.92 : 0,
           duration: 130,
           ease: 'Quad.easeOut',
         });
       }
     }
 
-    // Subtle specular sheen sweep + gentle edge pulse when gaining focus
+    // Crisp diagonal specular sheen sweep on gaining focus
     if (entering && !this.disabled && !immediate) {
       const span = this.width * 0.42;
       this.sheenGfx.setPosition(-span, 0).setAlpha(0.75);
@@ -601,9 +505,9 @@ export class ArcadeMenuButton {
         ease: 'Sine.easeOut',
       });
       this.pulseTween = this.scene.tweens.add({
-        targets: this.glowGfx,
-        alpha: { from: 0.92, to: 0.56 },
-        duration: 850,
+        targets: this.focusImg,
+        alpha: { from: 1, to: 0.92 },
+        duration: 900,
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut',
@@ -611,7 +515,6 @@ export class ArcadeMenuButton {
     }
   }
 
-  /** Plays tactile press + confirm flash then invokes callback once (used by keyboard, gamepad, and mouse). */
   playConfirmAndRun(callback: () => void, onAudio?: () => void): void {
     if (this.confirming) return;
     if (this.disabled) {
@@ -624,18 +527,13 @@ export class ArcadeMenuButton {
     this.entranceTween = undefined;
     this.scaleTween?.stop();
     this.container.setAlpha(1);
-    this.flashGfx.setAlpha(0.52);
+    this.flashGfx.setAlpha(0.55);
     this.scene.tweens.killTweensOf(this.flashGfx);
-    this.scene.tweens.add({
-      targets: this.flashGfx,
-      alpha: 0,
-      duration: 130,
-      ease: 'Quad.easeOut',
-    });
+    this.scene.tweens.add({ targets: this.flashGfx, alpha: 0, duration: 130, ease: 'Quad.easeOut' });
     this.scaleTween = this.scene.tweens.add({
       targets: this.container,
-      scaleX: 0.96,
-      scaleY: 0.96,
+      scaleX: 0.958,
+      scaleY: 0.958,
       y: this.baseY + 1.5,
       duration: 75,
       ease: 'Quad.easeOut',
@@ -648,10 +546,9 @@ export class ArcadeMenuButton {
     });
   }
 
-  /** Lightweight tactile pulse when stepping a setting row (volume / toggle / difficulty) without navigating away. */
   playStepPulse(): void {
     if (!this.container.active) return;
-    this.flashGfx.setAlpha(0.28);
+    this.flashGfx.setAlpha(0.26);
     this.scaleTween?.stop();
     this.scene.tweens.killTweensOf(this.flashGfx);
     this.scene.tweens.add({ targets: this.flashGfx, alpha: 0, duration: 120, ease: 'Quad.easeOut' });
@@ -660,7 +557,7 @@ export class ArcadeMenuButton {
       scaleX: this.focusScale * 1.01,
       scaleY: this.focusScale * 1.01,
       y: this.baseY,
-      duration: 95,
+      duration: 90,
       yoyo: true,
       ease: 'Quad.easeOut',
       onComplete: () => {
@@ -669,7 +566,6 @@ export class ArcadeMenuButton {
     });
   }
 
-  /** Subtle locked shake for disabled items (e.g., locked Mission 02). */
   playLockedFeedback(): void {
     if (!this.container.active) return;
     this.entranceTween?.stop();
@@ -687,7 +583,6 @@ export class ArcadeMenuButton {
     });
   }
 
-  /** Smooth entrance stagger (200-280ms) while keeping button immediately responsive. */
   animateEntrance(delayMs: number, offsetX = 0, offsetY = 10): void {
     this.entranceTween?.stop();
     this.container.setPosition(this.baseX + offsetX, this.baseY + offsetY).setAlpha(0);
@@ -717,7 +612,7 @@ export class ArcadeMenuButton {
   }
 }
 
-/** Sleek chamfered pill badge for difficulty / assisted status indicators. */
+/** Crisp vector chamfered status pill for difficulty / assisted indicator. */
 export function makeStatusPill(
   scene: Phaser.Scene,
   parent: Phaser.GameObjects.Container,
@@ -731,65 +626,24 @@ export function makeStatusPill(
   const txt = scene.add.text(5, 0.5, label, {
     fontFamily: UI_FONT, fontSize: '9px', fontStyle: 'bold', color: textColor, stroke: '#041028', strokeThickness: 2.2,
   }).setResolution(2).setOrigin(0.5);
-  const w = Math.max(118, Math.ceil(txt.width) + 26);
+  const w = Math.max(122, Math.ceil(txt.width) + 28);
   const h = 20;
   const g = scene.add.graphics();
-  g.fillStyle(0x061938, 0.88);
-  drawChamferPath(g, -w * 0.5, -h * 0.5, w, h, 5);
-  g.fillPath();
-  g.lineStyle(1.3, accentHex, 0.85);
-  drawChamferPath(g, -w * 0.5, -h * 0.5, w, h, 5);
-  g.strokePath();
-  g.fillStyle(accentHex, 0.95);
-  g.fillCircle(-w * 0.5 + 9, 0, 2.5);
+  g.fillStyle(0x061938, 0.92);
+  g.fillRoundedRect(-w * 0.5, -h * 0.5, w, h, 10);
+  g.lineStyle(1.3, accentHex, 0.88);
+  g.strokeRoundedRect(-w * 0.5, -h * 0.5, w, h, 10);
+  g.fillStyle(accentHex, 0.96);
+  g.fillCircle(-w * 0.5 + 10, 0, 2.6);
   ct.add([g, txt]);
   parent.add(ct);
   return ct;
 }
 
-/** Contextual navigation footer pill showing PlayStation/Xbox/Keyboard prompts clearly without clutter. */
-export function makeMenuHintBar(
-  scene: Phaser.Scene,
-  parent: Phaser.GameObjects.Container,
-  y: number,
-  padId?: string,
-  extra?: { adjust?: boolean; noBack?: boolean },
-): Phaser.GameObjects.Container {
-  const ct = scene.add.container(384, y);
-  const hasPad = !!padId;
-  const pl = padLabels(padId);
-  const parts: string[] = [];
-  if (hasPad) {
-    parts.push('D-PAD / L: NAVEGAR');
-    if (extra?.adjust) parts.push('←/→: AJUSTAR');
-    parts.push(`${pl.confirm}: CONFIRMAR`);
-    if (!extra?.noBack) parts.push(`${pl.cancel}: VOLTAR`);
-  } else {
-    parts.push('↑↓: NAVEGAR');
-    if (extra?.adjust) parts.push('←/→: AJUSTAR');
-    parts.push('ENTER: CONFIRMAR');
-    if (!extra?.noBack) parts.push('ESC: VOLTAR');
-  }
-  const label = parts.join('   •   ');
-  const txt = scene.add.text(0, 0.5, label, {
-    fontFamily: UI_FONT, fontSize: '9.2px', fontStyle: 'bold', color: '#cfe9ff', stroke: '#040e24', strokeThickness: 2.2,
-  }).setResolution(2).setOrigin(0.5);
-  const w = Math.min(660, Math.max(280, Math.ceil(txt.width) + 34));
-  const h = 21;
-  const g = scene.add.graphics();
-  g.fillStyle(0x05142e, 0.78);
-  drawChamferPath(g, -w * 0.5, -h * 0.5, w, h, 6);
-  g.fillPath();
-  g.lineStyle(1.1, UI.cyan, 0.42);
-  drawChamferPath(g, -w * 0.5, -h * 0.5, w, h, 6);
-  g.strokePath();
-  ct.add([g, txt]);
-  parent.add(ct);
-  return ct;
-}
+export const makeMenuHintBar = makeVectorHintBar;
 
-/** Smooth, snappy UI container transition (fade + subtle upward settle, ~220ms). */
-export function playMenuScreenEntrance(scene: Phaser.Scene, container: Phaser.GameObjects.Container, duration = 220): void {
+/** Smooth, snappy UI container transition (fade + subtle upward settle, ~210ms). */
+export function playMenuScreenEntrance(scene: Phaser.Scene, container: Phaser.GameObjects.Container, duration = 210): void {
   scene.tweens.killTweensOf(container);
   container.setAlpha(0).setPosition(0, 6);
   scene.tweens.add({

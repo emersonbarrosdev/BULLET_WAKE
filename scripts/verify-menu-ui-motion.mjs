@@ -175,6 +175,11 @@ try {
   await settle(460);
   await snap('10-touch-settings');
 
+  // 11. Credits screen
+  await evaluate(`s.show('credits'); true;`);
+  await settle(460);
+  await snap('11-credits');
+
   if (!isBefore) {
     // Interactive Keyboard, Mouse, and PlayStation Gamepad navigation verification (no gameplay started!)
     // A) Keyboard navigation on title -> pilot -> missions -> back -> title
@@ -237,7 +242,14 @@ try {
         // × (0) -> back to title
         await tapBtn(0);
         const afterCross2 = s.screen;
-        return { startFocus, afterCircle1, afterCircle2, lockedFocus, afterLockedConfirm, afterCross1, afterCross2, worldExists: !!s.world };
+        // Navigate down 3 times to CRÉDITOS -> ○ -> credits -> × -> title
+        await tapBtn(13); await tapBtn(13); await tapBtn(13);
+        const creditsFocus = s.focus;
+        await tapBtn(1);
+        const afterCreditsCircle = s.screen;
+        await tapBtn(0);
+        const afterCreditsBack = s.screen;
+        return { startFocus, afterCircle1, afterCircle2, lockedFocus, afterLockedConfirm, afterCross1, afterCross2, creditsFocus, afterCreditsCircle, afterCreditsBack, worldExists: !!s.world };
       } finally {
         if (origGetGamepads) Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: origGetGamepads });
       }
@@ -249,6 +261,9 @@ try {
     assert.equal(gpResult.afterLockedConfirm, 'missions', '○ on locked mission must not start match or leave missions');
     assert.equal(gpResult.afterCross1, 'pilot', '× on missions should return to pilot');
     assert.equal(gpResult.afterCross2, 'title', '× on pilot should return to title');
+    assert.equal(gpResult.creditsFocus, 3, '3× D-pad down on title should focus CRÉDITOS');
+    assert.equal(gpResult.afterCreditsCircle, 'credits', '○ on CRÉDITOS should open credits screen');
+    assert.equal(gpResult.afterCreditsBack, 'title', '× on credits should return to title');
     assert.equal(gpResult.worldExists, false, 'Menu validation must never start gameplay');
 
     // C) FPS check on animated title menu
