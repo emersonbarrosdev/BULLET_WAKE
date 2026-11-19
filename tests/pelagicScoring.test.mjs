@@ -105,8 +105,8 @@ test('survival bonus rewards clean sector crossings, never penalizes score on de
     const w = isolatedFenda([]);
     w.player.invulnerable = 0;
 
-    // Cross Sector 0 -> Sector 1 (at 45s) cleanly without dying
-    w.route = 44.95;
+    // Cross Sector 0 -> Sector 1 (at 60s) cleanly without dying
+    w.route = 59.95;
     w.step(0.05);
     const afterS0 = w.score;
     assert.equal(afterS0, sectorSurvivalBonus(0, false));
@@ -118,14 +118,14 @@ test('survival bonus rewards clean sector crossings, never penalizes score on de
     assert.equal(w.deaths, 1);
     assert.equal(w.score, afterS0, 'death must never deduct already-earned score');
 
-    // Cross Sector 1 -> Sector 2 (at 90s): Sector 1 bonus forfeited, score unchanged
-    w.route = 89.95;
+    // Cross Sector 1 -> Sector 2 (at 115s): Sector 1 bonus forfeited, score unchanged
+    w.route = 114.95;
     w.step(0.05);
     assert.equal(w.score, afterS0, 'dirty sector awards 0 survival bonus');
     assert.equal(w.pelagicScoring.snapshot().sectorsClean, 1);
 
-    // Survive Sector 2 cleanly -> Sector 3 (at 135s): survival bonus resumes!
-    w.route = 134.95;
+    // Survive Sector 2 cleanly -> Sector 3 (at 160s): survival bonus resumes!
+    w.route = 159.95;
     w.step(0.05);
     assert.equal(w.score, afterS0 + sectorSurvivalBonus(2, false));
     assert.equal(w.pelagicScoring.snapshot().sectorsClean, 2);
@@ -151,9 +151,9 @@ test('Arco das Mares checkpoint and Colosso Abissal sections award non-exploitab
     const wBoss = isolatedFenda([]);
     wBoss.player.invulnerable = 10;
     wBoss.tideArch.jumpTo('complete', wBoss.scroll, wBoss.playerHomeY);
-    wBoss.route = 300;
+    wBoss.route = 360;
     wBoss.step(1 / 60);
-    assert(wBoss.boss?.sub, 'Colosso Abissal should spawn at route 300 after Tide Arch');
+    assert(wBoss.boss?.sub, 'Colosso Abissal should spawn at route 360 after Tide Arch');
     const sub = wBoss.boss.sub;
     wBoss.player.invulnerable = 0;
 

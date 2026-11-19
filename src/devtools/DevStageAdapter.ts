@@ -8,6 +8,11 @@ import {
   type Motion,
 } from '../game/arcade/content.ts';
 import { buildMissionStageEvents } from '../game/arcade/ArcadeStageDirector.ts';
+import {
+  FENDA_REGION_STARTS,
+  SOLAR_REGION_STARTS,
+  stageDurationFor,
+} from '../game/arcade/PelagicProgression.ts';
 import { SUB_BOSS_NAME, createSubmarineBoss } from '../game/arcade/PelagicSubmarineBoss.ts';
 import type {
   DevBossSectionSpec,
@@ -32,12 +37,13 @@ const ALL_MOTIONS: Motion[] = [
   'side-curve',
 ];
 
-const REGION_START_TIMES_UP = [0, 45, 90, 135, 148, 200, 255] as const;
-const REGION_START_TIMES_SIDE = [0, 45, 90, 135, 155, 200, 255] as const;
+const REGION_START_TIMES_UP = FENDA_REGION_STARTS;
+const REGION_START_TIMES_SIDE = SOLAR_REGION_STARTS;
 
 function buildCheckpointsForMission(mission: Mission): DevCheckpointSpec[] {
   const checkpoints: DevCheckpointSpec[] = [];
   const starts = mission.perspective === 'UP' ? REGION_START_TIMES_UP : REGION_START_TIMES_SIDE;
+  const bossAt = stageDurationFor(mission.perspective);
   mission.regions.forEach((regName, idx) => {
     const at = starts[idx] ?? idx * 45;
     const isMini = mission.perspective !== 'UP' && idx === 4;
@@ -53,7 +59,7 @@ function buildCheckpointsForMission(mission: Mission): DevCheckpointSpec[] {
   checkpoints.push({
     id: `stage-${mission.id}-boss`,
     label: `Boss Final (${mission.boss})`,
-    atSeconds: 300,
+    atSeconds: bossAt,
     regionIndex: Math.max(0, mission.regions.length - 1),
     regionName: mission.regions[mission.regions.length - 1] ?? mission.name,
     kind: 'boss',
@@ -138,7 +144,7 @@ export function createPlayableStageAdapters(): DevStageAdapter[] {
       missionIndex,
       name: mission.name,
       perspective: mission.perspective,
-      durationSeconds: 300,
+      durationSeconds: stageDurationFor(mission.perspective),
       checkpoints: buildCheckpointsForMission(mission),
       bosses: buildBossesForMission(mission, missionIndex),
       events: buildEventsForMission(mission, missionIndex),

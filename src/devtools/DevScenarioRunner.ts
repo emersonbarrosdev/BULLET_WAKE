@@ -54,7 +54,8 @@ export class DevScenarioRunner {
   ): void {
     this.state.beginTestSession(scene);
     const apply = () => {
-      scene.devJumpToCheckpoint(missionIndex, mini ? 155 : 300, {
+      const bossAt = missionIndex === 0 ? 360 : 300;
+      scene.devJumpToCheckpoint(missionIndex, mini ? 155 : bossAt, {
         bossMini: mini,
         subSectionIndex: options?.subSectionIndex,
       });

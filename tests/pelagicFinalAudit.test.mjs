@@ -244,7 +244,7 @@ test('Fenda Pelagica full deterministic lifecycle, weapons, Tormenta Escarlate c
   // Bit-for-bit determinism across identical runs (quality-independent world rules)
   assert.deepEqual(runA, runB);
   assert.equal(runA.state, 'victory');
-  assert.equal(runA.route, 300);
+  assert.equal(runA.route, 360);
   assert.equal(runA.maxWeaponLevel, 5);
   assert.ok(runA.missilesFired > 0, 'Secondary homing missiles should fire at LV3+');
   assert.ok(runA.specialsUsed > 0, 'Tormenta Escarlate should be triggered');
@@ -266,11 +266,11 @@ test('Fenda Pelagica full deterministic lifecycle, weapons, Tormenta Escarlate c
   w.miniStarted = true;
   w.waveIndex = 999;
   w.supplyIndex = 999;
-  w.route = 299.98;
-  w.elapsed = 299.98;
+  w.route = 359.98;
+  w.elapsed = 359.98;
   w.player.invulnerable = 10;
   for (let i = 0; i < 4; i++) w.step(1 / 60, { x: 0, y: 0, fire: false, special: false });
-  assert.ok(w.boss?.sub, 'Colosso Abissal spawns at 300s');
+  assert.ok(w.boss?.sub, 'Colosso Abissal spawns at 360s');
   for (let i = 0; i < 600 && w.boss.sub.phase !== 'fight'; i++) {
     w.step(1 / 120, { x: 0, y: 0, fire: false, special: false });
   }

@@ -528,11 +528,11 @@ export class PelagicActorAnims {
           .setRotation(hull.rotation)
           .setDepth(hull.depth);
 
-        // Altitude-driven 2.5D shadow offset beneath helicopter
+        // Altitude-driven 2.5D shadow offset beneath helicopter (scaled proportionally with fuselage)
         const alt = e.altitude ?? .9;
-        const shOffX = 9 + alt * 11, shOffY = 11 + alt * 13;
-        const shScale = clamp(1.06 - alt * .22, .66, 1);
-        sh.fillStyle(0x06162c, .27).fillEllipse(hull.drawX + shOffX, hull.drawY + shOffY, e.size * .88 * shScale, e.size * .58 * shScale);
+        const shOffX = 8 + alt * 10, shOffY = 10 + alt * 12;
+        const shScale = clamp(1.04 - alt * .22, .64, 1);
+        sh.fillStyle(0x06162c, .26).fillEllipse(hull.drawX + shOffX, hull.drawY + shOffY, e.size * .82 * shScale, e.size * .54 * shScale);
 
         // Animated spinning main + tail rotors anchored cleanly on painted swashplate hub
         if (this.scene.textures.exists(PELAGIC_ROTOR_SHEET)) {
@@ -541,14 +541,14 @@ export class PelagicActorAnims {
           const wobble = damaged ? Math.sin(time * 28 + e.id) * .045 : 0;
           const specs: Array<{ lx: number; ly: number; size: number; tail: boolean; rotOffset: number }> = e.family === 'heli_utility'
             ? [
-              { lx: 0, ly: .05, size: e.size * 1.06, tail: false, rotOffset: 0 },
-              { lx: .02, ly: .42, size: e.size * .30, tail: true, rotOffset: Math.PI / 2 },
+              { lx: 0, ly: .05, size: e.size * 1.00, tail: false, rotOffset: 0 },
+              { lx: .02, ly: .42, size: e.size * .28, tail: true, rotOffset: Math.PI / 2 },
             ]
             : e.family === 'heli_phantom'
-              ? [{ lx: 0, ly: .09, size: e.size * 1.02, tail: false, rotOffset: 0 }]
+              ? [{ lx: 0, ly: .09, size: e.size * 0.96, tail: false, rotOffset: 0 }]
               : [
-                { lx: 0, ly: .04, size: e.size * (e.family === 'heli_warhawk' ? 1.12 : 1.04), tail: false, rotOffset: 0 },
-                { lx: .03, ly: .40, size: e.size * .32, tail: true, rotOffset: Math.PI / 2 },
+                { lx: 0, ly: .04, size: e.size * (e.family === 'heli_warhawk' ? 1.04 : 0.98), tail: false, rotOffset: 0 },
+                { lx: .03, ly: .40, size: e.size * .30, tail: true, rotOffset: Math.PI / 2 },
               ];
           const arr = this.syncSpritePool(this.rotorSprites, e.id, specs.length, PELAGIC_ROTOR_SHEET, 9.1);
           specs.forEach((sp, idx) => {

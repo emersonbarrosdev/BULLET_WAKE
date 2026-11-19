@@ -146,8 +146,16 @@ export class ArcadeBackdrop {
     const areaWidth = up ? world!.arenaWidth : STAGE1_WIDTH;
     const areaCenter = areaLeft + areaWidth * 0.5;
     const viewH = Math.max(432, vSize.h);
-    const openOcean = up ? (world?.boss?.sub || world?.state === 'exit' ? 1 : clamp(((world?.route ?? 0) - 285) / 11, 0, 1)) : 0;
-    const coastAlpha = 1 - openOcean;
+    const openOcean = up ? (world?.boss?.sub || world?.state === 'exit' ? 1 : clamp(((world?.route ?? 0) - 342) / 12, 0, 1)) : 0;
+    // Smoothly recede busy harbor/beach props during Tide Arch canyon traversal so cranes & docks never clip under the stone arch
+    let archCoastRecede = 0;
+    if (up && world?.tideArch.isActive) {
+      const ta = world.tideArch;
+      if (ta.phase === 'approach') archCoastRecede = clamp(ta.phaseTime / 3.2, 0, 1);
+      else if (ta.phase === 'ascent') archCoastRecede = clamp(1 - ta.phaseTime / 3.2, 0, 1);
+      else archCoastRecede = 1;
+    }
+    const coastAlpha = (1 - openOcean) * (1 - archCoastRecede * 0.94);
     this.coastPainting.draw(world?.scroll ?? 0, up, coastAlpha, world?.elapsed ?? time, quality, areaLeft, areaWidth);
     this.oceanDepth.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up);
     this.waterSwell.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up && quality >= 1);

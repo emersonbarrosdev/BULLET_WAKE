@@ -374,7 +374,7 @@ function benchmarkDifficulty(difficulty) {
   let totalHpSpawned = 0;
   const dt = 1 / 120;
 
-  for (let s = 0; s < 640 * 120; s++) {
+  for (let s = 0; s < 780 * 120; s++) {
     for (const e of w.enemies) {
       if (!seenIds.has(e.id)) {
         seenIds.add(e.id);

@@ -1,4 +1,5 @@
 import {
+    FENDA_BASE_SUPPLIES,
     MISSIONS,
     SUPPLIES,
     type Encounter,
@@ -7,6 +8,11 @@ import {
 
 export type SupplyKind = (typeof SUPPLIES)[number]['kind'];
 import {
+    FENDA_REGION_STARTS,
+    SOLAR_REGION_STARTS,
+    stageDurationFor,
+} from './PelagicProgression.ts';
+import {
     PELAGIC_RARE_EARLY_AT,
     PELAGIC_RARE_EVENT,
     PELAGIC_RARE_FALLBACK_AT,
@@ -14,7 +20,7 @@ import {
     type PelagicSpecialEventId,
 } from './PelagicSpecialEvents.ts';
 import { SUB_BOSS_NAME, createSubmarineBoss } from './PelagicSubmarineBoss.ts';
-import type { TideArchPhase } from './PelagicTideArch.ts';
+import { TIDE_ARCH_RESUME_ROUTE, TIDE_ARCH_START_ROUTE, type TideArchPhase } from './PelagicTideArch.ts';
 
 export type StageEventCategory =
     | 'region'
@@ -77,8 +83,8 @@ export interface StageDirectorSnapshot {
     entries: StageEventRuntimeEntry[];
 }
 
-const REGION_START_TIMES_UP = [0, 45, 90, 135, 148, 200, 255] as const;
-const REGION_START_TIMES_SIDE = [0, 45, 90, 135, 155, 200, 255] as const;
+const REGION_START_TIMES_UP = FENDA_REGION_STARTS;
+const REGION_START_TIMES_SIDE = SOLAR_REGION_STARTS;
 
 /**
  * Builds the canonical declarative event graph for any mission registered in `MISSIONS`.
@@ -127,19 +133,19 @@ export function buildMissionStageEvents(mission: Mission, missionIndex: number):
                 phase: 'approach',
                 name: 'Arco das Marés — 1. Aproximação',
                 triggerKind: 'timed',
-                atSeconds: 148,
-                preJumpSeconds: 143,
-                conditionLabel: 'route >= 148s && !boss',
+                atSeconds: TIDE_ARCH_START_ROUTE,
+                preJumpSeconds: TIDE_ARCH_START_ROUTE - 5,
+                conditionLabel: `route >= ${TIDE_ARCH_START_ROUTE}s && !boss`,
                 deps: [`stage-${stageId}-reg-3`],
                 category: 'special-event',
-                entities: ['TideArchBridge', '4x cannon_cliff', '5x boat'],
+                entities: ['TideArchBridge', '10x cannon_cliff', '7x boat'],
                 desc: 'Bloqueia spawns aéreos e inicia aproximação ao Arco das Marés.',
             },
             {
                 phase: 'descent',
                 name: 'Arco das Marés — 2. Descida Automática',
                 triggerKind: 'conditional',
-                preJumpSeconds: 148,
+                preJumpSeconds: TIDE_ARCH_START_ROUTE,
                 conditionLabel: 'Após 4.6s em approach',
                 deps: [`stage-${stageId}-arch-approach`],
                 category: 'special-event',
@@ -150,7 +156,7 @@ export function buildMissionStageEvents(mission: Mission, missionIndex: number):
                 phase: 'low-flight',
                 name: 'Arco das Marés — 3. Voo Baixo & Canal',
                 triggerKind: 'conditional',
-                preJumpSeconds: 152,
+                preJumpSeconds: TIDE_ARCH_START_ROUTE + 4,
                 conditionLabel: 'Após 3.8s de descent (altitude === 0)',
                 deps: [`stage-${stageId}-arch-descent`],
                 category: 'special-event',
@@ -161,7 +167,7 @@ export function buildMissionStageEvents(mission: Mission, missionIndex: number):
                 phase: 'under-arch',
                 name: 'Arco das Marés — 4. Passagem Sob o Arco',
                 triggerKind: 'conditional',
-                preJumpSeconds: 158,
+                preJumpSeconds: TIDE_ARCH_START_ROUTE + 10,
                 conditionLabel: 'scroll + archWorldY atinge banda da ponte [scrollY in bridgeBand]',
                 deps: [`stage-${stageId}-arch-low-flight`],
                 category: 'special-event',
@@ -172,7 +178,7 @@ export function buildMissionStageEvents(mission: Mission, missionIndex: number):
                 phase: 'ascent',
                 name: 'Arco das Marés — 5. Subida Automática',
                 triggerKind: 'conditional',
-                preJumpSeconds: 170,
+                preJumpSeconds: TIDE_ARCH_START_ROUTE + 22,
                 conditionLabel: 'Após cruzar a banda da ponte sem derrota',
                 deps: [`stage-${stageId}-arch-under-arch`],
                 category: 'special-event',
@@ -183,7 +189,7 @@ export function buildMissionStageEvents(mission: Mission, missionIndex: number):
                 phase: 'checkpoint',
                 name: 'Arco das Marés — 6. Checkpoint Concluído',
                 triggerKind: 'conditional',
-                preJumpSeconds: 173,
+                preJumpSeconds: TIDE_ARCH_START_ROUTE + 25,
                 conditionLabel: 'tideArch.altitudeRestored && tideArch.crossedArch',
                 deps: [`stage-${stageId}-arch-ascent`],
                 category: 'checkpoint',
@@ -264,7 +270,8 @@ export function buildMissionStageEvents(mission: Mission, missionIndex: number):
         });
     }
 
-    SUPPLIES.forEach((sup, idx) => {
+    const missionSupplies = isUp ? FENDA_BASE_SUPPLIES : SUPPLIES;
+    missionSupplies.forEach((sup, idx) => {
         events.push({
             id: `stage-${stageId}-supply-${idx}-${sup.kind}`,
             stageId,
@@ -284,7 +291,7 @@ export function buildMissionStageEvents(mission: Mission, missionIndex: number):
     });
 
     mission.encounters.forEach((enc, idx) => {
-        if (enc.at === 155) return; // Managed explicitly by Tide Arch (UP) / Miniboss (SIDE)
+        if (!isUp && enc.at === 155) return; // Managed explicitly by Miniboss (SIDE)
         events.push({
             id: `stage-${stageId}-enc-${idx}`,
             stageId,
@@ -294,7 +301,7 @@ export function buildMissionStageEvents(mission: Mission, missionIndex: number):
             triggerKind: 'timed',
             atSeconds: enc.at,
             preJumpSeconds: Math.max(0, enc.at - 3),
-            conditionLabel: isUp && enc.at >= 148 && enc.at < 198
+            conditionLabel: isUp && enc.at >= TIDE_ARCH_START_ROUTE && enc.at < TIDE_ARCH_RESUME_ROUTE
                 ? `route >= ${enc.at}s && !tideArch.airSpawnsBlocked`
                 : `route >= ${enc.at}s`,
             dependencies: [],
@@ -305,6 +312,7 @@ export function buildMissionStageEvents(mission: Mission, missionIndex: number):
         });
     });
 
+    const bossAt = stageDurationFor(mission.perspective);
     const sectionCount = isUp && mission.boss === SUB_BOSS_NAME
         ? createSubmarineBoss(() => 1, 384).sections.length
         : 1;
@@ -315,14 +323,14 @@ export function buildMissionStageEvents(mission: Mission, missionIndex: number):
         name: `Boss Final: ${mission.boss}`,
         category: 'boss',
         triggerKind: 'timed',
-        atSeconds: 300,
-        preJumpSeconds: 294,
-        conditionLabel: 'route >= 300s && !bossStarted',
+        atSeconds: bossAt,
+        preJumpSeconds: bossAt - 6,
+        conditionLabel: `route >= ${bossAt}s && !bossStarted`,
         dependencies: isUp ? [`stage-${stageId}-arch-checkpoint`] : [`stage-${stageId}-miniboss`],
         entities: [mission.boss, `${sectionCount} seção(ões)`],
         repeatPolicy: 'once',
         description: `Confronto final da missão ${mission.name}`,
-        payload: { kind: 'boss', at: 300, sectionCount },
+        payload: { kind: 'boss', at: bossAt, sectionCount },
     });
 
     // Keep stable chronological ordering (timed events first at each timestamp, conditional arch steps grouped right after 148s)
@@ -419,7 +427,8 @@ export class ArcadeStageDirector {
     }
 
     markSupplyTriggered(supplyIndex: number, atRoute: number): void {
-        const sup = SUPPLIES[supplyIndex];
+        const list = this.mission.perspective === 'UP' ? FENDA_BASE_SUPPLIES : SUPPLIES;
+        const sup = list[supplyIndex];
         if (!sup) return;
         this.setStatus(`stage-${this.mission.id}-supply-${supplyIndex}-${sup.kind}`, 'completed', atRoute);
     }
@@ -483,6 +492,8 @@ export class ArcadeStageDirector {
         const sid = this.mission.id;
         const isUp = this.mission.perspective === 'UP';
 
+        const bossAt = stageDurationFor(this.mission.perspective);
+
         for (const def of this.defs) {
             const entry = this.runtime.get(def.id)!;
             if (def.payload.kind === 'region') {
@@ -499,9 +510,9 @@ export class ArcadeStageDirector {
                 if (def.atSeconds < targetSeconds) {
                     entry.status = 'skipped';
                     entry.note = `Anterior ao salto (${targetSeconds}s)`;
-                } else if (def.payload.kind === 'boss' && targetSeconds >= 300) {
+                } else if (def.payload.kind === 'boss' && targetSeconds >= bossAt) {
                     entry.status = 'active';
-                    entry.triggeredAtRoute = 300;
+                    entry.triggeredAtRoute = bossAt;
                     entry.activations = 1;
                 } else if (def.payload.kind === 'miniboss' && !isUp && targetSeconds >= 155 && targetSeconds < 185) {
                     entry.status = 'active';
@@ -512,22 +523,22 @@ export class ArcadeStageDirector {
                     entry.note = `Anterior ao salto (${targetSeconds}s)`;
                 }
             } else if (def.payload.kind === 'arch-phase' && isUp) {
-                if (targetSeconds >= 185) {
+                if (targetSeconds >= 214) {
                     entry.status = 'completed';
                     entry.triggeredAtRoute = targetSeconds;
-                } else if (targetSeconds >= 148) {
+                } else if (targetSeconds >= TIDE_ARCH_START_ROUTE) {
                     const phase: Exclude<TideArchPhase, 'idle'> =
-                        targetSeconds < 153 ? 'approach'
-                        : targetSeconds < 158 ? 'descent'
-                        : targetSeconds < 171 ? 'low-flight'
-                        : targetSeconds < 177 ? 'under-arch'
-                        : targetSeconds < 181 ? 'ascent'
+                        targetSeconds < 185 ? 'approach'
+                        : targetSeconds < 190 ? 'descent'
+                        : targetSeconds < 203 ? 'low-flight'
+                        : targetSeconds < 209 ? 'under-arch'
+                        : targetSeconds < 212 ? 'ascent'
                         : 'checkpoint';
                     this.markArchPhase(phase, targetSeconds);
                 }
             } else if (def.payload.kind === 'special-event' && def.payload.eventId === 'rare-visitor' && isUp) {
                 if (targetSeconds > PELAGIC_RARE_EARLY_AT + 12 && targetSeconds < PELAGIC_RARE_FALLBACK_AT) {
-                    entry.note = 'Janela inicial (66-78s) já encerrada; janela fallback (204-216s) disponível';
+                    entry.note = `Janela inicial (${PELAGIC_RARE_EARLY_AT}-${PELAGIC_RARE_EARLY_AT + 12}s) já encerrada; janela fallback (${PELAGIC_RARE_FALLBACK_AT}-${PELAGIC_RARE_FALLBACK_AT + 12}s) disponível`;
                 } else if (targetSeconds >= PELAGIC_RARE_FALLBACK_AT + 12) {
                     entry.status = 'skipped';
                     entry.note = `Janelas de elegibilidade anteriores ao salto (${targetSeconds}s)`;
@@ -538,7 +549,7 @@ export class ArcadeStageDirector {
         if (opts?.pauseDirector) {
             const bossId = `stage-${sid}-boss`;
             const bossEntry = this.runtime.get(bossId);
-            if (bossEntry && targetSeconds < 300) bossEntry.note = 'Diretor pausado em modo isolado';
+            if (bossEntry && targetSeconds < bossAt) bossEntry.note = 'Diretor pausado em modo isolado';
         }
     }
 

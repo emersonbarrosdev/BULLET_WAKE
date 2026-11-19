@@ -555,10 +555,11 @@ export class DevToolsPanel {
       ),
     );
 
+    const maxJumpSec = adapter.durationSeconds;
     const timeJumpIn = document.createElement('input');
     timeJumpIn.className = 'bw-dev-input';
-    timeJumpIn.placeholder = 'Ex: 148 ou 02:28';
-    timeJumpIn.value = '02:28';
+    timeJumpIn.placeholder = adapter.perspective === 'UP' ? 'Ex: 180 ou 03:00' : 'Ex: 155 ou 02:35';
+    timeJumpIn.value = adapter.perspective === 'UP' ? '03:00' : '02:35';
     const jumpIsoChk = document.createElement('input');
     jumpIsoChk.type = 'checkbox';
     jumpIsoChk.checked = false;
@@ -570,22 +571,22 @@ export class DevToolsPanel {
       const txt = raw.trim();
       if (/^\d{1,2}:\d{2}$/.test(txt)) {
         const [m, sec] = txt.split(':').map(Number);
-        return Math.max(0, Math.min(300, m * 60 + sec));
+        return Math.max(0, Math.min(maxJumpSec, m * 60 + sec));
       }
       const n = Number(txt);
-      return Number.isFinite(n) ? Math.max(0, Math.min(300, n)) : null;
+      return Number.isFinite(n) ? Math.max(0, Math.min(maxJumpSec, n)) : null;
     };
 
     const sJump = this.section('Stage Jump — Acesso Direto por Instante (mm:ss ou seg)');
     sJump.add(
-      this.row(this.field('Momento da Fase (0s–300s)', timeJumpIn), jumpIsoLabel),
+      this.row(this.field(`Momento da Fase (0s–${maxJumpSec}s)`, timeJumpIn), jumpIsoLabel),
       this.row(
         this.btn('Saltar para Instante', () => {
           const sc = this.requireScene();
           if (!sc) return;
           const sec = parseJumpSeconds(timeJumpIn.value);
           if (sec === null) {
-            this.setStatus('Formato inválido. Use segundos (ex: 148) ou mm:ss (ex: 02:28).');
+            this.setStatus(`Formato inválido. Use segundos (0–${maxJumpSec}) ou mm:ss.`);
             return;
           }
           const seed = this.deps.state.getPrefs().seed;

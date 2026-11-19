@@ -118,9 +118,9 @@ test('isolated coordinated strike alternates maritime submarine volleys and aeri
 });
 
 test('rare visitor follows deterministic capped eligibility, never farms infinite score/items, and exits cleanly', () => {
-    assert.equal(isRareVisitorEligible(false, 68, 0, 15, false, false), false, 'never in Cidade Solar');
-    assert.equal(isRareVisitorEligible(true, 68, 0, 15, false, false), true, 'eligible cleanly at 66s with 0 deaths');
-    assert.equal(isRareVisitorEligible(true, 68, 1, 15, false, false), false, 'early slot skipped if player died');
+    assert.equal(isRareVisitorEligible(false, 250, 0, 15, false, false), false, 'never in Cidade Solar');
+    assert.equal(isRareVisitorEligible(true, 250, 0, 15, false, false), true, 'eligible cleanly at 248-260s with 0 deaths');
+    assert.equal(isRareVisitorEligible(true, 250, 1, 15, false, false), false, 'early slot skipped if player died');
     assert.equal(isRareVisitorEligible(true, PELAGIC_RARE_FALLBACK_AT + 1, 1, 22, false, false), true, 'late fallback slot eligible if still untriggered');
     assert.equal(isRareVisitorEligible(true, PELAGIC_RARE_FALLBACK_AT + 1, 0, 22, true, false), false, 'strictly capped at 1 per sortie');
 
@@ -143,7 +143,7 @@ test('rare visitor follows deterministic capped eligibility, never farms infinit
     for (const hard of [false, true]) {
         const sim = new ArcadeWorld(FENDA);
         sim.hard = hard;
-        for (let tick = 0; tick < 120 * 440 && !['victory', 'defeat'].includes(sim.state); tick++) {
+        for (let tick = 0; tick < 120 * 560 && !['victory', 'defeat'].includes(sim.state); tick++) {
             if (hard) sim.player.invulnerable = 1;
             const input = steer(sim, { collect: true, evade: true, special: true });
             sim.step(1 / 120, input);

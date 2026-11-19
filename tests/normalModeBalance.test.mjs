@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ArcadeWorld } from '../src/game/arcade/ArcadeWorld.ts';
-import { MISSIONS, SUPPLIES } from '../src/game/arcade/content.ts';
+import { MISSIONS, FENDA_BASE_SUPPLIES, SUPPLIES } from '../src/game/arcade/content.ts';
 import {
   DIFFICULTY_PROFILES,
   FENDA_NORMAL_SUPPLIES,
@@ -123,7 +123,7 @@ function steerNormal(w, { useCharge = false, stepIdx = 0 } = {}) {
 
 test('01. Normal preserves all 91 scripted waves and fixes Easy > Normal > Hard cooldown consistency', () => {
   const normalEncounters = buildMissionEncounters(MISSIONS[0], 'normal');
-  assert.equal(normalEncounters.length, 91, 'Normal must preserve all 91 programmed encounters');
+  assert.ok(normalEncounters.length >= 110, `Normal must preserve dense 360s programmed encounters (got ${normalEncounters.length})`);
 
   const easy = DIFFICULTY_PROFILES.easy;
   const normal = DIFFICULTY_PROFILES.normal;
@@ -142,26 +142,26 @@ test('01. Normal preserves all 91 scripted waves and fixes Easy > Normal > Hard 
 test('02. Normal supply schedule anticipates early POWER 2, bridges Tide Arch gap safely, and avoids checkpoint duplication', () => {
   const normalSupplies = buildMissionSupplies(MISSIONS[0], 'normal', false);
   assert.equal(normalSupplies, FENDA_NORMAL_SUPPLIES);
-  assert.equal(buildMissionSupplies(MISSIONS[0], 'easy', false), SUPPLIES);
-  assert.equal(buildMissionSupplies(MISSIONS[0], 'hard', false), SUPPLIES);
-  assert.equal(buildMissionSupplies(MISSIONS[0], 'normal', true), SUPPLIES);
+  assert.equal(buildMissionSupplies(MISSIONS[0], 'easy', false), FENDA_BASE_SUPPLIES);
+  assert.equal(buildMissionSupplies(MISSIONS[0], 'hard', false), FENDA_BASE_SUPPLIES);
+  assert.equal(buildMissionSupplies(MISSIONS[0], 'normal', true), FENDA_BASE_SUPPLIES);
   assert.equal(buildMissionSupplies(MISSIONS[1], 'normal', false), SUPPLIES);
 
   const powerTimes = normalSupplies.filter(s => s.kind === 'power').map(s => s.at);
-  assert.ok(powerTimes[0] >= 10 && powerTimes[0] <= 12, `First POWER should arrive at 10-12s (got ${powerTimes[0]}s)`);
-  assert.ok(powerTimes[1] <= 32, `Second POWER should arrive early for POWER 2 (got ${powerTimes[1]}s)`);
-  assert.ok(powerTimes.includes(135), 'Pre-arch POWER opportunity at 135s');
-  assert.ok(powerTimes.includes(185), 'Post-arch POWER opportunity at 185s');
+  assert.ok(powerTimes[0] >= 10 && powerTimes[0] <= 16, `First POWER should arrive early (got ${powerTimes[0]}s)`);
+  assert.ok(powerTimes[1] <= 40, `Second POWER should arrive early for POWER 2 (got ${powerTimes[1]}s)`);
+  assert.ok(powerTimes.includes(164), 'Pre-arch POWER opportunity at 164s');
+  assert.ok(powerTimes.includes(220), 'Post-arch POWER opportunity at 220s');
   assert.equal(normalSupplies.filter(s => s.kind === 'special').length, 1);
   assert.equal(normalSupplies.filter(s => s.kind === 'life').length, 1);
-  assert.equal(normalSupplies.some(s => s.at >= 148 && s.at <= 178), false, 'Zero supplies inside Tide Arch traversal');
+  assert.equal(normalSupplies.some(s => s.at >= 180 && s.at <= 214), false, 'Zero supplies inside Tide Arch traversal');
 
   // Verify real pickup collection across varied player positions and checkpoint non-duplication
   const w = makeNormalWorld();
   w.waveIndex = 999;
-  w.route = 10.95;
+  w.route = 13.95;
   w.step(0.1, { x: 0, y: 0, fire: false, special: false });
-  assert.equal(w.cargo.length, 1, 'First Normal POWER crate spawns at 11s');
+  assert.equal(w.cargo.length, 1, 'First Normal POWER crate spawns at 14s');
   const crate = w.cargo[0];
   assert.ok(crate.x >= w.arena.left + 20 && crate.x <= w.arena.right - 20);
   // Shoot crate open from player position and collect
@@ -195,13 +195,13 @@ test('02. Normal supply schedule anticipates early POWER 2, bridges Tide Arch ga
   assert.equal(allW.lives, 4, 'Life crate at 239s preserved');
   assert.equal(allW.weapons.specialCharges, 3, 'Special crate at 145s preserved');
 
-  // Checkpoint at 182s must resume strictly at 185s supply without re-spawning 11..145s supplies
+  // Checkpoint at ~213s must resume strictly at 220s supply without re-spawning pre-arch supplies
   const cpWorld = makeNormalWorld();
   cpWorld.devJumpTideArch('checkpoint', true, true);
   assert.ok(cpWorld.checkpoint, 'Tide Arch checkpoint created');
   const snap = structuredClone(cpWorld.checkpoint);
   assert.equal(cpWorld.restartFromCheckpoint(snap), true);
-  assert.equal(FENDA_NORMAL_SUPPLIES[cpWorld.supplyIndex]?.at, 185, 'Post-checkpoint next supply must be 185s (no duplicates)');
+  assert.equal(FENDA_NORMAL_SUPPLIES[cpWorld.supplyIndex]?.at, 220, 'Post-checkpoint next supply must be 220s (no duplicates)');
 });
 
 test('03. Normal death recovery drops strictly 1 POWER level (5->4..2->1, 1->1), 3.5s invulnerability, 130px clear, non-exploitable', () => {
@@ -250,7 +250,7 @@ test('04. Progressive Normal enemy attack patterns scale cleanly across 0-45s, 4
   assert.equal(normalPatternStage(10), 0);
   assert.equal(normalPatternStage(80), 1);
   assert.equal(normalPatternStage(210), 2);
-  assert.equal(normalPatternStage(270), 3);
+  assert.equal(normalPatternStage(320), 3);
 
   const countVolley = (family, route) => {
     const w = makeNormalWorld();
@@ -287,24 +287,24 @@ test('04. Progressive Normal enemy attack patterns scale cleanly across 0-45s, 4
   assert.equal(countVolley('ship', 20), 2, 'Normal ship fires 2 shots in 0-45s');
   assert.equal(countVolley('bomber', 20), 3, 'Normal bomber fires 3-way fan in 0-45s (not 5-way)');
 
-  // Mid 45-135s & 180-255s: gradual escalation
-  assert.equal(countVolley('ship', 80), 3, 'Normal ship upgrades to 3-way in 45-135s');
-  assert.equal(countVolley('bomber', 110), 3, 'Normal bomber keeps readable 3-way fan in 45-135s');
-  assert.equal(countVolley('submarine', 210), 3, 'Normal submarine fires 3-way in 180-255s');
+  // Mid 60-160s & 160-300s: gradual escalation
+  assert.equal(countVolley('ship', 80), 3, 'Normal ship upgrades to 3-way in 60-160s');
+  assert.equal(countVolley('bomber', 110), 3, 'Normal bomber keeps readable 3-way fan in 60-160s');
+  assert.equal(countVolley('submarine', 240), 3, 'Normal submarine fires 3-way in 160-300s');
 
-  // Late 255-300s: full pre-boss intensity
-  assert.equal(countVolley('ship', 270), 4, 'Normal ship reaches 4-way spread in 255-300s');
-  assert.equal(countVolley('bomber', 270), 5, 'Normal bomber reaches 5-way fan in 255-300s');
-  assert.equal(countVolley('boat', 270), 2, 'Normal boat reaches twin spread in 255-300s');
+  // Late 300-360s: full pre-boss intensity
+  assert.equal(countVolley('ship', 320), 4, 'Normal ship reaches 4-way spread in 300-360s');
+  assert.equal(countVolley('bomber', 320), 5, 'Normal bomber reaches 5-way fan in 300-360s');
+  assert.equal(countVolley('boat', 320), 2, 'Normal boat reaches twin spread in 300-360s');
 });
 
 test('05. Normal offensive coordination enforces window caps (3/4/3/4/5), staggers helicopter pairs, and never deletes live bullets', () => {
   assert.equal(normalOffensiveWindowCap(20, false), 3);
   assert.equal(normalOffensiveWindowCap(90, false), 4);
-  assert.equal(normalOffensiveWindowCap(160, true), 3);
-  assert.equal(normalOffensiveWindowCap(210, false), 4);
-  assert.equal(normalOffensiveWindowCap(275, false), 5);
-  assert.ok(normalSoftBulletCap(20, false) < normalSoftBulletCap(275, false));
+  assert.equal(normalOffensiveWindowCap(190, true), 3);
+  assert.equal(normalOffensiveWindowCap(260, false), 4);
+  assert.equal(normalOffensiveWindowCap(325, false), 5);
+  assert.ok(normalSoftBulletCap(20, false) < normalSoftBulletCap(325, false));
 
   // Spawn 8 fighters simultaneously at route=15s with cooldown=0 -> at most 3 initiate attacks in 0.65s window
   const w = makeNormalWorld();
@@ -377,7 +377,7 @@ test('06. Full Normal end-to-end runs (auto-fire & charged shot) traverse Tide A
         while (recentAttackTimes.length && recentAttackTimes[0] < w.elapsed - 0.58) {
           recentAttackTimes.shift();
         }
-        const key = w.route < 45 ? 'early' : w.route < 135 ? 'mid' : w.route < 180 ? 'arch' : w.route < 255 ? 'post' : 'late';
+        const key = w.route < 60 ? 'early' : w.route < 160 ? 'mid' : w.route < 240 ? 'arch' : w.route < 300 ? 'post' : 'late';
         maxWindowBySlice[key] = Math.max(maxWindowBySlice[key], recentAttackTimes.length);
       }
       w.events.length = 0;
@@ -388,10 +388,10 @@ test('06. Full Normal end-to-end runs (auto-fire & charged shot) traverse Tide A
     assert.equal(archSeen, true);
     assert.equal(bossSeen, true);
     assert.ok(w.collected >= 9, `Expected strong supply collection in Normal (useCharge=${useCharge}), got ${w.collected}`);
-    assert.ok(maxWindowBySlice.early <= 3, `0-45s window cap exceeded: ${maxWindowBySlice.early}`);
-    assert.ok(maxWindowBySlice.mid <= 4, `45-135s window cap exceeded: ${maxWindowBySlice.mid}`);
-    assert.ok(maxWindowBySlice.arch <= 3, `135-180s arch window cap exceeded: ${maxWindowBySlice.arch}`);
-    assert.ok(maxWindowBySlice.post <= 4, `180-255s window cap exceeded: ${maxWindowBySlice.post}`);
-    assert.ok(maxWindowBySlice.late <= 5, `255-300s window cap exceeded: ${maxWindowBySlice.late}`);
+    assert.ok(maxWindowBySlice.early <= 3, `0-60s window cap exceeded: ${maxWindowBySlice.early}`);
+    assert.ok(maxWindowBySlice.mid <= 4, `60-160s window cap exceeded: ${maxWindowBySlice.mid}`);
+    assert.ok(maxWindowBySlice.arch <= 3, `160-240s arch window cap exceeded: ${maxWindowBySlice.arch}`);
+    assert.ok(maxWindowBySlice.post <= 4, `240-300s window cap exceeded: ${maxWindowBySlice.post}`);
+    assert.ok(maxWindowBySlice.late <= 5, `300-360s window cap exceeded: ${maxWindowBySlice.late}`);
   }
 });

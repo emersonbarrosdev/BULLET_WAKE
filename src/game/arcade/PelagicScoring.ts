@@ -171,7 +171,7 @@ export class PelagicScoringTracker {
             this.currentSector = newRegion;
             this.sectorHadDeath = false;
         }
-        if (route >= 300 && !this.finalSectorChecked) {
+        if (route >= 360 && !this.finalSectorChecked) {
             this.finalSectorChecked = true;
             if (!this.sectorHadDeath && !this.awardedSectors.has(6)) {
                 const bonus = sectorSurvivalBonus(6, hard);

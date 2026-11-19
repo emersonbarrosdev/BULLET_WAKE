@@ -36,16 +36,16 @@ const ROCK_FRAME_META: Record<0 | 1, RockPlatformFrameMeta> = {
 };
 
 const PLATFORM_SLOTS: ReadonlyArray<{ frame: 0 | 1; dispW: number; dispH: number; tint: number }> = [
-  { frame: 0, dispW: 96, dispH: 72, tint: 0xfaf3e8 },
-  { frame: 1, dispW: 94, dispH: 70, tint: 0xf8f0e4 },
-  { frame: 1, dispW: 98, dispH: 74, tint: 0xfaf4ea },
-  { frame: 0, dispW: 96, dispH: 72, tint: 0xf9f2e7 },
-  { frame: 0, dispW: 102, dispH: 76, tint: 0xffffff },
-  { frame: 1, dispW: 100, dispH: 75, tint: 0xfcf6ed },
-  { frame: 1, dispW: 104, dispH: 78, tint: 0xffffff },
-  { frame: 0, dispW: 104, dispH: 78, tint: 0xffffff },
-  { frame: 0, dispW: 96, dispH: 72, tint: 0xf7efe4 },
-  { frame: 1, dispW: 94, dispH: 70, tint: 0xf5ede1 },
+  { frame: 0, dispW: 112, dispH: 82, tint: 0xfaf3e8 },
+  { frame: 1, dispW: 110, dispH: 80, tint: 0xf8f0e4 },
+  { frame: 1, dispW: 116, dispH: 84, tint: 0xfaf4ea },
+  { frame: 0, dispW: 114, dispH: 82, tint: 0xf9f2e7 },
+  { frame: 0, dispW: 120, dispH: 86, tint: 0xffffff },
+  { frame: 1, dispW: 118, dispH: 85, tint: 0xfcf6ed },
+  { frame: 1, dispW: 124, dispH: 88, tint: 0xffffff },
+  { frame: 0, dispW: 124, dispH: 88, tint: 0xffffff },
+  { frame: 0, dispW: 112, dispH: 82, tint: 0xf7efe4 },
+  { frame: 1, dispW: 110, dispH: 80, tint: 0xf5ede1 },
 ];
 
 const smoothstep = (t: number): number => {
@@ -165,6 +165,69 @@ function ensureNaturalRockPlatforms(scene: Phaser.Scene): boolean {
         if (fade >= 0.999) continue;
         const idx = (y * 1024 + baseCol + lx) * 4 + 3;
         d[idx] = Math.round(d[idx] * fade);
+      }
+    }
+
+    // Bake true alpha-contour shallow turquoise shelf + white coastal seafoam strictly hugging
+    // the seaward rock waterline (y > 235) so every rocky cannon outcrop sits organically IN the water.
+    const solidMask = new Uint8Array(512 * 512);
+    for (let y = 0; y < 512; y++) {
+      for (let lx = 0; lx < 512; lx++) {
+        if (d[(y * 1024 + baseCol + lx) * 4 + 3] >= 120) solidMask[y * 512 + lx] = 1;
+      }
+    }
+    const distGrid = new Float32Array(512 * 512).fill(99);
+    for (let y = 215; y < 498; y++) {
+      for (let lx = 24; lx < 498; lx++) {
+        if (solidMask[y * 512 + lx]) {
+          distGrid[y * 512 + lx] = 0;
+          continue;
+        }
+        let minD = 99;
+        for (let dy = -12; dy <= 4; dy++) {
+          const sy = y + dy;
+          if (sy < 0 || sy >= 512) continue;
+          for (let dx = -12; dx <= 12; dx++) {
+            const sx = lx + dx;
+            if (sx < 0 || sx >= 512) continue;
+            if (solidMask[sy * 512 + sx]) {
+              const dd = Math.hypot(dx, dy * 1.15);
+              if (dd < minD) minD = dd;
+            }
+          }
+        }
+        distGrid[y * 512 + lx] = minD;
+      }
+    }
+    for (let y = 232; y < 496; y++) {
+      const waterDepthT = smoothstep(clamp((y - 232) / 56, 0, 1));
+      for (let lx = 36; lx < 496; lx++) {
+        const md = distGrid[y * 512 + lx];
+        if (md <= 0 || md > 12.5) continue;
+        const p4 = (y * 1024 + baseCol + lx) * 4;
+        if (d[p4 + 3] >= 140) continue;
+        const wave = 0.72 + 0.28 * Math.sin(lx * 0.11 + y * 0.08);
+        if (md <= 4.4) {
+          // Crisp white shoreline foam collar hugging rock base contour
+          const foamK = (1 - md / 4.4) * waterDepthT * wave;
+          const a = clamp(Math.round(foamK * 215), 0, 225);
+          if (a > d[p4 + 3]) {
+            d[p4] = 228;
+            d[p4 + 1] = 252;
+            d[p4 + 2] = 255;
+            d[p4 + 3] = a;
+          }
+        } else {
+          // Soft translucent turquoise shallow reef shelf transitioning seamlessly into deep water
+          const shelfK = (1 - (md - 4.4) / 8.1) * waterDepthT * 0.62 * wave;
+          const a = clamp(Math.round(shelfK * 155), 0, 145);
+          if (a > d[p4 + 3]) {
+            d[p4] = 36;
+            d[p4 + 1] = 204;
+            d[p4 + 2] = 232;
+            d[p4 + 3] = a;
+          }
+        }
       }
     }
   }
@@ -410,30 +473,52 @@ export class PelagicTideArchRenderer {
         .setDisplaySize(dispW, dispH)
         .setVisible(true);
 
-      // Subtle organic reef shoaling strictly hugging submerged rock toe below cannon plateau
-      const cliffToeX = pos.x - spec.side * 6;
-      const cliffToeY = platY + dispH * 0.26;
-      const waveBeat = Math.sin(t * 2.8 + i * 1.1) * 2.0;
-      reef.fillStyle(0x032046, 0.14).fillRoundedRect(cliffToeX - dispW * 0.21, cliffToeY - 5, dispW * 0.42, 10, 5);
+      // Subtle curved submerged reef contour & shoreline sea-wash hugging rock base (no boxy rectangles or dark ovals)
+      const cliffToeX = pos.x - spec.side * 10;
+      const cliffToeY = platY + dispH * 0.28;
+      const waveBeat = Math.sin(t * 2.5 + i * 1.1) * 2.2;
+      const spanW = dispW * 0.34;
+      reef.lineStyle(5.5, 0x052c58, 0.22).beginPath();
+      reef.moveTo(cliffToeX - spanW, cliffToeY - 2);
+      reef.lineTo(cliffToeX, cliffToeY + 4);
+      reef.lineTo(cliffToeX + spanW, cliffToeY - 1);
+      reef.strokePath();
       if (quality > 0) {
-        surf.fillStyle(0x9bf5ff, 0.12).fillRoundedRect(cliffToeX - (11 + waveBeat * 0.25), cliffToeY - 2, 22 + waveBeat * 0.5, 4, 2);
+        surf.lineStyle(2.2, 0xcffbff, 0.24 + Math.sin(t * 3.1 + i) * 0.06).beginPath();
+        surf.moveTo(cliffToeX - spanW * 0.72, cliffToeY - 1 + waveBeat * 0.2);
+        surf.lineTo(cliffToeX, cliffToeY + 2.5 + waveBeat * 0.25);
+        surf.lineTo(cliffToeX + spanW * 0.72, cliffToeY - 1 + waveBeat * 0.2);
+        surf.strokePath();
       }
     }
 
-    // 2. Sea surf at bridge pillar bases + natural silhouette cast shadow + overhead bridge span
+    // 2. Curved coastal shoreline surf at bridge pillar bases + real silhouette cast shadow + overhead bridge span
     if (bridgeOnScreen) {
-      const pulseL = Math.sin(t * 2.4) * 3.0;
-      const pulseR = Math.sin(t * 2.4 + 1.4) * 3.0;
-      const leftBaseX = opening.left - opening.pierLeftWidth * 0.24;
-      const leftBaseY = spanY + bridgeH * 0.22;
-      const rightBaseX = opening.right + opening.pierRightWidth * 0.22;
+      const pulseL = Math.sin(t * 2.4) * 2.4;
+      const pulseR = Math.sin(t * 2.4 + 1.4) * 2.4;
+      const leftBaseX = opening.left - opening.pierLeftWidth * 0.16;
+      const leftBaseY = spanY + bridgeH * 0.23;
+      const rightBaseX = opening.right + opening.pierRightWidth * 0.16;
       const rightBaseY = spanY + bridgeH * 0.25;
 
-      surf.fillStyle(0x1cbce0, 0.20).fillRoundedRect(leftBaseX - opening.pierLeftWidth * 0.42, leftBaseY - 7, opening.pierLeftWidth * 0.90 + pulseL, 18, 9);
-      surf.fillStyle(0x1cbce0, 0.20).fillRoundedRect(rightBaseX - opening.pierRightWidth * 0.48, rightBaseY - 7, opening.pierRightWidth * 0.90 + pulseR, 18, 9);
-      if (quality > 0) {
-        surf.fillStyle(0xdcfbff, 0.22).fillRoundedRect(leftBaseX - opening.pierLeftWidth * 0.26, leftBaseY - 4, opening.pierLeftWidth * 0.58 + pulseL * 0.5, 9, 4.5);
-        surf.fillStyle(0xdcfbff, 0.22).fillRoundedRect(rightBaseX - opening.pierRightWidth * 0.30, rightBaseY - 4, opening.pierRightWidth * 0.58 + pulseR * 0.5, 9, 4.5);
+      // Subtle curved turquoise reef wash & foam hugging the actual left/right arch cliff abutment bases
+      for (const [bx, by, sign, pulse] of [
+        [leftBaseX, leftBaseY, -1, pulseL],
+        [rightBaseX, rightBaseY, 1, pulseR],
+      ] as const) {
+        const wSpan = opening.pierLeftWidth * 0.56;
+        surf.lineStyle(9, 0x1fc2e4, 0.22).beginPath();
+        surf.moveTo(bx + sign * wSpan, by - 8);
+        surf.lineTo(bx, by + 2 + pulse * 0.35);
+        surf.lineTo(bx - sign * (wSpan * 0.48), by + 6 + pulse * 0.45);
+        surf.strokePath();
+        if (quality > 0) {
+          surf.lineStyle(2.6, 0xe8fdff, 0.34).beginPath();
+          surf.moveTo(bx + sign * (wSpan * 0.82), by - 6);
+          surf.lineTo(bx, by + 1 + pulse * 0.25);
+          surf.lineTo(bx - sign * (wSpan * 0.42), by + 4 + pulse * 0.35);
+          surf.strokePath();
+        }
       }
 
       if (this.archShadowImage && ensureArchBridgeShadow(this.scene)) {

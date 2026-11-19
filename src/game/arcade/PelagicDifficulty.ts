@@ -1,5 +1,6 @@
 import {
   FAMILY,
+  FENDA_BASE_SUPPLIES,
   SUPPLIES,
   WARHAWK_MISSILE_SPEED_HARD,
   WARHAWK_MISSILE_SPEED_NORMAL,
@@ -267,23 +268,23 @@ export function resolveEnemyMaxHp(family: Family, difficulty: GameDifficulty): n
 }
 
 /**
- * Progressive Normal-mode supply timeline for Fenda Pelágica:
- * brings early POWER 2 forward (11s, 29s), bridges the 118s-201s gap with safe pre-arch (135s)
- * and post-arch (185s) drops, and preserves the exact Special (145s) and Life (239s) crates.
+ * Progressive Normal-mode supply timeline for the 360s Fenda Pelágica campaign:
+ * brings early POWER 2 forward (14s, 36s), bridges the Tide Arch window safely (164s pre-arch, 220s post-arch),
+ * and preserves the exact Special (174s) and Life (286s) crates with zero drops inside Tide Arch traversal (180-214s).
  */
 export const FENDA_NORMAL_SUPPLIES: readonly SupplyEntry[] = [
-  { at: 11, kind: 'power' },
-  { at: 29, kind: 'power' },
-  { at: 54, kind: 'power' },
-  { at: 80, kind: 'power' },
-  { at: 106, kind: 'power' },
-  { at: 135, kind: 'power' },
-  { at: 145, kind: 'special' },
-  { at: 185, kind: 'power' },
-  { at: 212, kind: 'power' },
-  { at: 239, kind: 'life' },
-  { at: 248, kind: 'power' },
-  { at: 274, kind: 'power' },
+  { at: 14, kind: 'power' },
+  { at: 36, kind: 'power' },
+  { at: 68, kind: 'power' },
+  { at: 98, kind: 'power' },
+  { at: 132, kind: 'power' },
+  { at: 164, kind: 'power' },
+  { at: 174, kind: 'special' },
+  { at: 220, kind: 'power' },
+  { at: 256, kind: 'power' },
+  { at: 286, kind: 'life' },
+  { at: 308, kind: 'power' },
+  { at: 338, kind: 'power' },
 ];
 
 export function buildMissionSupplies(
@@ -291,42 +292,43 @@ export function buildMissionSupplies(
   difficulty: GameDifficulty,
   assisted = false,
 ): readonly SupplyEntry[] {
-  if (mission.perspective === 'UP' && difficulty === 'normal' && !assisted) {
-    return FENDA_NORMAL_SUPPLIES;
+  if (mission.perspective === 'UP') {
+    if (difficulty === 'normal' && !assisted) return FENDA_NORMAL_SUPPLIES;
+    return FENDA_BASE_SUPPLIES;
   }
   return SUPPLIES;
 }
 
-/** Progressive Normal-mode offensive stage along the 300s Fenda Pelágica timeline. */
+/** Progressive Normal-mode offensive stage along the 360s Fenda Pelágica timeline. */
 export function normalPatternStage(route: number): 0 | 1 | 2 | 3 {
-  if (route < 45) return 0;
-  if (route < 135) return 1;
-  if (route < 255) return 2;
+  if (route < 60) return 0;
+  if (route < 160) return 1;
+  if (route < 300) return 2;
   return 3;
 }
 
 /** Maximum coordinated enemy units allowed to initiate volleys inside the Normal attack window. */
 export function normalOffensiveWindowCap(route: number, tideArchActive: boolean): number {
-  if (route < 45) return 3;
-  if (route < 135) return 4;
-  if (route < 180) return tideArchActive ? 3 : 3;
-  if (route < 255) return 4;
+  if (route < 60) return 3;
+  if (route < 160) return 4;
+  if (route < 240) return tideArchActive ? 3 : 3;
+  if (route < 300) return 4;
   return 5;
 }
 
 /** Progressive hostile bullet pressure cap used exclusively in Normal to delay excess volleys smoothly. */
 export function normalSoftBulletCap(route: number, narrowArena: boolean): number {
   if (narrowArena) {
-    if (route < 45) return 11;
-    if (route < 135) return 13;
-    if (route < 180) return 10;
-    if (route < 255) return 14;
+    if (route < 60) return 11;
+    if (route < 160) return 13;
+    if (route < 240) return 10;
+    if (route < 300) return 14;
     return 16;
   }
-  if (route < 45) return 16;
-  if (route < 135) return 18;
-  if (route < 180) return 14;
-  if (route < 255) return 20;
+  if (route < 60) return 16;
+  if (route < 160) return 18;
+  if (route < 240) return 14;
+  if (route < 300) return 20;
   return 22;
 }
 
@@ -353,100 +355,147 @@ const w = (
 ): Encounter => ({ at, family, formation, motion, lane, ...(speed ? { speed } : {}), ...(entry ? { entry } : {}) });
 
 /**
- * Additional waves layered onto Fenda Pelágica for the new NORMAL mode (old Hard difficulty + denser combat):
- * shrinks empty downtime and expands air/heli/naval variety without touching `135-148s` expressway calm or `148-178s` Tide Arch air-lock.
+ * Additional waves layered onto the 360s Fenda Pelágica for NORMAL mode:
+ * strictly obeys cumulative family unlocks per region and respects Tide Arch (180-214s) and open-ocean coastal cutoff (>336s).
  */
 export const FENDA_NORMAL_EXTRA_ENCOUNTERS: readonly Encounter[] = [
-  w(9.4, 'heli_scout', 'pair', 'sine', .35, 112),
-  w(13.8, 'interceptor', 'pair', 'diagonal', .68, 142),
-  w(32.6, 'submarine', 'solo', 'stationary', .62),
-  w(36.4, 'fighter', 'trio', 'sine', .50, 110),
-  w(49.4, 'acrobat', 'pair', 'side-curve', .22, 128, 'right'),
-  w(62.2, 'heli_utility', 'pair', 'stationary', .50, 76),
-  w(71.8, 'acrobat', 'successive', 'curve', .66, 114),
-  w(75.6, 'submarine', 'solo', 'stationary', .34),
-  w(88.8, 'fighter', 'trio', 'sine', .52, 112),
-  w(105.6, 'submarine', 'solo', 'stationary', .58),
-  w(122.6, 'boat', 'pair', 'stationary', .50),
-  w(126.8, 'fighter', 'pair', 'side-cross', .24, 136, 'right'),
-  w(182.4, 'boat', 'pair', 'stationary', .50),
-  w(189.8, 'heli_scout', 'pair', 'side-curve', .22, 120, 'right'),
-  w(207.4, 'boat', 'pair', 'stationary', .50),
-  w(229.8, 'ship', 'solo', 'stationary', .48),
-  w(257.4, 'fighter', 'v', 'accelerate', .50, 118),
-  w(272.2, 'boat', 'pair', 'stationary', .50),
-  w(281.2, 'submarine', 'pair', 'stationary', .50),
+  // Region 0 (0-60s): conventional aircraft only
+  w(10.2, 'fighter', 'trio', 'sine', .44, 106),
+  w(22.2, 'acrobat', 'pair', 'diagonal', .66, 114),
+  w(34.6, 'fighter', 'trio', 'curve', .50, 110),
+  w(47.4, 'acrobat', 'pair', 'side-curve', .22, 122, 'right'),
+  // Region 1 (60-115s): conventional aircraft + boat/ship
+  w(65.4, 'boat', 'solo', 'stationary', .64),
+  w(76.2, 'acrobat', 'successive', 'curve', .66, 114),
+  w(84.2, 'boat', 'pair', 'stationary', .50),
+  w(103.6, 'fighter', 'trio', 'sine', .52, 112),
+  // Region 2 (115-160s): adds interceptor, tower, tank
+  w(123.8, 'fighter', 'pair', 'side-cross', .24, 136, 'right'),
+  w(133.0, 'boat', 'pair', 'stationary', .50),
+  w(140.4, 'interceptor', 'pair', 'diagonal', .66, 148),
+  w(150.4, 'fighter', 'trio', 'sine', .46, 112),
+  // Region 3 (160-180s): adds submarine
+  w(165.4, 'interceptor', 'pair', 'diagonal', .32, 152),
+  // Region 4 post-arch (214-240s): no helicopters yet
+  w(216.2, 'boat', 'pair', 'stationary', .50),
+  w(223.4, 'fighter', 'trio', 'side-curve', .22, 124, 'left'),
+  w(231.6, 'interceptor', 'pair', 'side-cross', .22, 158, 'right'),
+  // Region 5 (240-300s): progressive helicopters + alien
+  w(245.8, 'heli_scout', 'pair', 'sine', .40, 114),
+  w(256.4, 'boat', 'pair', 'stationary', .50),
+  w(266.4, 'heli_utility', 'pair', 'stationary', .50, 76),
+  w(281.0, 'ship', 'solo', 'stationary', .48),
+  w(291.8, 'heli_phantom', 'solo', 'side-curve', .22, 128, 'left'),
+  // Region 6 (300-360s): full escalation
+  w(302.4, 'fighter', 'v', 'accelerate', .50, 118),
+  w(315.4, 'boat', 'pair', 'stationary', .50),
+  w(329.4, 'submarine', 'pair', 'stationary', .50),
+  w(342.8, 'heli_scout', 'pair', 'side-curve', .24, 124, 'right'),
+  w(349.2, 'submarine', 'pair', 'stationary', .50),
 ];
 
 /**
- * Heavy coordinated pressure waves for the new extreme HARD mode (~3x combat pressure vs Normal).
- * Opens readable at LV1 while surging progressively into multi-axis fighter Vs, helicopter pairs/trios,
- * naval ships/submarines, and side sweeps with clean evasion lanes and intact Tide Arch / Express boundaries.
+ * Heavy coordinated pressure waves for HARD mode (~3x combat pressure vs Normal),
+ * strictly honoring every region's cumulative family unlock rules and Tide Arch / open-ocean boundaries.
  */
 export const FENDA_HARD_EXTRA_ENCOUNTERS: readonly Encounter[] = [
-  w(23.8, 'heli_utility', 'pair', 'stationary', .50, 76),
-  w(27.0, 'fighter', 'v', 'curve', .56, 116),
-  w(30.4, 'ship', 'solo', 'stationary', .46),
-  w(34.6, 'heli_scout', 'trio', 'curve', .48, 120),
-  w(39.4, 'acrobat', 'quartet', 'sine', .50, 122),
-  w(43.2, 'heli_scout', 'pair', 'side-curve', .24, 122, 'left'),
+  // Region 0 (0-60s): conventional aircraft only (fighter, acrobat, bomber >= 42s)
+  w(21.6, 'fighter', 'v', 'curve', .56, 114),
+  w(26.4, 'acrobat', 'quartet', 'sine', .50, 118),
+  w(30.8, 'fighter', 'trio', 'side-curve', .24, 122, 'left'),
+  w(39.0, 'acrobat', 'trio', 'turn', .54, 120),
+  w(43.2, 'bomber', 'escort', 'straight', .62, 82),
+  w(48.0, 'bomber', 'pair', 'straight', .48, 82),
+  w(51.4, 'bomber', 'escort', 'straight', .36, 82),
+  w(55.0, 'acrobat', 'quartet', 'curve', .48, 120),
 
-  w(48.2, 'fighter', 'trio', 'sine', .46, 116),
-  w(52.4, 'heli_scout', 'trio', 'curve', .52, 120),
-  w(56.4, 'interceptor', 'trio', 'side-curve', .22, 152, 'right'),
-  w(60.6, 'ship', 'solo', 'stationary', .56),
-  w(65.4, 'fighter', 'v', 'curve', .36, 118),
-  w(69.8, 'heli_phantom', 'pair', 'side-curve', .24, 128, 'right'),
-  w(74.0, 'interceptor', 'trio', 'side-cross', .22, 158, 'left'),
-  w(78.6, 'fighter', 'v', 'diagonal', .62, 118),
-  w(82.8, 'heli_utility', 'pair', 'stationary', .50, 78),
-  w(86.2, 'interceptor', 'quartet', 'dive', .50, 150),
+  // Region 1 (60-115s): adds boat & ship (still zero jets/coastal/subs/helis)
+  w(62.2, 'fighter', 'trio', 'sine', .46, 116),
+  w(69.2, 'boat', 'pair', 'stationary', .50),
+  w(72.8, 'fighter', 'v', 'curve', .36, 118),
+  w(76.8, 'ship', 'solo', 'stationary', .42),
+  w(80.4, 'ship', 'solo', 'stationary', .56),
+  w(84.4, 'bomber', 'pair', 'straight', .50, 84),
+  w(87.8, 'acrobat', 'quartet', 'turn', .50, 120),
+  w(91.2, 'ship', 'solo', 'stationary', .62),
+  w(100.2, 'boat', 'pair', 'stationary', .50),
+  w(103.6, 'bomber', 'pair', 'straight', .50, 84),
+  w(107.0, 'ship', 'solo', 'stationary', .44),
+  w(110.4, 'fighter', 'horde', 'curve', .50, 118),
 
-  w(92.4, 'fighter', 'horde', 'curve', .50, 118),
-  w(95.4, 'submarine', 'pair', 'stationary', .50),
-  w(99.2, 'heli_scout', 'pair', 'side-curve', .24, 124, 'right'),
-  w(103.0, 'ship', 'solo', 'stationary', .44),
-  w(107.6, 'acrobat', 'quartet', 'turn', .50, 122),
-  w(112.4, 'heli_phantom', 'trio', 'curve', .50, 130),
-  w(121.6, 'interceptor', 'trio', 'side-cross', .22, 162, 'left'),
-  w(125.6, 'acrobat', 'quartet', 'curve', .44, 122),
-  w(129.6, 'ship', 'solo', 'stationary', .50),
-  w(133.0, 'fighter', 'v', 'accelerate', .50, 120),
+  // Region 2 (115-160s): adds interceptor, tower, tank
+  w(117.4, 'interceptor', 'trio', 'side-curve', .22, 152, 'right'),
+  w(123.0, 'ship', 'solo', 'stationary', .52),
+  w(125.0, 'bomber', 'pair', 'straight', .50, 84),
+  w(127.0, 'interceptor', 'trio', 'side-cross', .22, 158, 'left'),
+  w(133.2, 'acrobat', 'quartet', 'turn', .50, 122),
+  w(137.0, 'interceptor', 'quartet', 'dive', .50, 150),
+  w(140.4, 'ship', 'solo', 'stationary', .48),
+  w(143.6, 'fighter', 'horde', 'curve', .50, 118),
+  w(146.8, 'interceptor', 'trio', 'side-cross', .22, 160, 'left'),
+  w(150.2, 'bomber', 'pair', 'straight', .50, 84),
+  w(153.4, 'ship', 'solo', 'stationary', .46),
+  w(156.0, 'fighter', 'v', 'accelerate', .50, 120),
 
-  w(183.8, 'heli_utility', 'pair', 'stationary', .48, 78),
-  w(187.4, 'interceptor', 'trio', 'side-cross', .20, 162, 'left'),
-  w(191.6, 'heli_phantom', 'pair', 'side-curve', .24, 132, 'left'),
-  w(196.2, 'ship', 'solo', 'stationary', .46),
-  w(199.6, 'heli_scout', 'pair', 'side-curve', .22, 124, 'right'),
+  // Region 3 (160-180s): adds submarine
+  w(162.4, 'submarine', 'pair', 'stationary', .50),
+  w(165.8, 'ship', 'solo', 'stationary', .48),
+  w(169.0, 'interceptor', 'trio', 'side-cross', .20, 162, 'left'),
+  w(172.4, 'acrobat', 'quartet', 'curve', .44, 122),
 
-  w(203.2, 'heli_warhawk', 'solo', 'stationary', .42, 82),
-  w(206.4, 'interceptor', 'trio', 'side-cross', .20, 164, 'right'),
-  w(210.8, 'acrobat', 'quartet', 'turn', .50, 124),
-  w(218.2, 'heli_phantom', 'trio', 'curve', .50, 132),
-  w(222.8, 'fighter', 'v', 'sine', .48, 120),
-  w(226.8, 'interceptor', 'quartet', 'diagonal', .50, 156),
-  w(232.6, 'heli_utility', 'pair', 'stationary', .50, 78),
-  w(236.4, 'acrobat', 'trio', 'side-cross', .22, 134, 'left'),
-  w(247.8, 'fighter', 'horde', 'sine', .50, 120),
-  w(252.4, 'interceptor', 'trio', 'side-cross', .20, 164, 'right'),
-  w(256.0, 'heli_phantom', 'pair', 'side-curve', .22, 132, 'left'),
-  w(260.4, 'heli_warhawk', 'solo', 'stationary', .54, 82),
-  w(264.6, 'acrobat', 'quartet', 'zigzag', .50, 124),
-  w(268.6, 'heli_utility', 'pair', 'stationary', .50, 78),
-  w(273.0, 'ship', 'solo', 'stationary', .50),
-  w(276.6, 'interceptor', 'quartet', 'dive', .50, 158),
-  w(282.4, 'heli_scout', 'trio', 'sine', .50, 126),
-  w(284.4, 'ship', 'solo', 'stationary', .42),
-  w(286.4, 'fighter', 'v', 'accelerate', .50, 122),
-  w(288.8, 'submarine', 'solo', 'stationary', .62),
-  w(291.2, 'ship', 'solo', 'stationary', .50),
-  w(294.6, 'heli_phantom', 'trio', 'curve', .50, 132),
-  w(298.4, 'ship', 'pair', 'stationary', .50),
+  // Region 4 post-arch (214-240s): no helicopters/UFO yet
+  w(215.8, 'interceptor', 'trio', 'side-cross', .20, 162, 'left'),
+  w(219.6, 'ship', 'solo', 'stationary', .46),
+  w(221.8, 'bomber', 'pair', 'straight', .50, 84),
+  w(223.0, 'fighter', 'v', 'sine', .48, 120),
+  w(228.0, 'interceptor', 'quartet', 'diagonal', .50, 156),
+  w(232.0, 'ship', 'solo', 'stationary', .52),
+  w(234.4, 'acrobat', 'quartet', 'turn', .50, 124),
+  w(237.0, 'submarine', 'pair', 'stationary', .50),
+
+  // Region 5 (240-300s): progressive helicopters (Scout >= 240, Utility >= 252, Phantom >= 266, Warhawk >= 282) + UFO
+  w(242.8, 'heli_scout', 'pair', 'side-curve', .24, 122, 'right'),
+  w(246.2, 'interceptor', 'trio', 'side-cross', .20, 164, 'right'),
+  w(249.6, 'heli_scout', 'trio', 'curve', .50, 120),
+  w(253.2, 'heli_utility', 'pair', 'stationary', .48, 78),
+  w(256.8, 'fighter', 'horde', 'sine', .50, 120),
+  w(260.0, 'heli_utility', 'pair', 'stationary', .50, 78),
+  w(263.4, 'ship', 'solo', 'stationary', .48),
+  w(265.2, 'bomber', 'escort', 'straight', .56, 84),
+  w(267.0, 'heli_phantom', 'pair', 'side-curve', .24, 130, 'left'),
+  w(271.2, 'interceptor', 'quartet', 'diagonal', .50, 158),
+  w(277.4, 'heli_phantom', 'trio', 'curve', .50, 132),
+  w(281.2, 'acrobat', 'trio', 'side-cross', .22, 134, 'left'),
+  w(284.0, 'heli_warhawk', 'solo', 'stationary', .46, 82),
+  w(288.4, 'fighter', 'horde', 'sine', .50, 120),
+  w(292.0, 'heli_phantom', 'pair', 'side-curve', .22, 132, 'right'),
+  w(295.4, 'ship', 'solo', 'stationary', .50),
+  w(298.0, 'bomber', 'escort', 'straight', .42, 84),
+
+  // Region 6 (300-360s): full final escalation (no coastal towers/tanks > 336s)
+  w(302.0, 'heli_phantom', 'pair', 'side-curve', .22, 132, 'left'),
+  w(306.0, 'heli_warhawk', 'solo', 'stationary', .54, 82),
+  w(309.2, 'acrobat', 'quartet', 'zigzag', .50, 124),
+  w(312.4, 'heli_utility', 'pair', 'stationary', .50, 78),
+  w(316.0, 'ship', 'solo', 'stationary', .50),
+  w(318.2, 'bomber', 'escort', 'straight', .44, 84),
+  w(319.6, 'interceptor', 'quartet', 'dive', .50, 158),
+  w(323.2, 'heli_scout', 'trio', 'sine', .50, 126),
+  w(326.2, 'ship', 'solo', 'stationary', .46),
+  w(330.0, 'fighter', 'v', 'accelerate', .50, 122),
+  w(334.0, 'heli_phantom', 'trio', 'curve', .50, 132),
+  w(336.8, 'bomber', 'escort', 'straight', .58, 84),
+  w(339.2, 'ship', 'solo', 'stationary', .50),
+  w(343.0, 'heli_warhawk', 'solo', 'stationary', .46, 82),
+  w(346.2, 'submarine', 'pair', 'stationary', .50),
+  w(349.8, 'heli_phantom', 'trio', 'curve', .50, 132),
+  w(353.2, 'ship', 'pair', 'stationary', .50),
+  w(355.8, 'interceptor', 'trio', 'dive', .50, 162),
 ];
 
 function upgradeEncounterForHard(e: Encounter): Encounter {
-  // Keep opening LV1 waves and the pre-arch expressway calm band (135-148s) clean & readable
-  if (e.at < 22 || (e.at >= 135 && e.at < 148)) return e;
+  // Keep opening LV1 waves and the pre-arch expressway calm band (174-180s) clean & readable
+  if (e.at < 22 || (e.at >= 174 && e.at < 180)) return e;
   let formation = e.formation;
   if (formation === 'solo') {
     if (e.family === 'fighter' || e.family === 'acrobat' || e.family === 'interceptor') formation = 'trio';

@@ -32,17 +32,18 @@ export interface PelagicSpecialEventSpec {
 
 export const PELAGIC_RARE_BONUS = 1850;
 export const PELAGIC_CONVOY_CLEAR_BONUS = 600;
-export const PELAGIC_RARE_EARLY_AT = 66;
-export const PELAGIC_RARE_FALLBACK_AT = 204;
+export const PELAGIC_RARE_EARLY_AT = 248;
+export const PELAGIC_RARE_FALLBACK_AT = 286;
 
 /**
  * Deterministic, rate-capped scripted special events exclusive to Fenda Pelágica (UP).
- * Each timed event triggers at most once per sortie and never alters mission length or supply count.
+ * Each timed event triggers at most once per sortie, obeys cumulative region unlocks,
+ * and never alters mission length or supply count.
  */
 export const PELAGIC_TIMED_EVENTS: readonly PelagicSpecialEventSpec[] = [
     {
         id: 'naval-convoy',
-        at: 115,
+        at: 96,
         radio: 'COMBOIO NAVAL À VISTA!\nQUEBREM A ESCOLTA!',
         members: [
             { family: 'ship', formation: 'solo', motion: 'stationary', lane: 0.50, role: 'convoy-lead', cooldown: 1.9 },
@@ -51,12 +52,12 @@ export const PELAGIC_TIMED_EVENTS: readonly PelagicSpecialEventSpec[] = [
             { family: 'fighter', formation: 'pair', motion: 'curve', lane: 0.50, speed: 84, role: 'convoy-air', cooldown: 1.85 },
         ],
         hardExtra: [
-            { family: 'interceptor', formation: 'solo', motion: 'dive', lane: 0.24, speed: 136, role: 'convoy-air', cooldown: 2.0 },
+            { family: 'acrobat', formation: 'solo', motion: 'curve', lane: 0.24, speed: 118, role: 'convoy-air', cooldown: 2.0 },
         ],
     },
     {
         id: 'elite-interception',
-        at: 214,
+        at: 225,
         radio: 'ESQUADRÃO ÁS DETECTADO!\nATENÇÃO AOS RASTROS!',
         members: [
             { family: 'interceptor', formation: 'solo', motion: 'curve', lane: 0.50, speed: 124, role: 'elite-ace', cooldown: 1.55 },
@@ -69,7 +70,7 @@ export const PELAGIC_TIMED_EVENTS: readonly PelagicSpecialEventSpec[] = [
     },
     {
         id: 'coordinated-strike',
-        at: 242,
+        at: 274,
         radio: 'ATAQUE COORDENADO!\nMAR E AR ALTERNADOS!',
         members: [
             { family: 'submarine', formation: 'solo', motion: 'stationary', lane: 0.34, role: 'coord-sub', cooldown: 1.85 },

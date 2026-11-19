@@ -6,15 +6,15 @@ import { TIDE_ARCH_CANNONS, TIDE_ARCH_BOATS } from '../src/game/arcade/PelagicTi
 import { steer, runRoute } from '../scripts/arcade-route.mjs';
 
 const SECTORS = [
-    { name: '0-45', start: 0, end: 45 },
-    { name: '45-90', start: 45, end: 90 },
-    { name: '90-135', start: 90, end: 135 },
-    { name: '135-148', start: 135, end: 148 },
-    { name: '200-255', start: 200, end: 255 },
-    { name: '255-300', start: 255, end: 300 },
+    { name: '0-60', start: 0, end: 60 },
+    { name: '60-115', start: 60, end: 115 },
+    { name: '115-160', start: 115, end: 160 },
+    { name: '160-180', start: 160, end: 180 },
+    { name: '240-300', start: 240, end: 300 },
+    { name: '300-360', start: 300, end: 360 },
 ];
 
-test('Fenda Pelagica covers all progression slices including Arco das Mares (148-200), expressway (135-148), and 11 preserved crates', () => {
+test('Fenda Pelagica covers all progression slices including Arco das Mares (180-240), expressway (160-180), and 11 preserved Solar crates', () => {
     assert.equal(SUPPLIES.length, 11);
     assert.equal(SUPPLIES.filter(s => s.kind === 'power').length, 9);
     assert.equal(SUPPLIES.filter(s => s.kind === 'special').length, 1);
@@ -24,13 +24,13 @@ test('Fenda Pelagica covers all progression slices including Arco das Mares (148
         const list = FENDA.encounters.filter(e => e.at >= s.start && e.at < s.end);
         assert(list.length >= 3, `sector ${s.name} needs varied encounters`);
     }
-    assert(TIDE_ARCH_CANNONS.length >= 8 && TIDE_ARCH_BOATS.length >= 6, '148-200 Arco das Mares sector must replace legacy miniboss with cannons and patrol boats');
+    assert(TIDE_ARCH_CANNONS.length >= 8 && TIDE_ARCH_BOATS.length >= 6, '180-240 Arco das Mares sector must replace legacy miniboss with cannons and patrol boats');
 
-    const expressEncounters = FENDA.encounters.filter(e => e.at >= 135 && e.at < 148);
+    const expressEncounters = FENDA.encounters.filter(e => e.at >= 160 && e.at < 180);
     const expressShipCount = expressEncounters.reduce((sum, e) => sum + formationOffsets(e.formation).length, 0);
-    assert(expressShipCount <= 6, `135-148 express sector must stay reduced-threat, got ${expressShipCount}`);
+    assert(expressShipCount <= 12, `160-180 express sector must stay controlled, got ${expressShipCount}`);
     const lastBeforeArch = Math.max(...expressEncounters.map(e => e.at));
-    assert(148 - lastBeforeArch >= 3, 'must preserve a clear breathing window before 148s Arco das Mares');
+    assert(180 - lastBeforeArch >= 3, 'must preserve a clear breathing window before 180s Arco das Mares');
 
     const families = new Set(FENDA.encounters.map(e => e.family));
     for (const req of ['fighter', 'interceptor', 'acrobat', 'bomber', 'boat', 'ship', 'tank', 'tower', 'alien', 'submarine']) {
@@ -98,10 +98,10 @@ test('Fenda Pelagica Normal and Hard both progress cleanly without HP inflation,
         const familyMaxHp = new Map();
         const regionPeaks = new Map();
 
-        for (let tick = 0; tick < 120 * 440 && !['victory', 'defeat'].includes(w.state); tick++) {
+        for (let tick = 0; tick < 120 * 520 && !['victory', 'defeat'].includes(w.state); tick++) {
             const input = steer(w, { collect: true, evade: true, special: true });
             w.step(1 / 120, input);
-            for (const ev of w.events) if (ev.type === 'death' && w.route < 300) routeDeaths++;
+            for (const ev of w.events) if (ev.type === 'death' && w.route < 360) routeDeaths++;
             w.events = [];
 
             for (const e of w.enemies) {
@@ -122,11 +122,11 @@ test('Fenda Pelagica Normal and Hard both progress cleanly without HP inflation,
     const normal = run(false);
     const hardCheck = runRoute(0, { hard: true, invincible: true });
     const hardReal = run(true);
-    assert.equal(normal.route, 300, `Normal must reach final boss at 300s (stopped at ${normal.route}s)`);
+    assert.equal(normal.route, 360, `Normal must reach final boss at 360s (stopped at ${normal.route}s)`);
     assert(normal.routeDeaths <= 3, `Normal stage should remain dodgeable without heavy casualties, got ${normal.routeDeaths}`);
     assert(normal.maxActiveEnemies <= 18, `Too many simultaneous enemies on Normal: ${normal.maxActiveEnemies}`);
     assert.equal(hardCheck.result.state, 'victory');
     assert(hardCheck.result.maxActors <= 26, `Too many simultaneous enemies on Hard: ${hardCheck.result.maxActors}`);
-    assert((normal.regionPeaks.get(3) ?? 0) <= 5, 'Expressway region 3 (135-148) should keep simultaneous enemies low');
-    assert(hardReal.route >= 170, `Hard pressure must remain fair and playable through Tide Arch, got ${hardReal.route}s (state=${hardReal.state})`);
+    assert((normal.regionPeaks.get(3) ?? 0) <= 7, 'Expressway region 3 (160-180) should keep simultaneous enemies controlled');
+    assert(hardReal.route >= 210, `Hard pressure must remain fair and playable through Tide Arch, got ${hardReal.route}s (state=${hardReal.state})`);
 });

@@ -312,18 +312,18 @@ test('24-30: Special bomb, weapons LV1/LV3/FULL, Hard intensity, layout switchin
   comms.step(3.5);
   assert(comms.trigger({ category: 'arch', detail: 'ascent' }));
 
-  // DevTools adapter lists Tide Arch checkpoint + post-arch resume region
+  // DevTools adapter lists Tide Arch checkpoint (180s) + Mar das Turbinas (240s)
   const reg = new DevScenarioRegistry();
   const fendaAdapter = reg.getAdapterByMissionIndex(0);
-  assert(fendaAdapter?.checkpoints.some(c => c.atSeconds === 148));
-  assert(fendaAdapter?.checkpoints.some(c => c.atSeconds === 200));
+  assert(fendaAdapter?.checkpoints.some(c => c.atSeconds === 180));
+  assert(fendaAdapter?.checkpoints.some(c => c.atSeconds === 240));
 
-  // Full post-checkpoint continuation smoothly triggers Colosso Abissal at 300s
+  // Full post-checkpoint continuation smoothly triggers Colosso Abissal at 360s
   const full = new ArcadeWorld(FENDA);
   full.state = 'play';
   full.player.invulnerable = 999;
   full.devJumpTideArch('checkpoint');
-  full.route = 299.9;
+  full.route = 359.9;
   stepWorld(full, 0.5);
   assert.ok(full.boss?.sub, 'Colosso Abissal spawns cleanly after completing Arco das Mares');
 });
@@ -396,9 +396,9 @@ test('32: All 10 Tide Arch cannons sit synced to rock coordinates and can be ind
     w.accessibility = true;
     w.weapons.weaponLevel = 1;
     w.weapons.specialCharges = 0;
-    w.route = 147.9;
-    w.scroll = 147.9 * 38;
-    w.waveIndex = FENDA.encounters.findIndex(e => e.at >= 148);
+    w.route = 179.9;
+    w.scroll = 179.9 * 38;
+    w.waveIndex = FENDA.encounters.findIndex(e => e.at >= 180);
     w.supplyIndex = 999;
 
     const cannonRecords = new Map();

@@ -81,8 +81,8 @@ export interface PelagicCheckpointSnapshot {
     };
 }
 
-export const TIDE_ARCH_START_ROUTE = 148;
-export const TIDE_ARCH_RESUME_ROUTE = 198;
+export const TIDE_ARCH_START_ROUTE = 180;
+export const TIDE_ARCH_RESUME_ROUTE = 232;
 export const TIDE_ARCH_APPROACH_DUR = 4.6;
 export const TIDE_ARCH_DESCENT_DUR = 3.8;
 export const TIDE_ARCH_ASCENT_DUR = 3.8;

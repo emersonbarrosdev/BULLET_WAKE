@@ -62,7 +62,7 @@ export class DevScenarioRegistry {
         category: boss.mini ? 'miniboss' : 'boss',
         description: boss.mini ? 'Confronto direto com Miniboss' : 'Confronto direto com Chefe Final',
         initialize: (scene, options) => {
-          scene.devJumpToCheckpoint(adapter.missionIndex, boss.mini ? 155 : 300, {
+          scene.devJumpToCheckpoint(adapter.missionIndex, boss.mini ? 155 : adapter.durationSeconds, {
             bossMini: boss.mini,
           });
           applyScenarioOptions(scene, options);
@@ -82,7 +82,7 @@ export class DevScenarioRegistry {
             category: 'boss-section',
             description: `Seção ${sec.index + 1} (${sec.partCount} componentes, casco ${sec.hullMaxHp} HP)`,
             initialize: (scene, options) => {
-              scene.devJumpToCheckpoint(adapter.missionIndex, 300, {
+              scene.devJumpToCheckpoint(adapter.missionIndex, adapter.durationSeconds, {
                 bossMini: false,
                 subSectionIndex: sec.index,
               });

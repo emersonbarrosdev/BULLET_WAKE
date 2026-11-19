@@ -115,6 +115,7 @@ import {
     type TideArchPhase,
 } from './PelagicTideArch.ts';
 import { PelagicCombatDirector, type PelagicPacingSnapshot } from './PelagicCombatDirector.ts';
+import { isFamilyUnlockedAtFendaRoute, stageDurationFor } from './PelagicProgression.ts';
 
 export interface Controls { x: number; y: number; fire: boolean; special: boolean; charge?: boolean; }
 export interface SubmarineState { phase: 'emerge' | 'hold' | 'submerge'; exposure: number; side: -1 | 1; }
@@ -206,6 +207,7 @@ export class ArcadeWorld {
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     }
     get up(): boolean { return this.mission.perspective === 'UP'; }
+    get stageDuration(): number { return stageDurationFor(this.mission.perspective); }
     get arenaWidth(): number { return this.arena.right - this.arena.left; }
     get arenaCenterX(): number { return (this.arena.left + this.arena.right) * 0.5; }
     get playerHomeY(): number { return this.up ? this.arena.bottom - 52 : 228; }
@@ -253,8 +255,8 @@ export class ArcadeWorld {
         this.elapsed += dt;
         const advanceRoute = !this.directorPaused && (!this.devSandboxIsolated || Boolean(this.devIsolatedEventId));
         if (advanceRoute) {
-            this.route = Math.min(300, this.route + dt);
-            this.region = regionAt(this.route);
+            this.route = Math.min(this.stageDuration, this.route + dt);
+            this.region = regionAt(this.route, this.mission.perspective);
             this.stageDirector.markRegionReached(this.region, this.route);
         }
         this.stepEnemyShots = 0;
@@ -374,7 +376,7 @@ export class ArcadeWorld {
                 this.miniStarted = true;
                 this.startBoss(true);
             }
-            if (this.route >= 300 && !this.bossStarted && !this.boss && (!iso || iso === `stage-${this.mission.id}-boss`)) {
+            if (this.route >= this.stageDuration && !this.bossStarted && !this.boss && (!iso || iso === `stage-${this.mission.id}-boss`)) {
                 this.bossStarted = true;
                 if (this.up) for (const rem of this.enemies) if (rem.hp > 0) this.pelagicScoring.onSquadMemberEscaped(rem.squadId);
                 this.enemies = []; this.clearHostileBullets(); this.startBoss(false);
@@ -557,7 +559,7 @@ export class ArcadeWorld {
         this.route = snapshot.route;
         this.scroll = snapshot.scroll;
         this.scrollSpeed = 38;
-        this.region = regionAt(this.route);
+        this.region = regionAt(this.route, this.mission.perspective);
         this.waveIndex = snapshot.waveIndex;
         this.supplyIndex = snapshot.supplyIndex;
         this.specialEventsTriggered.clear();
@@ -600,7 +602,8 @@ export class ArcadeWorld {
         if (e.formation === 'solo' && e.family !== 'tower' && autoEscortEligible && (!this.up || this.enemies.length <= maxExisting || e.family === 'ship')) {
             if (this.up) {
                 const naval = e.family === 'boat' || e.family === 'ship' || e.family === 'submarine';
-                const escortFamily = naval ? 'fighter' : 'interceptor';
+                const canUseJet = isFamilyUnlockedAtFendaRoute('interceptor', this.route);
+                const escortFamily = (naval || !canUseJet) ? 'fighter' : 'interceptor';
                 const escortFormation = e.family === 'ship' && escMode === 'standard'
                     ? 'solo'
                     : escMode === 'heavy'
@@ -753,7 +756,10 @@ export class ArcadeWorld {
             if (this.up && family === 'submarine') {
                 if (i === 0) this.emit('comms', actor.x, actor.y, 1, 'submarine');
                 const solo = e.formation === 'solo';
-                let y = solo ? 120 : 80 + i * 100, corridor = waterCorridor(y - this.scroll, actor.size * .52, 0, this.arena.left, this.arenaWidth), span = corridor.right - corridor.left;
+                const trio = e.formation === 'trio';
+                let y = solo ? 120 : trio ? (78 + i * 68) : (84 + i * 96);
+                let corridor = waterCorridor(y - this.scroll, actor.size * .52, 0, this.arena.left, this.arenaWidth);
+                let span = corridor.right - corridor.left;
                 if (solo) {
                     for (const candidateY of [90, 115, 140, 165]) {
                         const c = waterCorridor(candidateY - this.scroll, actor.size * .52, 0, this.arena.left, this.arenaWidth);
@@ -761,11 +767,22 @@ export class ArcadeWorld {
                     }
                 }
                 const side: (-1 | 1) = solo ? (e.lane < .5 ? -1 : 1) : (i % 2 === 0 ? -1 : 1);
-                actor.x = solo ? (corridor.left + corridor.right) / 2 + side * Math.min(26, span * .16) : (side < 0 ? corridor.left + span * .16 : corridor.right - span * .16);
+                if (solo) {
+                    actor.x = (corridor.left + corridor.right) / 2 + side * Math.min(26, span * .16);
+                } else if (trio) {
+                    // 3 staggered non-overlapping positions (left -> right -> center) with wide dodge channels
+                    actor.x = i === 0
+                        ? corridor.left + span * .20
+                        : i === 1
+                            ? corridor.right - span * .20
+                            : (corridor.left + corridor.right) / 2;
+                } else {
+                    actor.x = side < 0 ? corridor.left + span * .18 : corridor.right - span * .18;
+                }
                 actor.y = y;
                 actor.navigation = { worldY: y - this.scroll, heading: side < 0 ? Math.PI / 2 : -Math.PI / 2, entry: 0, phase: 'hold' };
                 actor.submarine = { phase: 'emerge', exposure: 0, side };
-                actor.cooldown = special?.cooldown ?? (1.24 + i * .18);
+                actor.cooldown = special?.cooldown ?? (trio ? (1.28 + i * .48) : (1.24 + i * .22));
             } else if (this.up && (actor.eventRole === 'convoy-lead' || actor.eventRole === 'convoy-escort')) {
                 const startY = actor.eventRole === 'convoy-lead' ? -68 : -30;
                 const worldY = startY - this.scroll;
@@ -1815,14 +1832,14 @@ export class ArcadeWorld {
         targetSeconds: number,
         opts?: { pauseDirector?: boolean; isolated?: boolean; seed?: number },
     ): void {
-        const t = clamp(targetSeconds, 0, 300);
+        const t = clamp(targetSeconds, 0, this.stageDuration);
         this.clearArenaEntities();
         this.events.length = 0;
         this.introTime = 0;
         this.state = 'play';
         this.elapsed = t;
         this.route = t;
-        this.region = regionAt(t);
+        this.region = regionAt(t, this.mission.perspective);
         if (opts?.seed !== undefined) this.setSeed(opts.seed);
         let scrollPos = 0;
         if (this.up) {
@@ -1876,7 +1893,7 @@ export class ArcadeWorld {
         }
 
         this.miniStarted = !this.up && t >= 155;
-        this.bossStarted = t >= 300;
+        this.bossStarted = t >= this.stageDuration;
         this.stageDirector.syncAfterJump(t, this.region, {
             pauseDirector: this.directorPaused || this.devSandboxIsolated,
         });
@@ -1885,11 +1902,11 @@ export class ArcadeWorld {
             this.startBoss(false);
         } else if (!this.up && t >= 155 && t < 185) {
             this.startBoss(true);
-        } else if (this.up && t >= 148 && t < 185) {
-            const stage: Exclude<TideArchPhase, 'idle'> = t < 153 ? 'approach' : t < 158 ? 'descent' : t < 171 ? 'low-flight' : t < 177 ? 'under-arch' : t < 181 ? 'ascent' : 'checkpoint';
+        } else if (this.up && t >= 180 && t < 214) {
+            const stage: Exclude<TideArchPhase, 'idle'> = t < 185 ? 'approach' : t < 190 ? 'descent' : t < 203 ? 'low-flight' : t < 209 ? 'under-arch' : t < 212 ? 'ascent' : 'checkpoint';
             this.devJumpTideArch(stage, this.directorPaused, this.devSandboxIsolated);
         } else if (this.up) {
-            if (t >= 185) this.tideArch.jumpTo('complete', this.scroll, this.playerHomeY);
+            if (t >= 214) this.tideArch.jumpTo('complete', this.scroll, this.playerHomeY);
             if (t <= 2) this.emit('comms', 0, 0, 1, 'start');
         }
     }
@@ -1904,18 +1921,18 @@ export class ArcadeWorld {
         this.directorPaused = pauseDirector;
         this.devSandboxIsolated = isolated;
         const routeMap: Record<Exclude<TideArchPhase, 'idle'>, number> = {
-            approach: 148,
-            descent: 153,
-            'low-flight': 162,
-            'under-arch': 173,
-            ascent: 177,
-            checkpoint: 181,
-            complete: 192,
+            approach: 180,
+            descent: 185,
+            'low-flight': 194,
+            'under-arch': 205,
+            ascent: 209,
+            checkpoint: 213,
+            complete: 220,
         };
         const t = routeMap[stage];
         this.elapsed = t;
         this.route = t;
-        this.region = regionAt(t);
+        this.region = regionAt(t, this.mission.perspective);
         this.scroll = t * 38;
         this.scrollSpeed = this.tideArch.targetScrollSpeed();
         this.player.x = this.arenaCenterX;
@@ -1972,9 +1989,9 @@ export class ArcadeWorld {
         this.events.length = 0;
         this.introTime = 0;
         this.state = 'play';
-        this.route = mini ? 155 : 300;
+        this.route = mini ? 155 : this.stageDuration;
         this.elapsed = this.route;
-        this.region = regionAt(this.route);
+        this.region = regionAt(this.route, this.mission.perspective);
         this.waveIndex = this.activeEncounters.length;
         this.miniStarted = true;
         this.bossStarted = !mini;
@@ -2214,7 +2231,7 @@ export class ArcadeWorld {
                 return { ok: true, def, message: `Miniboss iniciado (${isolated ? 'Isolado' : 'Integrado'}).` };
             }
             case 'boss': {
-                this.devJumpToCheckpoint(300, { pauseDirector: isolated, isolated, seed: opts?.seed });
+                this.devJumpToCheckpoint(this.stageDuration, { pauseDirector: isolated, isolated, seed: opts?.seed });
                 this.devStartBoss(false);
                 return { ok: true, def, message: `'${def.name}' iniciado (${isolated ? 'Isolado' : 'Integrado'}).` };
             }
@@ -2251,7 +2268,7 @@ export class ArcadeWorld {
         if (enc.at > this.route) {
             this.route = enc.at;
             this.elapsed = enc.at;
-            this.region = regionAt(enc.at);
+            this.region = regionAt(enc.at, this.mission.perspective);
         }
         if (!this.up && enc.at === 155) { if (!this.miniStarted) { this.miniStarted = true; this.startBoss(true); } }
         else if (this.up && enc.at === 155) return enc;

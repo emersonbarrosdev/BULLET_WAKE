@@ -1,5 +1,7 @@
 import type { Encounter, EntrySide } from './content.ts';
 import { DIFFICULTY_PROFILES, type GameDifficulty } from './PelagicDifficulty.ts';
+import { FENDA_STAGE_DURATION, isFamilyUnlockedAtFendaRoute } from './PelagicProgression.ts';
+import { TIDE_ARCH_START_ROUTE } from './PelagicTideArch.ts';
 import type { UpLayoutMode } from './ArcadeWorld.ts';
 
 export interface DirectorLogEntry {
@@ -148,7 +150,7 @@ export class PelagicCombatDirector {
             return { kind: 'none', reason: 'boss-fight' };
         }
 
-        if (ctx.route < 300) {
+        if (ctx.route < FENDA_STAGE_DURATION) {
             this.playableSeconds += ctx.dt;
             this.totalEnemyShots += ctx.frameEnemyShots;
             this.peakSimultaneousEnemies = Math.max(this.peakSimultaneousEnemies, ctx.visibleEnemies);
@@ -187,7 +189,7 @@ export class PelagicCombatDirector {
             this.suppressedReason = 'opening-buffer';
             return { kind: 'none', reason: 'opening-buffer' };
         }
-        if (ctx.route >= 297.2) {
+        if (ctx.route >= FENDA_STAGE_DURATION - 2.8) {
             this.suppressedReason = 'pre-boss-buildup';
             return { kind: 'none', reason: 'pre-boss-buildup' };
         }
@@ -220,8 +222,8 @@ export class PelagicCombatDirector {
             return { kind: 'none', reason: 'tide-arch-active' };
         }
 
-        // Keep deliberate short breathing buffer right before Tide Arch entry (145.6..148s)
-        if (ctx.route >= 145.6 && ctx.route < 148.0) {
+        // Keep deliberate short breathing buffer right before Tide Arch entry (177.6..180s)
+        if (ctx.route >= TIDE_ARCH_START_ROUTE - 2.4 && ctx.route < TIDE_ARCH_START_ROUTE) {
             this.suppressedReason = 'pre-arch-window';
             return { kind: 'none', reason: 'pre-arch-window' };
         }
@@ -240,15 +242,25 @@ export class PelagicCombatDirector {
         }
 
         // Priority 1: Smoothly pull forward the next authored encounter only by a short window
+        // Never pull an encounter across a region unlock boundary, Tide Arch boundary, or Boss boundary!
         const next = ctx.nextEncounter;
-        if (next && next.at < 300) {
+        if (next && next.at < FENDA_STAGE_DURATION) {
             const lead = next.at - ctx.route;
-            const crossesArchBoundary = ctx.route < 148 && next.at >= 148;
-            const crossesBossBoundary = ctx.route < 296 && next.at >= 296;
+            const crossesRegionBoundary =
+                (ctx.route < 60 && next.at >= 60) ||
+                (ctx.route < 115 && next.at >= 115) ||
+                (ctx.route < 160 && next.at >= 160) ||
+                (ctx.route < 240 && next.at >= 240) ||
+                (ctx.route < 300 && next.at >= 300);
+            const crossesUnlockThreshold = !isFamilyUnlockedAtFendaRoute(next.family, ctx.route);
+            const crossesArchBoundary = ctx.route < TIDE_ARCH_START_ROUTE && next.at >= TIDE_ARCH_START_ROUTE;
+            const crossesBossBoundary = ctx.route < FENDA_STAGE_DURATION - 4 && next.at >= FENDA_STAGE_DURATION - 4;
             const lowPressureForAnticipate = diff === 'hard'
                 ? ctx.visibleEnemies <= (narrowArena ? 3 : 4)
                 : ctx.visibleEnemies === 0 && ctx.approachingEnemies === 0 && this.emptySeconds >= cfg.minEmptyForAnticipate;
             if (
+                !crossesRegionBoundary &&
+                !crossesUnlockThreshold &&
                 !crossesArchBoundary &&
                 !crossesBossBoundary &&
                 lead > 0 &&
@@ -281,13 +293,13 @@ export class PelagicCombatDirector {
             ctx.activeEnemyBullets <= (diff === 'hard' ? softMaxBullets * 0.65 : 4) &&
             sectorUsed < sectorCap &&
             ctx.route - this.lastReinforceAt >= cfg.minSpacing &&
-            !(ctx.region === 3 && ctx.route >= (diff === 'hard' ? 143.5 : 144.8)) &&
+            !(ctx.region === 3 && ctx.route >= (diff === 'hard' ? TIDE_ARCH_START_ROUTE - 4.5 : TIDE_ARCH_START_ROUTE - 3.2)) &&
             nextFarEnough
         ) {
             this.reinforcementsSpawned++;
             this.sectorReinforcements.set(ctx.region, sectorUsed + 1);
             this.lastReinforceAt = ctx.route;
-            const encounter = this.buildReinforcement(ctx.region, diff, ctx.playerX, ctx.arenaCenterX);
+            const encounter = this.buildReinforcement(ctx.region, ctx.route, diff, ctx.playerX, ctx.arenaCenterX);
             this.suppressedReason = null;
             this.logEvent(ctx.route, ctx.region, 'reinforce', `${encounter.family}/${encounter.formation}/${encounter.motion}`);
             return { kind: 'reinforce', reason: 'prolonged-idle-fill', encounter };
@@ -297,7 +309,7 @@ export class PelagicCombatDirector {
         return { kind: 'none', reason: 'steady-flow' };
     }
 
-    private buildReinforcement(region: number, diff: GameDifficulty, playerX: number, arenaCenterX: number): Omit<Encounter, 'at'> {
+    private buildReinforcement(region: number, route: number, diff: GameDifficulty, playerX: number, arenaCenterX: number): Omit<Encounter, 'at'> {
         const hard = diff !== 'easy';
         const extreme = diff === 'hard';
         const entry: EntrySide = this.reinforceSideToggle;
@@ -305,42 +317,69 @@ export class PelagicCombatDirector {
         const v = this.reinforceVariant++;
         const awayLane = playerX < arenaCenterX ? 0.68 : 0.32;
 
+        // Region 0 (0-60s, Céu Aberto): strictly conventional propeller planes (NO yellow jet, boats, helis, subs)
         if (region === 0) {
             const opts: Omit<Encounter, 'at'>[] = [
-                { family: 'fighter', formation: extreme ? 'v' : hard ? 'trio' : 'pair', motion: 'side-curve', lane: 0.24, speed: 122, entry },
-                { family: 'interceptor', formation: extreme ? 'trio' : hard ? 'pair' : 'solo', motion: 'side-cross', lane: 0.20, speed: 162, entry },
-                { family: 'acrobat', formation: extreme ? 'quartet' : 'pair', motion: 'diagonal', lane: awayLane, speed: 112 },
-                ...(extreme ? [{ family: 'heli_scout' as const, formation: 'pair' as const, motion: 'side-curve' as const, lane: 0.24, speed: 120, entry }] : []),
+                { family: 'fighter', formation: extreme ? 'v' : hard ? 'trio' : 'pair', motion: 'side-curve', lane: 0.24, speed: 118, entry },
+                { family: 'acrobat', formation: extreme ? 'quartet' : 'pair', motion: 'diagonal', lane: awayLane, speed: 110 },
+                { family: 'fighter', formation: extreme ? 'trio' : 'pair', motion: 'sine', lane: awayLane, speed: 108 },
             ];
             return opts[v % opts.length];
         }
-        if (region === 1 || region === 2) {
+        // Region 1 (60-115s, Costa Coral): conventional planes + boat (NO yellow jet, coastal, helis, subs)
+        if (region === 1) {
             const opts: Omit<Encounter, 'at'>[] = [
-                { family: 'heli_scout', formation: extreme ? 'trio' : 'pair', motion: 'side-curve', lane: 0.24, speed: 118, entry },
-                { family: 'interceptor', formation: extreme ? 'trio' : 'pair', motion: 'side-cross', lane: 0.20, speed: 166, entry },
                 { family: 'fighter', formation: extreme ? 'horde' : hard ? 'trio' : 'pair', motion: 'curve', lane: awayLane, speed: 114 },
+                { family: 'acrobat', formation: extreme ? 'quartet' : 'pair', motion: 'side-curve', lane: 0.24, speed: 122, entry },
                 { family: 'boat', formation: extreme ? 'pair' : 'solo', motion: 'stationary', lane: awayLane > 0.5 ? 0.72 : 0.34 },
-                ...(extreme ? [{ family: 'heli_utility' as const, formation: 'pair' as const, motion: 'stationary' as const, lane: 0.5, speed: 76 }] : []),
             ];
             return opts[v % opts.length];
         }
-        if (region === 3) {
-            return { family: 'interceptor', formation: extreme ? 'pair' : 'solo', motion: 'side-cross', lane: 0.22, speed: 168, entry };
+        // Region 2 (115-160s, Arquipélago): adds interceptor (NO subs, NO helis)
+        if (region === 2) {
+            const opts: Omit<Encounter, 'at'>[] = [
+                { family: 'interceptor', formation: extreme ? 'trio' : 'pair', motion: 'side-cross', lane: 0.20, speed: 162, entry },
+                { family: 'fighter', formation: extreme ? 'v' : hard ? 'trio' : 'pair', motion: 'curve', lane: awayLane, speed: 114 },
+                { family: 'boat', formation: extreme ? 'pair' : 'solo', motion: 'stationary', lane: awayLane > 0.5 ? 0.72 : 0.34 },
+                { family: 'acrobat', formation: extreme ? 'quartet' : 'pair', motion: 'side-curve', lane: 0.24, speed: 124, entry },
+            ];
+            return opts[v % opts.length];
         }
-        if (region === 4 || region === 5) {
+        // Region 3 (160-180s, Corrente Expressa): fast readable air passes (NO helis)
+        if (region === 3) {
+            const opts: Omit<Encounter, 'at'>[] = [
+                { family: 'interceptor', formation: extreme ? 'pair' : 'solo', motion: 'side-cross', lane: 0.22, speed: 164, entry },
+                { family: 'fighter', formation: extreme ? 'trio' : 'pair', motion: 'side-curve', lane: 0.24, speed: 124, entry },
+            ];
+            return opts[v % opts.length];
+        }
+        // Region 4 post-arch (214-240s, Arco das Marés): air/naval resume (STILL NO helicopters!)
+        if (region === 4) {
             const opts: Omit<Encounter, 'at'>[] = [
                 { family: 'fighter', formation: extreme ? 'v' : hard ? 'trio' : 'pair', motion: 'side-curve', lane: 0.24, speed: 124, entry },
-                { family: 'heli_scout', formation: extreme ? 'trio' : 'pair', motion: 'sine', lane: awayLane, speed: 118 },
-                { family: 'interceptor', formation: extreme ? 'trio' : 'pair', motion: 'diagonal', lane: awayLane, speed: 158 },
-                { family: 'acrobat', formation: extreme ? 'quartet' : hard ? 'trio' : 'pair', motion: 'side-cross', lane: 0.22, speed: 128, entry },
-                ...(extreme ? [{ family: 'heli_phantom' as const, formation: 'pair' as const, motion: 'side-curve' as const, lane: 0.24, speed: 132, entry }] : []),
+                { family: 'interceptor', formation: extreme ? 'trio' : 'pair', motion: 'diagonal', lane: awayLane, speed: 156 },
+                { family: 'acrobat', formation: extreme ? 'quartet' : hard ? 'trio' : 'pair', motion: 'side-cross', lane: 0.22, speed: 126, entry },
+                { family: 'boat', formation: extreme ? 'pair' : 'solo', motion: 'stationary', lane: awayLane > 0.5 ? 0.70 : 0.34 },
             ];
             return opts[v % opts.length];
         }
+        // Region 5 (240-300s, Mar das Turbinas): progressive helicopters + jets/planes
+        if (region === 5) {
+            const opts: Omit<Encounter, 'at'>[] = [
+                { family: 'heli_scout', formation: extreme ? 'trio' : 'pair', motion: 'sine', lane: awayLane, speed: 114 },
+                { family: 'interceptor', formation: extreme ? 'trio' : 'pair', motion: 'diagonal', lane: awayLane, speed: 158 },
+                { family: 'fighter', formation: extreme ? 'v' : hard ? 'trio' : 'pair', motion: 'side-curve', lane: 0.24, speed: 124, entry },
+                ...(route >= 254 ? [{ family: 'heli_utility' as const, formation: (extreme ? 'pair' : 'solo') as 'pair' | 'solo', motion: 'stationary' as const, lane: awayLane, speed: 76 }] : []),
+                ...(extreme && route >= 268 ? [{ family: 'heli_phantom' as const, formation: 'pair' as const, motion: 'side-curve' as const, lane: 0.24, speed: 130, entry }] : []),
+            ];
+            return opts[v % opts.length];
+        }
+        // Region 6 (300-360s, Fenda Pelágica): full arsenal escalation
         const lateOpts: Omit<Encounter, 'at'>[] = [
-            { family: 'interceptor', formation: extreme ? 'quartet' : hard ? 'trio' : 'pair', motion: 'side-cross', lane: 0.22, speed: 170, entry },
+            { family: 'interceptor', formation: extreme ? 'quartet' : hard ? 'trio' : 'pair', motion: 'side-cross', lane: 0.22, speed: 168, entry },
             { family: 'heli_phantom', formation: extreme ? 'trio' : hard ? 'pair' : 'solo', motion: 'side-curve', lane: 0.24, speed: 128, entry },
             { family: 'fighter', formation: extreme ? 'v' : 'trio', motion: 'accelerate', lane: awayLane, speed: 120 },
+            { family: 'heli_scout', formation: extreme ? 'trio' : 'pair', motion: 'side-curve', lane: 0.22, speed: 120, entry },
         ];
         return lateOpts[v % lateOpts.length];
     }
