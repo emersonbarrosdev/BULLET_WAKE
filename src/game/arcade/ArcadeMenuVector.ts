@@ -944,126 +944,85 @@ export function makeVectorKeycap(
 }
 
 /**
- * Pure vector winged footer hint bar with golden diagonal end-wings and miniature keycap pills!
+ * Discreet corner navigation hint positioned cleanly in the bottom-right corner
+ * so it never competes visually with the logo, buttons or panels.
  */
 export function makeVectorHintBar(
   scene: Phaser.Scene,
   parent: Phaser.GameObjects.Container,
-  y: number,
+  _y: number,
   padId?: string,
   extra?: { adjust?: boolean; noBack?: boolean },
 ): Phaser.GameObjects.Container {
   const hasPad = !!padId;
   const pl = padLabels(padId);
 
-  const items: Array<{ key: string; label: string; badgeColor?: string }> = hasPad
+  const segments: string[] = hasPad
     ? [
-        { key: 'D-PAD', label: 'NAVEGAR' },
-        ...(extra?.adjust ? [{ key: '←/→', label: 'AJUSTAR' }] : []),
-        { key: pl.confirm, label: 'CONFIRMAR', badgeColor: pl.profile === 'playstation' ? '#ff5c8a' : '#ef4444' },
-        ...(!extra?.noBack ? [{ key: pl.cancel, label: 'VOLTAR', badgeColor: pl.profile === 'playstation' ? '#4ea8ff' : '#22c55e' }] : []),
+        'D-PAD Navegar',
+        ...(extra?.adjust ? ['←/→ Ajustar'] : []),
+        `${pl.confirm} Confirmar`,
+        ...(!extra?.noBack ? [`${pl.cancel} Voltar`] : []),
       ]
     : [
-        { key: '↑↓', label: 'NAVEGAR' },
-        ...(extra?.adjust ? [{ key: '←/→', label: 'AJUSTAR' }] : []),
-        { key: 'ENTER', label: 'CONFIRMAR' },
-        ...(!extra?.noBack ? [{ key: 'ESC', label: 'VOLTAR' }] : []),
+        '↑↓ Navegar',
+        ...(extra?.adjust ? ['←/→ Ajustar'] : []),
+        'Enter Confirmar',
+        ...(!extra?.noBack ? ['Esc Voltar'] : []),
       ];
 
-  const ct = scene.add.container(384, y);
-  const content = scene.add.container(0, 0);
+  const label = segments.join('   •   ');
+  const txt = scene.add.text(0, 0, label, {
+    fontFamily: UI_FONT,
+    fontSize: '8.2px',
+    fontStyle: 'bold',
+    color: '#cce4f8',
+    stroke: '#040e24',
+    strokeThickness: 2,
+  }).setResolution(2).setOrigin(1, 0.5).setAlpha(0.86);
 
-  let cursorX = 0;
-  const nodes: Phaser.GameObjects.GameObject[] = [];
-  items.forEach((it, idx) => {
-    if (idx > 0) {
-      const sep = scene.add.text(cursorX + 6, 0, '•', {
-        fontFamily: UI_FONT, fontSize: '9px', fontStyle: 'bold', color: '#4ce6ff',
-      }).setResolution(2).setOrigin(0.5);
-      nodes.push(sep);
-      cursorX += 14;
-    }
-    const kw = Math.max(20, Math.round(it.key.length * 6.2 + 10));
-    const pill = scene.add.graphics();
-    if (it.badgeColor) {
-      pill.fillStyle(0x091d42, 0.96).fillCircle(cursorX + 9, 0, 7.5);
-      pill.lineStyle(1.5, Phaser.Display.Color.HexStringToColor(it.badgeColor).color, 0.95).strokeCircle(cursorX + 9, 0, 7.5);
-      const kt = scene.add.text(cursorX + 9, -0.5, it.key, {
-        fontFamily: UI_FONT, fontSize: '9px', fontStyle: 'bold', color: '#ffffff',
-      }).setResolution(2).setOrigin(0.5);
-      nodes.push(pill, kt);
-      cursorX += 21;
-    } else {
-      pill.fillStyle(0xf2f8ff, 0.96).fillRoundedRect(cursorX, -6.5, kw, 13, 3);
-      pill.lineStyle(1, 0x0b254f, 0.85).strokeRoundedRect(cursorX, -6.5, kw, 13, 3);
-      const kt = scene.add.text(cursorX + kw * 0.5, 0, it.key, {
-        fontFamily: UI_FONT, fontSize: '7.5px', fontStyle: 'bold', color: '#071b3b',
-      }).setResolution(2).setOrigin(0.5);
-      nodes.push(pill, kt);
-      cursorX += kw + 5;
-    }
-    const lt = scene.add.text(cursorX, 0.5, it.label, {
-      fontFamily: UI_FONT, fontSize: '8.5px', fontStyle: 'bold', color: '#e6f5ff', stroke: '#040e24', strokeThickness: 2,
-    }).setResolution(2).setOrigin(0, 0.5);
-    nodes.push(lt);
-    cursorX += lt.width + 4;
-  });
+  const w = Math.ceil(txt.width) + 20;
+  const h = 18;
+  const bg = scene.add.graphics();
+  bg.fillStyle(0x04122b, 0.56);
+  bg.fillRoundedRect(-w + 8, -h * 0.5, w, h, 9);
+  bg.lineStyle(1, 0x4ce6ff, 0.24);
+  bg.strokeRoundedRect(-w + 8, -h * 0.5, w, h, 9);
 
-  const totalW = Math.max(250, Math.ceil(cursorX) + 46);
-  const h = 22;
-  const barKey = `mv-hintbar-${totalW}x${h}`;
-  getOrMakeVectorTex(scene, barKey, totalW + 24, h + 8, (ctx) => {
-    const x = 12;
-    const y0 = 4;
-    // Main winged dark-navy bar
-    ctx.save();
-    ctx.shadowColor = 'rgba(2, 8, 22, 0.72)';
-    ctx.shadowBlur = 6;
-    traceWingedHex(ctx, x, y0, totalW, h, 12);
-    const bg = ctx.createLinearGradient(x, y0, x, y0 + h);
-    bg.addColorStop(0, 'rgba(13, 44, 98, 0.92)');
-    bg.addColorStop(1, 'rgba(6, 20, 48, 0.95)');
-    ctx.fillStyle = bg;
-    ctx.fill();
-    ctx.restore();
+  const ct = scene.add.container(750, 417);
+  ct.add([bg, txt]);
+  parent.add(ct);
+  return ct;
+}
 
-    // Cyan border
-    traceWingedHex(ctx, x, y0, totalW, h, 12);
-    ctx.strokeStyle = '#3ed8ff';
-    ctx.lineWidth = 1.4;
-    ctx.stroke();
-
-    // Golden chevron tips at left and right ends (exact match to prints!)
-    const goldG = ctx.createLinearGradient(0, y0, 0, y0 + h);
-    goldG.addColorStop(0, '#fff078');
-    goldG.addColorStop(1, '#f08c0c');
-    ctx.fillStyle = goldG;
-    // Left gold tip
-    ctx.beginPath();
-    ctx.moveTo(x + 12, y0 + 2);
-    ctx.lineTo(x + 18, y0 + 2);
-    ctx.lineTo(x + 9, y0 + h * 0.5);
-    ctx.lineTo(x + 18, y0 + h - 2);
-    ctx.lineTo(x + 12, y0 + h - 2);
-    ctx.lineTo(x + 3, y0 + h * 0.5);
-    ctx.closePath();
-    ctx.fill();
-    // Right gold tip
-    ctx.beginPath();
-    ctx.moveTo(x + totalW - 12, y0 + 2);
-    ctx.lineTo(x + totalW - 18, y0 + 2);
-    ctx.lineTo(x + totalW - 9, y0 + h * 0.5);
-    ctx.lineTo(x + totalW - 18, y0 + h - 2);
-    ctx.lineTo(x + totalW - 12, y0 + h - 2);
-    ctx.lineTo(x + totalW - 3, y0 + h * 0.5);
-    ctx.closePath();
-    ctx.fill();
-  });
-
-  ct.add(scene.add.image(0, 0, barKey).setScale(1 / DPR));
-  content.add(nodes);
-  content.setX(-cursorX * 0.5);
-  ct.add(content);
+/** Clean integrated nameplate badge for pilot portraits (replaces bulky trapezoid ribbon). */
+export function makePilotNameplate(
+  scene: Phaser.Scene,
+  parent: Phaser.GameObjects.Container,
+  cx: number,
+  cy: number,
+  w: number,
+  h: number,
+  name: string,
+): Phaser.GameObjects.Container {
+  const ct = scene.add.container(cx, cy);
+  const g = scene.add.graphics();
+  const hw = w * 0.5;
+  const hh = h * 0.5;
+  g.fillStyle(0x061a3d, 0.96);
+  g.fillRoundedRect(-hw, -hh, w, h, 4);
+  g.lineStyle(1.4, 0xffdf5a, 0.92);
+  g.strokeRoundedRect(-hw, -hh, w, h, 4);
+  const txt = scene.add.text(0, 0, name, {
+    fontFamily: UI_FONT,
+    fontSize: '10.5px',
+    fontStyle: 'bold',
+    color: '#ffdf5a',
+    stroke: '#041028',
+    strokeThickness: 2.2,
+    align: 'center',
+  }).setResolution(2).setOrigin(0.5, 0.5);
+  ct.add([g, txt]);
   parent.add(ct);
   return ct;
 }

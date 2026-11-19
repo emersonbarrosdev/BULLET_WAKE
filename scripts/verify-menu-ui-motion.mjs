@@ -92,8 +92,19 @@ try {
   await evaluate(`s.show('title'); true;`);
   await settle(480);
   if (!isBefore) {
-    const alphas = await evaluate(`s.buttons.map(b => Number((b.modern?.container.alpha ?? 1).toFixed(2)))`);
-    assert.ok(alphas.every((a) => a >= 0.99), `All title buttons must be fully visible after entrance: ${JSON.stringify(alphas)}`);
+    const titleChecks = await evaluate(`(async () => {
+      const y0 = s.logo?.y ?? 0;
+      await new Promise(r => setTimeout(r, 420));
+      const y1 = s.logo?.y ?? 0;
+      return {
+        alphas: s.buttons.map(b => Number((b.modern?.container.alpha ?? 1).toFixed(2))),
+        logoDeltaY: Number(Math.abs(y1 - y0).toFixed(4)),
+        centeredLabels: s.buttons.every(b => b.node.x === 0 && b.node.originX === 0.5),
+      };
+    })()`);
+    assert.ok(titleChecks.alphas.every((a) => a >= 0.99), `All title buttons must be fully visible after entrance: ${JSON.stringify(titleChecks.alphas)}`);
+    assert.equal(titleChecks.logoDeltaY, 0, `Logo must remain strictly static without floating, got deltaY=${titleChecks.logoDeltaY}`);
+    assert.equal(titleChecks.centeredLabels, true, 'All title button labels must be strictly centered at x=0, originX=0.5');
   }
   await snap('02-title-main-menu');
 
@@ -160,6 +171,11 @@ try {
   await settle(460);
   await snap('07-controls-gamepad');
 
+  // 7b. Controls screen — Android tab
+  await evaluate(`s.controlsTab = 'android'; s.show('controls'); true;`);
+  await settle(460);
+  await snap('07b-controls-android');
+
   // 8. Pilot select screen
   await evaluate(`s.show('pilot'); true;`);
   await settle(460);
@@ -206,6 +222,68 @@ try {
     await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
     await settle(350);
     assert.equal(await evaluate(`s.screen`), 'title', 'Escape on controls should return to title');
+
+    // A2) Controls tab-switching stress test (PC <-> CONTROLE <-> ANDROID via real mouse clicks including edges & double-click active tab)
+    await evaluate(`s.pauseOrigin = 'title'; s.controlsTab = 'pc'; s.show('controls'); true;`);
+    await settle(280);
+    const getControlBtnCoords = () => evaluate(`(() => {
+      const canvas = window.__GAME__.canvas;
+      const rect = canvas.getBoundingClientRect();
+      const wv = s.cameras.main.worldView;
+      return s.buttons.map((b, i) => {
+        const wx = b.modern ? b.modern.worldX : b.node.x;
+        const wy = b.modern ? b.modern.worldY : b.node.y;
+        const sx = rect.left + ((wx - wv.x) / wv.width) * rect.width;
+        const sy = rect.top + ((wy - wv.y) / wv.height) * rect.height;
+        return { i, label: b.node.text, wx, wy, sx: Math.round(sx), sy: Math.round(sy) };
+      });
+    })()`);
+    const clickAt = async (x, y) => {
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+      await sleep(50);
+      await send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
+      await sleep(45);
+      await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
+      await settle(160);
+    };
+    let cBtns = await getControlBtnCoords();
+    // Click PC again (already active tab — previously permanently froze menuActionLocked!)
+    await clickAt(cBtns[0].sx, cBtns[0].sy);
+    assert.equal(await evaluate(`s.menuActionLocked`), false, 'Clicking active PC tab must not lock menuActionLocked');
+    // Click CONTROLE tab near its left edge (previously hijacked by onLeft/onRight!)
+    await clickAt(cBtns[1].sx - 40, cBtns[1].sy);
+    assert.equal(await evaluate(`s.controlsTab`), 'gamepad', 'Clicking left edge of CONTROLE tab must switch to gamepad');
+    assert.equal(await evaluate(`s.menuActionLocked`), false, 'Switching to gamepad tab must leave menuActionLocked=false');
+    // Click VER XBOX toggle on gamepad tab
+    cBtns = await getControlBtnCoords();
+    const padToggle = cBtns.find((b) => b.label.includes('VER '));
+    assert.ok(padToggle, 'Gamepad tab must expose VER XBOX / VER PLAYSTATION toggle');
+    await clickAt(padToggle.sx, padToggle.sy);
+    assert.equal(await evaluate(`s.controlsPadPreview`), 'xbox', 'Clicking VER XBOX must switch controller preview to xbox');
+    assert.equal(await evaluate(`s.menuActionLocked`), false, 'Toggling gamepad preview must never lock screen');
+    // Click ANDROID tab near its right edge
+    cBtns = await getControlBtnCoords();
+    await clickAt(cBtns[2].sx + 40, cBtns[2].sy);
+    assert.equal(await evaluate(`s.controlsTab`), 'android', 'Clicking right edge of ANDROID tab must switch to android');
+    assert.equal(await evaluate(`s.menuActionLocked`), false, 'Switching to android tab must leave menuActionLocked=false');
+    // Click back to PC, then ANDROID, then CONTROLE rapidly
+    cBtns = await getControlBtnCoords();
+    await clickAt(cBtns[0].sx, cBtns[0].sy);
+    assert.equal(await evaluate(`s.controlsTab`), 'pc');
+    cBtns = await getControlBtnCoords();
+    await clickAt(cBtns[2].sx, cBtns[2].sy);
+    assert.equal(await evaluate(`s.controlsTab`), 'android');
+    cBtns = await getControlBtnCoords();
+    await clickAt(cBtns[1].sx, cBtns[1].sy);
+    assert.equal(await evaluate(`s.controlsTab`), 'gamepad');
+    // Click VOLTAR and confirm clean return to title
+    cBtns = await getControlBtnCoords();
+    const backBtn = cBtns.find((b) => b.label === 'VOLTAR');
+    assert.ok(backBtn, 'Controls screen must have VOLTAR button');
+    await clickAt(backBtn.sx, backBtn.sy);
+    await settle(320);
+    assert.equal(await evaluate(`s.screen`), 'title', 'VOLTAR after rapid Controls tab switches must cleanly return to title');
+    console.log('Controls tab-switching stress test PASSED!');
 
     // B) PlayStation Gamepad navigation (○ confirm = button 1, × back = button 0, D-pad = 12..15)
     const gpResult = await evaluate(`(async () => {
