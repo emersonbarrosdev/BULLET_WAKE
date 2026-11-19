@@ -23,6 +23,7 @@ export function steer(w,{collect=true,evade=true,special=true}={}){
  for(const[x,y]of candidates){const cx=clx(p.x+x*174*.22),cy=cly(p.y+y*174*.22);let cost=Math.hypot(cx-tx,cy-ty)*(b?.sub?.phase==='fight'?.45:.8);
   if(evade){for(const bullet of w.bullets){if(!bullet.active||!bullet.enemy)continue;for(const t of[.02,.06,.14,.24,.36]){const d=Math.hypot(bullet.x+bullet.vx*t-clx(p.x+x*174*t),bullet.y+bullet.vy*t-cly(p.y+y*174*t));if(d<bullet.radius+16)cost+=850/(d+1);}}
    for(const e of w.enemies)if(!e.ground){for(const t of[.04,.12,.22]){const ey=e.y+(w.up?e.speed*.65:0)*t;const d=Math.hypot(e.x-clx(p.x+x*174*t),ey-cly(p.y+y*174*t));if(d<e.size/2+18)cost+=600/(d+1);}}
+   for(const c of w.cargo)if(c.crate){for(const t of[.04,.12,.20]){const d=Math.hypot(c.x+c.vx*t-clx(p.x+x*174*t),c.y+c.vy*t-cly(p.y+y*174*t));if(d<26)cost+=700/(d+1);}}
    for(const o of w.obstacles)if(Math.abs(cx-o.x)<o.width/2+12&&Math.abs(cy-o.y)<o.height/2+15)cost+=3000;
   }
   if(archOpening&&(cx<archOpening.left+16||cx>archOpening.right-16))cost+=3000;

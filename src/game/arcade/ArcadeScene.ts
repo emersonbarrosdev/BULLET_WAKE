@@ -13,7 +13,7 @@ import { clamp, sweepEllipse } from './geometry';
 import { readArcadeProgress, recordArcadeClear } from './progress';
 import { pelagicShotSize } from './PelagicPresentation';
 import { rivetShotPresentation } from '../render/rivetPresentation';
-import { SUPPLY_ART, SUB_ART, BOMB_ART, BLAST_ART, SUB_HULL_ART, SUB_SUBMERGED_ART, SUB_PARTS_ART, installCombatArt, HitOverlays, BombArt, SubmarineBossArt } from './ArcadeCombatArt';
+import { SUPPLY_ART, SUPPLY_DRONE_BODY_ART, SUPPLY_DRONE_PROP_ART, SUPPLY_GLOW_ART, SUPPLY_SHADOW_ART, SUB_ART, BOMB_ART, BLAST_ART, SUB_HULL_ART, SUB_SUBMERGED_ART, SUB_PARTS_ART, installCombatArt, HitOverlays, BombArt, SubmarineBossArt } from './ArcadeCombatArt';
 import { subTotalHp } from './PelagicSubmarineBoss';
 import { EMPLACEMENT_TEXTURE, GUN_SMOKE_TEXTURE, TOWER_TEXTURE, PelagicEmplacements } from './PelagicEmplacements';
 import { PelagicActorAnims, preloadPelagicActorAnims } from './PelagicActorAnims';
@@ -73,7 +73,7 @@ export class ArcadeScene extends Phaser.Scene {
   private loadStartMs = 0; private loadCompleteAtMs?: number; private loadRealProgress = 0; private loadVisualProgress = 0;
   private splashHandoffCommitted = false; private bootOverlayDismissed = false; private loadErrors: string[] = [];
   private controlsTab: ControlsTab = 'pc'; private lastControlsPadId = ''; private nextControlsFocus?: number; private controlsPadPreview: 'auto' | 'playstation' | 'xbox' = 'auto';
-  private enemySprites = new Map<number, Phaser.GameObjects.Sprite>(); private cargoSprites = new Map<number, Phaser.GameObjects.Sprite>(); private partSprites = new Map<number, Phaser.GameObjects.Sprite>(); private bulletSprites: Phaser.GameObjects.Sprite[] = []; private effects: Effect[] = [];
+  private enemySprites = new Map<number, Phaser.GameObjects.Sprite>(); private cargoSprites = new Map<number, Phaser.GameObjects.Sprite>(); private cargoExtras = new Map<number, { shadow: Phaser.GameObjects.Image; glow: Phaser.GameObjects.Image; prop: Phaser.GameObjects.Sprite }>(); private partSprites = new Map<number, Phaser.GameObjects.Sprite>(); private bulletSprites: Phaser.GameObjects.Sprite[] = []; private effects: Effect[] = [];
   private bonusPopups: BonusPopup[] = []; private bonusPopupPool: Phaser.GameObjects.Text[] = [];
   private turrets = new Map<number, Phaser.GameObjects.Sprite>(); private effectPool: Phaser.GameObjects.Sprite[] = [];
   private controls!: Record<string, Phaser.Input.Keyboard.Key>; private pad = new GamepadReader(); buttons: MenuButton[] = []; private focus = 0;
@@ -98,7 +98,7 @@ export class ArcadeScene extends Phaser.Scene {
     enableCombatResolution(this);
     const base = import.meta.env.BASE_URL;
     this.load.spritesheet('arc-ufo', `${base}assets/arcade/ufo.webp`, { frameWidth: 256, frameHeight: 256 });
-    for (const [key, file] of [[SUPPLY_ART, 'supply-items'], [SUB_ART, 'submarines'], [BOMB_ART, 'bomb-flight'], [BLAST_ART, 'colossal-blast'], [SUB_HULL_ART, 'colossal-sub-hull'], [SUB_SUBMERGED_ART, 'colossal-sub-submerged'], [SUB_PARTS_ART, 'colossal-sub-parts']]) this.load.image(key, `${base}assets/arcade/pelagic-review/${file}.png`);
+    for (const [key, file] of [[SUPPLY_ART, 'supply-items'], [SUPPLY_DRONE_BODY_ART, 'supply-drone-body'], [SUPPLY_DRONE_PROP_ART, 'supply-drone-propeller'], [SUB_ART, 'submarines'], [BOMB_ART, 'bomb-flight'], [BLAST_ART, 'colossal-blast'], [SUB_HULL_ART, 'colossal-sub-hull'], [SUB_SUBMERGED_ART, 'colossal-sub-submerged'], [SUB_PARTS_ART, 'colossal-sub-parts']]) this.load.image(key, `${base}assets/arcade/pelagic-review/${file}.png`);
     this.load.image('arc-ocean', `${base}assets/arcade/ocean.webp`);
     this.load.image(EMPLACEMENT_TEXTURE, `${base}assets/arcade/pelagic-review/emplacements.png`);
     this.load.image(TOWER_TEXTURE, `${base}assets/arcade/pelagic-review/defense-tower.png`);
@@ -1211,7 +1211,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.touchController?.clearAll(); this.emplacements?.clear(); this.hitOverlays?.clear(); this.bombArt?.draw(); this.subBossArt?.clear(); this.bossHudLabel?.setVisible(false); this.pelagicAssistBadge?.setVisible(false); this.pelagicCheckpointBadge?.setVisible(false); this.pelagicSpecialText?.setVisible(false); this.pelagicAnims?.clear(); this.pelagicComms.reset(); this.pelagicDesktopHud?.resetComms();
     this.clearBonusPopups();
     this.world = undefined; this.pelagicDesktopHud?.setVisible(false); this.player?.setVisible(false); this.bossSprite?.setVisible(false); this.lifeIcons.forEach(s => s.setVisible(false)); this.hud?.setText(''); this.radio?.setVisible(false); this.combatInk?.clear(); this.decor?.clear(); this.lastHud = '';
-    for (const map of [this.enemySprites, this.partSprites, this.turrets]) { for (const s of map.values()) s.destroy(); map.clear(); } for (const s of this.cargoSprites.values()) s.destroy(); this.cargoSprites.clear(); for (const s of this.bulletSprites) s.setVisible(false); for (const e of this.effects) { e.sprite.setVisible(false); this.effectPool.push(e.sprite); } this.effects = []; globalAudio.stopCombatEffects();
+    for (const map of [this.enemySprites, this.partSprites, this.turrets]) { for (const s of map.values()) s.destroy(); map.clear(); } for (const s of this.cargoSprites.values()) s.destroy(); this.cargoSprites.clear(); for (const ex of this.cargoExtras.values()) { ex.shadow.destroy(); ex.glow.destroy(); ex.prop.destroy(); } this.cargoExtras.clear(); for (const s of this.bulletSprites) s.setVisible(false); for (const e of this.effects) { e.sprite.setVisible(false); this.effectPool.push(e.sprite); } this.effects = []; globalAudio.stopCombatEffects();
     this.syncResponsiveViewport();
   }
   update(_time: number, delta: number): void {
@@ -1588,15 +1588,119 @@ export class ArcadeScene extends Phaser.Scene {
   private renderCargo(): void {
     const w = this.world!, ids = new Set<number>();
     for (const c of w.cargo) {
-      ids.add(c.id); let sprite = this.cargoSprites.get(c.id);
-      if (!sprite) { sprite = this.add.sprite(c.x, c.y, SUPPLY_ART, 0).setDepth(13); this.cargoSprites.set(c.id, sprite); }
-      const start = c.crate ? 0 : c.kind === 'power' ? 4 : c.kind === 'life' ? 8 : 12, frame = start + Math.floor(c.age * 6) % 4;
-      const recoveryCapsule = !c.crate && c.kind === 'power' && (c.recoveryP ?? 0) > 0;
-      const displaySize = c.crate ? 58 : recoveryCapsule ? 32 : 28;
-      sprite.setFrame(frame).setOrigin(.5, c.crate ? .81 : .5).setPosition(c.x, c.y).setDisplaySize(displaySize, displaySize).setAngle(Math.sin(c.age * 2) * 2);
-      if (recoveryCapsule) sprite.setTint(0xffe970); else sprite.clearTint();
+      ids.add(c.id);
+      let sprite = this.cargoSprites.get(c.id);
+      let extras = this.cargoExtras.get(c.id);
+      if (!sprite || !extras) {
+        sprite?.destroy();
+        if (extras) { extras.shadow.destroy(); extras.glow.destroy(); extras.prop.destroy(); }
+        sprite = this.add.sprite(c.x, c.y, c.crate ? SUPPLY_DRONE_BODY_ART : SUPPLY_ART, 0).setDepth(13);
+        const shadow = this.add.image(c.x, c.y + 8, SUPPLY_SHADOW_ART).setDepth(12.6);
+        const glow = this.add.image(c.x, c.y, SUPPLY_GLOW_ART).setDepth(12.8).setBlendMode(Phaser.BlendModes.ADD);
+        const prop = this.add.sprite(c.x, c.y, SUPPLY_DRONE_PROP_ART).setDepth(13.2).setVisible(false);
+        this.cargoSprites.set(c.id, sprite);
+        extras = { shadow, glow, prop };
+        this.cargoExtras.set(c.id, extras);
+      }
+
+      if (c.crate) {
+        const d = c.drone;
+        const retreating = d?.phase === 'retreat';
+        const departWarn = d?.phase === 'deliver' && d.phaseTime >= d.deliverDuration - 0.85;
+        const retreatK = retreating ? clamp(d.phaseTime / 1.15, 0, 1) : 0;
+        const hoverBob = Math.sin(c.age * 7.2 + c.id) * 1.4;
+        const microVibX = Math.sin(c.age * 28 + c.id) * 0.45 + (d ? Math.sin(c.age * 62) * d.hitRecoil * 2.4 : 0);
+        const microVibY = Math.cos(c.age * 24 + c.id) * 0.35 - (d ? d.hitRecoil * 1.8 : 0);
+        const rx = c.x + microVibX;
+        const ry = c.y + hoverBob + microVibY;
+        const liftScale = 1 + Math.sin(c.age * 6.5 + c.id) * 0.025 + retreatK * 0.16;
+        const bodySize = 44 * liftScale;
+        const propSize = 42 * liftScale;
+        const droneAlpha = retreating ? clamp(1 - Math.max(0, retreatK - 0.35) / 0.65, 0.25, 1) : 1;
+        const tiltDeg = clamp(c.vx * 0.042, -9, 9);
+
+        if (sprite.texture.key !== SUPPLY_DRONE_BODY_ART) sprite.setTexture(SUPPLY_DRONE_BODY_ART);
+        sprite
+          .setOrigin(0.5, 0.5)
+          .setPosition(rx, ry)
+          .setDisplaySize(bodySize, bodySize)
+          .setAngle(tiltDeg)
+          .setAlpha(droneAlpha)
+          .clearTint();
+        if (departWarn && Math.floor(c.age * 14) % 2 === 0) sprite.setTint(0xfff1a8);
+        this.hitOverlays.draw(sprite, c.flash ?? 0);
+
+        const rotorAngle = d ? d.rotorAngle : (c.age * 18.5) % (Math.PI * 2);
+        extras.prop
+          .setVisible(true)
+          .setOrigin(0.5, 0.5)
+          .setPosition(rx, ry)
+          .setDisplaySize(propSize, propSize)
+          .setRotation(rotorAngle)
+          .setAlpha(droneAlpha)
+          .clearTint();
+
+        const washPulse = 0.24 + Math.sin(c.age * 16 + c.id) * 0.08;
+        extras.glow
+          .setVisible(true)
+          .setPosition(rx, ry)
+          .setDisplaySize(bodySize * 1.48, bodySize * 1.48)
+          .setTint(departWarn ? 0xffd24a : 0x3ce6ff)
+          .setAlpha(washPulse * droneAlpha);
+
+        const shadowOffset = 9 + hoverBob * 0.4 + retreatK * 14;
+        extras.shadow
+          .setVisible(true)
+          .setPosition(c.x + 4 + retreatK * 5, c.y + shadowOffset)
+          .setDisplaySize(bodySize * (1.05 - retreatK * 0.2), bodySize * (0.82 - retreatK * 0.16))
+          .setAlpha(0.75 * (1 - retreatK * 0.65));
+      } else {
+        // Released supply icon (rows 1..3 of supply-items.png: P, Heart, Bomb — never balloon row 0)
+        const start = c.kind === 'power' ? 4 : c.kind === 'life' ? 8 : 12;
+        const frame = start + (Math.floor(c.age * 8) % 4);
+        const recoveryCapsule = c.kind === 'power' && (c.recoveryP ?? 0) > 0;
+        const pop = c.dropPop ?? 0;
+        const popScale = pop > 0 ? 1 + Math.sin(pop * Math.PI) * 0.28 : 1;
+        const breathe = 1 + Math.sin(c.age * 5.4 + c.id) * 0.055;
+        const baseSize = recoveryCapsule ? 34 : 31;
+        const displaySize = baseSize * popScale * breathe;
+        const bobY = Math.sin(c.age * 5.2 + c.id) * 2.4;
+        const swayDeg = Math.sin(c.age * 3.8 + c.id) * 5.5;
+        const auraColor = recoveryCapsule ? 0xffe45e : c.kind === 'power' ? 0x38dfff : c.kind === 'life' ? 0xff5a7a : 0xff9b36;
+        const auraAlpha = 0.44 + Math.sin(c.age * 6.4 + c.id) * 0.14;
+
+        if (sprite.texture.key !== SUPPLY_ART) sprite.setTexture(SUPPLY_ART, frame);
+        sprite
+          .setFrame(frame)
+          .setOrigin(0.5, 0.5)
+          .setPosition(c.x, c.y + bobY)
+          .setDisplaySize(displaySize, displaySize)
+          .setAngle(swayDeg)
+          .setAlpha(1);
+        if (recoveryCapsule) sprite.setTint(0xffe970); else sprite.clearTint();
+
+        extras.prop.setVisible(false);
+        extras.glow
+          .setVisible(true)
+          .setPosition(c.x, c.y + bobY)
+          .setDisplaySize(displaySize * 1.65, displaySize * 1.65)
+          .setTint(auraColor)
+          .setAlpha(auraAlpha);
+        extras.shadow
+          .setVisible(true)
+          .setPosition(c.x + 2.5, c.y + 8)
+          .setDisplaySize(displaySize * 0.96, displaySize * 0.64)
+          .setAlpha(0.68);
+      }
     }
-    for (const [id, sprite] of this.cargoSprites) if (!ids.has(id)) { sprite.destroy(); this.cargoSprites.delete(id); }
+    for (const [id, sprite] of this.cargoSprites) {
+      if (!ids.has(id)) {
+        sprite.destroy();
+        this.cargoSprites.delete(id);
+        const ex = this.cargoExtras.get(id);
+        if (ex) { ex.shadow.destroy(); ex.glow.destroy(); ex.prop.destroy(); this.cargoExtras.delete(id); }
+      }
+    }
   }
   private renderObstacles(g: Phaser.GameObjects.Graphics): void {
     for (const o of this.world!.obstacles) {
