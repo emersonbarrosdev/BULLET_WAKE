@@ -288,7 +288,9 @@ export class ArcadeWorld {
         if (chargeStep.justReachedFull) this.emit('charge-full');
         if (chargeStep.released) this.fireChargedShot(chargeStep.released);
 
-        const effectiveAutoFire = input.fire && !this.chargedShot.shouldSuspendAutoFire;
+        // Default mode: holding FIRE repeats crisp 3-pulse bursts smoothly (220ms) and rapid tapping (>=95ms) accelerates cadence.
+        // DISPARO ACESSÍVEL (accessibility=true): hands-free continuous auto-fire without holding FIRE; always suspends during Charged Shot.
+        const effectiveAutoFire = (input.fire || this.accessibility) && !this.chargedShot.shouldSuspendAutoFire;
         const burstStep = this.burst.step(dt * 1000, effectiveAutoFire, {
             accessibility: this.accessibility,
             allowHoldRepeat: true,

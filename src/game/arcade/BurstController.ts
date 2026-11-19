@@ -43,7 +43,7 @@ export class BurstController {
    * Advances simulation clock by `dt` milliseconds and returns detailed state + emitted pulses.
    * Starts firing immediately on press and repeats continuously while `held` remains true unless suppressed until release.
    */
-  step(dt: number, held: boolean, options: BurstUpdateOptions | boolean = true): BurstStepResult {
+  step(dt: number, held: boolean, options: BurstUpdateOptions | boolean = false): BurstStepResult {
     const opts: BurstUpdateOptions = typeof options === 'boolean' ? { accessibility: options } : options;
     const accessibility = !!opts.accessibility;
     const allowHoldRepeat = opts.allowHoldRepeat ?? true;
@@ -92,7 +92,7 @@ export class BurstController {
   }
 
   /** Convenience helper returning only emitted primary pulses for this simulation step. */
-  update(dt: number, held: boolean, options: BurstUpdateOptions | boolean = true): number {
+  update(dt: number, held: boolean, options: BurstUpdateOptions | boolean = false): number {
     return this.step(dt, held, options).pulses;
   }
 
