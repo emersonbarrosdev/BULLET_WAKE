@@ -9,11 +9,12 @@ import { defaultSaveData } from '../src/game/systems/saveSystem.ts';
 
 const live = (index = 0) => { const w = new ArcadeWorld(MISSIONS[index]); w.state = 'play'; w.player.invulnerable = 0; return w; };
 const tick = (w, seconds, input) => { for (let n = 0; n < Math.round(seconds * 120); n++)w.step(1 / 120, input); };
-test('arcade burst commits three pulses on tap, does not repeat while held, and accessibility enables auto-repeat', () => {
+test('arcade burst commits three pulses on tap, supports continuous hold repeat, strict tap-only mode, and hands-free accessibility', () => {
     const b = new BurstController(); assert.equal(b.update(0, true), 1); assert.equal(b.update(41, false), 0); assert.equal(b.update(1, false), 1); assert.equal(b.update(42, false), 1); assert.equal(b.update(10, false), 0); assert.equal(b.update(1, true), 1);
-    const count = accessible => { const c = new BurstController(); let n = 0; for (let t = 0; t < 2000; t++)n += c.update(1, true, accessible); return n; };
-    assert.equal(count(false), 3);
-    assert(count(true) > count(false));
+    const countTapOnly = () => { const c = new BurstController(); let n = 0; for (let t = 0; t < 2000; t++) n += c.update(1, true, { allowHoldRepeat: false, accessibility: false }); return n; };
+    const countHold = () => { const c = new BurstController(); let n = 0; for (let t = 0; t < 2000; t++) n += c.update(1, true); return n; };
+    assert.equal(countTapOnly(), 3);
+    assert(countHold() > countTapOnly());
     b.reset(); assert.equal(b.update(0, true), 1);
 });
 test('resources cap at five and overflow gives points without an invisible reserve', () => {

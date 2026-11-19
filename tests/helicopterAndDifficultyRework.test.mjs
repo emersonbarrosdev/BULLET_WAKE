@@ -287,6 +287,7 @@ function twoPlyAceBot(w) {
   const clx = v => clamp(v, w.arena.left + 14, w.arena.right - 14);
   const cly = v => clamp(v, w.arena.top + 16, w.arena.bottom - 15);
   const nearAir = w.enemies.filter(e => !e.ground && Math.hypot(e.x - p.x, e.y - p.y) < 120);
+  const nearDrones = w.cargo.filter(c => c.crate && Math.hypot(c.x - p.x, c.y - p.y) < 100);
 
   const evalLeg = (x0, y0, dx, dy, tStart, tSteps) => {
     let cost = 0;
@@ -312,6 +313,10 @@ function twoPlyAceBot(w) {
       for (const e of nearAir) {
         const d = Math.hypot(e.x + (e.vx ?? 0) * t - px, e.y + (e.vy ?? e.speed) * t - py);
         if (d < e.size * 0.34 + 13) cost += 4000 / (d + 1);
+      }
+      for (const dr of nearDrones) {
+        const d = Math.hypot(dr.x + dr.vx * t - px, dr.y + dr.vy * t - py);
+        if (d < 26) cost += 4500 / (d + 1);
       }
       if (archOpening && (px < archOpening.left + 14 || px > archOpening.right - 14)) cost += 5000;
     }

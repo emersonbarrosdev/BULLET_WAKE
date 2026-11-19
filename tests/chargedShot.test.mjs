@@ -202,7 +202,7 @@ test('18 & 19. Mobile touch CARGA e dano real contra Boss Colosso Abissal sem da
   // Colosso Abissal boss respects enter invulnerability and takes exact single charged shot damage during fight
   const wBoss = liveWorld(0, 5);
   wBoss.devInvincible = true;
-  wBoss.route = 300;
+  wBoss.route = 360;
   wBoss.miniStarted = true;
   wBoss.step(1 / 60, { x: 0, y: 0, fire: false, special: false, charge: false });
   const sub = wBoss.boss.sub;

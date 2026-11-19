@@ -47,28 +47,30 @@ test('Teste A — Toque rápido: libera todos os 3 pulsos (0 / 65 / 130 ms) mesm
   assert.equal(BURST_MIN_CADENCE_MS, 95);
 });
 
-test('Teste B — Segurar TIRO por 5 segundos no modo padrão produz exatamente 1 rajada de 3 pulsos', () => {
-  const ctrl = new BurstController();
-  let burstsStarted = 0;
-  let pulses = 0;
+test('Teste B — Segurar TIRO no modo padrão repete rajadas suaves (220ms) e modo tap-only explícito dispara apenas 1 rajada', () => {
+  const tapOnly = new BurstController();
+  let tapBursts = 0;
+  let tapPulses = 0;
   for (let t = 0; t < 5000; t += 10) {
-    const res = ctrl.step(10, true, false);
-    if (res.burstStarted) burstsStarted++;
-    pulses += res.pulses;
+    const res = tapOnly.step(10, true, { allowHoldRepeat: false, accessibility: false });
+    if (res.burstStarted) tapBursts++;
+    tapPulses += res.pulses;
   }
-  assert.equal(burstsStarted, 1);
-  assert.equal(pulses, 3);
-  assert.equal(ctrl.getState(), 'holding');
+  assert.equal(tapBursts, 1);
+  assert.equal(tapPulses, 3);
+  assert.equal(tapOnly.getState(), 'holding');
 
-  // Full ArcadeWorld (Fenda Pelágica) verification holding fire continuously for 5s
+  // Default ArcadeWorld (Fenda Pelágica) holding fire repeats crisp 3-pulse bursts continuously (~220ms cadence)
   const w = livePelagic(1);
+  w.devSandboxIsolated = true;
+  w.player.invulnerable = 999;
   let worldShots = 0;
   for (let i = 0; i < 120 * 5; i++) {
     w.step(1 / 120, { x: 0, y: 0, fire: true, special: false });
     worldShots += w.events.filter((e) => e.type === 'shot').length;
     w.events.length = 0;
   }
-  assert.equal(worldShots, 3, 'Segurar TIRO por 5s no modo padrão deve disparar apenas 1 rajada (3 pulsos)');
+  assert.ok(worldShots >= 63 && worldShots <= 75, `Segurar TIRO por 5s deve repetir rajadas a cada ~220ms (esperado 63..75 pulsos, obtido ${worldShots})`);
 });
 
 test('Teste C — Pressionamentos repetidos respeitando cadência mínima produzem exatamente 2 rajadas (6 pulsos)', () => {
@@ -104,29 +106,30 @@ test('Teste C — Pressionamentos repetidos respeitando cadência mínima produz
 
 test('Teste D — Pressionamentos rápidos demais (< 95ms) são ignorados sem fila atrasada, mas toques rápidos reais aceleram rajadas', () => {
   const b = new BurstController();
-  assert.equal(b.step(0, true).burstStarted, true);
-  assert.equal(b.step(10, false).justReleased, true);
+  const tapOnly = { allowHoldRepeat: false, accessibility: false };
+  assert.equal(b.step(0, true, tapOnly).burstStarted, true);
+  assert.equal(b.step(10, false, tapOnly).justReleased, true);
 
   // Rapid invalid taps at 40ms and 70ms (< 95ms debounce); held invalid tap must never fire delayed burst past 95ms
-  for (let t = 15; t < 40; t += 5) b.step(5, false);
-  assert.equal(b.step(5, true).burstStarted, false, 'Tap at ~45ms ignored');
-  assert.equal(b.step(10, false).justReleased, true);
+  for (let t = 15; t < 40; t += 5) b.step(5, false, tapOnly);
+  assert.equal(b.step(5, true, tapOnly).burstStarted, false, 'Tap at ~45ms ignored');
+  assert.equal(b.step(10, false, tapOnly).justReleased, true);
 
-  for (let t = 55; t < 70; t += 5) b.step(5, false);
-  const earlyHeld = b.step(5, true);
+  for (let t = 55; t < 70; t += 5) b.step(5, false, tapOnly);
+  const earlyHeld = b.step(5, true, tapOnly);
   assert.equal(earlyHeld.burstStarted, false, 'Tap at ~75ms ignored');
 
   let delayedBursts = 0;
   for (let t = 75; t < 500; t += 5) {
-    if (b.step(5, true).burstStarted) delayedBursts++;
+    if (b.step(5, true, tapOnly).burstStarted) delayedBursts++;
   }
   assert.equal(delayedBursts, 0);
 
   // Releasing and pressing cleanly after cooldown starts one valid new burst immediately
-  assert.equal(b.step(5, false).justReleased, true);
-  assert.equal(b.step(5, true).burstStarted, true);
+  assert.equal(b.step(5, false, tapOnly).justReleased, true);
+  assert.equal(b.step(5, true, tapOnly).burstStarted, true);
 
-  // Faster manual tapping (110ms) produces strictly more bursts & pulses than slower tapping (260ms) in 1s
+  // Faster manual tapping (110ms) produces strictly more bursts & pulses than passive hold (220ms) or slower tapping (260ms) in 1s
   const measureTapRate = (periodMs) => {
     const ctrl = new BurstController();
     let bursts = 0, pulses = 0;
@@ -161,8 +164,8 @@ test('Teste E — FULL POWER e evolução LV1..FULL preservam contagem exata de 
   }
 });
 
-test('Teste F — Mísseis respeitam cooldown e não disparam continuamente apenas segurando TIRO', () => {
-  // Holding TIRO for 5s at FULL launches at most 1 missile salvo (from the 1 triggered burst)
+test('Teste F — Mísseis respeitam cooldown de 1.1s (FULL) tanto segurando TIRO quanto em toques manuais', () => {
+  // Holding TIRO for 5s at FULL respects 1.1s cooldown (3..5 salvos, never spamming every burst)
   const heldWorld = livePelagic(5);
   let heldMissileEvents = 0;
   for (let i = 0; i < 120 * 5; i++) {
@@ -170,7 +173,7 @@ test('Teste F — Mísseis respeitam cooldown e não disparam continuamente apen
     heldMissileEvents += heldWorld.events.filter((e) => e.type === 'missile').length;
     heldWorld.events.length = 0;
   }
-  assert.equal(heldMissileEvents, 1, 'Holding TIRO for 5s launches only 1 missile salvo');
+  assert.ok(heldMissileEvents >= 3 && heldMissileEvents <= 5, `Holding TIRO for 5s must respect 1.1s cooldown (expected 3..5 salvos, got ${heldMissileEvents})`);
 
   // Repeated manual bursts respect 1.1s cooldown at FULL
   const tapWorld = livePelagic(5);
@@ -184,28 +187,39 @@ test('Teste F — Mísseis respeitam cooldown e não disparam continuamente apen
   assert.ok(tapMissileEvents >= 3 && tapMissileEvents <= 4, `Expected 3-4 salvos in 4s tapping, got ${tapMissileEvents}`);
 });
 
-test('Teste G — Acessibilidade (DISPARO ACESSÍVEL): desativada por padrão; ativa autofire somente quando ligada', () => {
+test('Teste G — Acessibilidade (DISPARO ACESSÍVEL): desativada por padrão; ativa disparo contínuo sem precisar segurar TIRO', () => {
   assert.equal(defaultSaveData().settings.rapidFire, false, 'rapidFire must default to false for new players');
 
+  // With DISPARO ACESSÍVEL OFF and fire=false, ship does not fire automatically
   const wOff = livePelagic(1);
   assert.equal(wOff.accessibility, false);
   let offShots = 0;
   for (let i = 0; i < 120 * 2; i++) {
-    wOff.step(1 / 120, { x: 0, y: 0, fire: true, special: false });
+    wOff.step(1 / 120, { x: 0, y: 0, fire: false, special: false });
     offShots += wOff.events.filter((e) => e.type === 'shot').length;
     wOff.events.length = 0;
   }
-  assert.equal(offShots, 3);
+  assert.equal(offShots, 0);
 
+  // With DISPARO ACESSÍVEL ON and fire=false, ship fires continuously hands-free and suspends cleanly during charge
   const wOn = livePelagic(1);
   wOn.accessibility = true;
   let onShots = 0;
   for (let i = 0; i < 120 * 2; i++) {
-    wOn.step(1 / 120, { x: 0, y: 0, fire: true, special: false });
+    wOn.step(1 / 120, { x: 0, y: 0, fire: false, special: false });
     onShots += wOn.events.filter((e) => e.type === 'shot').length;
     wOn.events.length = 0;
   }
-  assert.ok(onShots >= 21, `Expected auto-repeat bursts with accessibility=true, got ${onShots}`);
+  assert.ok(onShots >= 21, `Expected hands-free auto-fire bursts with accessibility=true, got ${onShots}`);
+
+  // Holding Charged Shot suspends hands-free auto-fire cleanly
+  let shotsWhileCharging = 0;
+  for (let i = 0; i < 60; i++) {
+    wOn.step(1 / 120, { x: 0, y: 0, fire: false, special: false, charge: true });
+    if (i > 12) shotsWhileCharging += wOn.events.filter((e) => e.type === 'shot').length;
+    wOn.events.length = 0;
+  }
+  assert.equal(shotsWhileCharging, 0, 'Hands-free auto-fire must suspend while holding Charged Shot');
 });
 
 test('Teste H — Morte e reaparecimento cancelam rajada em curso sem disparo fantasma se botão seguir segurado', () => {
@@ -268,9 +282,9 @@ test('Teste J — Múltiplos dispositivos (GamepadReader, TouchInputController d
     assert.equal(gp.firePrimary, true);
     assert.equal(gp.firePrimaryTap, i === 0);
     assert.ok(gp.moveX > 0.4 && gp.moveY < -0.4, 'Diagonal movement works concurrently with fire');
-    padPulses += burst.update(1000 / 60, gp.firePrimary, false);
+    padPulses += burst.update(1000 / 60, gp.firePrimary, true);
   }
-  assert.equal(padPulses, 3);
+  assert.ok(padPulses >= 12 && padPulses <= 18, `Expected smooth 220ms hold cadence in 1s (12..18 pulses), got ${padPulses}`);
 
   // 2. Touch: quick <1 frame tap on TIRO latches cleanly without double burst; diagonal joystick + TIRO works
   const touch = new TouchInputController(defaultTouchSettings());
@@ -284,13 +298,18 @@ test('Teste J — Múltiplos dispositivos (GamepadReader, TouchInputController d
   assert.ok(step1.x > 0.5 && step1.y < -0.5);
   assert.equal(touch.consumeStep().fire, false);
 
-  // 3. Consistency across 30 / 60 / 120 FPS simulated deltas
+  // 3. Consistency across 30 / 60 / 120 FPS simulated deltas (both strict tap-only and continuous hold-repeat)
   for (const fps of [30, 60, 120]) {
     const dtMs = 1000 / fps;
+    const tapOnlyCtrl = new BurstController();
+    let tapOnlyCount = 0;
+    for (let i = 0; i < fps * 2; i++) tapOnlyCount += tapOnlyCtrl.update(dtMs, true, { allowHoldRepeat: false, accessibility: false });
+    assert.equal(tapOnlyCount, 3, `Strict tap-only hold must emit strictly 3 pulses at ${fps} FPS`);
+
     const heldCtrl = new BurstController();
     let heldCount = 0;
-    for (let i = 0; i < fps * 2; i++) heldCount += heldCtrl.update(dtMs, true, false);
-    assert.equal(heldCount, 3, `Hold must emit strictly 3 pulses at ${fps} FPS`);
+    for (let i = 0; i < fps * 2; i++) heldCount += heldCtrl.update(dtMs, true, true);
+    assert.ok(heldCount >= 24 && heldCount <= 30, `Continuous hold must emit consistent 24..30 pulses in 2s at ${fps} FPS (got ${heldCount})`);
 
     const tapCtrl = new BurstController();
     let tapCount = 0;

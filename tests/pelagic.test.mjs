@@ -27,9 +27,9 @@ test('land units stay registered to their actual island and the muzzle follows a
  for(const family of['tank','tower'])for(let scroll=0;scroll<12000;scroll+=337){const e={id:2,x:0,y:0,size:34,age:0,speed:24,family};prepareSurface(e,scroll);const p=PELAGIC_COAST[e.navigation.anchor];moveSurface(e,scroll+123,1/60);assert.equal(e.y,p.y+scroll+123+e.navigation.anchorY);assert(touchesCoast(e.x,e.y-scroll-123,1));}
  const e={id:1,x:400,y:100,size:40,age:0,speed:24,family:'boat',navigation:{worldY:0,entry:0,phase:'turn',heading:Math.PI/2}};const m=surfaceMount(e);assert(Math.abs(m.x-404.8)<1e-8);assert.equal(m.y,100);
 });
-test('Phase 2 does not install maritime routes and phase-one encounter timings are unchanged',()=>{
+test('Phase 2 does not install maritime routes and phase-one maritime boats install navigation from Region 1 (60s+)',()=>{
  const side=new ArcadeWorld(MISSIONS[1]);side.spawnEncounter({family:'tank',formation:'pair',motion:'stationary',lane:.8});assert(side.enemies.every(e=>!e.navigation));
- const w=new ArcadeWorld(MISSIONS[0]);w.state='play';w.player.invulnerable=1000;for(let i=0;i<120*47;i++){w.step(1/120);w.events=[];}assert(w.enemies.filter(e=>e.family==='boat').length>=1);assert(w.enemies.filter(e=>e.family==='boat').every(e=>e.navigation));assert(Math.abs(w.route-47)<1e-7);
+ const w=new ArcadeWorld(MISSIONS[0]);w.state='play';w.player.invulnerable=1000;for(let i=0;i<120*65;i++){w.step(1/120);w.events=[];}assert(w.enemies.filter(e=>e.family==='boat').length>=1);assert(w.enemies.filter(e=>e.family==='boat').every(e=>e.navigation));assert(Math.abs(w.route-65)<1e-7);
 });
 test('the authored encounters respect the continuous western coast and the eastern bay',()=>{
  const w=new ArcadeWorld(MISSIONS[0]);w.state='play';w.player.invulnerable=1000;const entries=new Set();

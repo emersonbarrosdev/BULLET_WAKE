@@ -42,9 +42,9 @@ test('Stage adapters expose real checkpoints, bosses, all 5 Colosso Abissal sect
   assert(fenda && solar);
 
   assert(fenda.checkpoints.some((c) => c.atSeconds === 0 && c.kind === 'start'));
-  assert(fenda.checkpoints.some((c) => c.atSeconds === 148 && c.kind === 'region'));
-  assert(fenda.checkpoints.some((c) => c.atSeconds === 200 && c.kind === 'region'));
-  assert(fenda.checkpoints.some((c) => c.atSeconds === 300 && c.kind === 'boss'));
+  assert(fenda.checkpoints.some((c) => c.atSeconds === 180 && c.kind === 'region'));
+  assert(fenda.checkpoints.some((c) => c.atSeconds === 240 && c.kind === 'region'));
+  assert(fenda.checkpoints.some((c) => c.atSeconds === 360 && c.kind === 'boss'));
   assert(solar.checkpoints.some((c) => c.atSeconds === 155 && c.kind === 'miniboss'));
   assert(solar.checkpoints.some((c) => c.atSeconds === 300 && c.kind === 'boss'));
 
@@ -65,17 +65,17 @@ test('Stage adapters expose real checkpoints, bosses, all 5 Colosso Abissal sect
 
 test('ArcadeWorld checkpoint jump initializes route, scroll, region, encounter director, and blocks stale events', () => {
   const w = makeWorld(0);
-  w.devJumpToCheckpoint(200);
-  assert.equal(w.route, 200);
-  assert.equal(w.elapsed, 200);
+  w.devJumpToCheckpoint(240);
+  assert.equal(w.route, 240);
+  assert.equal(w.elapsed, 240);
   assert.equal(w.region, 5);
-  assert(w.scroll >= 200 * 38 - 1);
-  assert(w.specialEventsTriggered.has('naval-convoy'), 'Past timed event before 200s must be marked already passed');
-  assert(!w.specialEventsTriggered.has('elite-interception'), 'Future post-arch event @ 214s must remain eligible');
-  assert(!w.specialEventsTriggered.has('coordinated-strike'), 'Future timed event @ 242s must remain eligible');
+  assert(w.scroll >= 240 * 38 - 1);
+  assert(w.specialEventsTriggered.has('naval-convoy'), 'Past timed event before 240s must be marked already passed');
+  assert(w.specialEventsTriggered.has('elite-interception'), 'Past post-arch event @ 225s must be marked already passed');
+  assert(!w.specialEventsTriggered.has('coordinated-strike'), 'Future timed event @ 274s must remain eligible');
 
   const snap = w.devDirectorSnapshot();
-  assert(snap.nextEncounterAt !== null && snap.nextEncounterAt >= 200);
+  assert(snap.nextEncounterAt !== null && snap.nextEncounterAt >= 240);
 });
 
 test('Boss section jump starts consistent hull, modules, and allows full progression verification without skipping phases', () => {
@@ -198,7 +198,7 @@ test('ArcadeStageDirector serves as single source of truth for timed and conditi
 
   assert(archDescent && archDescent.triggerKind === 'conditional' && archDescent.atSeconds === undefined);
   assert(rare && rare.triggerKind === 'conditional' && rare.atSeconds === undefined && rare.repeatPolicy === 'capped');
-  assert(boss && boss.triggerKind === 'timed' && boss.atSeconds === 300);
+  assert(boss && boss.triggerKind === 'timed' && boss.atSeconds === 360);
 
   const dir = new ArcadeStageDirector(MISSIONS[0], 0);
   assert.equal(dir.defs.length, fendaDefs.length);
@@ -215,8 +215,8 @@ test('ArcadeStageDirector serves as single source of truth for timed and conditi
 
 test('Stage Jump backward/forward restores coherent ArcadeStageDirector flags and blocks duplicate past events', () => {
   const w = makeWorld(0);
-  // Jump late past rare visitor and timed events
-  w.devJumpToCheckpoint(225, { seed: 4242 });
+  // Jump late past Tide Arch checkpoint and early timed events
+  w.devJumpToCheckpoint(245, { seed: 4242 });
   assert.equal(w.seed, 4242);
   let snap = w.devStageDirectorSnapshot();
   assert.equal(snap.entries.find((e) => e.id === 'stage-1-special-naval-convoy')?.status, 'skipped');

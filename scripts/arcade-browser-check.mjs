@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process';
 import { createServer as createViteDevServer } from 'vite';
 import { steer } from './arcade-route.mjs';
 const root = resolve('dist'), out = resolve('docs/screenshots/cartoon'); mkdirSync(out, { recursive: true });
-const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.ogg': 'audio/ogg' };
+const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png', '.svg': 'image/svg+xml', '.ogg': 'audio/ogg' };
 const server = createServer((req, res) => { const p = new URL(req.url, 'http://localhost').pathname; const file = resolve(root, '.' + (p === '/' ? '/index.html' : p)); if (!file.startsWith(root + sep) || !existsSync(file)) { res.writeHead(404).end(); return; } res.writeHead(200, { 'Content-Type': mime[extname(file)] ?? 'application/octet-stream' }); res.end(readFileSync(file)); });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
 const devServer = await createViteDevServer({ configFile: resolve('vite.config.ts'), mode: 'development', server: { host: '127.0.0.1', port: 0, strictPort: false } });
@@ -56,16 +56,16 @@ try {
     assert(!titleBackdrop.coast.visible && !titleBackdrop.water.visible && titleBackdrop.menuSkyVisible, `Cenário Pelágico vazando no menu: ${JSON.stringify(titleBackdrop)}`);
     report.pelagic = { textures: pelagicTextures, title: titleBackdrop };
     const verifyPelagic = async (stage, minScroll = 0, expectCoast = true) => {
-        const state = await evaluate(`({screen:s.screen,up:s.world?.up,scroll:s.world?.scroll??0,playerVisible:s.player.visible,hudLeftVisible:s.hudLeft.visible,hudRightVisible:s.hudRight.visible,bossVisible:s.bossSprite.visible||(s.subBossArt?.hullSprites?.some(h=>h.visible)??false),backdrop:s.backdrop.pelagicState()})`);
+        const state = await evaluate(`({screen:s.screen,up:s.world?.up,scroll:s.world?.scroll??0,arenaLeft:s.world?.arena?.left??160,arenaWidth:s.world?.arenaWidth??448,playerVisible:s.player.visible,hudVisible:Boolean(s.devPelagicHudState()?.visible),bossVisible:s.bossSprite.visible||(s.subBossArt?.hullSprites?.some(h=>h.visible)??false),backdrop:s.backdrop.pelagicState()})`);
         assert(state.screen === 'play' && state.up === true, `Cena Pelágica inativa em ${stage}: ${JSON.stringify(state)}`);
         assert(state.scroll >= minScroll, `Scroll abaixo do esperado em ${stage}: ${state.scroll} < ${minScroll}`);
-        assert(state.playerVisible && state.hudLeftVisible && state.hudRightVisible, `HUD ou nave ocultos em ${stage}: ${JSON.stringify(state)}`);
+        assert(state.playerVisible && state.hudVisible, `HUD ou nave ocultos em ${stage}: ${JSON.stringify(state)}`);
         const { coast, water, menuSkyVisible } = state.backdrop;
         assert(!menuSkyVisible, `Sky de menu visível durante gameplay em ${stage}`);
         if (expectCoast) {
             assert(coast.visible && coast.stripCount === 2 && coast.visibleCount === 2 && coast.texture === 'pelagic-connected-coast-v2', `Costa contínua inválida em ${stage}: ${JSON.stringify(coast)}`);
             const [s0, s1] = coast.strips;
-            assert(s0.visible && s1.visible && s0.x === 192 && s1.x === 192 && s0.width === 384 && s1.width === 384 && s0.height === 2048 && s1.height === 2048, `Geometria das faixas da costa inválida em ${stage}: ${JSON.stringify(coast.strips)}`);
+            assert(s0.visible && s1.visible && s0.x === state.arenaLeft && s1.x === state.arenaLeft && s0.width === 384 && s1.width === 384 && s0.height === 2048 && s1.height === 2048, `Geometria das faixas da costa inválida em ${stage}: ${JSON.stringify(coast.strips)}`);
             assert(Math.abs((s1.y - s0.y) - 2048) < 1e-3 && s0.y <= 0 && s1.y + s1.height >= 432, `Faixas da costa não cobrem a arena 0..432 em ${stage}: ${JSON.stringify(coast.strips)}`);
             const expectedTop = -(((610 - state.scroll) % 2048 + 2048) % 2048);
             const seamDelta = Math.min(Math.abs(s0.y - expectedTop), 2048 - Math.abs(s0.y - expectedTop));
@@ -76,8 +76,8 @@ try {
         assert(water.visible && water.texture === 'pelagic-water-review' && water.depthVisible && water.depthTexture === 'pelagic-depth-review' && water.swellVisible && water.causticsVisible && water.causticsTexture === 'pelagic-caustics-review' && water.activeWaves > 0, `Camadas oceânicas inválidas em ${stage}: ${JSON.stringify(water)}`);
         return state;
     };
-    await key('Enter'); assert.equal(await evaluate('s.screen'), 'pilot');
-    await evaluate(`window.seek=(time)=>{const w=s.world;w.route=time;w.waveIndex=w.mission.encounters.findIndex(e=>e.at>time);if(w.waveIndex<0)w.waveIndex=w.mission.encounters.length;w.supplyIndex=11;w.miniStarted=time>155;w.bossStarted=false;w.enemies=[];w.cargo=[];w.obstacles=[];w.nextObstacle=time+10;w.boss=undefined;w.bullets.forEach(b=>b.active=false);w.player.invulnerable=100;};`);
+    await key('Enter'); await wait(`s.screen === 'pilot'`); assert.equal(await evaluate('s.screen'), 'pilot');
+    await evaluate(`window.seek=(time)=>{const w=s.world;w.route=time;w.waveIndex=w.mission.encounters.findIndex(e=>e.at>time);if(w.waveIndex<0)w.waveIndex=w.mission.encounters.length;w.supplyIndex=12;w.miniStarted=time>155;w.bossStarted=false;w.enemies=[];w.cargo=[];w.obstacles=[];w.nextObstacle=time+10;w.boss=undefined;w.bullets.forEach(b=>b.active=false);w.player.invulnerable=100;};`);
     await evaluate(`s.show('pilot')`); await shot('pilots'); await evaluate(`s.show('missions')`); await shot('missions');
     await evaluate(`s.begin(0);s.world.introTime=0;s.controls.SPACE.isDown=true;s.setTouchVisible(false);`); await sleep(1500); await shot('phase1-start');
     report.pelagic.start = await verifyPelagic('phase1-start');
@@ -89,7 +89,7 @@ try {
     assert.notEqual(report.pelagic.harbor.backdrop.water.tilePositionY, report.pelagic.coast.backdrop.water.tilePositionY, 'Água deve rolar entre coast e harbor');
     await evaluate(`s.show('pause')`); await shot('pause'); report.pause = await evaluate(`(()=>{const a=s.world.elapsed;return new Promise(r=>setTimeout(()=>r({before:a,after:s.world.elapsed,audio:s.audio.status()}),200));})()`); assert.equal(report.pause.before, report.pause.after);
     await evaluate(`s.audio.unlock();s.show('controls')`); await shot('controls'); assert.equal(await evaluate('s.audio.status().paused'), true); await evaluate(`s.pauseOrigin='pause';s.show('settings')`); await shot('settings');
-    await evaluate(`s.show('play');seek(300)`); await sleep(3500); await shot('phase1-boss');
+    await evaluate(`s.show('play');seek(360)`); await sleep(3500); await shot('phase1-boss');
     report.pelagic.boss = await verifyPelagic('phase1-boss', 0, false); assert(report.pelagic.boss.bossVisible, 'Submarino Colosso Abissal deve estar visível em phase1-boss');
     await evaluate(`s.world.step(1/60,{x:0,y:0,fire:false,special:true});s.world.player.x=s.world.boss.parts[0].x;s.world.player.y=350`); await sleep(750); await shot('phase1-special');
     await evaluate(`(()=>{const w=s.world,sub=w.boss.sub;sub.sections[0].hullHp=0;sub.sections[0].parts.forEach(p=>p.hp=0);for(let i=0;i<300&&sub.activeSection<1;i++)w.step(1/60);for(let i=0;i<220&&sub.phase!=='fight';i++)w.step(1/60);})()`); await shot('phase1-return'); assert.equal(await evaluate('s.world.boss.sub.activeSection'), 1);
@@ -97,7 +97,7 @@ try {
     report.assets = await evaluate(`({textures:s.textures.getTextureKeys().filter(k=>k.startsWith('arc-')),audio:s.audio.status(),objects:s.children.length,screen:s.screen})`);
     if (process.argv.includes('--both')) { await evaluate(`s.begin(1);s.world.introTime=0;seek(99)`); await sleep(1600); await shot('phase2-city'); await evaluate(`seek(300)`); await sleep(3500); await shot('phase2-boss'); }
     // Standard browser gamepad injection exercises the real input adapter, not a physical device.
-    await evaluate(`s.begin(0);s.world.introTime=0;window.pad={id:'Virtual Standard',connected:true,mapping:'standard',axes:[1,0],buttons:Array.from({length:17},()=>({pressed:false,value:0}))};Object.defineProperty(navigator,'getGamepads',{configurable:true,value:()=>[window.pad]});window.xBefore=s.world.player.x;pad.buttons[0]={pressed:true,value:1};`); await sleep(500);
+    await evaluate(`s.begin(0);s.world.introTime=0;window.pad={id:'Virtual Standard',connected:true,mapping:'standard',axes:[1,0],buttons:Array.from({length:17},()=>({pressed:false,value:0}))};Object.defineProperty(navigator,'getGamepads',{configurable:true,value:()=>[window.pad]});window.xBefore=s.world.player.x;pad.buttons[1]={pressed:true,value:1};`); await sleep(500);
     report.gamepad = await evaluate(`({moved:s.world.player.x>xBefore,fired:s.world.bullets.some(b=>b.active&&!b.enemy)})`); assert(report.gamepad.moved && report.gamepad.fired);
     await evaluate(`pad.buttons[9]={pressed:true,value:1}`); await sleep(100); assert.equal(await evaluate('s.screen'), 'pause'); await evaluate(`Object.defineProperty(navigator,'getGamepads',{configurable:true,value:()=>[]});s.show('play');`);
     await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
@@ -119,13 +119,13 @@ try {
         const [one, two] = report.routes; for (const field of ['lives', 'level', 'power', 'specials', 'score']) assert.equal(two.initial[field], one[field]);
         await evaluate(`s.show('ending')`); await shot('ending');
         await evaluate(`s.begin(0);s.world.state='play';s.world.lives=1;s.world.player.invulnerable=0;s.world.hurtPlayer()`); await sleep(100); assert.equal(await evaluate('s.screen'), 'defeat'); await shot('game-over');
-        await key('Enter'); assert.equal(await evaluate('s.screen'), 'play'); await key('Escape'); assert.equal(await evaluate('s.screen'), 'pause'); await evaluate(`s.show('confirm-exit')`); await shot('confirm-exit'); await evaluate(`s.buttons[0].action()`); assert.equal(await evaluate('s.screen'), 'pause'); await evaluate(`s.show('confirm-exit');s.buttons[1].action()`); assert.equal(await evaluate('s.screen'), 'title'); assert.equal(await evaluate('!!s.world'), false); report.endFlow = { defeatRetry: true, exitCancelled: true, exitConfirmed: true, automaticFlyout: true };
+        await key('Enter'); await wait(`s.screen === 'play'`); assert.equal(await evaluate('s.screen'), 'play'); await key('Escape'); await wait(`s.screen === 'pause'`); assert.equal(await evaluate('s.screen'), 'pause'); await evaluate(`s.show('confirm-exit')`); await shot('confirm-exit'); await evaluate(`s.buttons[0].action()`); assert.equal(await evaluate('s.screen'), 'pause'); await evaluate(`s.show('confirm-exit');s.buttons[1].action()`); assert.equal(await evaluate('s.screen'), 'title'); assert.equal(await evaluate('!!s.world'), false); report.endFlow = { defeatRetry: true, exitCancelled: true, exitConfirmed: true, automaticFlyout: true };
     }
     report.renderer = await evaluate(`(()=>{const gl=window.__GAME__.renderer.gl;const ext=gl?.getExtension('WEBGL_debug_renderer_info');return {type:window.__GAME__.renderer.type,gpu:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):null};})()`);
     if (process.argv.includes('--performance')) {
         report.performance = [];
         for (const index of [0, 1]) for (const quality of [0, 2]) {
-            await evaluate(`s.begin(${index});s.world.introTime=0;seek(300);s.quality=${quality};s.world.weapons.weaponLevel=5;s.controls.SPACE.isDown=true;s.world.player.invulnerable=100;`); await sleep(2800);
+            await evaluate(`s.begin(${index});s.world.introTime=0;seek(${index === 0 ? 360 : 300});s.quality=${quality};s.world.weapons.weaponLevel=5;s.controls.SPACE.isDown=true;s.world.player.invulnerable=100;`); await sleep(2800);
             report.performance.push(await evaluate(`new Promise(resolve=>{const samples=[];let previous=performance.now(),start=previous,peak=0;function sample(now){samples.push(now-previous);previous=now;const w=s.world;peak=Math.max(peak,w.bullets.filter(b=>b.active).length);if(Math.floor((now-start)/1000)%2===0&&w.enemies.length<8)w.spawnEncounter({family:'bomber',formation:'horde',motion:'sine',lane:.5});if(now-start>3000&&now-start<5000)w.specialTime=.5;if(now-start<8000)requestAnimationFrame(sample);else{s.controls.SPACE.isDown=false;samples.shift();samples.sort((a,b)=>a-b);resolve({mission:${index}+1,quality:${quality},frames:samples.length,seconds:(now-start)/1000,medianMs:samples[Math.floor(samples.length*.5)],p95Ms:samples[Math.floor(samples.length*.95)],heap:performance.memory?.usedJSHeapSize,objects:s.children.length,peakBullets:peak});}}requestAnimationFrame(sample);})`));
         }
     }
