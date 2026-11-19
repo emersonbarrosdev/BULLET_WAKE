@@ -116,6 +116,13 @@ import {
 } from './PelagicTideArch.ts';
 import { PelagicCombatDirector, type PelagicPacingSnapshot } from './PelagicCombatDirector.ts';
 import { isFamilyUnlockedAtFendaRoute, stageDurationFor } from './PelagicProgression.ts';
+import {
+    SUPPLY_DRONE_HIT_RADIUS,
+    SUPPLY_DRONE_PLAYER_COLLISION_RADIUS,
+    createSupplyDronePlan,
+    stepSupplyDrone,
+    type SupplyDroneState,
+} from './SupplyDrone.ts';
 
 export interface Controls { x: number; y: number; fire: boolean; special: boolean; charge?: boolean; }
 export interface SubmarineState { phase: 'emerge' | 'hold' | 'submerge'; exposure: number; side: -1 | 1; }
@@ -130,7 +137,7 @@ export interface Actor {
 }
 export interface ArcadeBomb { id: number; x: number; y: number; age: number; phase: 'flight' | 'blast'; radius: number; }
 export interface Bullet { active: boolean; x: number; y: number; px: number; py: number; vx: number; vy: number; damage: number; radius: number; enemy: boolean; missile: boolean; enemyMissile?: boolean; homing: boolean; age: number; scale: number; color: number; charged?: boolean; chargeTier?: 'partial' | 'full'; pierceRemaining?: number; hitTargetIds?: Set<number>; }
-export interface Cargo { id: number; x: number; y: number; vx: number; vy: number; kind: 'power' | 'life' | 'special'; crate: boolean; hp: number; age: number; recoveryP?: number; }
+export interface Cargo { id: number; x: number; y: number; vx: number; vy: number; kind: 'power' | 'life' | 'special'; crate: boolean; hp: number; age: number; recoveryP?: number; drone?: SupplyDroneState; flash?: number; dropPop?: number; retryCount?: number; expired?: boolean; }
 export interface Component { id: number; x: number; y: number; dx: number; dy: number; hp: number; maxHp: number; radius: number; flash: number; warning: number; angle: number; }
 export interface Boss { mini: boolean; x: number; y: number; size: number; age: number; phase: 'enter' | 'fight' | 'retreat' | 'absent' | 'return' | 'sink'; configuration: number; timer: number; attack: number; attackTime: number; volley: number; aimX: number; aimY: number; parts: Component[]; flash?: number; sub?: SubmarineBossState; }
 export interface Obstacle { id: number; x: number; y: number; width: number; height: number; kind: 'roof' | 'gate' | 'barrier'; warning: number; hp: number; age: number; }
@@ -168,7 +175,7 @@ export class ArcadeWorld {
     readonly stageDirector: ArcadeStageDirector;
     checkpoint?: PelagicCheckpointSnapshot;
     private rngState = 1337;
-    private burst = new BurstController(); private sequence = 0; private waveIndex = 0; private supplyIndex = 0; private miniStarted = false; private bossStarted = false; private nextObstacle = 98;
+    private burst = new BurstController(); private sequence = 0; private waveIndex = 0; private supplyIndex = 0; private supplySpawnCounter = 0; private miniStarted = false; private bossStarted = false; private nextObstacle = 98;
     private normalRecentAttacks: Array<{ at: number; enemyId: number; squadId?: number; targetX: number; isFan: boolean }> = [];
     private rareSpawnCount = 0; private rareRewardClaimed = false; private convoyBonusClaimed = false; private assistedDeathHinted = false;
     private stepEnemyShots = 0; private directorPaused = false;
@@ -368,8 +375,7 @@ export class ArcadeWorld {
                 const c = supplies[idx];
                 const supId = `stage-${this.mission.id}-supply-${idx}-${c.kind}`;
                 if (iso && iso !== supId) continue;
-                const lane = .25 + (this.supplyIndex % 3) * .24;
-                this.cargo.push({ id: ++this.sequence, x: this.up ? this.arena.left + lane * this.arenaWidth : this.arena.right + 15, y: this.up ? -25 : 85 + lane * 250, vx: this.up ? 20 : -32, vy: this.up ? 25 : 0, kind: c.kind, crate: true, hp: 3, age: 0 });
+                this.spawnSupplyDrone(c.kind, { supplyKey: supId });
                 this.stageDirector.markSupplyTriggered(idx, this.route);
             }
             if (!this.up && this.route >= 155 && !this.miniStarted && (!iso || iso === `stage-${this.mission.id}-miniboss`)) {
@@ -1273,7 +1279,7 @@ export class ArcadeWorld {
             const boss = this.boss, t = this.bossContact ? this.bossContact(boss, b.px, b.py, b.x, b.y, b.radius) : sweepEllipse(b.px, b.py, b.x, b.y, boss.x, boss.y, boss.size * .43 + b.radius, boss.size * (this.up ? .37 : .29) + b.radius);
             if (t !== null && t < nearest) { nearest = t; target = boss; hitKey = -1; }
         }
-        for (const c of this.cargo) { if (!c.crate || b.hitTargetIds?.has(-10000 - c.id)) continue; const t = sweepEllipse(b.px, b.py, b.x, b.y, c.x, c.y, 12 + b.radius, 12 + b.radius); if (t !== null && t < nearest) { nearest = t; target = c; subHit = undefined; hitKey = -10000 - c.id; } }
+        for (const c of this.cargo) { if (!c.crate || b.hitTargetIds?.has(-10000 - c.id)) continue; const t = sweepEllipse(b.px, b.py, b.x, b.y, c.x, c.y, SUPPLY_DRONE_HIT_RADIUS + b.radius, SUPPLY_DRONE_HIT_RADIUS + b.radius); if (t !== null && t < nearest) { nearest = t; target = c; subHit = undefined; hitKey = -10000 - c.id; } }
         for (const o of this.obstacles) { if (o.kind !== 'barrier' || o.hp <= 0 || b.hitTargetIds?.has(-20000 - o.id)) continue; const t = sweepEllipse(b.px, b.py, b.x, b.y, o.x, o.y, o.width / 2 + b.radius, o.height / 2 + b.radius); if (t !== null && t < nearest) { nearest = t; target = o; subHit = undefined; hitKey = -20000 - o.id; } }
         if (!target && !subHit) return;
         const hx = b.px + (b.x - b.px) * nearest;
@@ -1289,7 +1295,13 @@ export class ArcadeWorld {
             if (subHit.part) this.damageSubModule(this.boss.sub, subHit.sec, subHit.part, b.damage, hx, hy);
             else this.damageSubHull(this.boss.sub, subHit.sec, b.damage, hx, hy);
         } else if (target && 'parts' in target) { this.damageBossAt(hx, hy, b.damage); }
-        else if (target && 'crate' in target) { target.hp -= b.damage; if (target.hp <= 0) { target.crate = false; target.age = 0; target.vx = this.up ? 58 : -58; target.vy = this.up ? 37 : 35; this.emit('explosion', target.x, target.y, .35); } }
+        else if (target && 'crate' in target) {
+            target.hp -= b.damage;
+            target.flash = 0.095;
+            if (target.drone) target.drone.hitRecoil = 1;
+            this.emit('impact', hx, hy, .35);
+            if (target.hp <= 0) this.releaseCargoFromDrone(target);
+        }
         else if (target && 'kind' in target) { target.hp -= b.damage; if (target.hp <= 0) this.emit('explosion', target.x, target.y, 1); }
         else if (target) this.damage(target, b.damage, hx, hy);
     }
@@ -1510,11 +1522,50 @@ export class ArcadeWorld {
         for (const b of this.bullets) if (b.enemy && Math.hypot(b.x - this.player.x, b.y - this.player.y) < ASSISTED_RESPAWN_BULLET_CLEAR_RADIUS) b.active = false;
         for (const e of this.enemies) if (!e.ground && e.y > safeRespawnY - 125) e.cooldown = Math.max(e.cooldown, ASSISTED_LOWER_LANE_ENEMY_COOLDOWN);
     }
+    private spawnSupplyDrone(
+        kind: Cargo['kind'],
+        opts?: { supplyKey?: string },
+    ): Cargo {
+        const plan = createSupplyDronePlan(this.arena, this.up, this.supplySpawnCounter++, opts);
+        const entry: Cargo = {
+            id: ++this.sequence,
+            x: plan.x,
+            y: plan.y,
+            vx: plan.vx,
+            vy: plan.vy,
+            kind,
+            crate: true,
+            hp: 3,
+            age: 0,
+            flash: 0,
+            drone: plan.drone,
+        };
+        this.cargo.push(entry);
+        return entry;
+    }
+    private releaseCargoFromDrone(target: Cargo): void {
+        target.crate = false;
+        target.drone = undefined;
+        target.age = 0;
+        target.flash = 0;
+        target.dropPop = 1;
+        const dirX = target.x <= this.arenaCenterX ? 1 : -1;
+        target.vx = this.up ? dirX * 48 : -54;
+        target.vy = this.up ? -26 : 28;
+        this.emit('explosion', target.x, target.y, .45);
+    }
     private updateCargo(dt: number): void {
         for (const c of this.cargo) {
-            c.age += dt; c.x += c.vx * dt; c.y += c.vy * dt;
+            c.age += dt;
+            if (c.flash && c.flash > 0) c.flash = Math.max(0, c.flash - dt);
+            if (c.dropPop && c.dropPop > 0) c.dropPop = Math.max(0, c.dropPop - dt * 2.6);
             if (!c.crate) {
-                if (c.x < this.arena.left + 12 || c.x > this.arena.right - 12) { c.vx *= -1; c.x = clamp(c.x, this.arena.left + 12, this.arena.right - 12); } if (c.y < this.arena.top + 18 || c.y > this.arena.bottom - 12) { c.vy *= -1; c.y = clamp(c.y, this.arena.top + 18, this.arena.bottom - 12); }
+                if (this.up && c.dropPop && c.dropPop > 0) {
+                    c.vy = Math.min(72, c.vy + 270 * dt);
+                }
+                c.x += c.vx * dt; c.y += c.vy * dt;
+                if (c.x < this.arena.left + 14 || c.x > this.arena.right - 14) { c.vx *= -1; c.x = clamp(c.x, this.arena.left + 14, this.arena.right - 14); }
+                if (c.y < this.arena.top + 18 || c.y > this.arena.bottom - 14) { c.vy *= -1; c.y = clamp(c.y, this.arena.top + 18, this.arena.bottom - 14); }
                 if (Math.hypot(c.x - this.player.x, c.y - this.player.y) < 22) {
                     const prevWeaponLevel = this.weapons.weaponLevel;
                     if (c.kind === 'power') {
@@ -1535,8 +1586,34 @@ export class ArcadeWorld {
                     else { this.score += this.weapons.specialCharges === 5 ? 5000 : 250; this.weapons.specialCharges = Math.min(5, this.weapons.specialCharges + 1); if (this.up) this.emit('comms', c.x, c.y, 1, 'pickup:special'); }
                     c.age = 100; this.collected++; this.emit('pickup', c.x, c.y, 1, c.kind);
                 }
-            } else if (this.up && (c.x < this.arena.left + 20 || c.x > this.arena.right - 20)) c.vx *= -1;
-        } this.cargo = this.cargo.filter(c => c.age < (c.crate ? 23 : 24) && c.y < this.arena.bottom + 45 && c.x > this.arena.left - 60);
+            } else if (c.drone) {
+                const res = stepSupplyDrone(c.drone, c.x, c.y, dt, this.arena);
+                c.x = res.x; c.y = res.y; c.vx = res.vx; c.vy = res.vy;
+                if (res.escaped) {
+                    c.expired = true;
+                    continue;
+                }
+                if (Math.hypot(c.x - this.player.x, c.y - this.player.y) < SUPPLY_DRONE_PLAYER_COLLISION_RADIUS) {
+                    c.hp = 0;
+                    this.releaseCargoFromDrone(c);
+                    this.hurtPlayer();
+                }
+            } else {
+                c.x += c.vx * dt; c.y += c.vy * dt;
+                if (this.up && (c.x < this.arena.left + 20 || c.x > this.arena.right - 20)) c.vx *= -1;
+                if (Math.hypot(c.x - this.player.x, c.y - this.player.y) < SUPPLY_DRONE_PLAYER_COLLISION_RADIUS) {
+                    c.hp = 0;
+                    this.releaseCargoFromDrone(c);
+                    this.hurtPlayer();
+                }
+            }
+        }
+        this.cargo = this.cargo.filter(c =>
+            !c.expired &&
+            (c.crate
+                ? (c.drone ? true : (c.age < 23 && c.y < this.arena.bottom + 45 && c.x > this.arena.left - 60))
+                : (c.age < 24 && c.y < this.arena.bottom + 45 && c.x > this.arena.left - 60))
+        );
     }
     private startBoss(mini: boolean): void {
         if (mini && this.up) return;
@@ -2078,6 +2155,10 @@ export class ArcadeWorld {
         this.specialTime = 2.75;
         this.bomb = { id: ++this.sequence, x: this.player.x, y: this.player.y, age: 0, phase: 'flight', radius: 0 };
         this.emit('special');
+    }
+
+    devSpawnSupplyDrone(kind: Cargo['kind']): Cargo {
+        return this.spawnSupplyDrone(kind);
     }
 
     devSpawnCargoItem(kind: Cargo['kind']): void {

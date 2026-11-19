@@ -4,7 +4,7 @@ import {EMPLACEMENT_TEXTURE,GUN_SMOKE_TEXTURE} from './PelagicEmplacements';
 import {SUB_HULL_DISPLAY_W,SUB_SECTION_HEIGHT,subSectionCenterY,type SubModule} from './PelagicSubmarineBoss';
 import {clamp} from './geometry';
 import {spriteContact} from '../render/SpriteSilhouette';
-export const SUPPLY_ART='arc-supply-v2',SUB_ART='arc-submarine-v2',BOMB_ART='arc-bomb-v2',BLAST_ART='arc-colossal-v2',SUB_HULL_ART='arc-sub-hull',SUB_SUBMERGED_ART='arc-sub-submerged',SUB_PARTS_ART='arc-sub-parts';
+export const SUPPLY_ART='arc-supply-v2',SUPPLY_DRONE_BODY_ART='arc-supply-drone-body',SUPPLY_DRONE_PROP_ART='arc-supply-drone-propeller',SUPPLY_GLOW_ART='arc-supply-glow',SUPPLY_SHADOW_ART='arc-supply-shadow',SUB_ART='arc-submarine-v2',BOMB_ART='arc-bomb-v2',BLAST_ART='arc-colossal-v2',SUB_HULL_ART='arc-sub-hull',SUB_SUBMERGED_ART='arc-sub-submerged',SUB_PARTS_ART='arc-sub-parts';
 function frames(scene:Phaser.Scene,key:string,columns:number,rows:number):void{
  const t=scene.textures.get(key),s=t.getSourceImage() as HTMLImageElement;
  if(t.has('0'))return;
@@ -15,6 +15,23 @@ function frames(scene:Phaser.Scene,key:string,columns:number,rows:number):void{
 }
 export function installCombatArt(scene:Phaser.Scene):void{
  frames(scene,SUPPLY_ART,4,4);frames(scene,SUB_ART,2,1);frames(scene,BOMB_ART,2,2);frames(scene,BLAST_ART,4,3);frames(scene,SUB_HULL_ART,5,1);frames(scene,SUB_PARTS_ART,4,2);
+ if(!scene.textures.exists(SUPPLY_GLOW_ART)){
+  const t=scene.textures.createCanvas(SUPPLY_GLOW_ART,64,64)!,c=t.context;
+  const g=c.createRadialGradient(32,32,4,32,32,32);
+  g.addColorStop(0,'rgba(255,255,255,0.88)');
+  g.addColorStop(0.45,'rgba(255,255,255,0.34)');
+  g.addColorStop(0.78,'rgba(255,255,255,0.08)');
+  g.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=g;c.fillRect(0,0,64,64);t.refresh();
+ }
+ if(!scene.textures.exists(SUPPLY_SHADOW_ART)){
+  const t=scene.textures.createCanvas(SUPPLY_SHADOW_ART,64,64)!,c=t.context;
+  const g=c.createRadialGradient(32,32,4,32,32,30);
+  g.addColorStop(0,'rgba(2,18,45,0.52)');
+  g.addColorStop(0.6,'rgba(2,18,45,0.24)');
+  g.addColorStop(1,'rgba(2,18,45,0)');
+  c.fillStyle=g;c.fillRect(0,0,64,64);t.refresh();
+ }
  if(scene.textures.exists(SUB_SUBMERGED_ART))frames(scene,SUB_SUBMERGED_ART,5,1);
  // Build 6-frame animated water-hugging spritesheets for naval hulls (4=boat, 5=ship).
  // Proportions scale by `u = cw / 100` so bow V-foam, side wave collars, and stern churn stay crisp at gameplay scale.

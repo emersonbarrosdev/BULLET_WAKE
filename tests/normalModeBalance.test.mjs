@@ -163,18 +163,20 @@ test('02. Normal supply schedule anticipates early POWER 2, bridges Tide Arch ga
   w.step(0.1, { x: 0, y: 0, fire: false, special: false });
   assert.equal(w.cargo.length, 1, 'First Normal POWER crate spawns at 14s');
   const crate = w.cargo[0];
+  assert.ok(crate.drone, 'Supply carrier spawns as animated supply drone');
+  assert.equal(crate.drone.entrySide, 'top', 'Supply drone enters from top');
   assert.ok(crate.x >= w.arena.left + 20 && crate.x <= w.arena.right - 20);
-  // Shoot crate open from player position and collect
+  // Shoot drone open from player position and collect
   w.player.x = crate.x;
   crate.y = w.player.y - 40;
   for (let i = 0; i < 40 && crate.crate; i++) w.step(1 / 60, { x: 0, y: 0, fire: true, special: false });
-  assert.equal(crate.crate, false, 'Crate breaks cleanly from primary shots');
+  assert.equal(crate.crate, false, 'Drone breaks cleanly from primary shots');
   w.player.x = crate.x;
   w.player.y = crate.y;
   w.step(1 / 60, { x: 0, y: 0, fire: false, special: false });
   assert.equal(w.weapons.powerMeter, 1);
 
-  // Verify ALL 12 Normal supplies spawn at accessible coordinates and reach POWER 5 FULL cleanly
+  // Verify ALL 12 Normal supplies spawn inside playable arena from top and reach POWER 5 FULL cleanly
   const allW = makeNormalWorld();
   allW.waveIndex = 999;
   for (let idx = 0; idx < FENDA_NORMAL_SUPPLIES.length; idx++) {
@@ -185,6 +187,7 @@ test('02. Normal supply schedule anticipates early POWER 2, bridges Tide Arch ga
     assert.ok(c, `Supply #${idx + 1} (${sup.kind} @ ${sup.at}s) must spawn`);
     assert.ok(c.x >= allW.arena.left + 20 && c.x <= allW.arena.right - 20, `Supply @ ${sup.at}s must spawn inside playable arena`);
     c.crate = false;
+    c.drone = undefined;
     allW.player.x = c.x;
     allW.player.y = allW.playerHomeY;
     c.y = allW.playerHomeY;

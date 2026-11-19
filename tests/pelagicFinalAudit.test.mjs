@@ -77,6 +77,15 @@ function advancedSteer(w) {
         if (d < e.size * 0.45 + 18) cost += 1200 / (d + 1);
       }
     }
+    for (const c of w.cargo) {
+      if (!c.crate) continue;
+      for (const t of [0.03, 0.10, 0.18]) {
+        const px = clx(p.x + dx * 174 * t);
+        const py = cly(p.y + dy * 174 * t);
+        const d = Math.hypot(c.x + c.vx * t - px, c.y + c.vy * t - py);
+        if (d < 28) cost += 900 / (d + 1);
+      }
+    }
     if (archOpening && (cx < archOpening.left + 14 || cx > archOpening.right - 14)) {
       cost += 3000;
     }
