@@ -4,11 +4,13 @@ Shooter arcade 2D cartoon/anime em Phaser 4, TypeScript e Vite. Duas missões co
 
 [Bíblia vigente](docs/27_BULLET_WAKE_V2_DEFINITIVO.md) · [Direção aprovada](docs/54_DIRECAO_ARCADE_APROVADA.md) · [Implementação e validação](docs/55_ARCADE_IMPLEMENTACAO_E_VALIDACAO.md)
 
-Rajadas de três pulsos, arma própria com cinco níveis, mísseis automáticos NV3+, bomba especial com explosão em área, suprimentos em balões e dano por setores no casco dos chefes. A Fenda Pelágica tem margens contínuas, submarinos e canhões/torres que deixam destroços com fumaça. Início com três vidas e dois especiais, limites cinco. Teclado, controle padrão e interface touch. Música baixa por padrão, opções de áudio, dificuldade e qualidade visual.
+Rajadas de três pulsos, POWER progressivo, mísseis automáticos NV3+, especiais próprios e suprimentos em drones. A Fenda Pelágica tem margens contínuas, submarinos e canhões/torres que deixam destroços com fumaça. A regra padrão começa com **quatro segmentos de casco e dois especiais**. Cada impacto válido remove um segmento e reduz POWER em um nível, com piso NV1; REPAIR recupera um segmento e P recupera armamento. Danos progressivos mostram marcas, fumaça e chamas sem alterar controle ou hitbox. O modo clássico de três vidas continua selecionável nas opções, com recordes separados.
 
 [Revisão do cenário](docs/65_COAST_V2_VALIDATION.md) · [Revisão de combate](docs/67_TASK2_COMBAT_VALIDATION.md)
 
-Somente Bayek está selecionável nesta reformulação. Tita, Leona, Osvald e Hien mantêm registros e retratos; armas e cenas legadas continuam no repositório. Campanha completa, sexto piloto, Remix e três secretas são planejamento, não fases produzidas.
+Bayek, Tita, Leona, Osvald e Hien possuem contratos de armas e especiais no motor arcade, com desbloqueios no perfil. A arte de nave em gameplay ainda usa a RIVET aprovada, com tintas para os demais pilotos; isso não equivale a cinco modelos visuais finais. O sistema de casco contém âncoras UP/SIDE para os cinco contratos. Campanha completa, sexto piloto, Remix e três secretas são planejamento, não fases produzidas.
+
+Score fica no painel esquerdo no desktop vertical e no rodapé nas apresentações lateral e retrato. Teclado, gamepad e multitoque compartilham as mesmas regras de combate. Validação por navegador não certifica Android nem controles físicos.
 
 ## Desenvolvimento
 

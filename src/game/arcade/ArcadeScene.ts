@@ -60,6 +60,9 @@ import {
 } from './ArcadeProfileStore';
 import { stageDurationFor } from './PelagicProgression';
 import { ReplayRecorder } from './ArcadeReplay';
+import { HULL_STATES } from './HullIntegrity';
+import { drawHullSegments } from './HullHud';
+import { HullDamageArt, preloadHullDamageArt } from './HullDamageArt';
 
 type HangarTab = 'hangar' | 'achievements' | 'profile';
 type RunOutcome = ReturnType<ArcadeProfileStore['recordRunResult']> & { evaluation: RunEvaluationResult };
@@ -122,9 +125,14 @@ export class ArcadeScene extends Phaser.Scene {
   private vfxGfx!: Phaser.GameObjects.Graphics;
   private warningBannerText!: Phaser.GameObjects.Text;
   private sortieHintText!: Phaser.GameObjects.Text;
+  private hullDefeatAt = 0;
+  private runId = '';
+  private footerScore!: Phaser.GameObjects.Text;
+  private hullArt!: HullDamageArt;
   constructor() { super('ArcadeScene'); }
   preload(): void {
     enableCombatResolution(this);
+    preloadHullDamageArt(this, import.meta.env.BASE_URL);
     const base = import.meta.env.BASE_URL;
     this.load.spritesheet('arc-ufo', `${base}assets/arcade/ufo.webp`, { frameWidth: 256, frameHeight: 256 });
     for (const [key, file] of [[SUPPLY_ART, 'supply-items'], [SUPPLY_DRONE_BODY_ART, 'supply-drone-body'], [SUPPLY_DRONE_PROP_ART, 'supply-drone-propeller'], [SUB_ART, 'submarines'], [BOMB_ART, 'bomb-flight'], [BLAST_ART, 'colossal-blast'], [SUB_HULL_ART, 'colossal-sub-hull'], [SUB_SUBMERGED_ART, 'colossal-sub-submerged'], [SUB_PARTS_ART, 'colossal-sub-parts']]) this.load.image(key, `${base}assets/arcade/pelagic-review/${file}.png`);
@@ -216,6 +224,7 @@ export class ArcadeScene extends Phaser.Scene {
     try { const stored = localStorage.getItem('bullet_wake_visual'); if (stored !== null) this.quality = clamp(Number(stored) || 0, 0, 2); } catch {/* Optional preference. */ }
     installCombatArt(this); installMenuAnims(this); this.hitOverlays = new HitOverlays(this); this.bombArt = new BombArt(this); this.subBossArt = new SubmarineBossArt(this);
     this.pelagicAnims = new PelagicActorAnims(this);
+    this.hullArt = new HullDamageArt(this);
     this.backdrop = new ArcadeBackdrop(this); this.emplacements = new PelagicEmplacements(this); this.decor = this.add.graphics().setDepth(40); this.combatInk = this.add.graphics().setDepth(12);
     this.vfxGfx = this.add.graphics().setDepth(52);
     this.warningBannerText = this.add.text(384, 108, '', { fontFamily: FONT, fontSize: '13.5px', fontStyle: 'bold', color: '#ffe654', stroke: '#3a0612', strokeThickness: 3.5, align: 'center' }).setResolution(2).setOrigin(.5).setDepth(53).setVisible(false);
@@ -237,6 +246,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.installIntroActors();
     this.ui = this.add.container(0, 0).setDepth(60);
     this.hud = this.add.text(0, 0, '', { fontFamily: FONT, fontSize: '11px', fontStyle: 'bold', color: '#ffffff', stroke: '#153550', strokeThickness: 3 }).setResolution(2).setDepth(45);
+    this.footerScore = this.add.text(0, 0, '', { fontFamily: FONT, fontSize: '9px', color: '#ffe987', stroke: '#041430', strokeThickness: 2 }).setResolution(2).setOrigin(1, .5).setDepth(46).setVisible(false);
     this.pelagicLevel = this.add.text(408, 14.5, '', { fontFamily: FONT, fontSize: '11.5px', fontStyle: 'bold italic', color: '#ffffff', stroke: '#04122b', strokeThickness: 2.8 }).setResolution(2).setOrigin(0, .5).setDepth(45).setVisible(false);
     this.pelagicAssistBadge = this.add.text(648, 14.5, 'ASSISTIDO', { fontFamily: FONT, fontSize: '8.5px', fontStyle: 'bold italic', color: '#8cfff3', stroke: '#041430', strokeThickness: 2 }).setResolution(2).setOrigin(.5).setDepth(46).setVisible(false);
     this.pelagicCheckpointBadge = this.add.text(384, 44, 'CHECKPOINT ALCANÇADO', { fontFamily: FONT, fontSize: '11px', fontStyle: 'bold', color: '#ffe654', backgroundColor: '#061c40', padding: { x: 10, y: 4 }, stroke: '#041430', strokeThickness: 3 }).setResolution(2).setOrigin(.5).setDepth(48).setVisible(false);
@@ -261,6 +271,7 @@ export class ArcadeScene extends Phaser.Scene {
       window.removeEventListener('orientationchange', onResize);
       this.scale.off('resize', onResize);
       this.backdrop.destroy(); this.pelagicAnims?.destroy();
+      this.hullArt?.destroy();
     });
   }
   private makeOrbTextures(): void {
@@ -731,8 +742,9 @@ export class ArcadeScene extends Phaser.Scene {
       const prog = this.arcadeProgress(), unlocked = prog.cleared.includes(1);
       for (let i = 0; i < 2; i++) {
         const cx = i ? 562 : 206, m = MISSIONS[i], avail = i === 0 || unlocked;
-        const bestScoreRec = globalProfileStore.bestScoreForMission(m.id, this.selectedPilotId);
-        const bestRankRec = globalProfileStore.bestRankForMission(m.id, this.selectedPilotId);
+        const rule = globalProfileStore.getSettings().survivalRule;
+        const bestScoreRec = globalProfileStore.bestScoreForMission(m.id, this.selectedPilotId, rule);
+        const bestRankRec = globalProfileStore.bestRankForMission(m.id, this.selectedPilotId, rule);
         const best = Math.max(bestScoreRec, this.bestScoreFor(m.id));
         const rankStr = bestRankRec ? `  •  RANK ${bestRankRec}` : '';
         makeVectorPanel(this, this.ui, cx, 204, 326, 238, { kind: 'main', cut: 14 });
@@ -760,6 +772,7 @@ export class ArcadeScene extends Phaser.Scene {
       }
 
       // Bottom utility bar: VOLTAR | DIFICULDADE inline | ASSISTIDO inline | TREINO
+      this.text(384, 337, globalProfileStore.getSettings().survivalRule === 'hull-v1' ? 'CASCO: 4 SEGMENTOS • REPAIR +1 • IMPACTO: POWER −1 • RECORDES PRÓPRIOS' : 'CLÁSSICO: VIDAS ARCADE • RECORDES CLÁSSICOS', 8.2, UI.cyanHex);
       this.button(114, 366, 'VOLTAR', () => this.show('pilot'), 132, 28, { fontSize: 11, variant: 'back' });
       const stepDiff = (dir: -1 | 1) => {
         globalSave.updateSettings({ difficulty: stepGameDifficulty(globalSave.getSettings().difficulty, dir) });
@@ -953,6 +966,7 @@ export class ArcadeScene extends Phaser.Scene {
             : w.difficultyProfile.label;
         makeStatusPill(this, this.ui, 384, 102, `ROTA 0${this.currentMission + 1} • ${w.pilotContract.name.toUpperCase()} • ${modeTag}`, UI.cyan, UI.cyanHex);
         this.text(384, 126, `PROGRESSO ${pct}%  •  ${w.score} PTS  •  NV ${w.weapons.weaponLevel}`, 9.5, UI.white);
+        if (w.survivalRule === 'hull-v1') this.text(384, 141, `CASCO ${w.hull}/${w.hullMaximum} • REPAIR recupera 1 segmento. POWER é recuperado com P.`, 8, UI.cyanHex);
       }
       this.button(384, 166, 'CONTINUAR', () => this.show('play'), 256, 32, { fontSize: 12, variant: 'primary' });
       this.button(384, 206, 'CONTROLES', () => this.show('controls'), 256, 32, { fontSize: 11.5, variant: 'secondary' });
@@ -1133,6 +1147,7 @@ export class ArcadeScene extends Phaser.Scene {
         this.text(528, 312, 'Personalize tamanho, lado e transparência em OPÇÕES.', 8, UI.silver, { wrap: 280 });
       }
 
+      this.text(384, 335, 'CASCO: 4 impactos • REPAIR +1 • dano reduz POWER • P recupera armamento • controle preservado', 7.7, UI.cyanHex);
       this.button(384, preGame ? 356 : 372, 'VOLTAR', () => { this.nextControlsFocus = undefined; this.show(this.world ? 'pause' : this.pauseOrigin); }, preGame ? 188 : 204, preGame ? 30 : 34, { fontSize: 12, variant: 'back' });
       this.focus = this.nextControlsFocus ?? tabs.findIndex(t => t.id === this.controlsTab);
       this.nextControlsFocus = undefined;
@@ -1149,7 +1164,9 @@ export class ArcadeScene extends Phaser.Scene {
       const syncWorldDifficulty = () => {
         if (!this.world) return;
         const cur = globalSave.getSettings();
-        this.world.assisted = this.currentMission === 0 && cur.assisted;
+        const assisted = (this.currentMission === 0 || this.world.survivalRule === 'hull-v1') && cur.assisted;
+        if (assisted !== this.world.assisted && this.world.route > 0) this.world.rulesChanged = true;
+        this.world.assisted = assisted;
         this.world.setDifficulty(cur.difficulty);
         this.pelagicAssistBadge.setVisible(!!this.world.up && this.world.isAssisted);
       };
@@ -1238,7 +1255,11 @@ export class ArcadeScene extends Phaser.Scene {
       addBoolRow(287, 'REDUZIR FLASHES INTENSOS',
         () => globalProfileStore.getSettings().reducedFlash,
         () => { globalProfileStore.updateSettings({ reducedFlash: !globalProfileStore.getSettings().reducedFlash }); });
-      this.text(384, 316, 'Disparo Acessível: tiro contínuo mãos-livres. Assistido: recuperação facilitada (fora do ranking puro).', 7.9, UI.silver);
+      addToggleRow(318, 'SOBREVIVÊNCIA', 2, 'green', () => {
+        const hull = globalProfileStore.getSettings().survivalRule === 'hull-v1';
+        return { text: hull ? 'CASCO 4' : 'CLÁSSICO', filled: hull ? 2 : 1 };
+      }, () => { globalProfileStore.updateSettings({ survivalRule: globalProfileStore.getSettings().survivalRule === 'hull-v1' ? 'classic-v1' : 'hull-v1' }); });
+      this.text(384, 388, 'Sobrevivência vale na próxima partida. Casco: REPAIR +1, impacto reduz POWER; recordes separados.', 7.7, UI.silver);
       this.button(268, 350, 'CONTROLES TOUCH', () => this.show('touch-settings'), 204, 30, { fontSize: 11.2, variant: 'secondary' });
       this.button(500, 350, 'VOLTAR', () => this.show(this.pauseOrigin), 204, 30, { fontSize: 11.5, variant: 'back' });
       if (preGame) {
@@ -1370,8 +1391,9 @@ export class ArcadeScene extends Phaser.Scene {
       if (evalRes.badges.length > 0) {
         this.text(466, 212, `SELOS: ${evalRes.badges.join('  •  ')}`, 9.5, UI.goldHex);
       } else {
-        this.text(466, 212, 'Potência, vidas e especiais seguem para a próxima rota.', 9.2, UI.silver);
+        this.text(466, 212, w.survivalRule === 'hull-v1' ? 'Potência, casco e especiais seguem para a próxima rota.' : 'Potência, vidas e especiais seguem para a próxima rota.', 9.2, UI.silver);
       }
+      if (w.survivalRule === 'hull-v1') this.text(466, 228, `CASCO ${w.hull}/${w.hullMaximum} • IMPACTOS ${w.hitsReceived} • REPAROS ${w.repairsCollected}`, 8.4, UI.cyanHex);
       const creditsWon = outcome ? outcome.creditsAdded : evalRes.creditsEarned;
       const unlockParts: string[] = [];
       if (creditsWon > 0) unlockParts.push(`+${creditsWon} CR`);
@@ -1391,7 +1413,7 @@ export class ArcadeScene extends Phaser.Scene {
       const w = this.world!;
       const defeatOutcome = this.recordDefeatProgress();
       makeVectorPanel(this, this.ui, 384, 214, 520, 352, { kind: 'gold' });
-      makeVectorBanner(this, this.ui, 384, 42, 316, 34, 'ATERRISSAGEM… CRIATIVA!', { kind: 'red', fontSize: 15 });
+      makeVectorBanner(this, this.ui, 384, 42, 316, 34, w.survivalRule === 'hull-v1' ? 'CASCO DESTRUÍDO' : 'ATERRISSAGEM… CRIATIVA!', { kind: 'red', fontSize: 15 });
       makeVectorPanel(this, this.ui, 384, 124, 114, 114, { kind: 'sub', cut: 10 });
       const loseFrame = w?.pilotId === 'nolan' ? 2 : (w?.pilotContract.portraitFrame ?? 2);
       this.ui.add(this.add.image(384, 123, 'arc-pilots', loseFrame).setDisplaySize(96, 96));
@@ -1459,6 +1481,8 @@ export class ArcadeScene extends Phaser.Scene {
     const usePortrait = index === 0 && this.isPortraitMobileMode();
     const portH = usePortrait ? this.portraitCanvasHeight() : 432;
     const practiceMode = Boolean(opts?.practiceMode);
+    const survivalRule = globalProfileStore.getSettings().survivalRule;
+    if (carry && (carry.survival?.rule ?? 'classic-v1') !== survivalRule) carry = undefined;
     const pilotId = globalProfileStore.isPilotUnlocked(this.selectedPilotId) ? this.selectedPilotId : 'nolan';
     this.selectedPilotId = pilotId;
     this.world = new ArcadeWorld(MISSIONS[index], carry, {
@@ -1468,9 +1492,11 @@ export class ArcadeScene extends Phaser.Scene {
       } : {}),
       pilotId,
       practiceMode,
+      survivalRule,
+      difficulty: settings.difficulty,
     });
     this.world.accessibility = settings.rapidFire;
-    this.world.assisted = index === 0 && settings.assisted;
+    this.world.assisted = settings.assisted && (index === 0 || survivalRule === 'hull-v1');
     this.world.setDifficulty(settings.difficulty);
     this.accumulator = 0;
     this.shakeTime = 0;
@@ -1478,12 +1504,20 @@ export class ArcadeScene extends Phaser.Scene {
     this.damageFlashAlpha = 0;
     this.bossWarningUntil = 0;
     this.firstSortieHintUntil = this.clock + 3.8;
+    this.hullDefeatAt = 0;
+    this.runId = crypto.randomUUID();
     this.replayRecorder = new ReplayRecorder({
       missionId: MISSIONS[index].id,
       pilotId,
       difficulty: this.world.difficulty,
       assisted: this.world.isAssisted,
       seed: this.world.seed,
+      survivalRule,
+      maxHull: this.world.hullMaximum,
+      carry,
+      upLayout: this.world.upLayout,
+      arena: this.world.arena,
+      rapidFire: this.world.accessibility,
     });
     this.world.bossContact = (_boss, ax, ay, bx, by, radius) => spriteContact(this.bossSprite, ax, ay, bx, by, radius);
     this.world.subHullContact = (_sub, secIdx, ax, ay, bx, by, radius) => this.subBossArt.hullContact(secIdx, ax, ay, bx, by, radius);
@@ -1516,6 +1550,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.refreshHudVisual();
   }
   private disposeWorld(): void {
+    this.hullArt?.clear();
     this.touchController?.clearAll(); this.emplacements?.clear(); this.hitOverlays?.clear(); this.bombArt?.draw(); this.subBossArt?.clear(); this.bossHudLabel?.setVisible(false); this.pelagicAssistBadge?.setVisible(false); this.pelagicCheckpointBadge?.setVisible(false); this.pelagicSpecialText?.setVisible(false); this.pelagicAnims?.clear(); this.pelagicComms.reset(); this.pelagicDesktopHud?.resetComms();
     this.clearBonusPopups();
     this.vfxGfx?.clear();
@@ -1669,7 +1704,7 @@ export class ArcadeScene extends Phaser.Scene {
       }
       this.consumeEvents();
       this.renderTouchOverlay();
-      if (this.world.state === 'victory') { this.saveClear(); this.show('result'); } else if (this.world.state === 'defeat') this.show('defeat');
+      if (this.world.state === 'victory') { this.saveClear(); this.show('result'); } else if (this.world.state === 'defeat' && this.clock >= this.hullDefeatAt) this.show('defeat');
     }
     const animated = this.world && this.screen !== 'play' ? this.world.elapsed : this.clock;
     const showMenuBackdrop = !['loading', 'intro'].includes(this.screen);
@@ -1723,6 +1758,7 @@ export class ArcadeScene extends Phaser.Scene {
     sp.setFlipX(active.dir > 0).setPosition(x, y).setDisplaySize(active.size, active.size).setAngle(tilt).setAlpha(0.96).setVisible(true);
   }
   private renderMenu(): void {
+    this.footerScore.setVisible(false);
     this.decor.clear(); this.hud.setText(''); this.combatInk.clear(); const time = this.clock;
     this.hero.setVisible(false);
     this.wingmen.forEach(s => s.setVisible(false));
@@ -1788,6 +1824,7 @@ export class ArcadeScene extends Phaser.Scene {
     } else if (w.pilotId !== 'nolan') {
       this.player.setTint(w.pilotContract.hullColor);
     }
+    this.hullArt.update(w, this.player, dt, ['play', 'pause', 'defeat', 'result'].includes(this.screen));
     // Precision FOCUS hitbox indicator (exact 5×7px core + soft cyan ring)
     if (w.player.focusActive && w.state === 'play') {
       g.lineStyle(1.3, 0x67e8f9, 0.92).strokeCircle(w.player.x, w.player.y, 6.2 + Math.sin(this.clock * 14) * 0.6);
@@ -2083,8 +2120,10 @@ export class ArcadeScene extends Phaser.Scene {
           .setAlpha(0.68);
       } else {
         // Released supply icon (rows 1..3 of supply-items.png: P, Heart, Bomb — never balloon row 0)
+        const repair = c.kind === 'repair' || (c.kind === 'life' && w.survivalRule === 'hull-v1');
         const start = c.kind === 'power' ? 4 : c.kind === 'life' ? 8 : 12;
-        const frame = start + (Math.floor(c.age * 8) % 4);
+        const frame = repair ? Math.floor(c.age * 10) % 8 : start + (Math.floor(c.age * 8) % 4);
+        const supplyTexture = repair ? 'hull-repair-pickup' : SUPPLY_ART;
         const recoveryCapsule = c.kind === 'power' && (c.recoveryP ?? 0) > 0;
         const pop = c.dropPop ?? 0;
         const popScale = pop > 0 ? 1 + Math.sin(pop * Math.PI) * 0.28 : 1;
@@ -2093,10 +2132,10 @@ export class ArcadeScene extends Phaser.Scene {
         const displaySize = baseSize * popScale * breathe;
         const bobY = Math.sin(c.age * 5.2 + c.id) * 2.4;
         const swayDeg = Math.sin(c.age * 3.8 + c.id) * 5.5;
-        const auraColor = recoveryCapsule ? 0xffe45e : c.kind === 'power' ? 0x38dfff : c.kind === 'life' ? 0xff5a7a : 0xff9b36;
+        const auraColor = repair ? 0x71ffd4 : recoveryCapsule ? 0xffe45e : c.kind === 'power' ? 0x38dfff : c.kind === 'life' ? 0xff5a7a : 0xff9b36;
         const auraAlpha = 0.44 + Math.sin(c.age * 6.4 + c.id) * 0.14;
 
-        if (sprite.texture.key !== SUPPLY_ART) sprite.setTexture(SUPPLY_ART, frame);
+        if (sprite.texture.key !== supplyTexture) sprite.setTexture(supplyTexture, frame);
         sprite
           .setFrame(frame)
           .setOrigin(0.5, 0.5)
@@ -2140,6 +2179,9 @@ export class ArcadeScene extends Phaser.Scene {
   }
   private renderHud(dt = 0): void {
     const w = this.world!, g = this.decor; g.clear();
+    this.footerScore.setVisible(!w.up || this.portraitUpActive).setText(`PONTOS ${w.score}`)
+      .setFontSize(this.portraitUpActive ? 8 : 9)
+      .setPosition(this.portraitUpActive ? 376 : 748, this.portraitUpActive ? getCombatVirtualSize(this).h - 6 : 424);
     if (w.up) {
       const cpVisible = this.clock < this.checkpointBannerUntil && this.screen === 'play';
       if (this.portraitUpActive) {
@@ -2148,7 +2190,8 @@ export class ArcadeScene extends Phaser.Scene {
         // Android Portrait HUD: compact essential top strip only (no side panels, no Bayek portrait, no radio).
         g.fillStyle(0x051936, .90).fillRoundedRect(4, 3, 376, 26, 7);
         g.lineStyle(1.3, 0x26dcff, .85).strokeRoundedRect(4, 3, 376, 26, 7);
-        this.lifeIcons.forEach((sprite, i) => sprite.setPosition(16 + i * 13.5, 16).setDisplaySize(12.5, 15).setVisible(true).setAlpha(i < w.lives ? 1 : .20));
+        this.lifeIcons.forEach((sprite, i) => sprite.setPosition(16 + i * 13.5, 16).setDisplaySize(12.5, 15).setVisible(w.survivalRule !== 'hull-v1').setAlpha(i < w.lives ? 1 : .20));
+        if (w.survivalRule === 'hull-v1') drawHullSegments(g, 12, 10, 64, 12, w.hull, w.hullMaximum);
         this.pelagicLevel.setFontSize(9.5).setOrigin(0, .5).setPosition(90, 16).setText(`NV ${w.weapons.weaponLevel}`).setVisible(true);
         for (let i = 0; i < 5; i++) {
           g.fillStyle(i < w.weapons.weaponLevel ? 0x21e3f4 : 0x103d68).fillRoundedRect(122 + i * 11, 11.5, 9, 8.5, 2);
@@ -2162,9 +2205,9 @@ export class ArcadeScene extends Phaser.Scene {
           g.fillStyle(0x051936, 0.9).fillRoundedRect(122, 23, 53, 4, 2);
           g.fillStyle(cPort.isFull ? 0xfef08a : 0x38bdf8, 0.96).fillRoundedRect(122, 23, Math.max(3, 53 * cPort.ratio), 4, 2);
         }
-        const scoreLine = String(w.score).padStart(6, '0');
+        const scoreLine = w.survivalRule === 'hull-v1' ? `${w.hull}/${w.hullMaximum} ${HULL_STATES[w.hullState].label}` : `${w.lives} VIDAS`;
         if (scoreLine !== this.lastHud) {
-          this.hud.setFontSize(13).setColor('#ffe654').setStroke('#032f74', 2).setOrigin(1, .5);
+          this.hud.setFontSize(8.5).setColor('#b8fff1').setStroke('#032f74', 2).setOrigin(1, .5);
           this.hud.setText(scoreLine).setPosition(344, 16);
           this.lastHud = scoreLine;
         }
@@ -2198,6 +2241,7 @@ export class ArcadeScene extends Phaser.Scene {
         w.state === 'intro',
         this.clock,
         dt,
+        this.touchShown,
       );
     } else {
       this.pelagicDesktopHud.setVisible(false);
@@ -2209,13 +2253,14 @@ export class ArcadeScene extends Phaser.Scene {
       // Side-scrolling mission and its horizontal score bar are unchanged.
       g.fillStyle(BLUE, .92).fillRoundedRect(9, 5, 750, 29, 10);
       g.lineStyle(1, 0x8ee5e4, .7).strokeRoundedRect(9, 5, 750, 29, 10);
-      const line = `${w.pilotContract.name.toUpperCase()} / ${w.pilotContract.shipName}     ${w.score}     NV ${w.weapons.weaponLevel} ${w.weapons.powerMeter ? `+${w.weapons.powerMeter}P` : ''}`;
+      const line = `${w.pilotContract.name.toUpperCase()} / ${w.pilotContract.shipName}     NV ${w.weapons.weaponLevel} ${w.weapons.powerMeter ? `+${w.weapons.powerMeter}P` : ''}    ${w.survivalRule === 'hull-v1' ? `CASCO ${w.hull}/${w.hullMaximum}` : ''}`;
       if (line !== this.lastHud) {
         this.hud.setFontSize(11).setColor('#ffffff').setStroke('#153550', 3).setOrigin(0, 0);
         this.hud.setText(line).setPosition(22, 13);
         this.lastHud = line;
       }
-      this.lifeIcons.forEach((sprite, i) => sprite.setPosition(447 + i * 17, 19).setDisplaySize(15, 19).setVisible(true).setAlpha(i < w.lives ? 1 : .18));
+      this.lifeIcons.forEach((sprite, i) => sprite.setPosition(447 + i * 17, 19).setDisplaySize(15, 19).setVisible(w.survivalRule !== 'hull-v1').setAlpha(i < w.lives ? 1 : .18));
+      if (w.survivalRule === 'hull-v1') drawHullSegments(g, 447, 11, 91, 13, w.hull, w.hullMaximum);
       for (let i = 0; i < 5; i++) {
         const x = 589 + i * 20; g.fillStyle(i < w.weapons.specialCharges ? 0xffd95a : 0x45718a);
         g.beginPath().moveTo(x + 2, 9).lineTo(x - 5, 20).lineTo(x, 20).lineTo(x - 2, 29).lineTo(x + 7, 16).lineTo(x + 2, 16).closePath().fillPath();
@@ -2261,6 +2306,11 @@ export class ArcadeScene extends Phaser.Scene {
         if (w.grazeCount % 5 === 1) this.spawnBonusPopup(e.x, e.y, 25, 'GRAZE');
       }
       else if (e.type === 'death') {
+        if (w.survivalRule === 'hull-v1') {
+          this.hullDefeatAt = this.clock + .95;
+          this.hullArt.triggerDestruction(e.x, e.y, w.up);
+          globalAudio.playArcade('boom');
+        }
         this.shakeTime = 0.34;
         this.shakeAmp = 4.6;
         this.damageFlashAlpha = 1;
@@ -2275,7 +2325,19 @@ export class ArcadeScene extends Phaser.Scene {
         if (sz >= 1.6) { this.shakeTime = Math.max(this.shakeTime, 0.2); this.shakeAmp = Math.max(this.shakeAmp, 3.0); }
         if (e.text !== 'special-blast') { this.layeredExplosion(e); if (w.up) this.pelagicAnims.spawnEnemyDestruction(e.x, e.y, e.text, sz, this.quality); }
       }
-      else if (e.type === 'pickup') globalAudio.playPickup(e.text ?? 'power');
+      else if (e.type === 'damage') {
+        globalAudio.playArcade('impact');
+        if (w.hull === 1) globalAudio.playArcade('low-life');
+        this.shakeTime = .14; this.shakeAmp = 1.2; this.damageFlashAlpha = .35;
+        this.pelagicAnims.triggerPlayerDamage();
+        this.spawnBonusPopup(e.x, e.y - 20, 0, e.text);
+        this.vibrateHullImpact();
+      }
+      else if (e.type === 'repair') {
+        this.hullArt.triggerRepair(); globalAudio.playPickup('repair');
+        this.spawnBonusPopup(e.x, e.y - 20, 0, e.text);
+      }
+      else if (e.type === 'pickup' && e.text !== 'repair') globalAudio.playPickup(e.text ?? 'power');
       else if (e.type === 'special') {
         globalAudio.playSpecial(w.pilotContract.specialType);
         this.shakeTime = Math.max(this.shakeTime, 0.28);
@@ -2316,6 +2378,13 @@ export class ArcadeScene extends Phaser.Scene {
         if (!w.boss && w.route > 155) this.audio.play(w.up ? 'stage1' : 'stage2');
       }
     } w.events.length = 0;
+  }
+  private vibrateHullImpact(): void {
+    if (typeof navigator === 'undefined') return;
+    if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.(35);
+    const pad = Array.from(navigator.getGamepads?.() ?? []).find(p => p?.connected);
+    const actuator = pad?.vibrationActuator;
+    if (actuator) void actuator.playEffect('dual-rumble', { duration: 65, strongMagnitude: .2, weakMagnitude: .3 }).catch(() => {});
   }
   private pushPelagicCommsEvent(code: string): void {
     if (code === 'start') {
@@ -2380,6 +2449,8 @@ export class ArcadeScene extends Phaser.Scene {
     this.messageUntil = this.clock + (up ? 6 : 3.3);
   }
   private bestScoreFor(stageId?: number): number {
+    const rule = this.world?.survivalRule ?? globalProfileStore.getSettings().survivalRule;
+    if (rule === 'hull-v1') return globalProfileStore.bestScoreForMission(stageId, this.selectedPilotId, rule);
     const rec = globalSave.getData().bestScores;
     if (stageId !== undefined) return rec[stageId]?.score ?? 0;
     const vals = Object.values(rec).map(r => r.score);
@@ -2390,7 +2461,7 @@ export class ArcadeScene extends Phaser.Scene {
     if (this.devSaveGuard || this.stageClearSaved || !this.world) return;
     this.stageClearSaved = true;
     const w = this.world;
-    this.carried = stageFlightSnapshot(w.mission.id, w.weapons, w.lives, w.score);
+    this.carried = stageFlightSnapshot(w.mission.id, w.weapons, w.lives, w.score, w.survivalSnapshot);
     if (!w.practiceMode) {
       const data = recordArcadeClear(this.arcadeProgress(), this.carried);
       try { localStorage.setItem('bullet_wake_arcade_v1', JSON.stringify(data)); } catch {/* Memory carry still supports next stage. */ }
@@ -2398,7 +2469,8 @@ export class ArcadeScene extends Phaser.Scene {
       this.replayRecorder?.finish();
       const { evaluation, achievements } = w.evaluateRun(true);
       const outcome = globalProfileStore.recordRunResult({
-        runId: `m${w.mission.id}:${w.seed}:${Math.round(w.elapsed * 100)}:${w.score}:win`,
+        runId: `${this.runId}:win`,
+        survivalRule: w.survivalRule,
         missionId: w.mission.id,
         pilotId: w.pilotId,
         difficulty: w.difficulty,
@@ -2426,7 +2498,8 @@ export class ArcadeScene extends Phaser.Scene {
     if (w.practiceMode) return undefined;
     const { evaluation, achievements } = w.evaluateRun(false);
     const outcome = globalProfileStore.recordRunResult({
-      runId: `m${w.mission.id}:${w.seed}:${Math.round(w.elapsed * 100)}:${w.score}:loss`,
+      runId: `${this.runId}:loss:${w.continuesUsed}`,
+      survivalRule: w.survivalRule,
       missionId: w.mission.id,
       pilotId: w.pilotId,
       difficulty: w.difficulty,

@@ -1,0 +1,102 @@
+{
+  "originalArt": true,
+  "style": "Bézier cel shaded cartoon/anime overlays",
+  "sheets": [
+    {
+      "key": "hull-scars-up",
+      "size": 64,
+      "frames": 3,
+      "width": 192,
+      "height": 64,
+      "alpha": {
+        "clear": 11379,
+        "solid": 48,
+        "partial": 861
+      }
+    },
+    {
+      "key": "hull-scars-side",
+      "size": 64,
+      "frames": 3,
+      "width": 192,
+      "height": 64,
+      "alpha": {
+        "clear": 11330,
+        "solid": 49,
+        "partial": 909
+      }
+    },
+    {
+      "key": "hull-smoke",
+      "size": 64,
+      "frames": 8,
+      "width": 512,
+      "height": 64,
+      "alpha": {
+        "clear": 17493,
+        "solid": 13732,
+        "partial": 1543
+      }
+    },
+    {
+      "key": "hull-flame",
+      "size": 64,
+      "frames": 8,
+      "width": 512,
+      "height": 64,
+      "alpha": {
+        "clear": 19846,
+        "solid": 10930,
+        "partial": 1992
+      }
+    },
+    {
+      "key": "hull-spark",
+      "size": 64,
+      "frames": 4,
+      "width": 256,
+      "height": 64,
+      "alpha": {
+        "clear": 14432,
+        "solid": 187,
+        "partial": 1765
+      }
+    },
+    {
+      "key": "hull-repair",
+      "size": 64,
+      "frames": 8,
+      "width": 512,
+      "height": 64,
+      "alpha": {
+        "clear": 27332,
+        "solid": 1349,
+        "partial": 4087
+      }
+    },
+    {
+      "key": "hull-destruction",
+      "size": 128,
+      "frames": 8,
+      "width": 1024,
+      "height": 128,
+      "alpha": {
+        "clear": 88731,
+        "solid": 28709,
+        "partial": 13632
+      }
+    },
+    {
+      "key": "hull-repair-pickup",
+      "size": 64,
+      "frames": 8,
+      "width": 512,
+      "height": 64,
+      "alpha": {
+        "clear": 21114,
+        "solid": 10654,
+        "partial": 1000
+      }
+    }
+  ]
+}

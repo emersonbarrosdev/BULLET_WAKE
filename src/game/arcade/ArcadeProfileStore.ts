@@ -7,6 +7,7 @@ import { rankWeight, type ArcadeRank } from './ArcadeRanking.ts';
 import { defaultTouchSettings, sanitizeTouchSettings, type TouchControlSettings } from './TouchControls.ts';
 import { readArcadeProgress, type ArcadeProgress } from './progress.ts';
 import type { CampaignFlight } from '../systems/campaignFlight.ts';
+import { normalizeHullSnapshot, type SurvivalRule } from './HullIntegrity.ts';
 import { STORAGE_KEY as LEGACY_SAVE_KEY } from '../systems/saveSystem.ts';
 
 export const PROFILE_SCHEMA_VERSION = 4;
@@ -40,6 +41,7 @@ export interface PlayerSettings {
   reducedFlash: boolean;
   touch: TouchControlSettings;
   keyBindings: KeyBindings;
+  survivalRule: SurvivalRule;
 }
 
 export interface CompetitiveRecord {
@@ -162,8 +164,9 @@ export function recordKey(
   pilotId: PilotId,
   difficulty: GameDifficulty,
   competitiveEligible: boolean,
+  survivalRule: SurvivalRule = 'classic-v1',
 ): string {
-  return `m${missionId}:${pilotId}:${difficulty}:${competitiveEligible ? 'pure' : 'assist'}`;
+  return `m${missionId}:${pilotId}:${difficulty}:${competitiveEligible ? 'pure' : 'assist'}${survivalRule === 'hull-v1' ? ':hull-v1' : ''}`;
 }
 
 export function defaultProfileV4(): PlayerProfileV4 {
@@ -182,6 +185,7 @@ export function defaultProfileV4(): PlayerProfileV4 {
       reducedFlash: false,
       touch: defaultTouchSettings(),
       keyBindings: { ...DEFAULT_KEY_BINDINGS },
+      survivalRule: 'hull-v1',
     },
     clearedStages: [],
     flights: {},
@@ -278,6 +282,7 @@ export class ArcadeProfileStore {
         reducedFlash: Boolean(rawSettings.reducedFlash),
         touch: sanitizeTouchSettings(rawSettings.touch),
         keyBindings: sanitizeKeyBindings(rawSettings.keyBindings),
+        survivalRule: rawSettings.survivalRule === 'classic-v1' ? 'classic-v1' : 'hull-v1',
       },
       clearedStages: Array.isArray(raw.clearedStages)
         ? [...new Set<number>(raw.clearedStages.filter((n): n is number => n === 1 || n === 2))].sort((a, b) => a - b)
@@ -412,6 +417,7 @@ export class ArcadeProfileStore {
       ...patch,
       touch: patch.touch ? sanitizeTouchSettings(patch.touch) : this.profile.settings.touch,
       keyBindings: patch.keyBindings ? sanitizeKeyBindings(patch.keyBindings) : this.profile.settings.keyBindings,
+      survivalRule: patch.survivalRule === undefined ? this.profile.settings.survivalRule : patch.survivalRule === 'classic-v1' ? 'classic-v1' : 'hull-v1',
     };
     this.save();
   }
@@ -443,6 +449,7 @@ export class ArcadeProfileStore {
     rank: ArcadeRank;
     victory: boolean;
     competitiveEligible: boolean;
+    survivalRule?: SurvivalRule;
     assisted: boolean;
     noMiss: boolean;
     noBomb: boolean;
@@ -461,7 +468,11 @@ export class ArcadeProfileStore {
         this.profile.clearedStages.sort((a, b) => a - b);
       }
       if (params.flight) {
-        this.profile.flights[`${params.pilotId}:${params.missionId}`] = structuredClone(params.flight);
+        const flight = structuredClone(params.flight);
+        const survival = normalizeHullSnapshot(flight.survival);
+        if (survival) flight.survival = survival;
+        else delete flight.survival;
+        this.profile.flights[`${params.pilotId}:${params.missionId}`] = flight;
       }
       // Organic milestone unlocks for pilots
       if (params.missionId === 1) {
@@ -479,7 +490,7 @@ export class ArcadeProfileStore {
       }
     }
 
-    const key = recordKey(params.missionId, params.pilotId, params.difficulty, params.competitiveEligible);
+    const key = recordKey(params.missionId, params.pilotId, params.difficulty, params.competitiveEligible, params.survivalRule);
     const prev = this.profile.records[key];
     if (!prev || params.score > prev.score || rankWeight(params.rank) > rankWeight(prev.rank)) {
       newRecord = !prev || params.score > prev.score;
@@ -518,9 +529,10 @@ export class ArcadeProfileStore {
     return { newRecord, newlyUnlockedAchievements, newlyUnlockedPilots, creditsAdded };
   }
 
-  bestScoreForMission(missionId?: number, pilotId?: PilotId): number {
+  bestScoreForMission(missionId?: number, pilotId?: PilotId, survivalRule: SurvivalRule = 'classic-v1'): number {
     let best = 0;
     for (const [k, rec] of Object.entries(this.profile.records)) {
+      if (k.endsWith(':hull-v1') !== (survivalRule === 'hull-v1')) continue;
       if (missionId !== undefined && !k.startsWith(`m${missionId}:`)) continue;
       if (pilotId !== undefined && !k.includes(`:${pilotId}:`)) continue;
       if (rec.score > best) best = rec.score;
@@ -528,9 +540,10 @@ export class ArcadeProfileStore {
     return best;
   }
 
-  bestRankForMission(missionId: number, pilotId?: PilotId): ArcadeRank | null {
+  bestRankForMission(missionId: number, pilotId?: PilotId, survivalRule: SurvivalRule = 'classic-v1'): ArcadeRank | null {
     let best: ArcadeRank | null = null;
     for (const [k, rec] of Object.entries(this.profile.records)) {
+      if (k.endsWith(':hull-v1') !== (survivalRule === 'hull-v1')) continue;
       if (!k.startsWith(`m${missionId}:`)) continue;
       if (pilotId !== undefined && !k.includes(`:${pilotId}:`)) continue;
       if (!best || rankWeight(rec.rank) > rankWeight(best)) best = rec.rank;

@@ -1,4 +1,5 @@
 import type { CampaignFlight } from './campaignFlight.ts';
+import { normalizeHullSnapshot } from '../arcade/HullIntegrity.ts';
 import { CAMPAIGN_MAIN_STAGES, SECRET_PILOT_CODE, SECRET_STAGE_IDS } from '../data/pilotStories.ts';
 import { defaultTouchSettings, sanitizeTouchSettings, type TouchControlSettings } from '../arcade/TouchControls.ts';
 import { migrateLegacyDifficulty, type SavedDifficulty } from '../arcade/PelagicDifficulty.ts';
@@ -88,6 +89,12 @@ export class SaveSystem {
               },
             };
             // The previous untouched default is migrated; explicit custom mixes remain intact.
+            for (const progress of Object.values(this.data.pilotProgress)) {
+              if (!progress?.flight) continue;
+              const survival = normalizeHullSnapshot(progress.flight.survival);
+              if (survival) progress.flight.survival = survival;
+              else delete progress.flight.survival;
+            }
             if(parsed.settings?.musicVolume===0.55)this.data.settings.musicVolume=0.18;
             if(parsed.schemaVersion===1){
               for(const [stage,record] of Object.entries(this.data.bestScores)){
@@ -144,14 +151,21 @@ export class SaveSystem {
   recordStageClear(stageNumber: number, pilotId: string, score: number, flight?:CampaignFlight): void {
     if(!Number.isInteger(stageNumber)||stageNumber<1||stageNumber>17||!Number.isFinite(score))return;
     const progress=this.data.pilotProgress[pilotId]??={clearedStages:[],bestScores:{},endingSeen:false};
-    if(flight&&flight.pilotId===pilotId&&flight.clearedStage===stageNumber)progress.flight=structuredClone(flight);
+    if(flight&&flight.pilotId===pilotId&&flight.clearedStage===stageNumber){
+      progress.flight=structuredClone(flight);
+      const survival=normalizeHullSnapshot(flight.survival);
+      if(survival)progress.flight.survival=survival;
+      else delete progress.flight.survival;
+    }
     if(!progress.clearedStages.includes(stageNumber))progress.clearedStages.push(stageNumber);
     progress.clearedStages.sort((a,b)=>a-b);
-    progress.bestScores[stageNumber]=Math.max(progress.bestScores[stageNumber]??0,Math.max(0,score));
+    // Hull records belong to the versioned profile category; retain campaign unlocks and carry here.
+    const hullRun = flight?.survival?.rule === 'hull-v1';
+    if (!hullRun) progress.bestScores[stageNumber]=Math.max(progress.bestScores[stageNumber]??0,Math.max(0,score));
     const fullClear=Array.from({length:CAMPAIGN_MAIN_STAGES},(_,i)=>i+1).every(n=>progress.clearedStages.includes(n));
     if(fullClear){this.data.secretStagesUnlocked=true;for(const n of SECRET_STAGE_IDS)if(!this.data.unlockedStages.includes(n))this.data.unlockedStages.push(n);}
     const existing = this.data.bestScores[stageNumber];
-    if (!existing || score > existing.score) {
+    if (!hullRun && (!existing || score > existing.score)) {
       this.data.bestScores[stageNumber] = {
         score,
         pilotId,

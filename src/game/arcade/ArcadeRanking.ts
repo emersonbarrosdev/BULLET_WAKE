@@ -9,6 +9,7 @@ export interface RunEvaluationInput {
   readonly difficulty: GameDifficulty;
   readonly score: number;
   readonly deaths: number;
+  readonly hitsReceived?: number;
   readonly specialsUsed: number;
   readonly continuesUsed: number;
   readonly assisted: boolean;
@@ -61,6 +62,7 @@ export function rankWeight(rank: ArcadeRank): number {
 }
 
 export function evaluateArcadeRun(input: RunEvaluationInput): RunEvaluationResult {
+  const hits = input.hitsReceived ?? input.deaths;
   const competitiveEligible = !input.assisted && !input.practiceMode && input.continuesUsed === 0;
   const competitiveReason = input.practiceMode
     ? 'Modo Prática (não elegível para ranking oficial)'
@@ -78,7 +80,7 @@ export function evaluateArcadeRun(input: RunEvaluationInput): RunEvaluationResul
     if (
       competitiveEligible &&
       input.difficulty !== 'easy' &&
-      input.deaths === 0 &&
+      hits === 0 &&
       input.score >= table.sPlusScore &&
       (input.missionId !== 1 || cleanRatio >= 6 / 7)
     ) {
@@ -86,11 +88,11 @@ export function evaluateArcadeRun(input: RunEvaluationInput): RunEvaluationResul
     } else if (
       !input.assisted &&
       input.continuesUsed === 0 &&
-      input.deaths <= (input.difficulty === 'easy' ? 0 : 1) &&
+      hits <= (input.difficulty === 'easy' ? 0 : 1) &&
       input.score >= table.sScore
     ) {
       rank = 'S';
-    } else if (input.score >= table.aScore && input.deaths <= 2) {
+    } else if (input.score >= table.aScore && hits <= 2) {
       rank = 'A';
     } else if (input.score >= table.bScore) {
       rank = 'B';
@@ -108,7 +110,7 @@ export function evaluateArcadeRun(input: RunEvaluationInput): RunEvaluationResul
   const badges: Array<'1CC' | 'NO-MISS' | 'NO-BOMB' | 'ALL-SECTORS' | 'SPEEDKILL'> = [];
   if (input.victory && competitiveEligible) {
     badges.push('1CC');
-    if (input.deaths === 0) badges.push('NO-MISS');
+    if (hits === 0) badges.push('NO-MISS');
     if (input.specialsUsed === 0) badges.push('NO-BOMB');
     if (input.totalSectors > 0 && input.sectorsClean >= input.totalSectors) badges.push('ALL-SECTORS');
     if (input.bossSeconds > 0 && input.bossSeconds <= 75) badges.push('SPEEDKILL');
