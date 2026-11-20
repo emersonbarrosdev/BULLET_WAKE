@@ -2,148 +2,124 @@
   "errors": [],
   "captures": {
     "title": {
-      "bytes": 183948,
+      "bytes": 208040,
       "width": 1366,
       "height": 768,
       "minLuma": 14,
-      "maxLuma": 253,
-      "lumaStd": 57.64
+      "maxLuma": 252,
+      "lumaStd": 50.51
     },
     "pilots": {
-      "bytes": 164316,
-      "width": 1366,
-      "height": 768,
-      "minLuma": 19,
-      "maxLuma": 240,
-      "lumaStd": 44.7
-    },
-    "missions": {
-      "bytes": 148862,
-      "width": 1366,
-      "height": 768,
-      "minLuma": 28,
-      "maxLuma": 225,
-      "lumaStd": 41.16
-    },
-    "phase1-start": {
-      "bytes": 271458,
-      "width": 1366,
-      "height": 768,
-      "minLuma": 17,
-      "maxLuma": 249,
-      "lumaStd": 49.42
-    },
-    "phase1-coast": {
-      "bytes": 269582,
-      "width": 1366,
-      "height": 768,
-      "minLuma": 15,
-      "maxLuma": 251,
-      "lumaStd": 50.15
-    },
-    "phase1-harbor": {
-      "bytes": 285626,
-      "width": 1366,
-      "height": 768,
-      "minLuma": 15,
-      "maxLuma": 250,
-      "lumaStd": 51.11
-    },
-    "pause": {
-      "bytes": 134284,
-      "width": 1366,
-      "height": 768,
-      "minLuma": 16,
-      "maxLuma": 213,
-      "lumaStd": 33.58
-    },
-    "controls": {
-      "bytes": 110460,
-      "width": 1366,
-      "height": 768,
-      "minLuma": 17,
-      "maxLuma": 235,
-      "lumaStd": 34.01
-    },
-    "settings": {
-      "bytes": 129468,
-      "width": 1366,
-      "height": 768,
-      "minLuma": 18,
-      "maxLuma": 219,
-      "lumaStd": 34.74
-    },
-    "phase1-boss": {
-      "bytes": 230912,
-      "width": 1366,
-      "height": 768,
-      "minLuma": 16,
-      "maxLuma": 249,
-      "lumaStd": 41.99
-    },
-    "phase1-special": {
-      "bytes": 220460,
-      "width": 1366,
-      "height": 768,
-      "minLuma": 15,
-      "maxLuma": 250,
-      "lumaStd": 46.96
-    },
-    "phase1-return": {
-      "bytes": 245886,
-      "width": 1366,
-      "height": 768,
-      "minLuma": 15,
-      "maxLuma": 249,
-      "lumaStd": 43.3
-    },
-    "compact-touch": {
-      "bytes": 151714,
-      "width": 854,
-      "height": 480,
-      "minLuma": 20,
-      "maxLuma": 251,
-      "lumaStd": 51.52
-    },
-    "result-phase1": {
-      "bytes": 119610,
-      "width": 1366,
-      "height": 768,
-      "minLuma": 18,
-      "maxLuma": 236,
-      "lumaStd": 38.87
-    },
-    "result-phase2": {
-      "bytes": 85578,
-      "width": 1366,
-      "height": 768,
-      "minLuma": 19,
-      "maxLuma": 237,
-      "lumaStd": 38.53
-    },
-    "ending": {
-      "bytes": 133670,
-      "width": 1366,
-      "height": 768,
-      "minLuma": 23,
-      "maxLuma": 228,
-      "lumaStd": 43.15
-    },
-    "game-over": {
-      "bytes": 119412,
+      "bytes": 119448,
       "width": 1366,
       "height": 768,
       "minLuma": 14,
-      "maxLuma": 216,
-      "lumaStd": 29.21
+      "maxLuma": 235,
+      "lumaStd": 45.05
     },
-    "confirm-exit": {
-      "bytes": 127710,
+    "missions": {
+      "bytes": 140970,
+      "width": 1366,
+      "height": 768,
+      "minLuma": 17,
+      "maxLuma": 227,
+      "lumaStd": 42.88
+    },
+    "phase1-start": {
+      "bytes": 228092,
+      "width": 1366,
+      "height": 768,
+      "minLuma": 17,
+      "maxLuma": 243,
+      "lumaStd": 47.6
+    },
+    "phase1-coast": {
+      "bytes": 238686,
+      "width": 1366,
+      "height": 768,
+      "minLuma": 17,
+      "maxLuma": 240,
+      "lumaStd": 48.21
+    },
+    "phase1-harbor": {
+      "bytes": 242228,
+      "width": 1366,
+      "height": 768,
+      "minLuma": 17,
+      "maxLuma": 242,
+      "lumaStd": 49.08
+    },
+    "pause": {
+      "bytes": 102424,
+      "width": 1366,
+      "height": 768,
+      "minLuma": 16,
+      "maxLuma": 225,
+      "lumaStd": 36.75
+    },
+    "controls": {
+      "bytes": 83720,
+      "width": 1366,
+      "height": 768,
+      "minLuma": 16,
+      "maxLuma": 248,
+      "lumaStd": 42.42
+    },
+    "settings": {
+      "bytes": 95294,
       "width": 1366,
       "height": 768,
       "minLuma": 15,
-      "maxLuma": 237,
-      "lumaStd": 33.33
+      "maxLuma": 234,
+      "lumaStd": 41.27
+    },
+    "phase1-boss": {
+      "bytes": 190506,
+      "width": 1366,
+      "height": 768,
+      "minLuma": 17,
+      "maxLuma": 229,
+      "lumaStd": 39.26
+    },
+    "phase1-special": {
+      "bytes": 180280,
+      "width": 1366,
+      "height": 768,
+      "minLuma": 17,
+      "maxLuma": 229,
+      "lumaStd": 42.56
+    },
+    "phase1-return": {
+      "bytes": 206800,
+      "width": 1366,
+      "height": 768,
+      "minLuma": 17,
+      "maxLuma": 225,
+      "lumaStd": 40.37
+    },
+    "phase2-city": {
+      "bytes": 83336,
+      "width": 1366,
+      "height": 768,
+      "minLuma": 24,
+      "maxLuma": 245,
+      "lumaStd": 38.99
+    },
+    "phase2-boss": {
+      "bytes": 112164,
+      "width": 1366,
+      "height": 768,
+      "minLuma": 6,
+      "maxLuma": 239,
+      "lumaStd": 40.94
+    },
+    "compact-touch": {
+      "bytes": 126758,
+      "width": 854,
+      "height": 480,
+      "minLuma": 16,
+      "maxLuma": 249,
+      "lumaStd": 48.59
     }
   },
   "prodIsolation": {
@@ -283,14 +259,14 @@
         "texture": "pelagic-connected-coast-v2",
         "strips": [
           {
-            "x": 192,
+            "x": 160,
             "y": -610,
             "visible": false,
             "width": 384,
             "height": 2048
           },
           {
-            "x": 192,
+            "x": 160,
             "y": 1438,
             "visible": false,
             "width": 384,
@@ -314,11 +290,18 @@
     "start": {
       "screen": "play",
       "up": true,
-      "scroll": 72.40833333333354,
+      "scroll": 75.89166666666684,
+      "arenaLeft": 160,
+      "arenaWidth": 448,
       "playerVisible": true,
-      "hudLeftVisible": true,
-      "hudRightVisible": true,
+      "hudVisible": true,
       "bossVisible": false,
+      "cameraWorldBounds": {
+        "left": 0.000008578879749775526,
+        "top": 0.0000016093253969451384,
+        "right": 767.9999914211203,
+        "bottom": 431.9999983906746
+      },
       "backdrop": {
         "coast": {
           "visible": true,
@@ -327,15 +310,15 @@
           "texture": "pelagic-connected-coast-v2",
           "strips": [
             {
-              "x": 192,
-              "y": -537.5916666666662,
+              "x": 160,
+              "y": -534.1083333333331,
               "visible": true,
               "width": 384,
               "height": 2048
             },
             {
-              "x": 192,
-              "y": 1510.4083333333338,
+              "x": 160,
+              "y": 1513.8916666666669,
               "visible": true,
               "width": 384,
               "height": 2048
@@ -345,7 +328,7 @@
         "water": {
           "visible": true,
           "texture": "pelagic-water-review",
-          "tilePositionY": -147.4766666666671,
+          "tilePositionY": -154.571666666667,
           "depthVisible": true,
           "depthTexture": "pelagic-depth-review",
           "swellVisible": true,
@@ -359,11 +342,18 @@
     "coast": {
       "screen": "play",
       "up": true,
-      "scroll": 130.35833333333287,
+      "scroll": 136.69166666666612,
+      "arenaLeft": 160,
+      "arenaWidth": 448,
       "playerVisible": true,
-      "hudLeftVisible": true,
-      "hudRightVisible": true,
+      "hudVisible": true,
       "bossVisible": false,
+      "cameraWorldBounds": {
+        "left": 0.000008578879749775526,
+        "top": 0.0000016093253969451384,
+        "right": 767.9999914211203,
+        "bottom": 431.9999983906746
+      },
       "backdrop": {
         "coast": {
           "visible": true,
@@ -372,15 +362,15 @@
           "texture": "pelagic-connected-coast-v2",
           "strips": [
             {
-              "x": 192,
-              "y": -479.64166666666733,
+              "x": 160,
+              "y": -473.30833333333385,
               "visible": true,
               "width": 384,
               "height": 2048
             },
             {
-              "x": 192,
-              "y": 1568.3583333333327,
+              "x": 160,
+              "y": 1574.6916666666662,
               "visible": true,
               "width": 384,
               "height": 2048
@@ -390,7 +380,7 @@
         "water": {
           "visible": true,
           "texture": "pelagic-water-review",
-          "tilePositionY": -265.5116666666657,
+          "tilePositionY": -278.41166666666555,
           "depthVisible": true,
           "depthTexture": "pelagic-depth-review",
           "swellVisible": true,
@@ -404,11 +394,18 @@
     "harbor": {
       "screen": "play",
       "up": true,
-      "scroll": 513.4999999999999,
+      "scroll": 518.5666666666674,
+      "arenaLeft": 160,
+      "arenaWidth": 448,
       "playerVisible": true,
-      "hudLeftVisible": true,
-      "hudRightVisible": true,
+      "hudVisible": true,
       "bossVisible": false,
+      "cameraWorldBounds": {
+        "left": 0.000008578879749775526,
+        "top": 0.0000016093253969451384,
+        "right": 767.9999914211203,
+        "bottom": 431.9999983906746
+      },
       "backdrop": {
         "coast": {
           "visible": true,
@@ -417,15 +414,15 @@
           "texture": "pelagic-connected-coast-v2",
           "strips": [
             {
-              "x": 192,
-              "y": -96.5,
+              "x": 160,
+              "y": -91.43333333333248,
               "visible": true,
               "width": 384,
               "height": 2048
             },
             {
-              "x": 192,
-              "y": 1951.5,
+              "x": 160,
+              "y": 1956.5666666666675,
               "visible": true,
               "width": 384,
               "height": 2048
@@ -435,7 +432,7 @@
         "water": {
           "visible": true,
           "texture": "pelagic-water-review",
-          "tilePositionY": -1032.868333333333,
+          "tilePositionY": -1043.4216666666682,
           "depthVisible": true,
           "depthTexture": "pelagic-depth-review",
           "swellVisible": true,
@@ -449,11 +446,18 @@
     "boss": {
       "screen": "play",
       "up": true,
-      "scroll": 677.4067778706133,
+      "scroll": 683.8731119452173,
+      "arenaLeft": 160,
+      "arenaWidth": 448,
       "playerVisible": true,
-      "hudLeftVisible": true,
-      "hudRightVisible": true,
+      "hudVisible": true,
       "bossVisible": true,
+      "cameraWorldBounds": {
+        "left": 0.000008578879749775526,
+        "top": 0.0000016093253969451384,
+        "right": 767.9999914211203,
+        "bottom": 431.9999983906746
+      },
       "backdrop": {
         "coast": {
           "visible": false,
@@ -462,15 +466,15 @@
           "texture": "pelagic-connected-coast-v2",
           "strips": [
             {
-              "x": 192,
-              "y": -1980.5932221293867,
+              "x": 160,
+              "y": -1974.1268880547827,
               "visible": false,
               "width": 384,
               "height": 2048
             },
             {
-              "x": 192,
-              "y": 67.40677787061327,
+              "x": 160,
+              "y": 73.87311194521726,
               "visible": false,
               "width": 384,
               "height": 2048
@@ -480,7 +484,7 @@
         "water": {
           "visible": true,
           "texture": "pelagic-water-review",
-          "tilePositionY": -1366.2352224078934,
+          "tilePositionY": -1379.634557223768,
           "depthVisible": true,
           "depthTexture": "pelagic-depth-review",
           "swellVisible": true,
@@ -494,11 +498,18 @@
     "return": {
       "screen": "play",
       "up": true,
-      "scroll": 1085.282729638947,
+      "scroll": 1064.7732392985924,
+      "arenaLeft": 160,
+      "arenaWidth": 448,
       "playerVisible": true,
-      "hudLeftVisible": true,
-      "hudRightVisible": true,
+      "hudVisible": true,
       "bossVisible": true,
+      "cameraWorldBounds": {
+        "left": 0.000008578879749775526,
+        "top": 0.0000016093253969451384,
+        "right": 767.9999914211203,
+        "bottom": 431.9999983906746
+      },
       "backdrop": {
         "coast": {
           "visible": false,
@@ -507,15 +518,15 @@
           "texture": "pelagic-connected-coast-v2",
           "strips": [
             {
-              "x": 192,
-              "y": -1572.717270361053,
+              "x": 160,
+              "y": -1593.2267607014076,
               "visible": false,
               "width": 384,
               "height": 2048
             },
             {
-              "x": 192,
-              "y": 475.2827296389471,
+              "x": 160,
+              "y": 454.77323929859244,
               "visible": false,
               "width": 384,
               "height": 2048
@@ -525,7 +536,7 @@
         "water": {
           "visible": true,
           "texture": "pelagic-water-review",
-          "tilePositionY": -2186.8987926112277,
+          "tilePositionY": -2146.1831452638517,
           "depthVisible": true,
           "depthTexture": "pelagic-depth-review",
           "swellVisible": true,
@@ -538,11 +549,11 @@
     }
   },
   "pause": {
-    "before": 4.208333333333332,
-    "after": 4.208333333333332,
+    "before": 4.508333333333347,
+    "after": 4.508333333333347,
     "audio": {
       "track": "stage1",
-      "position": 4.100958,
+      "position": 4.411351,
       "volume": 0.0936,
       "paused": true,
       "failed": false
@@ -551,23 +562,28 @@
   "assets": {
     "textures": [
       "arc-ufo",
+      "arc-supply-drone-body",
+      "arc-supply-drone-propeller",
       "arc-bomb-v2",
       "arc-submarine-v2",
       "arc-sub-hull",
+      "arc-sub-submerged",
       "arc-ocean",
-      "arc-colossal-v2",
       "arc-supply-v2",
-      "arc-stage1-hud-left",
+      "arc-colossal-v2",
       "arc-sub-parts",
+      "arc-stage1-hud-left",
       "arc-stage1-hud-right",
+      "arc-pilots",
       "arc-rivet",
       "arc-enemies",
-      "arc-pilots",
       "arc-scenery",
-      "arc-boss",
       "arc-red",
-      "arc-explosion",
       "arc-missile",
+      "arc-explosion",
+      "arc-boss",
+      "arc-supply-glow",
+      "arc-supply-shadow",
       "arc-wet-hull-4",
       "arc-wet-hull-5",
       "arc-wet-boss-0",
@@ -579,12 +595,12 @@
     ],
     "audio": {
       "track": "boss1",
-      "position": 5.652561,
+      "position": 5.925303,
       "volume": 0.0936,
       "paused": false,
       "failed": false
     },
-    "objects": 849,
+    "objects": 1239,
     "screen": "play"
   },
   "gamepad": {
@@ -597,54 +613,6 @@
     "special": true,
     "pause": true
   },
-  "routes": [
-    {
-      "mission": 1,
-      "state": "victory",
-      "seconds": 404.30833333312995,
-      "initial": {
-        "level": 1,
-        "power": 0,
-        "lives": 3,
-        "specials": 2,
-        "score": 0
-      },
-      "lives": 3,
-      "deaths": 1,
-      "level": 1,
-      "power": 1,
-      "specials": 0,
-      "score": 125960,
-      "items": 12,
-      "peakBullets": 71
-    },
-    {
-      "mission": 2,
-      "state": "victory",
-      "seconds": 319.91666666654004,
-      "initial": {
-        "level": 1,
-        "power": 1,
-        "lives": 3,
-        "specials": 0,
-        "score": 125960
-      },
-      "lives": 4,
-      "deaths": 0,
-      "level": 5,
-      "power": 0,
-      "specials": 0,
-      "score": 185420,
-      "items": 11,
-      "peakBullets": 92
-    }
-  ],
-  "endFlow": {
-    "defeatRetry": true,
-    "exitCancelled": true,
-    "exitConfirmed": true,
-    "automaticFlyout": true
-  },
   "renderer": {
     "type": 2,
     "gpu": "ANGLE (AMD, AMD Radeon(TM) Graphics (0x00001681) Direct3D11 vs_5_0 ps_5_0, D3D11)"
@@ -653,46 +621,46 @@
     {
       "mission": 1,
       "quality": 0,
-      "frames": 480,
-      "seconds": 8.016199999856951,
+      "frames": 475,
+      "seconds": 8.002600000047686,
       "medianMs": 16.69999999999709,
       "p95Ms": 16.80000000000291,
-      "heap": 115530765,
-      "objects": 923,
-      "peakBullets": 72
+      "heap": 143391514,
+      "objects": 1274,
+      "peakBullets": 53
     },
     {
       "mission": 1,
       "quality": 2,
-      "frames": 479,
-      "seconds": 8.006199999856952,
+      "frames": 480,
+      "seconds": 8.015000000011918,
       "medianMs": 16.69999999999709,
       "p95Ms": 16.80000000000291,
-      "heap": 116179320,
-      "objects": 923,
-      "peakBullets": 72
+      "heap": 137359412,
+      "objects": 1337,
+      "peakBullets": 53
     },
     {
       "mission": 2,
       "quality": 0,
-      "frames": 479,
-      "seconds": 8.005600000047679,
+      "frames": 480,
+      "seconds": 8.013900000035763,
       "medianMs": 16.69999999999709,
       "p95Ms": 16.80000000000291,
-      "heap": 118863079,
-      "objects": 919,
-      "peakBullets": 85
+      "heap": 147344697,
+      "objects": 1319,
+      "peakBullets": 114
     },
     {
       "mission": 2,
       "quality": 2,
-      "frames": 479,
-      "seconds": 8.006199999856952,
+      "frames": 480,
+      "seconds": 8.016100000047677,
       "medianMs": 16.69999999999709,
       "p95Ms": 16.80000000000291,
-      "heap": 119195599,
-      "objects": 919,
-      "peakBullets": 85
+      "heap": 159972782,
+      "objects": 1319,
+      "peakBullets": 114
     }
   ]
 }

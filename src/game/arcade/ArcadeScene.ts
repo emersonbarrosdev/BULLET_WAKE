@@ -39,7 +39,7 @@ import {
 } from './TouchControls';
 import {
   UI, UI_FONT, UI_TEX, UI_ICON, UI_PIP,
-  preloadMenuAssets, installMenuAnims, makePanel, makeRibbon, makeButtonBg, makeGaugeMeter, makeIcon, makeKeyBadge,
+  preloadMenuAssets, installMenuAnims, makePanel, makeButtonBg, makeIcon,
   type SpriteButton,
 } from './ArcadeMenuArt';
 import {
@@ -50,8 +50,21 @@ import {
   makePilotNameplate, makeVectorBanner, makeVectorGauge, makeVectorIconSprite, makeVectorKeycap,
   makeVectorPanel, makeVectorTogglePill, type VectorIconId,
 } from './ArcadeMenuVector';
+import {
+  getPilotContract, listPilotContracts, perspectiveLabelPt, type PilotId,
+} from './ArcadeContracts';
+import { ACHIEVEMENTS } from './ArcadeAchievements';
+import type { RunEvaluationResult } from './ArcadeRanking';
+import {
+  ArcadeProfileStore, HANGAR_CATALOG, globalProfileStore,
+} from './ArcadeProfileStore';
+import { stageDurationFor } from './PelagicProgression';
+import { ReplayRecorder } from './ArcadeReplay';
 
-type Screen = 'loading' | 'intro' | 'title' | 'pilot' | 'missions' | 'play' | 'pause' | 'controls' | 'settings' | 'touch-settings' | 'credits' | 'confirm-exit' | 'result' | 'defeat' | 'ending';
+type HangarTab = 'hangar' | 'achievements' | 'profile';
+type RunOutcome = ReturnType<ArcadeProfileStore['recordRunResult']> & { evaluation: RunEvaluationResult };
+
+type Screen = 'loading' | 'intro' | 'title' | 'pilot' | 'missions' | 'practice' | 'hangar' | 'play' | 'pause' | 'controls' | 'settings' | 'touch-settings' | 'credits' | 'confirm-exit' | 'result' | 'defeat' | 'ending';
 type OpeningState = 'LOADING' | 'STUDIO_SPLASH' | 'MAIN_MENU' | 'READY';
 type OpeningPhase = 'BOOT' | 'LOADING' | 'LOADING_COMPLETE' | 'STUDIO_SPLASH' | 'STUDIO_EXIT' | 'TITLE_READY' | 'TITLE_VISIBLE';
 type ControlsTab = 'pc' | 'gamepad' | 'android';
@@ -94,6 +107,21 @@ export class ArcadeScene extends Phaser.Scene {
   private pelagicAnims!: PelagicActorAnims; private pelagicComms = new PelagicComms(); private lastInput: Controls = { x: 0, y: 0, fire: false, special: false };
   private devSaveGuard = false; private devSimulationPaused = false; private devTimeScale = 1; private devWeaponDebug = false;
   private devEscapeHandler?: () => boolean; private devOverlayCallback?: (scene: ArcadeScene, deltaMs: number) => void;
+  private selectedPilotId: PilotId = 'nolan';
+  private hangarTab: HangarTab = 'hangar';
+  private nextHangarFocus?: number;
+  private practiceMission = 0;
+  private lastRunOutcome?: RunOutcome;
+  private replayRecorder?: ReplayRecorder;
+  private shakeTime = 0;
+  private shakeAmp = 0;
+  private damageFlashAlpha = 0;
+  private bossWarningUntil = 0;
+  private firstSortieHintUntil = 0;
+  private defeatRecorded = false;
+  private vfxGfx!: Phaser.GameObjects.Graphics;
+  private warningBannerText!: Phaser.GameObjects.Text;
+  private sortieHintText!: Phaser.GameObjects.Text;
   constructor() { super('ArcadeScene'); }
   preload(): void {
     enableCombatResolution(this);
@@ -118,7 +146,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.load.spritesheet('arc-boss', `${base}assets/arcade/boss.webp`, { frameWidth: 512, frameHeight: 512 });
     this.load.spritesheet('arc-red', `${base}assets/combat-hd/polish/rivet-red.webp`, { frameWidth: 128, frameHeight: 128 });
     this.load.spritesheet('arc-explosion', `${base}assets/arcade/explosion.webp`, { frameWidth: 256, frameHeight: 256 });
-    this.load.spritesheet('arc-missile', `${base}assets/combat-hd/review/effects-missile.webp`, { frameWidth: 256, frameHeight: 256 });
+    this.load.spritesheet('arc-missile', `${base}assets/combat-hd/review/effects-missile.webp`, { frameWidth: 128, frameHeight: 128 });
     preloadPelagicActorAnims(this, base);
     preloadTideArchArt(this, base);
     preloadMenuAssets(this, base);
@@ -181,13 +209,17 @@ export class ArcadeScene extends Phaser.Scene {
   }
   create(): void {
     enableCombatResolution(this); this.input.addPointer(3);
-    this.controls = this.input.keyboard!.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D,SPACE,X,Z,ESC,ENTER,ONE,TWO,THREE') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.controls = this.input.keyboard!.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D,SPACE,X,Z,SHIFT,ESC,ENTER,ONE,TWO,THREE') as Record<string, Phaser.Input.Keyboard.Key>;
     this.input.keyboard!.addCapture(['SPACE', 'UP', 'DOWN', 'LEFT', 'RIGHT', 'ENTER']);
+    this.selectedPilotId = globalProfileStore.getProfile().selectedPilotId;
     const settings = globalSave.getSettings(); this.mute = settings.isMuted; this.audio.setMix(settings.musicVolume, settings.sfxVolume, this.mute);
     try { const stored = localStorage.getItem('bullet_wake_visual'); if (stored !== null) this.quality = clamp(Number(stored) || 0, 0, 2); } catch {/* Optional preference. */ }
     installCombatArt(this); installMenuAnims(this); this.hitOverlays = new HitOverlays(this); this.bombArt = new BombArt(this); this.subBossArt = new SubmarineBossArt(this);
     this.pelagicAnims = new PelagicActorAnims(this);
     this.backdrop = new ArcadeBackdrop(this); this.emplacements = new PelagicEmplacements(this); this.decor = this.add.graphics().setDepth(40); this.combatInk = this.add.graphics().setDepth(12);
+    this.vfxGfx = this.add.graphics().setDepth(52);
+    this.warningBannerText = this.add.text(384, 108, '', { fontFamily: FONT, fontSize: '13.5px', fontStyle: 'bold', color: '#ffe654', stroke: '#3a0612', strokeThickness: 3.5, align: 'center' }).setResolution(2).setOrigin(.5).setDepth(53).setVisible(false);
+    this.sortieHintText = this.add.text(384, 416, '', { fontFamily: FONT, fontSize: '8.5px', fontStyle: 'bold', color: '#c8f4ff', stroke: '#04122e', strokeThickness: 2.5, align: 'center' }).setResolution(2).setOrigin(.5).setDepth(53).setVisible(false);
     // Illustrated left cockpit frame (160px on PC horizontal; hidden in Android vertical). Right HUD panel removed per Task 21.
     this.pelagicDesktopHud = new PelagicDesktopHud(this);
     this.player = this.add.sprite(384, 350, 'arc-rivet', 1).setDisplaySize(31, 38).setDepth(18).setVisible(false);
@@ -282,7 +314,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.ui.add(node); return node;
   }
   private isPreGameplayMenu(): boolean {
-    return !this.world && ['title', 'pilot', 'missions', 'controls', 'settings', 'touch-settings', 'credits'].includes(this.screen);
+    return ['title', 'pilot', 'missions', 'practice', 'hangar', 'controls', 'settings', 'touch-settings', 'credits', 'pause', 'confirm-exit', 'result', 'defeat', 'ending'].includes(this.screen);
   }
   private button(
     x: number, y: number, label: string, action: () => void, width = 230, height = 38,
@@ -494,16 +526,20 @@ export class ArcadeScene extends Phaser.Scene {
       }
     } else if (screen === 'title') {
       this.audio.play('menu');
+      const prof = globalProfileStore.getProfile();
       const b0 = this.button(384, 242, 'INICIAR JORNADA', () => this.show('pilot'), 192, 26, { fontSize: 11.5, variant: 'primary' });
       const b1 = this.button(384, 276, 'CONTROLES', () => { this.pauseOrigin = 'title'; this.show('controls'); }, 192, 26, { fontSize: 11.5, variant: 'secondary' });
       const b2 = this.button(384, 310, 'OPÇÕES', () => { this.pauseOrigin = 'title'; this.show('settings'); }, 192, 26, { fontSize: 11.5, variant: 'secondary' });
       const b3 = this.button(384, 344, 'CRÉDITOS', () => this.show('credits'), 192, 26, { fontSize: 11.5, variant: 'secondary' });
+      let b4: MenuButton | undefined;
       if (!this.isPortraitMobileMode()) {
+        makeStatusPill(this, this.ui, 682, 18, `${prof.wallet.credits} CR  •  ${Object.keys(prof.achievements).length}/${ACHIEVEMENTS.length}`, UI.cyan, '#9aefff');
+        b4 = this.button(682, 42, 'HANGAR / PERFIL', () => { this.hangarTab = 'hangar'; this.show('hangar'); }, 144, 22, { fontSize: 9.5, variant: 'secondary' });
         const hint = makeMenuHintBar(this, this.ui, 417, connectedPad()?.id, { noBack: true });
         hint.setAlpha(0);
         this.tweens.add({ targets: hint, alpha: 1, duration: 260, delay: 140, ease: 'Sine.easeOut' });
       }
-      [b0, b1, b2, b3].forEach((btn, idx) => btn.modern?.animateEntrance(idx * 38, 0, 8));
+      [b0, b1, b2, b3, ...(b4 ? [b4] : [])].forEach((btn, idx) => btn.modern?.animateEntrance(idx * 34, 0, 8));
       if (old === 'intro') {
         const vSize = getCombatVirtualSize(this);
         const veil = this.add.rectangle(vSize.w * 0.5, vSize.h * 0.5, vSize.w + 16, vSize.h + 16, 0x040d21, 1).setDepth(85);
@@ -563,96 +599,332 @@ export class ArcadeScene extends Phaser.Scene {
       makeMenuHintBar(this, this.ui, 417, connectedPad()?.id);
       playMenuScreenEntrance(this, this.ui, 210);
     } else if (screen === 'pilot') {
-      this.audio.play('select'); this.addModalBackdrop(0x030d22, .60, false);
+      if (old !== 'pilot') this.audio.play('select');
+      this.addModalBackdrop(0x030d22, .60, false);
       makeVectorPanel(this, this.ui, 384, 214, 672, 356, { kind: 'main' });
       makeVectorBanner(this, this.ui, 384, 36, 260, 32, 'ESCOLHA SEU PILOTO', { fontSize: 15 });
 
-      // Portrait frame (left) with clean integrated nameplate
-      makeVectorPanel(this, this.ui, 134, 130, 122, 122, { kind: 'gold', cut: 10 });
-      this.ui.add(this.add.image(134, 126, 'arc-pilots', 3).setDisplaySize(100, 100));
-      makePilotNameplate(this, this.ui, 134, 189, 108, 20, 'BAYEK');
+      const pilots = listPilotContracts();
+      const activeIdx = Math.max(0, pilots.findIndex(p => p.id === this.selectedPilotId));
+      const activePilot = pilots[activeIdx] ?? pilots[0];
+      const profile = globalProfileStore.getProfile();
+      const isUnlocked = globalProfileStore.isPilotUnlocked(activePilot.id);
+      const canAfford = profile.wallet.credits >= activePilot.creditCost;
 
-      // RIVET hangar bay (center)
-      makeVectorPanel(this, this.ui, 336, 120, 214, 92, { kind: 'sub', cut: 10 });
+      const stepPilot = (dir: -1 | 1) => {
+        const next = pilots[(activeIdx + dir + pilots.length) % pilots.length];
+        this.selectedPilotId = next.id;
+        if (globalProfileStore.isPilotUnlocked(next.id)) globalProfileStore.selectPilot(next.id);
+        this.menuActionLocked = false;
+        this.show('pilot');
+      };
+
+      // Portrait frame (left) with clean integrated nameplate
+      makeVectorPanel(this, this.ui, 134, 130, 122, 122, { kind: isUnlocked ? 'gold' : 'sub', cut: 10 });
+      const bigPortraitFrame = activePilot.id === 'nolan' ? 3 : activePilot.portraitFrame;
+      this.ui.add(this.add.image(134, 126, 'arc-pilots', bigPortraitFrame).setDisplaySize(100, 100).setAlpha(isUnlocked ? 1 : .58));
+      if (!isUnlocked) makeVectorIconSprite(this, this.ui, 174, 84, 'lock', 18, UI.goldHex);
+      makePilotNameplate(this, this.ui, 134, 189, 108, 20, activePilot.name.toUpperCase());
+
+      // Hangar bay (center) — displays active ship with distinct livery tint
+      makeVectorPanel(this, this.ui, 336, 114, 214, 84, { kind: 'sub', cut: 10 });
       const bay = this.add.graphics()
-        .lineStyle(0.9, UI.cyan, .22).strokeCircle(336, 120, 34).strokeCircle(336, 120, 20)
-        .lineStyle(0.7, UI.cyan, .18).lineBetween(282, 120, 390, 120).lineBetween(336, 82, 336, 158);
+        .lineStyle(0.9, UI.cyan, .22).strokeCircle(336, 114, 32).strokeCircle(336, 114, 18)
+        .lineStyle(0.7, UI.cyan, .18).lineBetween(282, 114, 390, 114).lineBetween(336, 78, 336, 150);
       this.ui.add(bay);
-      const radarPulse = this.add.graphics().lineStyle(1.4, UI.cyan, 0.55).strokeCircle(0, 0, 16).setPosition(336, 120);
+      const radarPulse = this.add.graphics().lineStyle(1.4, UI.cyan, 0.55).strokeCircle(0, 0, 15).setPosition(336, 114);
       this.ui.add(radarPulse);
-      this.tweens.add({ targets: radarPulse, scaleX: 2.25, scaleY: 2.25, alpha: 0, duration: 1650, repeat: -1, ease: 'Sine.easeOut' });
-      const plane = this.add.sprite(336, 120, PELAGIC_RIVET_SHEET, 3).setDisplaySize(66, 66);
+      this.tweens.add({ targets: radarPulse, scaleX: 2.2, scaleY: 2.2, alpha: 0, duration: 1650, repeat: -1, ease: 'Sine.easeOut' });
+      const plane = this.add.sprite(336, 114, PELAGIC_RIVET_SHEET, 3).setDisplaySize(62, 62);
+      if (activePilot.id !== 'nolan') plane.setTint(activePilot.hullColor);
       this.ui.add(plane);
-      this.tweens.add({ targets: plane, y: { from: 117.5, to: 122.5 }, duration: 1450, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-      this.text(336, 179, 'RIVET  •  VANGUARDA', 11, UI.cyanHex);
-      this.text(336, 196, 'ESPECIAL: TORMENTA ESCARLATE', 8.8, UI.goldHex);
+      this.tweens.add({ targets: plane, y: { from: 111.5, to: 116.5 }, duration: 1450, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.text(336, 168, `${activePilot.shipName}  •  ${activePilot.callsign}`, 11, UI.cyanHex);
+      this.text(336, 183, `ARMA: ${activePilot.weaponName}`, 8.2, UI.white);
+      this.text(336, 197, `ESPECIAL: ${activePilot.specialName.toUpperCase()}`, 8.4, UI.goldHex);
 
       // Slanted vector stat meters (right)
       const stats: [string, number, 'cyan' | 'gold' | 'green', number][] = [
-        ['VELOCIDADE', 4, 'cyan', 94],
-        ['ARMAMENTO', 5, 'gold', 134],
-        ['BLINDAGEM', 3, 'green', 174],
+        ['VELOCIDADE', activePilot.stats.speed, 'cyan', 92],
+        ['ARMAMENTO', activePilot.stats.firepower, 'gold', 132],
+        ['BLINDAGEM', activePilot.stats.armor, 'green', 172],
       ];
       for (const [lbl, val, kind, sy] of stats) {
         this.text(584, sy - 13, lbl, 9, UI.silver);
         makeVectorGauge(this, this.ui, 584, sy + 3, 162, 18, 5, val, kind);
       }
 
-      // 5 Vector pilot cards
-      const portraits = [0, 4, 5, 6, 7], names = ['BAYEK', 'TITA', 'LEONA', 'OSVALD', 'HIEN'];
-      for (let i = 0; i < 5; i++) {
+      // 5 Clickable vector pilot cards
+      for (let i = 0; i < pilots.length; i++) {
+        const p = pilots[i];
+        const pUnlocked = globalProfileStore.isPilotUnlocked(p.id);
+        const selected = p.id === activePilot.id;
         const cx = 128 + i * 128;
-        const card = this.add.container(cx, 266);
-        makeVectorPanel(this, card, 0, 0, 114, 86, { kind: i === 0 ? 'cardActive' : 'card', cut: 9 });
-        card.add(this.add.image(0, -14, 'arc-pilots', portraits[i]).setDisplaySize(46, 46).setAlpha(i ? .48 : 1));
-        if (i) makeVectorIconSprite(this, card, 40, -28, 'lock', 14, UI.goldHex);
-        card.add(this.add.text(0, 16, names[i], { fontFamily: FONT, fontSize: '10.5px', fontStyle: 'bold', color: i ? UI.silver : UI.goldHex, stroke: '#061938', strokeThickness: 3 }).setResolution(2).setOrigin(.5));
-        card.add(this.add.text(0, 29, i ? 'EM BREVE' : 'PRONTO', { fontFamily: FONT, fontSize: '7.5px', fontStyle: 'bold', color: i ? UI.slate : UI.cyanHex, stroke: '#061938', strokeThickness: 2.5 }).setResolution(2).setOrigin(.5));
+        const card = this.add.container(cx, 260);
+        makeVectorPanel(this, card, 0, 0, 114, 82, { kind: selected ? 'cardActive' : 'card', cut: 9 });
+        card.add(this.add.image(0, -14, 'arc-pilots', p.portraitFrame).setDisplaySize(44, 44).setAlpha(pUnlocked ? 1 : .52));
+        if (!pUnlocked) makeVectorIconSprite(this, card, 40, -26, 'lock', 13, UI.goldHex);
+        card.add(this.add.text(0, 15, p.name.toUpperCase(), { fontFamily: FONT, fontSize: '10.5px', fontStyle: 'bold', color: selected ? UI.goldHex : (pUnlocked ? UI.white : UI.silver), stroke: '#061938', strokeThickness: 3 }).setResolution(2).setOrigin(.5));
+        const statusStr = selected && pUnlocked ? 'PRONTO' : pUnlocked ? 'DISPONÍVEL' : `${p.creditCost} CR`;
+        const statusCol = selected && pUnlocked ? UI.cyanHex : pUnlocked ? '#9ae6b4' : UI.goldHex;
+        card.add(this.add.text(0, 28, statusStr, { fontFamily: FONT, fontSize: '7.5px', fontStyle: 'bold', color: statusCol, stroke: '#061938', strokeThickness: 2.5 }).setResolution(2).setOrigin(.5));
+        const cardZone = this.add.zone(0, 0, 114, 82).setInteractive({ useHandCursor: true });
+        cardZone.on('pointerdown', () => {
+          this.audio.unlock();
+          globalAudio.playArcade('navigate');
+          this.selectedPilotId = p.id;
+          if (pUnlocked) globalProfileStore.selectPilot(p.id);
+          this.menuActionLocked = false;
+          this.show('pilot');
+        });
+        card.add(cardZone);
         this.ui.add(card);
-        card.setAlpha(0).setY(275);
-        this.tweens.add({ targets: card, alpha: 1, y: 266, duration: 210, delay: 36 + i * 30, ease: 'Sine.easeOut' });
+        if (old !== 'pilot') {
+          card.setAlpha(0).setY(269);
+          this.tweens.add({ targets: card, alpha: 1, y: 260, duration: 190, delay: 30 + i * 26, ease: 'Sine.easeOut' });
+        }
       }
 
-      const pLaunch = this.button(486, 352, 'DECOLAR COM BAYEK', () => this.show('missions'), 256, 32, { fontSize: 12.5, variant: 'primary' });
+      // Bio or unlock requirement line cleanly above bottom buttons
+      const infoLine = isUnlocked
+        ? `${activePilot.bio}  •  SALDO: ${profile.wallet.credits} CR  •  ←/→ TROCAR PILOTO`
+        : `${activePilot.unlockHint} (SALDO: ${profile.wallet.credits} CR)`;
+      this.text(384, 315, infoLine, 8.2, isUnlocked ? UI.silver : UI.goldHex, { wrap: 620 });
+
+      const launchLabel = isUnlocked
+        ? `DECOLAR COM ${activePilot.name.toUpperCase()}`
+        : canAfford
+          ? `DESBLOQUEAR (${activePilot.creditCost} CR)`
+          : `BLOQUEADO (${activePilot.creditCost} CR)`;
+      const pLaunch = this.button(486, 352, launchLabel, () => {
+        if (isUnlocked) {
+          globalProfileStore.selectPilot(activePilot.id);
+          this.show('missions');
+        } else if (canAfford) {
+          globalProfileStore.buyHangarItem(`pilot:${activePilot.id}`);
+          globalProfileStore.selectPilot(activePilot.id);
+          globalAudio.playArcade('level-up');
+          this.menuActionLocked = false;
+          this.show('pilot');
+        }
+      }, 272, 32, {
+        fontSize: 11.8,
+        variant: isUnlocked || canAfford ? 'primary' : 'secondary',
+        disabled: !isUnlocked && !canAfford,
+        onLeft: () => { globalAudio.playArcade('navigate'); stepPilot(-1); },
+        onRight: () => { globalAudio.playArcade('navigate'); stepPilot(1); },
+      });
       const pBack = this.button(176, 352, 'VOLTAR', () => this.show('title'), 166, 32, { fontSize: 12, variant: 'back' });
-      pLaunch.modern?.animateEntrance(75, 0, 8);
-      pBack.modern?.animateEntrance(45, 0, 8);
-      makeMenuHintBar(this, this.ui, 417, connectedPad()?.id);
-      playMenuScreenEntrance(this, this.ui, 210);
+      if (old !== 'pilot') {
+        pLaunch.modern?.animateEntrance(75, 0, 8);
+        pBack.modern?.animateEntrance(45, 0, 8);
+        playMenuScreenEntrance(this, this.ui, 200);
+      }
+      makeMenuHintBar(this, this.ui, 417, connectedPad()?.id, { adjust: true });
     } else if (screen === 'missions') {
-      this.addModalBackdrop(0x041530, .40, false);
-      makeVectorBanner(this, this.ui, 384, 30, 250, 34, 'ESCOLHA A ROTA', { fontSize: 16 });
-      this.text(384, 60, 'DUAS PERSPECTIVAS. UMA OPERAÇÃO DE RESGATE.', 10.5, UI.white);
+      this.addModalBackdrop(0x041530, .42, false);
+      makeVectorBanner(this, this.ui, 384, 28, 250, 32, 'ESCOLHA A ROTA', { fontSize: 15.5 });
+      const activePilot = getPilotContract(this.selectedPilotId);
+      const st = globalSave.getSettings();
+      const diff = normalizeGameDifficulty(st.difficulty);
+      this.text(384, 56, `PILOTO: ${activePilot.name.toUpperCase()} (${activePilot.shipName})  •  DUAS PERSPECTIVAS, UMA OPERAÇÃO DE RESGATE`, 9.2, UI.white);
       const prog = this.arcadeProgress(), unlocked = prog.cleared.includes(1);
       for (let i = 0; i < 2; i++) {
-        const cx = i ? 562 : 206, m = MISSIONS[i], avail = i === 0 || unlocked, best = this.bestScoreFor(m.id);
-        makeVectorPanel(this, this.ui, cx, 212, 326, 252, { kind: 'main', cut: 14 });
-        makeVectorBanner(this, this.ui, cx, 92, 152, 24, `ROTA 0${i + 1}`, { kind: avail ? 'gold' : 'red', fontSize: 11.5, wings: false });
-        makeVectorPanel(this, this.ui, cx - 84, 184, 118, 118, { kind: avail ? 'gold' : 'sub', cut: 10 });
-        this.ui.add(this.add.image(cx - 84, 184, i ? 'arc-scenery' : UI_TEX.routePelagic, i ? 5 : undefined).setDisplaySize(102, 102).setAlpha(avail ? 1 : .40));
-        if (!avail) makeVectorIconSprite(this, this.ui, cx - 84, 184, 'lock', 36, UI.goldHex);
-        this.text(cx + 62, 144, m.name, 15, avail ? UI.goldHex : UI.silver, { wrap: 162 });
-        this.text(cx + 62, 172, i ? 'SIDE • CIDADE SOLAR' : 'UP • FENDA PELÁGICA', 9.5, UI.cyanHex, { wrap: 160 });
-        this.text(cx + 62, 200, avail ? `RECORDE\n${best}` : 'CONCLUA A\nROTA 01 ANTES', 10, avail ? UI.white : UI.crimsonHex, { wrap: 156 });
+        const cx = i ? 562 : 206, m = MISSIONS[i], avail = i === 0 || unlocked;
+        const bestScoreRec = globalProfileStore.bestScoreForMission(m.id, this.selectedPilotId);
+        const bestRankRec = globalProfileStore.bestRankForMission(m.id, this.selectedPilotId);
+        const best = Math.max(bestScoreRec, this.bestScoreFor(m.id));
+        const rankStr = bestRankRec ? `  •  RANK ${bestRankRec}` : '';
+        makeVectorPanel(this, this.ui, cx, 204, 326, 238, { kind: 'main', cut: 14 });
+        makeVectorBanner(this, this.ui, cx, 88, 152, 24, `ROTA 0${i + 1}`, { kind: avail ? 'gold' : 'red', fontSize: 11.5, wings: false });
+        makeVectorPanel(this, this.ui, cx - 84, 178, 116, 116, { kind: avail ? 'gold' : 'sub', cut: 10 });
+        this.ui.add(this.add.image(cx - 84, 178, i ? 'arc-scenery' : UI_TEX.routePelagic, i ? 5 : undefined).setDisplaySize(100, 100).setAlpha(avail ? 1 : .40));
+        if (!avail) makeVectorIconSprite(this, this.ui, cx - 84, 178, 'lock', 34, UI.goldHex);
+        this.text(cx + 62, 138, m.name, 14.5, avail ? UI.goldHex : UI.silver, { wrap: 162 });
+        this.text(cx + 62, 166, `${perspectiveLabelPt(m.perspective)}  •  ${Math.round(stageDurationFor(m.perspective) / 60)} MIN`, 9, UI.cyanHex, { wrap: 162 });
+        this.text(cx + 62, 196, avail ? `RECORDE: ${best}${rankStr}` : 'CONCLUA A\nROTA 01 ANTES', 9.5, avail ? UI.white : UI.crimsonHex, { wrap: 160 });
         if (i === 0) {
-          const st = globalSave.getSettings();
-          const diff = normalizeGameDifficulty(st.difficulty);
-          const modeLabel = st.assisted ? 'MODO ASSISTIDO ATIVO' : `MODO ${DIFFICULTY_PROFILES[diff].label}`;
+          const modeLabel = st.assisted ? `${DIFFICULTY_PROFILES[diff].label} • ASSISTIDO` : `DIFICULDADE: ${DIFFICULTY_PROFILES[diff].label}`;
           const modeHex = st.assisted ? 0x52f2e2 : diff === 'hard' ? UI.gold : diff === 'normal' ? UI.cyan : 0x9ec5e8;
           const modeCol = st.assisted ? '#88fff2' : diff === 'hard' ? UI.goldHex : diff === 'normal' ? UI.cyanHex : UI.silver;
-          makeStatusPill(this, this.ui, cx, 262, modeLabel, modeHex, modeCol);
+          makeStatusPill(this, this.ui, cx, 248, modeLabel, modeHex, modeCol);
+        } else if (avail) {
+          makeStatusPill(this, this.ui, cx, 248, 'CAMPANHA DESBLOQUEADA', UI.gold, UI.goldHex);
         }
-        const mBtn = this.button(cx, 300, avail ? 'INICIAR MISSÃO' : 'BLOQUEADA', () => { if (!avail) return; const carry = i ? prog.flights[1] : undefined; this.begin(i, carry); }, 236, 32, {
-          fontSize: 12.5,
+        const mBtn = this.button(cx, 286, avail ? 'INICIAR MISSÃO' : 'BLOQUEADA', () => { if (!avail) return; const carry = i ? prog.flights[1] : undefined; this.begin(i, carry); }, 236, 31, {
+          fontSize: 12,
           variant: avail ? 'primary' : 'secondary',
           disabled: !avail,
         });
-        mBtn.modern?.animateEntrance(60 + i * 45, i ? 10 : -10, 0);
+        if (old !== 'missions') mBtn.modern?.animateEntrance(50 + i * 40, i ? 10 : -10, 0);
       }
-      const mBack = this.button(122, 376, 'VOLTAR', () => this.show('pilot'), 156, 30, { fontSize: 12, variant: 'back' });
-      mBack.modern?.animateEntrance(95, 0, 8);
+
+      // Bottom utility bar: VOLTAR | DIFICULDADE inline | ASSISTIDO inline | TREINO
+      this.button(114, 366, 'VOLTAR', () => this.show('pilot'), 132, 28, { fontSize: 11, variant: 'back' });
+      const stepDiff = (dir: -1 | 1) => {
+        globalSave.updateSettings({ difficulty: stepGameDifficulty(globalSave.getSettings().difficulty, dir) });
+        this.menuActionLocked = false;
+        this.show('missions');
+      };
+      this.button(294, 366, `◄ ${DIFFICULTY_PROFILES[diff].label} ►`, () => stepDiff(1), 184, 28, {
+        fontSize: 10.5,
+        variant: 'secondary',
+        onLeft: () => { globalAudio.playArcade('navigate'); stepDiff(-1); },
+        onRight: () => { globalAudio.playArcade('navigate'); stepDiff(1); },
+      });
+      this.button(484, 366, st.assisted ? 'ASSISTIDO: SIM' : 'ASSISTIDO: NÃO', () => {
+        globalSave.updateSettings({ assisted: !globalSave.getSettings().assisted });
+        this.menuActionLocked = false;
+        this.show('missions');
+      }, 158, 28, { fontSize: 10.2, variant: 'secondary' });
+      this.button(654, 366, 'MODO TREINO', () => { this.practiceMission = 0; this.show('practice'); }, 144, 28, { fontSize: 10.5, variant: 'secondary' });
+      makeMenuHintBar(this, this.ui, 417, connectedPad()?.id, { adjust: true });
+      if (old !== 'missions') playMenuScreenEntrance(this, this.ui, 200);
+    } else if (screen === 'practice') {
+      this.addModalBackdrop(0x030e24, .64, false);
+      makeVectorPanel(this, this.ui, 384, 208, 668, 348, { kind: 'main' });
+      makeVectorBanner(this, this.ui, 384, 34, 248, 32, 'MODO TREINO', { fontSize: 15 });
+      const prog = this.arcadeProgress();
+      const stage2Unlocked = prog.cleared.includes(1);
+      this.text(384, 66, 'Pratique qualquer setor ou chefe diretamente. Não altera recordes competitivos nem 1CC.', 8.6, UI.silver);
+
+      const mTabs: Array<{ id: number; label: string; x: number; enabled: boolean }> = [
+        { id: 0, label: 'ROTA 01 — FENDA PELÁGICA', x: 254, enabled: true },
+        { id: 1, label: stage2Unlocked ? 'ROTA 02 — CIDADE SOLAR' : 'ROTA 02 (BLOQUEADA)', x: 514, enabled: stage2Unlocked },
+      ];
+      for (const mt of mTabs) {
+        this.button(mt.x, 96, mt.label, () => {
+          if (!mt.enabled) return;
+          this.practiceMission = mt.id;
+          this.menuActionLocked = false;
+          this.show('practice');
+        }, 244, 24, { fontSize: 9.8, variant: 'tab', activeTab: this.practiceMission === mt.id, disabled: !mt.enabled });
+      }
+
+      const checkpoints = this.practiceMission === 0
+        ? [
+            { label: '01 • CÉU ABERTO (0s)', at: 0 },
+            { label: '02 • COSTA CORAL (60s)', at: 60 },
+            { label: '03 • ARQUIPÉLAGO (115s)', at: 115 },
+            { label: '04 • CORRENTE NORTE (160s)', at: 160 },
+            { label: '05 • ARCO DAS MARÉS (180s)', at: 180 },
+            { label: '06 • BLOQUEIO NAVAL (230s)', at: 230 },
+            { label: '07 • MAR ABERTO (295s)', at: 295 },
+            { label: 'CHEFE • COLOSSO ABISSAL', at: 360 },
+          ]
+        : [
+            { label: '01 • ENTRADA SOLAR (0s)', at: 0 },
+            { label: '02 • DISTRITO CENTRAL (85s)', at: 85 },
+            { label: '03 • MINI-CHEFE GIRO (155s)', at: 155 },
+            { label: '04 • ALTA ATMOSFERA (225s)', at: 225 },
+            { label: 'CHEFE • FORTALEZA SOLAR', at: 300 },
+          ];
+      checkpoints.forEach((cp, idx) => {
+        const col = idx % 2;
+        const row = Math.floor(idx / 2);
+        const bx = col === 0 ? 236 : 532;
+        const by = 144 + row * 42;
+        this.button(bx, by, cp.label, () => this.beginPractice(this.practiceMission, cp.at), 272, 32, {
+          fontSize: 10.5,
+          variant: cp.at >= (this.practiceMission === 0 ? 360 : 300) ? 'primary' : 'secondary',
+        });
+      });
+
+      this.button(384, 348, 'VOLTAR', () => this.show('missions'), 188, 30, { fontSize: 12, variant: 'back' });
       makeMenuHintBar(this, this.ui, 417, connectedPad()?.id);
-      playMenuScreenEntrance(this, this.ui, 210);
+      if (old !== 'practice') playMenuScreenEntrance(this, this.ui, 190);
+    } else if (screen === 'hangar') {
+      this.addModalBackdrop(0x030e24, .64, false);
+      makeVectorPanel(this, this.ui, 384, 210, 678, 354, { kind: 'main' });
+      makeVectorBanner(this, this.ui, 384, 34, 248, 32, 'HANGAR & PERFIL', { fontSize: 15 });
+      const prof = globalProfileStore.getProfile();
+      const achCount = Object.keys(prof.achievements).length;
+      const eqSkinId = prof.unlocks.equippedSkins[prof.selectedPilotId] ?? 'skin:classic';
+      this.text(648, 34, `${prof.wallet.credits} CR`, 12, UI.goldHex);
+
+      const hTabs: Array<{ id: HangarTab; label: string; x: number }> = [
+        { id: 'hangar', label: 'PINTURAS', x: 228 },
+        { id: 'achievements', label: `CONQUISTAS (${achCount}/${ACHIEVEMENTS.length})`, x: 384 },
+        { id: 'profile', label: 'PERFIL', x: 540 },
+      ];
+      const switchHangar = (next: HangarTab, focusIdx: number) => {
+        if (this.hangarTab === next) return;
+        this.hangarTab = next;
+        this.nextHangarFocus = focusIdx;
+        this.menuActionLocked = false;
+        this.show('hangar');
+      };
+      hTabs.forEach((t, idx) => {
+        this.button(t.x, 76, t.label, () => switchHangar(t.id, idx), 148, 25, {
+          fontSize: 10,
+          variant: 'tab',
+          activeTab: this.hangarTab === t.id,
+          onLeft: () => { const prev = (idx + 2) % 3; switchHangar(hTabs[prev].id, prev); },
+          onRight: () => { const nxt = (idx + 1) % 3; switchHangar(hTabs[nxt].id, nxt); },
+        });
+      });
+
+      if (this.hangarTab === 'hangar') {
+        this.text(384, 108, 'ITENS 100% COSMÉTICOS — SEM VANTAGEM EM COMBATE (SEM PAY-TO-WIN)', 8.4, UI.cyanHex);
+        const skins = HANGAR_CATALOG.filter(it => it.kind === 'skin');
+        skins.forEach((skin, idx) => {
+          const y = 136 + idx * 36;
+          const owned = prof.unlocks.skins.includes(skin.id);
+          const equipped = eqSkinId === skin.id;
+          const canBuy = prof.wallet.credits >= skin.cost;
+          const status = equipped ? 'EQUIPADA (ATIVA)' : owned ? 'DESBLOQUEADA — EQUIPAR' : `COMPRAR POR ${skin.cost} CR`;
+          this.button(384, y, `${skin.name.toUpperCase()}  •  ${status}`, () => {
+            if (equipped) {
+              globalProfileStore.equipSkin(prof.selectedPilotId, 'skin:classic');
+            } else if (owned) {
+              globalProfileStore.equipSkin(prof.selectedPilotId, skin.id);
+            } else if (canBuy) {
+              globalProfileStore.buyHangarItem(skin.id);
+              globalAudio.playArcade('level-up');
+            }
+            this.nextHangarFocus = 3 + idx;
+            this.menuActionLocked = false;
+            this.show('hangar');
+          }, 580, 29, {
+            fontSize: 10.2,
+            variant: equipped ? 'primary' : 'secondary',
+            disabled: !owned && !canBuy,
+          });
+        });
+      } else if (this.hangarTab === 'achievements') {
+        makeVectorPanel(this, this.ui, 384, 214, 624, 224, { kind: 'sub' });
+        const shown = ACHIEVEMENTS.slice(0, 12);
+        shown.forEach((ach, idx) => {
+          const col = idx % 2;
+          const row = Math.floor(idx / 2);
+          const ax = col === 0 ? 96 : 396;
+          const ay = 122 + row * 34;
+          const done = Boolean(prof.achievements[ach.id]);
+          this.text(ax, ay - 4, `${done ? '★' : '○'} ${ach.title}  (+${ach.rewardCredits} CR)`, 9.2, done ? UI.goldHex : UI.silver, { originX: 0 });
+          this.text(ax + 12, ay + 8, ach.description, 7.6, done ? UI.cyanHex : UI.slate, { originX: 0, wrap: 274 });
+        });
+        this.text(384, 314, `Conquistas verificadas diretamente na simulação (${achCount}/${ACHIEVEMENTS.length}).`, 8, UI.silver);
+      } else {
+        makeVectorPanel(this, this.ui, 214, 212, 282, 218, { kind: 'sub' });
+        this.text(214, 126, 'CONTA LOCAL (CONVIDADO)', 11, UI.goldHex);
+        this.text(214, 152, `PILOTO ATIVO: ${getPilotContract(prof.selectedPilotId).name.toUpperCase()}`, 9.5, UI.cyanHex);
+        this.text(214, 176, `PILOTOS DESBLOQUEADOS: ${prof.unlocks.pilots.length} / 5`, 9.5, UI.white);
+        this.text(214, 198, `FASES CONCLUÍDAS: ${prof.clearedStages.length} / 2`, 9.5, UI.white);
+        this.text(214, 220, `CONQUISTAS: ${achCount} / ${ACHIEVEMENTS.length}`, 9.5, UI.white);
+        this.text(214, 242, `CRÉDITOS DE CAMPANHA: ${prof.wallet.credits} CR`, 10, UI.goldHex);
+        this.text(214, 274, `SCHEMA DE PERFIL: v${prof.schemaVersion} (OFFLINE)`, 8, UI.silver);
+
+        makeVectorPanel(this, this.ui, 526, 212, 314, 218, { kind: 'sub' });
+        this.text(526, 126, 'SERVIÇOS ONLINE & NUVEM', 11, UI.goldHex);
+        this.text(526, 174, 'Status atual: MODO CONVIDADO OFFLINE.\nTodo o seu progresso, recordes, pilotos e pinturas\nficam salvos localmente neste navegador/dispositivo.', 8.8, UI.white, { wrap: 286 });
+        this.text(526, 244, 'Sincronização em nuvem, login externo e placares\nglobais requerem backend configurado e não estão\nativos nesta compilação.', 8.2, UI.silver, { wrap: 286 });
+      }
+
+      this.button(384, 356, 'VOLTAR', () => { this.nextHangarFocus = undefined; this.show('title'); }, 188, 30, { fontSize: 12, variant: 'back' });
+      this.focus = this.nextHangarFocus ?? hTabs.findIndex(t => t.id === this.hangarTab);
+      this.nextHangarFocus = undefined;
+      makeMenuHintBar(this, this.ui, 417, connectedPad()?.id);
+      if (old !== 'hangar') playMenuScreenEntrance(this, this.ui, 190);
     } else if (screen === 'play') {
       if (this.world?.up) {
         this.radio.setStyle({ fontFamily: FONT, fontSize: '10px', color: '#f2fff9', backgroundColor: 'rgba(0,0,0,0)', padding: { x: 0, y: 0 }, wordWrap: { width: 105 }, align: 'left' });
@@ -664,29 +936,34 @@ export class ArcadeScene extends Phaser.Scene {
       this.refreshTouchLayout();
       this.syncPauseButton();
       if (!this.world?.up && this.world?.state === 'intro') {
-        const portrait = this.add.image(144, 207, 'arc-pilots', 0).setDisplaySize(110, 110); this.ui.add(portrait); this.time.delayedCall(2300, () => portrait.destroy());
+        const pIdx = this.world?.pilotContract.portraitFrame ?? 0;
+        const portrait = this.add.image(144, 207, 'arc-pilots', pIdx).setDisplaySize(110, 110); this.ui.add(portrait); this.time.delayedCall(2300, () => portrait.destroy());
       }
     } else if (screen === 'pause') {
-      this.addModalBackdrop(0x031129, .60, true);
-      makePanel(this, 384, 224, 380, 326, 'cobalt', this.ui);
-      makeRibbon(this, 384, 64, 228, 38, 'gold', this.ui);
-      this.text(384, 64, 'PAUSA', 18, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
+      this.addModalBackdrop(0x031129, .62, false);
+      makeVectorPanel(this, this.ui, 384, 218, 410, 324, { kind: 'main' });
+      makeVectorBanner(this, this.ui, 384, 58, 224, 32, 'PAUSA', { fontSize: 16 });
       const w = this.world;
       if (w) {
-        makeGaugeMeter(this, 384, 110, 322, 26, 0, 0, UI_PIP.cyan, this.ui);
-        const modeTag = w.up ? (w.isAssisted ? '  •  ASSISTIDO' : `  •  ${w.difficultyProfile.label}`) : '';
-        this.text(384, 110, `ROTA 0${this.currentMission + 1}${modeTag}  •  ${w.score} PTS  •  NV ${w.weapons.weaponLevel}`, 10, UI.cyanHex);
+        const pct = Math.round(w.progressRatio * 100);
+        const modeTag = w.practiceMode
+          ? 'TREINO'
+          : w.isAssisted
+            ? `${w.difficultyProfile.label} • ASSISTIDO`
+            : w.difficultyProfile.label;
+        makeStatusPill(this, this.ui, 384, 102, `ROTA 0${this.currentMission + 1} • ${w.pilotContract.name.toUpperCase()} • ${modeTag}`, UI.cyan, UI.cyanHex);
+        this.text(384, 126, `PROGRESSO ${pct}%  •  ${w.score} PTS  •  NV ${w.weapons.weaponLevel}`, 9.5, UI.white);
       }
-      this.button(384, 162, 'CONTINUAR', () => this.show('play'), 266, 38);
-      this.button(384, 209, 'CONTROLES', () => this.show('controls'), 266, 38);
-      this.button(384, 256, 'OPÇÕES', () => { this.pauseOrigin = 'pause'; this.show('settings'); }, 266, 38);
-      this.button(384, 303, 'SAIR DA MISSÃO', () => this.show('confirm-exit'), 266, 38);
+      this.button(384, 166, 'CONTINUAR', () => this.show('play'), 256, 32, { fontSize: 12, variant: 'primary' });
+      this.button(384, 206, 'CONTROLES', () => this.show('controls'), 256, 32, { fontSize: 11.5, variant: 'secondary' });
+      this.button(384, 246, 'OPÇÕES', () => { this.pauseOrigin = 'pause'; this.show('settings'); }, 256, 32, { fontSize: 11.5, variant: 'secondary' });
+      this.button(384, 286, 'SAIR DA MISSÃO', () => this.show('confirm-exit'), 256, 32, { fontSize: 11.5, variant: 'back' });
       const pPad = connectedPad();
       const pLabels = padLabels(pPad?.id);
-      this.text(384, 358, pPad ? `${pLabels.pause}: RETOMAR  •  ${pLabels.confirm}: CONFIRMAR  •  ${pLabels.cancel}: VOLTAR` : 'ESC: RETOMAR VOO', 9, UI.slate);
+      this.text(384, 344, pPad ? `${pLabels.pause}: RETOMAR  •  ${pLabels.confirm}: CONFIRMAR  •  ${pLabels.cancel}: VOLTAR` : 'ESC: RETOMAR VOO', 8.5, UI.silver);
     } else if (screen === 'controls') {
-      this.addModalBackdrop(0x031129, .62, true);
-      const preGame = !this.world;
+      this.addModalBackdrop(0x031129, .62, false);
+      const preGame = true;
       const pad = connectedPad();
       this.lastControlsPadId = pad?.id ?? '';
       if (old !== 'controls') {
@@ -695,14 +972,8 @@ export class ArcadeScene extends Phaser.Scene {
         else if (hasTouchOnly) this.controlsTab = 'android';
         else this.controlsTab = 'pc';
       }
-      if (preGame) {
-        makeVectorPanel(this, this.ui, 384, 210, 678, 352, { kind: 'main' });
-        makeVectorBanner(this, this.ui, 384, 34, 218, 32, 'CONTROLES', { fontSize: 15.5 });
-      } else {
-        makePanel(this, 384, 218, 678, 368, 'cobalt', this.ui);
-        makeRibbon(this, 384, 42, 260, 34, 'gold', this.ui);
-        this.text(384, 42, 'CONTROLES', 17, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
-      }
+      makeVectorPanel(this, this.ui, 384, 210, 678, 352, { kind: 'main' });
+      makeVectorBanner(this, this.ui, 384, 34, 218, 32, 'CONTROLES', { fontSize: 15.5 });
       const tabs: Array<{ id: ControlsTab; label: string; x: number }> = [
         { id: 'pc', label: 'PC', x: 228 },
         { id: 'gamepad', label: 'CONTROLE', x: 384 },
@@ -717,8 +988,7 @@ export class ArcadeScene extends Phaser.Scene {
       };
       tabs.forEach((t, idx) => {
         const active = this.controlsTab === t.id;
-        if (active && this.world) makePanel(this, t.x, 80, 152, 32, 'gold', this.ui);
-        this.button(t.x, preGame ? 76 : 80, active ? (this.world ? `▸ ${t.label} ◂` : t.label) : t.label, () => switchTab(t.id, idx), preGame ? 138 : 148, 26, {
+        this.button(t.x, 76, t.label, () => switchTab(t.id, idx), 138, 26, {
           fontSize: 11.5,
           variant: 'tab',
           activeTab: active,
@@ -728,41 +998,40 @@ export class ArcadeScene extends Phaser.Scene {
       });
 
       const drawKey = (kx: number, ky: number, lbl: string, opts?: { wide?: boolean; gold?: boolean; size?: number; fontSize?: number; width?: number }) => {
-        if (preGame) makeVectorKeycap(this, this.ui, kx, ky, lbl, opts);
-        else makeKeyBadge(this, kx, ky, lbl, { wide: opts?.wide, gold: opts?.gold, size: opts?.size, fontSize: opts?.fontSize, container: this.ui });
+        makeVectorKeycap(this, this.ui, kx, ky, lbl, opts);
       };
       const cmdRow = (xBadge: number, y: number, badgeText: string, desc: string, opts?: { wide?: boolean; gold?: boolean; descColor?: string; badgeFont?: number }) => {
-        drawKey(xBadge, y, badgeText, { wide: opts?.wide ?? badgeText.length > 3, gold: opts?.gold, size: 22, width: preGame ? 72 : undefined, fontSize: opts?.badgeFont ?? 8.2 });
-        this.text(xBadge + 44, y, desc, 10, opts?.descColor ?? UI.white, { originX: 0, wrap: 230 });
+        drawKey(xBadge, y, badgeText, { wide: opts?.wide ?? badgeText.length > 3, gold: opts?.gold, size: 22, width: 72, fontSize: opts?.badgeFont ?? 8.2 });
+        this.text(xBadge + 44, y, desc, 9.6, opts?.descColor ?? UI.white, { originX: 0, wrap: 230 });
       };
 
       if (this.controlsTab === 'pc') {
-        if (preGame) makeVectorPanel(this, this.ui, 198, 218, 228, 214, { kind: 'sub' });
-        else makePanel(this, 198, 224, 228, 222, 'cobalt', this.ui);
+        makeVectorPanel(this, this.ui, 198, 218, 228, 214, { kind: 'sub' });
         this.text(198, 128, 'TECLADO PC', 11.5, UI.goldHex);
-        drawKey(158, 160, 'W', { size: 24, fontSize: 10 });
-        drawKey(186, 160, 'A', { size: 24, fontSize: 10 });
-        drawKey(214, 160, 'S', { size: 24, fontSize: 10 });
-        drawKey(242, 160, 'D', { size: 24, fontSize: 10 });
-        drawKey(158, 194, '↑', { size: 24, fontSize: 11 });
-        drawKey(186, 194, '←', { size: 24, fontSize: 11 });
-        drawKey(214, 194, '↓', { size: 24, fontSize: 11 });
-        drawKey(242, 194, '→', { size: 24, fontSize: 11 });
-        drawKey(198, 232, 'ESPAÇO', { wide: true, size: 24, width: 92, fontSize: 9.5 });
-        drawKey(148, 268, 'Z', { size: 24, fontSize: 10.5 });
-        drawKey(182, 268, 'X', { gold: true, size: 24, fontSize: 10.5 });
-        drawKey(236, 268, 'ESC', { wide: true, size: 24, width: 58, fontSize: 9 });
-        this.text(198, 304, 'MOUSE NÃO MOVE NEM ATIRA EM COMBATE', 7.8, UI.cyanHex, { wrap: 204 });
+        drawKey(158, 158, 'W', { size: 24, fontSize: 10 });
+        drawKey(186, 158, 'A', { size: 24, fontSize: 10 });
+        drawKey(214, 158, 'S', { size: 24, fontSize: 10 });
+        drawKey(242, 158, 'D', { size: 24, fontSize: 10 });
+        drawKey(158, 190, '↑', { size: 24, fontSize: 11 });
+        drawKey(186, 190, '←', { size: 24, fontSize: 11 });
+        drawKey(214, 190, '↓', { size: 24, fontSize: 11 });
+        drawKey(242, 190, '→', { size: 24, fontSize: 11 });
+        drawKey(198, 226, 'ESPAÇO', { wide: true, size: 23, width: 92, fontSize: 9.2 });
+        drawKey(136, 260, 'Z', { size: 23, fontSize: 10 });
+        drawKey(166, 260, 'X', { gold: true, size: 23, fontSize: 10 });
+        drawKey(208, 260, 'SHIFT', { wide: true, size: 23, width: 48, fontSize: 8.2 });
+        drawKey(258, 260, 'ESC', { wide: true, size: 23, width: 40, fontSize: 8.2 });
+        this.text(198, 298, 'MOUSE NÃO MOVE NEM ATIRA EM COMBATE', 7.8, UI.cyanHex, { wrap: 204 });
 
-        if (preGame) makeVectorPanel(this, this.ui, 504, 218, 344, 214, { kind: 'sub' });
-        else makePanel(this, 504, 224, 344, 222, 'cobalt', this.ui);
-        this.text(504, 128, 'TIRO AUTOMÁTICO E CARREGADO', 11, UI.goldHex);
-        cmdRow(380, 158, 'WASD/SETAS', 'Mover RIVET em 8 direções', { wide: true, badgeFont: 7.2 });
-        cmdRow(380, 189, 'ESPAÇO', 'Tiro automático / rajada principal', { wide: true, descColor: UI.goldHex, badgeFont: 8 });
-        cmdRow(380, 220, 'TECLA Z', 'Tiro carregado (segurar / soltar)', { wide: true, descColor: '#67e8f9', badgeFont: 8 });
-        cmdRow(380, 251, 'TECLA X', 'Especial — Tormenta Escarlate', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8 });
-        cmdRow(380, 282, 'ESC / ENTER', 'Pausar / Confirmar menus', { wide: true, badgeFont: 7.2 });
-        this.text(504, 310, 'Segure Z para carregar energia e solte para disparar.', 8.2, UI.silver, { wrap: 318 });
+        makeVectorPanel(this, this.ui, 504, 218, 344, 214, { kind: 'sub' });
+        this.text(504, 128, 'COMANDOS DE COMBATE', 11, UI.goldHex);
+        cmdRow(380, 154, 'WASD/SETAS', 'Mover nave em 8 direções', { wide: true, badgeFont: 7.2 });
+        cmdRow(380, 181, 'ESPAÇO', 'Tiro principal / rajada contínua', { wide: true, descColor: UI.goldHex, badgeFont: 8 });
+        cmdRow(380, 208, 'TECLA Z', 'Tiro carregado (segurar / soltar)', { wide: true, descColor: '#67e8f9', badgeFont: 8 });
+        cmdRow(380, 235, 'TECLA X', 'Especial do piloto', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8 });
+        cmdRow(380, 262, 'SHIFT', 'Foco (voo preciso + núcleo hitbox)', { wide: true, descColor: '#a5f3fc', badgeFont: 8 });
+        cmdRow(380, 289, 'ESC / ENTER', 'Pausar / Confirmar menus', { wide: true, badgeFont: 7.2 });
+        this.text(504, 314, 'Segure Z para carregar energia e solte para disparar.', 8, UI.silver, { wrap: 318 });
       } else if (this.controlsTab === 'gamepad') {
         const detected = pad ? detectPadProfile(pad.id) : 'playstation';
         const activeProfile: Extract<PadProfile, 'playstation' | 'xbox'> =
@@ -873,16 +1142,10 @@ export class ArcadeScene extends Phaser.Scene {
         if (old !== 'controls') playMenuScreenEntrance(this, this.ui, 200);
       }
     } else if (screen === 'settings') {
-      this.addModalBackdrop(0x031129, .62, true);
-      const preGame = !this.world;
-      if (preGame) {
-        makeVectorPanel(this, this.ui, 384, 210, 634, 350, { kind: 'main' });
-        makeVectorBanner(this, this.ui, 384, 34, 210, 32, 'OPÇÕES', { fontSize: 15.5 });
-      } else {
-        makePanel(this, 384, 222, 620, 368, 'cobalt', this.ui);
-        makeRibbon(this, 384, 42, 232, 36, 'gold', this.ui);
-        this.text(384, 42, 'OPÇÕES', 18, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
-      }
+      this.addModalBackdrop(0x031129, .62, false);
+      const preGame = true;
+      makeVectorPanel(this, this.ui, 384, 212, 634, 356, { kind: 'main' });
+      makeVectorBanner(this, this.ui, 384, 32, 210, 30, 'OPÇÕES', { fontSize: 15 });
       const syncWorldDifficulty = () => {
         if (!this.world) return;
         const cur = globalSave.getSettings();
@@ -890,11 +1153,8 @@ export class ArcadeScene extends Phaser.Scene {
         this.world.setDifficulty(cur.difficulty);
         this.pelagicAssistBadge.setVisible(!!this.world.up && this.world.isAssisted);
       };
-      const addRowIcon = (y: number, iconFrame: number) => {
-        if (!preGame) makeIcon(this, 136, y, iconFrame, 22, this.ui);
-      };
-      const labelX = preGame ? 124 : 164;
-      const addVolumeRow = (y: number, iconFrame: number, label: string, isMusic: boolean) => {
+      const labelX = 122;
+      const addVolumeRow = (y: number, label: string, isMusic: boolean) => {
         const get = () => isMusic ? globalSave.getSettings().musicVolume : globalSave.getSettings().sfxVolume;
         let meter!: { setValue: (n: number) => void }, valText!: Phaser.GameObjects.Text;
         const apply = (next: number) => {
@@ -905,76 +1165,59 @@ export class ArcadeScene extends Phaser.Scene {
           const steps = Math.round(clamped * 10);
           meter?.setValue(steps); valText?.setText(`${steps * 10}%`);
         };
-        const btn = this.button(384, y, '', () => apply(get() >= .99 ? 0 : get() + .1), 564, 32, {
+        const btn = this.button(384, y, '', () => apply(get() >= .99 ? 0 : get() + .1), 564, 27, {
           noLabel: true,
           variant: 'optionRow',
           showArrows: true,
           onLeft: () => { globalAudio.playArcade('navigate'); apply(get() - .1); },
           onRight: () => { globalAudio.playArcade('navigate'); apply(get() + .1); },
         });
-        addRowIcon(y, iconFrame);
-        const title = this.text(labelX, y, label, 11, UI.white, { originX: 0 });
-        meter = preGame
-          ? makeVectorGauge(this, this.ui, 444, y, 206, 19, 10, Math.round(get() * 10), isMusic ? 'cyan' : 'gold')
-          : makeGaugeMeter(this, 456, y, 192, 22, 10, Math.round(get() * 10), isMusic ? UI_PIP.cyan : UI_PIP.gold, this.ui);
+        const title = this.text(labelX, y, label, 10.2, UI.white, { originX: 0 });
+        meter = makeVectorGauge(this, this.ui, 444, y, 200, 16, 10, Math.round(get() * 10), isMusic ? 'cyan' : 'gold');
         const initSteps = Math.round(get() * 10);
-        valText = this.text(596, y, `${initSteps * 10}%`, 11, UI.cyanHex);
+        valText = this.text(596, y, `${initSteps * 10}%`, 10.2, UI.cyanHex);
         btn.extras = [title, valText];
       };
-      const addBoolRow = (y: number, iconFrame: number, label: string, readOn: () => boolean, toggle: () => void) => {
+      const addBoolRow = (y: number, label: string, readOn: () => boolean, toggle: () => void) => {
         const initOn = readOn();
-        let pill!: { setValue: (on: boolean) => void }, meter!: { setValue: (n: number) => void }, valText!: Phaser.GameObjects.Text;
+        let pill!: { setValue: (on: boolean) => void };
         const flip = () => {
           toggle();
-          const on = readOn();
-          pill?.setValue(on);
-          meter?.setValue(on ? 2 : 0);
-          valText?.setText(on ? 'ATIVADO' : 'DESATIVADO');
+          pill?.setValue(readOn());
         };
-        const btn = this.button(384, y, '', flip, 564, 32, {
+        const btn = this.button(384, y, '', flip, 564, 27, {
           noLabel: true,
           variant: 'optionRow',
           showArrows: true,
           onLeft: () => { globalAudio.playArcade('navigate'); flip(); },
           onRight: () => { globalAudio.playArcade('navigate'); flip(); },
         });
-        addRowIcon(y, iconFrame);
-        const title = this.text(labelX, y, label, 11, UI.white, { originX: 0 });
-        if (preGame) {
-          pill = makeVectorTogglePill(this, this.ui, 536, y, 148, 21, initOn, ['NÃO', 'SIM']);
-          btn.extras = [title];
-        } else {
-          meter = makeGaugeMeter(this, 438, y, 118, 20, 2, initOn ? 2 : 0, UI_PIP.green, this.ui);
-          valText = this.text(578, y, initOn ? 'ATIVADO' : 'DESATIVADO', 11, UI.goldHex);
-          btn.extras = [title, valText];
-        }
+        const title = this.text(labelX, y, label, 10.2, UI.white, { originX: 0 });
+        pill = makeVectorTogglePill(this, this.ui, 536, y, 146, 19, initOn, ['NÃO', 'SIM']);
+        btn.extras = [title];
       };
-      const addToggleRow = (y: number, iconFrame: number, label: string, pipCount: number, pipFrame: number, gaugeKind: 'cyan' | 'gold' | 'green', readState: () => { text: string; filled: number }, stepState: (dir: number) => void) => {
+      const addToggleRow = (y: number, label: string, pipCount: number, gaugeKind: 'cyan' | 'gold' | 'green', readState: () => { text: string; filled: number }, stepState: (dir: number) => void) => {
         const st0 = readState();
         let meter!: { setValue: (n: number) => void }, valText!: Phaser.GameObjects.Text;
         const update = (dir: number) => { stepState(dir); const st = readState(); meter.setValue(st.filled); valText.setText(st.text); };
-        const btn = this.button(384, y, '', () => update(1), 564, 32, {
+        const btn = this.button(384, y, '', () => update(1), 564, 27, {
           noLabel: true,
           variant: 'optionRow',
           showArrows: true,
           onLeft: () => { globalAudio.playArcade('navigate'); update(-1); },
           onRight: () => { globalAudio.playArcade('navigate'); update(1); },
         });
-        addRowIcon(y, iconFrame);
-        const title = this.text(labelX, y, label, 11, UI.white, { originX: 0 });
-        meter = preGame
-          ? makeVectorGauge(this, this.ui, 436, y, 142, 18, pipCount, st0.filled, gaugeKind)
-          : makeGaugeMeter(this, 438, y, 118, 20, pipCount, st0.filled, pipFrame, this.ui);
-        valText = this.text(578, y, st0.text, 10.8, UI.goldHex);
+        const title = this.text(labelX, y, label, 10.2, UI.white, { originX: 0 });
+        meter = makeVectorGauge(this, this.ui, 436, y, 138, 16, pipCount, st0.filled, gaugeKind);
+        valText = this.text(578, y, st0.text, 10, UI.goldHex);
         btn.extras = [title, valText];
       };
-      const yOff = preGame ? -8 : 0;
-      addVolumeRow(90 + yOff, UI_ICON.music, 'MÚSICA', true);
-      addVolumeRow(129 + yOff, UI_ICON.speaker, 'EFEITOS', false);
-      addBoolRow(168 + yOff, UI_ICON.lightning, 'DISPARO ACESSÍVEL',
+      addVolumeRow(70, 'MÚSICA', true);
+      addVolumeRow(101, 'EFEITOS', false);
+      addBoolRow(132, 'DISPARO ACESSÍVEL (AUTO)',
         () => globalSave.getSettings().rapidFire,
         () => { const next = !globalSave.getSettings().rapidFire; globalSave.updateSettings({ rapidFire: next }); if (this.world) this.world.accessibility = next; });
-      addToggleRow(207 + yOff, UI_ICON.crown, 'DIFICULDADE', 3, UI_PIP.gold, 'gold', () => {
+      addToggleRow(163, 'DIFICULDADE', 3, 'gold', () => {
         const diff = normalizeGameDifficulty(globalSave.getSettings().difficulty);
         const filled = diff === 'hard' ? 3 : diff === 'normal' ? 2 : 1;
         return { text: DIFFICULTY_PROFILES[diff].label, filled };
@@ -983,30 +1226,29 @@ export class ArcadeScene extends Phaser.Scene {
         globalSave.updateSettings({ difficulty: next });
         syncWorldDifficulty();
       });
-      addBoolRow(246 + yOff, UI_ICON.botan, 'MODO ASSISTIDO',
+      addBoolRow(194, 'MODO ASSISTIDO',
         () => globalSave.getSettings().assisted,
         () => { const next = !globalSave.getSettings().assisted; globalSave.updateSettings({ assisted: next }); syncWorldDifficulty(); });
-      addToggleRow(285 + yOff, UI_ICON.radar, 'QUALIDADE VISUAL', 3, UI_PIP.cyan, 'cyan', () => {
+      addToggleRow(225, 'QUALIDADE VISUAL', 3, 'cyan', () => {
         return { text: ['BAIXA', 'MÉDIA', 'ALTA'][this.quality], filled: this.quality + 1 };
       }, (dir) => { this.quality = (this.quality + (dir < 0 ? 2 : 1)) % 3; try { localStorage.setItem('bullet_wake_visual', String(this.quality)); } catch {/* Optional */ } });
-      this.text(384, 319 + yOff, 'Modo Assistido (Rota 01): recuperação facilitada sem alterar Fácil/Normal/Difícil.', 8.5, UI.silver);
-      this.button(268, 353 + yOff, 'CONTROLES TOUCH', () => this.show('touch-settings'), 204, 31, { fontSize: 11.5, variant: 'secondary' });
-      this.button(500, 353 + yOff, 'VOLTAR', () => this.show(this.pauseOrigin), 204, 31, { fontSize: 12, variant: 'back' });
+      addBoolRow(256, 'REDUZIR TREMOR DE TELA',
+        () => globalProfileStore.getSettings().reducedShake,
+        () => { globalProfileStore.updateSettings({ reducedShake: !globalProfileStore.getSettings().reducedShake }); });
+      addBoolRow(287, 'REDUZIR FLASHES INTENSOS',
+        () => globalProfileStore.getSettings().reducedFlash,
+        () => { globalProfileStore.updateSettings({ reducedFlash: !globalProfileStore.getSettings().reducedFlash }); });
+      this.text(384, 316, 'Disparo Acessível: tiro contínuo mãos-livres. Assistido: recuperação facilitada (fora do ranking puro).', 7.9, UI.silver);
+      this.button(268, 350, 'CONTROLES TOUCH', () => this.show('touch-settings'), 204, 30, { fontSize: 11.2, variant: 'secondary' });
+      this.button(500, 350, 'VOLTAR', () => this.show(this.pauseOrigin), 204, 30, { fontSize: 11.5, variant: 'back' });
       if (preGame) {
         makeMenuHintBar(this, this.ui, 417, connectedPad()?.id, { adjust: true });
-        playMenuScreenEntrance(this, this.ui, 210);
+        if (!this.world) playMenuScreenEntrance(this, this.ui, 200);
       }
     } else if (screen === 'touch-settings') {
-      this.addModalBackdrop(0x031129, .56, true);
-      const preGame = !this.world;
-      if (preGame) {
-        makeVectorPanel(this, this.ui, 384, 170, 536, 290, { kind: 'main' });
-        makeVectorBanner(this, this.ui, 384, 30, 240, 30, 'CONTROLES TOUCH', { fontSize: 14.5 });
-      } else {
-        makePanel(this, 384, 170, 524, 290, 'cobalt', this.ui);
-        makeRibbon(this, 384, 32, 276, 34, 'gold', this.ui);
-        this.text(384, 32, 'CONTROLES TOUCH', 16, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
-      }
+      this.addModalBackdrop(0x031129, .58, false);
+      makeVectorPanel(this, this.ui, 384, 170, 536, 290, { kind: 'main' });
+      makeVectorBanner(this, this.ui, 384, 30, 240, 30, 'CONTROLES TOUCH', { fontSize: 14.5 });
       const patchTouch = (patch: Partial<TouchControlSettings>) => {
         const cur = globalSave.getSettings().touch;
         globalSave.updateSettings({ touch: { ...cur, ...patch } });
@@ -1014,10 +1256,10 @@ export class ArcadeScene extends Phaser.Scene {
       };
       const addTouchRow = (
         y: number,
-        iconFrame: number,
+        _iconFrame: number,
         label: string,
         pipCount: number,
-        pipFrame: number,
+        _pipFrame: number,
         gaugeKind: 'cyan' | 'gold' | 'green',
         readState: () => { text: string; filled: number },
         stepState: (dir: number) => void,
@@ -1032,11 +1274,8 @@ export class ArcadeScene extends Phaser.Scene {
           onLeft: () => { globalAudio.playArcade('navigate'); update(-1); },
           onRight: () => { globalAudio.playArcade('navigate'); update(1); },
         });
-        if (!preGame) makeIcon(this, 174, y, iconFrame, 20, this.ui);
-        const title = this.text(preGame ? 168 : 198, y, label, 10.5, UI.white, { originX: 0 });
-        meter = preGame
-          ? makeVectorGauge(this, this.ui, 412, y, 114, 18, pipCount, st0.filled, gaugeKind)
-          : makeGaugeMeter(this, 418, y, 104, 18, pipCount, st0.filled, pipFrame, this.ui);
+        const title = this.text(168, y, label, 10.5, UI.white, { originX: 0 });
+        meter = makeVectorGauge(this, this.ui, 412, y, 114, 18, pipCount, st0.filled, gaugeKind);
         valText = this.text(540, y, st0.text, 10.5, UI.goldHex);
         btn.extras = [title, valText];
       };
@@ -1094,105 +1333,158 @@ export class ArcadeScene extends Phaser.Scene {
         this.show('touch-settings');
       }, 198, 30, { fontSize: 11, variant: 'secondary' });
       this.button(494, 272, 'VOLTAR', () => this.show('settings'), 198, 30, { fontSize: 12, variant: 'back' });
-      if (preGame) playMenuScreenEntrance(this, this.ui, 200);
+      if (!this.world) playMenuScreenEntrance(this, this.ui, 200);
     } else if (screen === 'confirm-exit') {
-      this.addModalBackdrop(0x031129, .64, true);
-      makePanel(this, 384, 218, 434, 256, 'gold', this.ui);
-      makeRibbon(this, 384, 92, 268, 38, 'red', this.ui);
-      this.text(384, 92, 'SAIR DA MISSÃO?', 17, '#fff5f7', { stroke: '#4b0816', strokeThickness: 2 });
-      const warn = makeIcon(this, 204, 174, UI_ICON.warning, 56, this.ui);
-      this.tweens.add({ targets: warn, scaleX: '*=1.08', scaleY: '*=1.08', duration: 620, yoyo: true, repeat: -1 });
-      this.text(406, 174, 'O progresso da fase atual\nserá perdido ao voltar.', 12, UI.white, { wrap: 270 });
-      this.button(384, 248, 'CANCELAR', () => this.show('pause'), 272, 40);
-      this.button(384, 298, 'CONFIRMAR SAÍDA', () => { this.disposeWorld(); this.show('title'); }, 272, 40);
+      this.addModalBackdrop(0x031129, .66, false);
+      makeVectorPanel(this, this.ui, 384, 214, 434, 248, { kind: 'gold' });
+      makeVectorBanner(this, this.ui, 384, 92, 244, 34, 'SAIR DA MISSÃO?', { kind: 'red', fontSize: 15 });
+      this.text(384, 158, 'O progresso da fase atual\nserá perdido ao voltar ao menu.', 11.5, UI.white, { wrap: 340 });
+      this.button(384, 232, 'CANCELAR', () => this.show('pause'), 252, 34, { fontSize: 12, variant: 'primary' });
+      this.button(384, 280, 'CONFIRMAR SAÍDA', () => { this.disposeWorld(); this.show('title'); }, 252, 34, { fontSize: 11.5, variant: 'back' });
     } else if (screen === 'result') {
-      this.audio.play('results'); this.addModalBackdrop(0x031129, .58, true); this.addConfetti();
+      this.audio.play('results'); this.addModalBackdrop(0x031129, .62, false); this.addConfetti();
       const w = this.world!;
-      makePanel(this, 384, 216, 628, 344, 'cobalt', this.ui);
-      makeRibbon(this, 384, 46, 328, 40, 'gold', this.ui);
-      this.text(384, 46, 'MISSÃO CONCLUÍDA!', 18, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
-      makePanel(this, 180, 170, 152, 152, 'gold', this.ui);
-      this.ui.add(this.add.image(180, 169, 'arc-pilots', 1).setDisplaySize(128, 128));
-      const crown = makeIcon(this, 144, 264, UI_ICON.crown, 24, this.ui);
-      this.tweens.add({ targets: crown, angle: { from: -4, to: 4 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-      const rank = w.deaths === 0 && w.score >= 18000 ? 'S' : w.score >= 10000 ? 'A' : w.score >= 5000 ? 'B' : 'C';
-      this.text(192, 264, `RANK ${rank}`, 14, UI.goldHex);
-      this.text(468, 100, MISSIONS[this.currentMission].name, 17, UI.cyanHex);
-      makePanel(this, 468, 148, 348, 50, 'cobalt', this.ui);
-      this.text(362, 148, 'PONTUAÇÃO', 10.5, UI.silver);
-      const scoreTxt = this.text(506, 148, String(w.score), 20, UI.goldHex);
-      makeIcon(this, 616, 148, UI_ICON.coin0, 28, this.ui).play('ui-coin-spin');
-      this.tweens.addCounter({ from: Math.round(w.score * .65), to: w.score, duration: 300, onUpdate: tw => { scoreTxt.setText(String(Math.round(tw.getValue() ?? w.score))); } });
+      const evalRes = this.lastRunOutcome?.evaluation ?? w.evaluateRun().evaluation;
+      const outcome = this.lastRunOutcome;
+      makeVectorPanel(this, this.ui, 384, 212, 650, 356, { kind: 'main' });
+      makeVectorBanner(this, this.ui, 384, 36, 300, 34, 'MISSÃO CONCLUÍDA!', { fontSize: 16 });
+      makeVectorPanel(this, this.ui, 168, 146, 138, 138, { kind: 'gold', cut: 10 });
+      const winFrame = w.pilotId === 'nolan' ? 1 : w.pilotContract.portraitFrame;
+      this.ui.add(this.add.image(168, 144, 'arc-pilots', winFrame).setDisplaySize(116, 116));
+      makePilotNameplate(this, this.ui, 168, 206, 114, 20, w.pilotContract.name.toUpperCase());
+      this.text(168, 240, `RANK ${evalRes.rank}`, 18, evalRes.rank === 'S+' || evalRes.rank === 'S' ? UI.goldHex : UI.cyanHex);
+      const modeLabel = evalRes.competitiveEligible ? 'ARCADE PURO' : w.practiceMode ? 'MODO TREINO' : w.isAssisted ? 'MODO ASSISTIDO' : `CONTINUE ×${w.continuesUsed}`;
+      makeStatusPill(this, this.ui, 168, 268, modeLabel, evalRes.competitiveEligible ? UI.gold : UI.cyan, evalRes.competitiveEligible ? UI.goldHex : '#88fff2');
+
+      this.text(466, 84, `${MISSIONS[this.currentMission].name}  •  ${w.difficultyProfile.label}`, 13.5, UI.cyanHex);
+      makeVectorPanel(this, this.ui, 466, 126, 366, 44, { kind: 'sub' });
+      this.text(336, 126, 'PONTUAÇÃO', 9.5, UI.silver, { originX: 0 });
+      const scoreTxt = this.text(534, 126, String(w.score), 19, UI.goldHex);
+      this.tweens.addCounter({ from: Math.round(w.score * .65), to: w.score, duration: 320, onUpdate: tw => { scoreTxt.setText(String(Math.round(tw.getValue() ?? w.score))); } });
       const secs = Math.floor(w.elapsed);
-      this.text(468, 198, `TEMPO ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}  •  ${w.kills} ALVOS  •  ${w.collected} ITENS`, 12, UI.white);
-      makeIcon(this, 316, 232, UI_ICON.lightning, 20, this.ui);
-      this.text(476, 232, 'Potência, vidas e especiais seguem com você.', 11, UI.goldHex);
+      this.text(466, 166, `TEMPO ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}  •  ${w.kills} ALVOS  •  GRAZE ${w.grazeCount}  •  CHAIN ×${w.maxChain}`, 9.4, UI.white);
       if (w.up) {
         const b = w.pelagicScoring.snapshot();
-        this.text(468, 260, `ESQUADRÕES ${b.formationsCleared}  •  SETORES ${b.sectorsClean}/7  •  BÔNUS +${b.totalBonus}`, 10, UI.cyanHex);
-        if (w.isAssisted) this.text(468, 279, 'MODO ASSISTIDO ATIVO', 9, '#88fff2');
+        this.text(466, 188, `ESQUADRÕES ${b.formationsCleared}  •  SETORES ${b.sectorsClean}/7  •  BÔNUS +${b.totalBonus}`, 9.2, UI.cyanHex);
       }
-      this.button(384, 312, this.currentMission === 0 ? 'PRÓXIMA: CIDADE SOLAR' : 'VER ENCERRAMENTO', () => { if (this.currentMission === 0) this.begin(1, this.carried); else this.show('ending'); }, 346, 40);
-      this.button(384, 358, 'MENU', () => { this.disposeWorld(); this.show('title'); }, 184, 34);
+      if (evalRes.badges.length > 0) {
+        this.text(466, 212, `SELOS: ${evalRes.badges.join('  •  ')}`, 9.5, UI.goldHex);
+      } else {
+        this.text(466, 212, 'Potência, vidas e especiais seguem para a próxima rota.', 9.2, UI.silver);
+      }
+      const creditsWon = outcome ? outcome.creditsAdded : evalRes.creditsEarned;
+      const unlockParts: string[] = [];
+      if (creditsWon > 0) unlockParts.push(`+${creditsWon} CR`);
+      if (outcome && outcome.newlyUnlockedAchievements.length > 0) unlockParts.push(`${outcome.newlyUnlockedAchievements.length} CONQUISTA(S)`);
+      if (outcome && outcome.newlyUnlockedPilots.length > 0) unlockParts.push(`PILOTO: ${outcome.newlyUnlockedPilots.map((id: PilotId) => getPilotContract(id).name.toUpperCase()).join(', ')}`);
+      if (unlockParts.length > 0) {
+        makeStatusPill(this, this.ui, 466, 244, unlockParts.join('  •  '), UI.gold, UI.goldHex);
+      }
+      this.button(466, 304, w.practiceMode ? 'VOLTAR AO TREINO' : (this.currentMission === 0 ? 'PRÓXIMA: CIDADE SOLAR' : 'VER ENCERRAMENTO'), () => {
+        if (w.practiceMode) { this.disposeWorld(); this.show('practice'); return; }
+        if (this.currentMission === 0) this.begin(1, this.carried);
+        else this.show('ending');
+      }, 300, 34, { fontSize: 12, variant: 'primary' });
+      this.button(466, 348, 'MENU', () => { this.disposeWorld(); this.show('title'); }, 188, 30, { fontSize: 11.5, variant: 'back' });
     } else if (screen === 'defeat') {
-      this.audio.play('defeat'); this.addModalBackdrop(0x260812, .64, true);
+      this.audio.play('defeat'); this.addModalBackdrop(0x260812, .68, false);
       const w = this.world!;
-      makePanel(this, 384, 218, 480, 342, 'gold', this.ui);
-      makeRibbon(this, 384, 50, 340, 40, 'red', this.ui);
-      this.text(384, 50, 'ATERRISSAGEM… CRIATIVA!', 17, '#fff5f7', { stroke: '#4b0816', strokeThickness: 2 });
-      makePanel(this, 384, 146, 134, 134, 'cobalt', this.ui);
-      this.ui.add(this.add.image(384, 145, 'arc-pilots', 2).setDisplaySize(112, 112));
-      this.text(384, 236, 'Bayek: "O importante é ter estilo na próxima!"', 12, UI.goldHex);
-      if (w) this.text(384, 252, `PONTOS ${w.score}  •  PROGRESSO ${Math.min(100, Math.round(w.route / 3))}%${w.isAssisted ? '  •  ASSISTIDO' : ''}`, 10.5, UI.silver);
+      const defeatOutcome = this.recordDefeatProgress();
+      makeVectorPanel(this, this.ui, 384, 214, 520, 352, { kind: 'gold' });
+      makeVectorBanner(this, this.ui, 384, 42, 316, 34, 'ATERRISSAGEM… CRIATIVA!', { kind: 'red', fontSize: 15 });
+      makeVectorPanel(this, this.ui, 384, 124, 114, 114, { kind: 'sub', cut: 10 });
+      const loseFrame = w?.pilotId === 'nolan' ? 2 : (w?.pilotContract.portraitFrame ?? 2);
+      this.ui.add(this.add.image(384, 123, 'arc-pilots', loseFrame).setDisplaySize(96, 96));
+      const pName = w?.pilotContract.name.toUpperCase() ?? 'BAYEK';
+      this.text(384, 196, `${pName}: "O importante é voltar ainda mais forte!"`, 10.5, UI.goldHex);
+      if (w) {
+        const pct = Math.round(w.progressRatio * 100);
+        const crTag = defeatOutcome && defeatOutcome.creditsAdded > 0 ? `  •  +${defeatOutcome.creditsAdded} CR` : '';
+        this.text(384, 218, `PONTOS ${w.score}  •  PROGRESSO ${pct}%${w.isAssisted ? '  •  ASSISTIDO' : ''}${crTag}`, 9.6, UI.silver);
+      }
+      const canInstantContinue = !!(w && !w.practiceMode && w.difficulty !== 'hard');
       const hasCp = !!(w?.up && this.activeCheckpointSnapshot);
+      let nextBtnY = 256;
       if (hasCp) {
-        this.button(384, 292, 'CONTINUAR DO CHECKPOINT', () => {
+        this.button(384, nextBtnY, 'CONTINUAR DO CHECKPOINT', () => {
           if (!this.world || !this.activeCheckpointSnapshot) { this.begin(this.currentMission); return; }
           if (this.world.restartFromCheckpoint(this.activeCheckpointSnapshot)) {
             this.stageClearSaved = false;
+            this.defeatRecorded = false;
             this.audio.play('stage1');
             this.show('play');
           } else {
             this.begin(this.currentMission);
           }
-        }, 296, 36, { fontSize: 12.5 });
+        }, 296, 30, { fontSize: 11.2, variant: 'primary' });
+        nextBtnY += 36;
+      } else if (canInstantContinue) {
+        this.button(384, nextBtnY, 'CONTINUAR (NÃO-1CC)', () => {
+          if (!this.world) { this.begin(this.currentMission); return; }
+          this.world.continueFromDefeat();
+          this.defeatRecorded = false;
+          this.audio.play(this.currentMission ? 'stage2' : 'stage1');
+          this.show('play');
+        }, 296, 30, { fontSize: 11.2, variant: 'primary' });
+        nextBtnY += 36;
       }
-      this.button(384, hasCp ? 334 : 306, 'REINICIAR FASE', () => this.begin(this.currentMission), 260, 36, { fontSize: 12.5 });
-      this.button(384, hasCp ? 372 : 354, 'MENU', () => { this.disposeWorld(); this.show('title'); }, 184, 34);
+      this.button(384, nextBtnY, 'REINICIAR FASE', () => this.begin(this.currentMission), 260, 30, { fontSize: 11.2, variant: hasCp || canInstantContinue ? 'secondary' : 'primary' });
+      nextBtnY += 36;
+      this.button(384, nextBtnY, 'MENU', () => { this.disposeWorld(); this.show('title'); }, 184, 28, { fontSize: 11, variant: 'back' });
     } else if (screen === 'ending') {
-      this.disposeWorld(); this.audio.play('victory'); this.addModalBackdrop(0x041530, .32, false); this.addConfetti();
-      makeRibbon(this, 384, 40, 326, 42, 'gold', this.ui);
-      this.text(384, 40, 'DO MAR AO CÉU!', 19, UI.cobaltHex, { stroke: '#fff6b0', strokeThickness: 2 });
-      makePanel(this, 384, 198, 600, 220, 'cobalt', this.ui);
-      makePanel(this, 194, 198, 162, 162, 'gold', this.ui);
-      this.ui.add(this.add.image(194, 196, 'arc-pilots', 1).setDisplaySize(138, 138));
-      this.text(468, 142, 'OPERAÇÃO CONCLUÍDA COM SUCESSO', 11.5, UI.cyanHex);
-      this.text(468, 186, 'Bayek abriu caminho para a equipe de resgate.\nDuas missões concluídas. O próximo recorde é seu!', 12, UI.white, { wrap: 310 });
+      const activePilot = getPilotContract(this.selectedPilotId);
+      this.disposeWorld(); this.audio.play('victory'); this.addModalBackdrop(0x041530, .42, false); this.addConfetti();
+      makeVectorPanel(this, this.ui, 384, 206, 624, 336, { kind: 'main' });
+      makeVectorBanner(this, this.ui, 384, 40, 296, 36, 'DO MAR AO CÉU!', { fontSize: 17 });
+      makeVectorPanel(this, this.ui, 186, 188, 152, 152, { kind: 'gold', cut: 10 });
+      this.ui.add(this.add.image(186, 186, 'arc-pilots', activePilot.id === 'nolan' ? 1 : activePilot.portraitFrame).setDisplaySize(130, 130));
+      makePilotNameplate(this, this.ui, 186, 256, 118, 20, activePilot.name.toUpperCase());
+      this.text(468, 126, 'OPERAÇÃO CONCLUÍDA COM SUCESSO', 11.5, UI.cyanHex);
+      this.text(468, 170, `${activePilot.name.toUpperCase()} abriu caminho para a equipe de resgate.\nDuas missões concluídas. Experimente novos pilotos e busque o Rank S+!`, 11, UI.white, { wrap: 332 });
       const best = this.bestScoreFor();
-      makePanel(this, 468, 252, 292, 42, 'gold', this.ui);
-      makeIcon(this, 348, 252, UI_ICON.crown, 24, this.ui);
-      this.text(468, 252, `RECORDE  ${best}`, 14, UI.goldHex);
-      makeIcon(this, 588, 252, UI_ICON.coin0, 24, this.ui).play('ui-coin-spin');
-      this.button(384, 366, 'VOAR DE NOVO', () => this.show('pilot'), 278, 42);
+      const prof = globalProfileStore.getProfile();
+      makeVectorPanel(this, this.ui, 468, 238, 314, 44, { kind: 'gold' });
+      this.text(468, 238, `RECORDE ${best}  •  SALDO ${prof.wallet.credits} CR`, 12.5, UI.goldHex);
+      this.text(468, 282, `PILOTOS: ${prof.unlocks.pilots.length}/5  •  CONQUISTAS: ${Object.keys(prof.achievements).length}/${ACHIEVEMENTS.length}`, 9.5, UI.cyanHex);
+      this.button(384, 342, 'VOAR DE NOVO', () => this.show('pilot'), 264, 34, { fontSize: 12.5, variant: 'primary' });
     }
     this.focusButtons(true);
     this.setTouchVisible(screen === 'play' || screen === 'touch-settings');
     if (screen === 'touch-settings') this.refreshTouchLayout();
   }
-  begin(index: number, carry?: CampaignFlight): void {
+  begin(index: number, carry?: CampaignFlight, opts?: { practiceMode?: boolean }): void {
     if (index === 0) { this.messageUntil = 0; this.activeCheckpointSnapshot = undefined; this.checkpointBannerUntil = 0; }
-    this.disposeWorld(); this.currentMission = index; this.stageClearSaved = false; this.pelagicComms.reset();
+    this.disposeWorld(); this.currentMission = index; this.stageClearSaved = false; this.defeatRecorded = false; this.lastRunOutcome = undefined; this.pelagicComms.reset();
     const settings = globalSave.getSettings();
     const usePortrait = index === 0 && this.isPortraitMobileMode();
     const portH = usePortrait ? this.portraitCanvasHeight() : 432;
-    this.world = new ArcadeWorld(MISSIONS[index], carry, index === 0 ? {
-      upLayout: usePortrait ? 'portrait' : 'pc',
-      arena: usePortrait ? { left: 0, right: 384, top: 34, bottom: portH - 14 } : { left: 160, right: 608, top: 18, bottom: 424 },
-    } : undefined);
+    const practiceMode = Boolean(opts?.practiceMode);
+    const pilotId = globalProfileStore.isPilotUnlocked(this.selectedPilotId) ? this.selectedPilotId : 'nolan';
+    this.selectedPilotId = pilotId;
+    this.world = new ArcadeWorld(MISSIONS[index], carry, {
+      ...(index === 0 ? {
+        upLayout: usePortrait ? 'portrait' : 'pc',
+        arena: usePortrait ? { left: 0, right: 384, top: 34, bottom: portH - 14 } : { left: 160, right: 608, top: 18, bottom: 424 },
+      } : {}),
+      pilotId,
+      practiceMode,
+    });
     this.world.accessibility = settings.rapidFire;
     this.world.assisted = index === 0 && settings.assisted;
     this.world.setDifficulty(settings.difficulty);
     this.accumulator = 0;
+    this.shakeTime = 0;
+    this.shakeAmp = 0;
+    this.damageFlashAlpha = 0;
+    this.bossWarningUntil = 0;
+    this.firstSortieHintUntil = this.clock + 3.8;
+    this.replayRecorder = new ReplayRecorder({
+      missionId: MISSIONS[index].id,
+      pilotId,
+      difficulty: this.world.difficulty,
+      assisted: this.world.isAssisted,
+      seed: this.world.seed,
+    });
     this.world.bossContact = (_boss, ax, ay, bx, by, radius) => spriteContact(this.bossSprite, ax, ay, bx, by, radius);
     this.world.subHullContact = (_sub, secIdx, ax, ay, bx, by, radius) => this.subBossArt.hullContact(secIdx, ax, ay, bx, by, radius);
     this.world.contact = (e, ax, ay, bx, by, radius) => {
@@ -1208,9 +1500,33 @@ export class ArcadeScene extends Phaser.Scene {
     };
     this.player.setVisible(true); this.audio.play(index ? 'stage2' : 'stage1'); this.show('play');
   }
+  beginPractice(missionIndex: number, targetSeconds: number): void {
+    this.begin(missionIndex, undefined, { practiceMode: true });
+    const w = this.world;
+    if (!w) return;
+    w.introTime = 0;
+    if (targetSeconds > 0) {
+      w.devJumpToCheckpoint(targetSeconds);
+      if (targetSeconds >= w.stageDuration) this.audio.play(w.up ? 'boss1' : 'boss2');
+      else if (!w.up && targetSeconds >= 155 && targetSeconds < 185) this.audio.play('mini2');
+    }
+    this.consumeEvents();
+    this.backdrop.draw(w.elapsed, w, this.quality);
+    this.renderWorld(0);
+    this.refreshHudVisual();
+  }
   private disposeWorld(): void {
     this.touchController?.clearAll(); this.emplacements?.clear(); this.hitOverlays?.clear(); this.bombArt?.draw(); this.subBossArt?.clear(); this.bossHudLabel?.setVisible(false); this.pelagicAssistBadge?.setVisible(false); this.pelagicCheckpointBadge?.setVisible(false); this.pelagicSpecialText?.setVisible(false); this.pelagicAnims?.clear(); this.pelagicComms.reset(); this.pelagicDesktopHud?.resetComms();
     this.clearBonusPopups();
+    this.vfxGfx?.clear();
+    this.warningBannerText?.setVisible(false);
+    this.sortieHintText?.setVisible(false);
+    this.shakeTime = 0;
+    this.damageFlashAlpha = 0;
+    this.bossWarningUntil = 0;
+    this.firstSortieHintUntil = 0;
+    const viewport = getCombatVirtualSize(this);
+    this.cameras?.main?.centerOn(viewport.cx ?? viewport.w / 2, viewport.cy ?? viewport.h / 2);
     this.world = undefined; this.pelagicDesktopHud?.setVisible(false); this.player?.setVisible(false); this.bossSprite?.setVisible(false); this.lifeIcons.forEach(s => s.setVisible(false)); this.hud?.setText(''); this.radio?.setVisible(false); this.combatInk?.clear(); this.decor?.clear(); this.lastHud = '';
     for (const map of [this.enemySprites, this.partSprites, this.turrets]) { for (const s of map.values()) s.destroy(); map.clear(); } for (const s of this.cargoSprites.values()) s.destroy(); this.cargoSprites.clear(); for (const ex of this.cargoExtras.values()) { ex.shadow.destroy(); ex.glow.destroy(); ex.prop.destroy(); } this.cargoExtras.clear(); for (const s of this.bulletSprites) s.setVisible(false); for (const e of this.effects) { e.sprite.setVisible(false); this.effectPool.push(e.sprite); } this.effects = []; globalAudio.stopCombatEffects();
     this.syncResponsiveViewport();
@@ -1316,8 +1632,9 @@ export class ArcadeScene extends Phaser.Scene {
           else if (this.screen === 'controls') this.show(this.world ? 'pause' : this.pauseOrigin);
           else if (this.screen === 'touch-settings') this.show('settings');
           else if (this.screen === 'settings') this.show(this.pauseOrigin);
+          else if (this.screen === 'practice') this.show('missions');
           else if (this.screen === 'missions') this.show('pilot');
-          else if (this.screen === 'pilot' || this.screen === 'credits') this.show('title');
+          else if (this.screen === 'pilot' || this.screen === 'credits' || this.screen === 'hangar') this.show('title');
           else if (backPressed && ['result', 'defeat', 'ending'].includes(this.screen)) { this.disposeWorld(); this.show('title'); }
         }
       }
@@ -1325,7 +1642,7 @@ export class ArcadeScene extends Phaser.Scene {
     const resumedFromMenu = !startedInPlay && this.screen === 'play';
     if (this.world && this.screen === 'play' && !resumedFromMenu) {
       if (just('ENTER')) this.world.introTime = 0;
-      const held = (k: string) => !domInputFocused && this.controls[k].isDown;
+      const held = (k: string) => !domInputFocused && Boolean(this.controls[k]?.isDown);
       const touchCmd = this.touchController.consumeStep();
       const rawFire = held('SPACE') || gp.firePrimary || touchCmd.fire;
       if (this.suppressHeldFireUntilRelease && !rawFire) this.suppressHeldFireUntilRelease = false;
@@ -1336,13 +1653,18 @@ export class ArcadeScene extends Phaser.Scene {
       const rawSpecialHeld = held('X') || gp.specialHeld || touchCmd.special;
       if (this.suppressSpecialUntilRelease && !rawSpecialHeld) this.suppressSpecialUntilRelease = false;
       const specialInput = this.suppressSpecialUntilRelease ? false : (held('X') || gp.special || touchCmd.special);
+      const focusInput = held('SHIFT') || gp.focusHeld;
       const moveX = clamp(Number(held('D') || held('RIGHT')) - Number(held('A') || held('LEFT')) + gp.moveX + touchCmd.x, -1, 1);
       const moveY = clamp(Number(held('S') || held('DOWN')) - Number(held('W') || held('UP')) + gp.moveY + touchCmd.y, -1, 1);
-      const input: Controls = { x: moveX, y: moveY, fire: fireInput, special: specialInput, charge: chargeInput };
+      const input: Controls = { x: moveX, y: moveY, fire: fireInput, special: specialInput, charge: chargeInput, focus: focusInput };
       this.lastInput = input;
       if (!this.devSimulationPaused) {
         this.accumulator += dt * this.devTimeScale;
-        while (this.accumulator >= 1 / 120) { this.world.step(1 / 120, input); this.accumulator -= 1 / 120; }
+        while (this.accumulator >= 1 / 120) {
+          this.replayRecorder?.record(input);
+          this.world.step(1 / 120, input);
+          this.accumulator -= 1 / 120;
+        }
         if (this.world.up && this.world.state !== 'intro') this.pelagicComms.step(dt * this.devTimeScale);
       }
       this.consumeEvents();
@@ -1459,6 +1781,19 @@ export class ArcadeScene extends Phaser.Scene {
       // Temporary invulnerability remains readable without making the ship translucent.
       if (w.player.invulnerable > 0) this.player.setAlpha(.72 + .28 * Math.cos(time * 18) ** 2);
     }
+    // Apply equipped cosmetic skin tint or distinct livery tint for alternate pilots (Bayek default remains pristine)
+    const skinTint = globalProfileStore.getEquippedSkinTint(w.pilotId);
+    if (skinTint !== 0xffffff) {
+      this.player.setTint(skinTint);
+    } else if (w.pilotId !== 'nolan') {
+      this.player.setTint(w.pilotContract.hullColor);
+    }
+    // Precision FOCUS hitbox indicator (exact 5×7px core + soft cyan ring)
+    if (w.player.focusActive && w.state === 'play') {
+      g.lineStyle(1.3, 0x67e8f9, 0.92).strokeCircle(w.player.x, w.player.y, 6.2 + Math.sin(this.clock * 14) * 0.6);
+      g.fillStyle(0xffffff, 0.96).fillRoundedRect(w.player.x - 2.5, w.player.y - 3.5, 5, 7, 2);
+      g.lineStyle(1, 0x0ea5e9, 0.9).strokeRoundedRect(w.player.x - 2.5, w.player.y - 3.5, 5, 7, 2);
+    }
     if (w.chargedShot.isHolding && w.state === 'play') {
       const cSnap = w.chargedShot.snapshot();
       const nx = w.player.x + (w.up ? 0 : 18);
@@ -1507,6 +1842,16 @@ export class ArcadeScene extends Phaser.Scene {
 
       if (!w.up && !e.ground) { g.lineStyle(1, 0xb6ffff, .3).lineBetween(e.x + e.size * .42, e.y, e.x + e.size * .76 + Math.sin(time * 25) * 2, e.y); if (['fighter', 'acrobat', 'bomber'].includes(e.family)) { const nose = e.x - e.size * .35; g.lineStyle(1.3, 0xffe36a, .7); g.lineBetween(nose, e.y - Math.cos(time * 45 + e.id) * e.size * .22, nose, e.y + Math.cos(time * 45 + e.id) * e.size * .22); } }
       if (!w.up) this.hitOverlays.draw(s, e.flash);
+      // Discrete HP bar on damaged heavy enemies for clear damage readability
+      const isHeavy = e.maxHp >= 120 || e.family === 'ship' || e.family === 'tower' || e.family === 'airship' || e.family === 'heli_warhawk' || Boolean(e.submarine);
+      if (isHeavy && e.hp > 0 && e.hp < e.maxHp && e.y > w.arena.top + 8 && e.y < w.arena.bottom - 8) {
+        const bw = clamp(e.size * 0.72, 24, 52);
+        const bx = e.x - bw * 0.5;
+        const by = e.y - e.size * 0.48 - 5;
+        const ratio = clamp(e.hp / Math.max(1, e.maxHp), 0, 1);
+        g.fillStyle(0x04122a, 0.85).fillRoundedRect(bx - 1, by - 1, bw + 2, 4.5, 2);
+        g.fillStyle(ratio < 0.3 ? 0xff5a52 : ratio < 0.65 ? 0xffd84d : 0x38e4ff, 0.95).fillRoundedRect(bx, by, Math.max(2, bw * ratio), 2.5, 1);
+      }
     } for (const [id, s] of this.enemySprites) if (!alive.has(id)) { s.destroy(); this.enemySprites.delete(id); this.turrets.get(id)?.destroy(); this.turrets.delete(id); }
     if (w.up) {
       this.pelagicAnims.updateEnemies(w, this.enemySprites, this.turrets, dt, this.quality, (sp, fl) => this.hitOverlays.draw(sp, fl), this.devWeaponDebug);
@@ -1538,21 +1883,108 @@ export class ArcadeScene extends Phaser.Scene {
         g.fillStyle(isFull ? 0xfef08a : 0xa5f3fc, 0.72).fillCircle(b.x, b.y, b.radius * 0.78);
         g.fillStyle(0xffffff, 0.92).fillCircle(b.x, b.y, b.radius * 0.38);
       } else {
-        const art = w.up ? pelagicShotSize(w.weapons.weaponLevel) : rivetShotPresentation(w.weapons.weaponLevel); s.clearTint().setTexture(b.missile ? 'arc-missile' : w.up ? 'pelagic-plasma' : 'arc-red', w.up && !b.missile ? undefined : Math.floor(b.age * 20) % 8).setDisplaySize(b.missile ? 17 : art.width, b.missile ? 25 : art.height).setRotation(Math.atan2(b.vy, b.vx) + Math.PI / 2);
+        const art = w.up ? pelagicShotSize(w.weapons.weaponLevel) : rivetShotPresentation(w.weapons.weaponLevel);
+        s.clearTint().setTexture(b.missile ? 'arc-missile' : w.up ? 'pelagic-plasma' : 'arc-red', w.up && !b.missile ? undefined : Math.floor(b.age * 20) % (b.missile ? 4 : 8)).setDisplaySize(b.missile ? 17 : art.width, b.missile ? 25 : art.height).setRotation(Math.atan2(b.vy, b.vx) + Math.PI / 2);
+        if (!b.missile && w.pilotId !== 'nolan') s.setTint(w.pilotContract.projectileTint);
       }
       s.setPosition(b.x, b.y);
     }
     this.renderCargo(); this.renderObstacles(g);
-    this.bombArt.draw(w);
+    this.renderSpecialVisuals(w, g);
     for (const fx of this.effects) { fx.age += dt; fx.sprite.setPosition(fx.sprite.x + fx.vx * dt, fx.sprite.y + fx.vy * dt).setRotation(fx.sprite.rotation + fx.spin * dt).setAlpha(1 - fx.age / fx.duration * .7); fx.sprite.setFrame(Math.min(15, Math.floor(fx.age / fx.duration * 16))); }
     this.effects = this.effects.filter(f => { if (f.age >= f.duration) { f.sprite.setVisible(false); this.effectPool.push(f.sprite); return false; } return true; });
     this.updateBonusPopups(dt);
+    this.updateCombatVfx(w, dt);
     this.renderHud(dt);
     if (w.up) {
       // Desktop Fenda Pelágica owns persistent radio inside Left Panel via PelagicDesktopHud
       this.radio.setVisible(false);
     } else if (this.clock > this.messageUntil) {
       this.radio.setVisible(false);
+    }
+  }
+  private renderSpecialVisuals(w: ArcadeWorld, g: Phaser.GameObjects.Graphics): void {
+    const spec = w.pilotContract.specialType;
+    if (spec === 'scarlet' || w.specialTime <= 0) {
+      this.bombArt.draw(w);
+      return;
+    }
+    this.bombArt.draw(); // hide scarlet bomb sprite when other pilot special runs
+    const t = this.clock;
+    const p = clamp(w.specialTime / 2.2, 0, 1);
+    if (spec === 'phantom') {
+      const r = 104 + Math.sin(t * 14) * 8;
+      g.fillStyle(0xb980ff, 0.14 * p).fillCircle(w.player.x, w.player.y, r);
+      g.lineStyle(2.4, 0xd8b4fe, 0.85 * p).strokeCircle(w.player.x, w.player.y, r);
+      g.lineStyle(1.4, 0x67e8f9, 0.65 * p).strokeCircle(w.player.x, w.player.y, r * 0.64);
+    } else if (spec === 'orbital') {
+      const cx = (w.arena.left + w.arena.right) * 0.5;
+      for (const off of [-88, 0, 88]) {
+        const bx = cx + off + Math.sin(t * 8 + off) * 14;
+        g.fillStyle(0x34d399, 0.24 * p).fillRect(bx - 12, w.arena.top, 24, w.arena.bottom - w.arena.top);
+        g.fillStyle(0xd1fae5, 0.68 * p).fillRect(bx - 3.5, w.arena.top, 7, w.arena.bottom - w.arena.top);
+      }
+    } else if (spec === 'nova') {
+      const prog = 1 - p;
+      const r = 36 + prog * 230;
+      g.lineStyle(5 * p + 1.5, 0xff9f43, 0.9 * p).strokeCircle(w.player.x, w.player.y, r);
+      g.lineStyle(2.2, 0xfef08a, 0.78 * p).strokeCircle(w.player.x, w.player.y, r * 0.72);
+    } else if (spec === 'comet') {
+      for (let i = 0; i < 4; i++) {
+        const phase = ((t * 1.9 + i * 0.25) % 1);
+        const sx = w.arena.left + ((i + 0.5) / 4) * w.arenaWidth;
+        const sy = w.arena.bottom - phase * (w.arena.bottom - w.arena.top + 80);
+        g.lineStyle(4, 0xfde047, 0.85 * p).lineBetween(sx - 18, sy + 52, sx + 12, sy - 20);
+        g.fillStyle(0xffffff, 0.9 * p).fillCircle(sx + 12, sy - 20, 5.5);
+      }
+    }
+  }
+  private updateCombatVfx(w: ArcadeWorld, dt: number): void {
+    const prefs = globalProfileStore.getSettings();
+    const viewport = getCombatVirtualSize(this);
+    const centerX = viewport.cx ?? viewport.w / 2;
+    const centerY = viewport.cy ?? viewport.h / 2;
+    // 1. Camera shake (only during active play, respects reducedShake accessibility option)
+    if (this.screen === 'play' && this.shakeTime > 0 && !prefs.reducedShake) {
+      this.shakeTime = Math.max(0, this.shakeTime - dt);
+      const decay = clamp(this.shakeTime / 0.25, 0, 1);
+      const amp = this.shakeAmp * decay;
+      this.cameras.main.centerOn(centerX + Math.sin(this.clock * 78) * amp, centerY + Math.cos(this.clock * 91) * amp);
+    } else {
+      this.shakeTime = 0;
+      this.cameras.main.centerOn(centerX, centerY);
+    }
+
+    // 2. Screen-space damage vignette & banners
+    const g = this.vfxGfx;
+    g.clear();
+    if (this.damageFlashAlpha > 0) {
+      this.damageFlashAlpha = Math.max(0, this.damageFlashAlpha - dt * 1.4);
+      if (!prefs.reducedFlash && this.screen === 'play') {
+        const a = this.damageFlashAlpha * 0.45;
+        g.lineStyle(18, 0xff2a4d, a).strokeRect(w.arena.left + 9, w.arena.top + 9, w.arenaWidth - 18, (w.arena.bottom - w.arena.top) - 18);
+      }
+    }
+
+    const showBossWarn = this.screen === 'play' && this.clock < this.bossWarningUntil;
+    if (showBossWarn) {
+      const pulse = prefs.reducedFlash ? 0.85 : (0.58 + 0.42 * Math.abs(Math.sin(this.clock * 10)));
+      const cx = (w.arena.left + w.arena.right) * 0.5;
+      g.fillStyle(0x4a0614, 0.78 * pulse).fillRoundedRect(cx - 170, 92, 340, 32, 6);
+      g.lineStyle(1.8, 0xff5a52, 0.92 * pulse).strokeRoundedRect(cx - 170, 92, 340, 32, 6);
+      this.warningBannerText.setPosition(cx, 108).setText(w.up ? '⚠ ALERTA — COLOSSO ABISSAL' : '⚠ ALERTA — FORTALEZA SOLAR').setAlpha(pulse).setVisible(true);
+    } else {
+      this.warningBannerText.setVisible(false);
+    }
+
+    const showHint = this.screen === 'play' && this.clock < this.firstSortieHintUntil && !this.touchShown && w.state !== 'defeat';
+    if (showHint) {
+      const fade = clamp((this.firstSortieHintUntil - this.clock) / 0.8, 0, 1);
+      const cx = (w.arena.left + w.arena.right) * 0.5;
+      g.fillStyle(0x04122e, 0.68 * fade).fillRoundedRect(cx - 196, 405, 392, 20, 6);
+      this.sortieHintText.setPosition(cx, 415).setText('WASD/SETAS MOVER  •  ESPAÇO TIRO  •  Z CARGA  •  X ESP  •  SHIFT FOCO').setAlpha(fade).setVisible(true);
+    } else {
+      this.sortieHintText.setVisible(false);
     }
   }
   private renderBoss(g: Phaser.GameObjects.Graphics): void {
@@ -1777,7 +2209,7 @@ export class ArcadeScene extends Phaser.Scene {
       // Side-scrolling mission and its horizontal score bar are unchanged.
       g.fillStyle(BLUE, .92).fillRoundedRect(9, 5, 750, 29, 10);
       g.lineStyle(1, 0x8ee5e4, .7).strokeRoundedRect(9, 5, 750, 29, 10);
-      const line = `BAYEK / RIVET     ${w.score}     NV ${w.weapons.weaponLevel} ${w.weapons.powerMeter ? `+${w.weapons.powerMeter}P` : ''}`;
+      const line = `${w.pilotContract.name.toUpperCase()} / ${w.pilotContract.shipName}     ${w.score}     NV ${w.weapons.weaponLevel} ${w.weapons.powerMeter ? `+${w.weapons.powerMeter}P` : ''}`;
       if (line !== this.lastHud) {
         this.hud.setFontSize(11).setColor('#ffffff').setStroke('#153550', 3).setOrigin(0, 0);
         this.hud.setText(line).setPosition(22, 13);
@@ -1804,22 +2236,51 @@ export class ArcadeScene extends Phaser.Scene {
   }
   private consumeEvents(): void {
     const w = this.world!; for (const e of w.events) {
-      if (e.type === 'shot') { globalAudio.playShot('nolan', w.weapons.weaponLevel); if (w.up) this.pelagicAnims.triggerShot(); }
+      if (e.type === 'shot') { globalAudio.playShot(w.pilotId, w.weapons.weaponLevel); if (w.up) this.pelagicAnims.triggerShot(); }
       else if (e.type === 'charge-windup') { globalAudio.playChargeWindup(e.size ?? 0); }
       else if (e.type === 'charge-full') { globalAudio.playArcade('bonus'); }
       else if (e.type === 'charged-shot') {
         const intensity = e.size ?? 1;
-        globalAudio.playChargedShot('nolan', intensity >= 1.5 ? 2 : 1);
+        globalAudio.playChargedShot(w.pilotId, intensity >= 1.5 ? 2 : 1);
         if (w.up) this.pelagicAnims.triggerShot();
         this.explosion(e.x, e.y, intensity >= 1.5 ? 18 : 12, .16);
       }
       else if (e.type === 'missile') { globalAudio.playMissile(); if (w.up) this.pelagicAnims.triggerMissile(); }
-      else if (e.type === 'death') { if (w.up) { this.pelagicAnims.triggerPlayerDamage(); this.pelagicComms.trigger({ category: 'damage', detail: w.lives <= 1 ? 'low-lives' : undefined }); } }
+      else if (e.type === 'level-up') {
+        globalAudio.playArcade('level-up');
+        this.spawnBonusPopup(e.x, e.y - 8, 100, e.text ?? `NV ${w.weapons.weaponLevel}`);
+      }
+      else if (e.type === 'boss-warning') {
+        globalAudio.playArcade('boss-warning');
+        this.bossWarningUntil = this.clock + 3.0;
+        this.shakeTime = 0.25;
+        this.shakeAmp = 2.6;
+      }
+      else if (e.type === 'graze') {
+        globalAudio.playArcade('graze');
+        if (w.grazeCount % 5 === 1) this.spawnBonusPopup(e.x, e.y, 25, 'GRAZE');
+      }
+      else if (e.type === 'death') {
+        this.shakeTime = 0.34;
+        this.shakeAmp = 4.6;
+        this.damageFlashAlpha = 1;
+        if (w.lives <= 1) globalAudio.playArcade('low-life');
+        if (w.up) { this.pelagicAnims.triggerPlayerDamage(); this.pelagicComms.trigger({ category: 'damage', detail: w.lives <= 1 ? 'low-lives' : undefined }); }
+      }
       else if (e.type === 'enemy-shot') { globalAudio.playArcade(w.boss ? 'cannon' : 'orb'); if (w.up) this.pelagicAnims.triggerEnemyShot(e.x, e.y, e.size ?? 1); }
       else if (e.type === 'impact') { globalAudio.playArcade('impact'); if (this.effects.length < 18 + this.quality * 18) this.explosion(e.x, e.y, 10, .12); }
-      else if (e.type === 'explosion') { globalAudio.playArcade((e.size ?? 1) > 1.3 ? 'boom' : 'pop'); if (e.text !== 'special-blast') { this.layeredExplosion(e); if (w.up) this.pelagicAnims.spawnEnemyDestruction(e.x, e.y, e.text, e.size ?? 1, this.quality); } }
+      else if (e.type === 'explosion') {
+        const sz = e.size ?? 1;
+        globalAudio.playArcade(sz > 1.3 ? 'boom' : 'pop');
+        if (sz >= 1.6) { this.shakeTime = Math.max(this.shakeTime, 0.2); this.shakeAmp = Math.max(this.shakeAmp, 3.0); }
+        if (e.text !== 'special-blast') { this.layeredExplosion(e); if (w.up) this.pelagicAnims.spawnEnemyDestruction(e.x, e.y, e.text, sz, this.quality); }
+      }
       else if (e.type === 'pickup') globalAudio.playPickup(e.text ?? 'power');
-      else if (e.type === 'special') globalAudio.playArcade('special');
+      else if (e.type === 'special') {
+        globalAudio.playSpecial(w.pilotContract.specialType);
+        this.shakeTime = Math.max(this.shakeTime, 0.28);
+        this.shakeAmp = Math.max(this.shakeAmp, 3.8);
+      }
       else if (e.type === 'bonus') { globalAudio.playArcade('bonus'); this.spawnBonusPopup(e.x, e.y, e.size ?? 0, e.text); }
       else if (e.type === 'arch') {
         if (e.text === 'descent') globalAudio.playArcade('arch-descent');
@@ -1926,9 +2387,62 @@ export class ArcadeScene extends Phaser.Scene {
   }
   private arcadeProgress() { try { return readArcadeProgress(localStorage.getItem('bullet_wake_arcade_v1')); } catch { return readArcadeProgress(null); } }
   private saveClear(): void {
-    if (this.devSaveGuard || this.stageClearSaved || !this.world) return; this.stageClearSaved = true; const w = this.world; this.carried = stageFlightSnapshot(w.mission.id, w.weapons, w.lives, w.score);
-    const data = recordArcadeClear(this.arcadeProgress(), this.carried); try { localStorage.setItem('bullet_wake_arcade_v1', JSON.stringify(data)); } catch {/* Memory carry still supports next stage. */ }
-    globalSave.recordStageClear(w.mission.id, 'nolan', w.score, this.carried);
+    if (this.devSaveGuard || this.stageClearSaved || !this.world) return;
+    this.stageClearSaved = true;
+    const w = this.world;
+    this.carried = stageFlightSnapshot(w.mission.id, w.weapons, w.lives, w.score);
+    if (!w.practiceMode) {
+      const data = recordArcadeClear(this.arcadeProgress(), this.carried);
+      try { localStorage.setItem('bullet_wake_arcade_v1', JSON.stringify(data)); } catch {/* Memory carry still supports next stage. */ }
+      globalSave.recordStageClear(w.mission.id, w.pilotId, w.score, this.carried);
+      this.replayRecorder?.finish();
+      const { evaluation, achievements } = w.evaluateRun(true);
+      const outcome = globalProfileStore.recordRunResult({
+        runId: `m${w.mission.id}:${w.seed}:${Math.round(w.elapsed * 100)}:${w.score}:win`,
+        missionId: w.mission.id,
+        pilotId: w.pilotId,
+        difficulty: w.difficulty,
+        score: w.score,
+        rank: evaluation.rank,
+        victory: true,
+        competitiveEligible: evaluation.competitiveEligible,
+        assisted: w.isAssisted,
+        noMiss: evaluation.badges.includes('NO-MISS'),
+        noBomb: evaluation.badges.includes('NO-BOMB'),
+        oneCC: evaluation.badges.includes('1CC'),
+        creditsEarned: evaluation.creditsEarned,
+        achievements,
+        flight: this.carried,
+      });
+      this.lastRunOutcome = { ...outcome, evaluation };
+    } else {
+      this.lastRunOutcome = undefined;
+    }
+  }
+  private recordDefeatProgress(): RunOutcome | undefined {
+    if (this.devSaveGuard || this.defeatRecorded || !this.world) return this.lastRunOutcome;
+    this.defeatRecorded = true;
+    const w = this.world;
+    if (w.practiceMode) return undefined;
+    const { evaluation, achievements } = w.evaluateRun(false);
+    const outcome = globalProfileStore.recordRunResult({
+      runId: `m${w.mission.id}:${w.seed}:${Math.round(w.elapsed * 100)}:${w.score}:loss`,
+      missionId: w.mission.id,
+      pilotId: w.pilotId,
+      difficulty: w.difficulty,
+      score: w.score,
+      rank: evaluation.rank,
+      victory: false,
+      competitiveEligible: evaluation.competitiveEligible,
+      assisted: w.isAssisted,
+      noMiss: evaluation.badges.includes('NO-MISS'),
+      noBomb: evaluation.badges.includes('NO-BOMB'),
+      oneCC: evaluation.badges.includes('1CC'),
+      creditsEarned: evaluation.creditsEarned,
+      achievements,
+    });
+    this.lastRunOutcome = { ...outcome, evaluation };
+    return this.lastRunOutcome;
   }
   private readViewportSafeInsets(): SafeAreaInsets {
     try {
@@ -2176,7 +2690,7 @@ export class ArcadeScene extends Phaser.Scene {
       this.audio.play(opts.bossMini ? (w.up ? 'mini1' : 'mini2') : (w.up ? 'boss1' : 'boss2'));
     } else {
       w.devJumpToCheckpoint(targetSeconds, { pauseDirector: opts?.pauseDirector, isolated: opts?.isolated, seed: opts?.seed });
-      if (targetSeconds >= 300) this.audio.play(w.up ? 'boss1' : 'boss2');
+      if (targetSeconds >= w.stageDuration) this.audio.play(w.up ? 'boss1' : 'boss2');
       else if (!w.up && targetSeconds >= 155 && targetSeconds < 185) this.audio.play('mini2');
       else this.audio.play(missionIndex ? 'stage2' : 'stage1');
     }

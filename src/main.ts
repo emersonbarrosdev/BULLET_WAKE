@@ -1,11 +1,6 @@
 import Phaser from 'phaser';
 import './style.css';
 import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from './game/constants';
-import { TitleScene } from './game/scenes/TitleScene';
-import { StageSelectScene } from './game/scenes/StageSelectScene';
-import { PilotSelectScene } from './game/scenes/PilotSelectScene';
-import { PrototypeScene } from './game/scenes/PrototypeScene';
-import { EndingScene } from './game/scenes/EndingScene';
 import { ArcadeScene } from './game/arcade/ArcadeScene';
 
 async function bootGame(): Promise<void> {
@@ -58,7 +53,8 @@ async function bootGame(): Promise<void> {
       width: initWidth,
       height: initHeight,
     },
-    scene: [ArcadeScene, TitleScene, StageSelectScene, PilotSelectScene, PrototypeScene, EndingScene],
+    // Production entry uses exclusively the unified ArcadeScene; legacy scenes stay archived in src/game/scenes/ for reference tests.
+    scene: [ArcadeScene],
   };
 
   const game = new Phaser.Game(config);

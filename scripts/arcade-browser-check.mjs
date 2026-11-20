@@ -56,10 +56,13 @@ try {
     assert(!titleBackdrop.coast.visible && !titleBackdrop.water.visible && titleBackdrop.menuSkyVisible, `Cenário Pelágico vazando no menu: ${JSON.stringify(titleBackdrop)}`);
     report.pelagic = { textures: pelagicTextures, title: titleBackdrop };
     const verifyPelagic = async (stage, minScroll = 0, expectCoast = true) => {
-        const state = await evaluate(`({screen:s.screen,up:s.world?.up,scroll:s.world?.scroll??0,arenaLeft:s.world?.arena?.left??160,arenaWidth:s.world?.arenaWidth??448,playerVisible:s.player.visible,hudVisible:Boolean(s.devPelagicHudState()?.visible),bossVisible:s.bossSprite.visible||(s.subBossArt?.hullSprites?.some(h=>h.visible)??false),backdrop:s.backdrop.pelagicState()})`);
+        const state = await evaluate(`(()=>{const c=s.cameras.main,a=c.getWorldPoint(c.x,c.y),b=c.getWorldPoint(c.x+c.width,c.y+c.height);return{screen:s.screen,up:s.world?.up,scroll:s.world?.scroll??0,arenaLeft:s.world?.arena?.left??160,arenaWidth:s.world?.arenaWidth??448,playerVisible:s.player.visible,hudVisible:Boolean(s.devPelagicHudState()?.visible),bossVisible:s.bossSprite.visible||(s.subBossArt?.hullSprites?.some(h=>h.visible)??false),cameraWorldBounds:{left:a.x,top:a.y,right:b.x,bottom:b.y},backdrop:s.backdrop.pelagicState()};})()`);
         assert(state.screen === 'play' && state.up === true, `Cena Pelágica inativa em ${stage}: ${JSON.stringify(state)}`);
         assert(state.scroll >= minScroll, `Scroll abaixo do esperado em ${stage}: ${state.scroll} < ${minScroll}`);
         assert(state.playerVisible && state.hudVisible, `HUD ou nave ocultos em ${stage}: ${JSON.stringify(state)}`);
+        // Native canvas resolution uses camera zoom; resetting scroll to zero crops the virtual arena.
+        const view = state.cameraWorldBounds;
+        assert(Math.abs(view.left) < 8 && Math.abs(view.top) < 8 && Math.abs(view.right - 768) < 8 && Math.abs(view.bottom - 432) < 8, `Camera recorta a arena virtual em ${stage}: ${JSON.stringify(view)}`);
         const { coast, water, menuSkyVisible } = state.backdrop;
         assert(!menuSkyVisible, `Sky de menu visível durante gameplay em ${stage}`);
         if (expectCoast) {
@@ -110,7 +113,8 @@ try {
     await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [await touchAt(layout.pause.x, layout.pause.y)] }); await sleep(100); await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); assert.equal(await evaluate('s.screen'), 'pause'); report.touch.pause = true; await evaluate(`s.show('play')`);
     await send('Emulation.setDeviceMetricsOverride', { width: 854, height: 480, deviceScaleFactor: 1, mobile: false }); await shot('compact-touch'); await send('Emulation.setTouchEmulationEnabled', { enabled: false }); await send('Emulation.setDeviceMetricsOverride', { width: 1366, height: 768, deviceScaleFactor: 1, mobile: false });
     if (process.argv.includes('--routes')) {
-        await evaluate(`window.steer=${steer.toString()}`); report.routes = [];
+        // steer closes over this shared geometry helper; transfer that dependency into the browser too.
+        await evaluate(`(async()=>{window.computeArchOpening=(await import('/src/game/arcade/PelagicTideArch.ts')).computeArchOpening;window.steer=${steer.toString()};})()`); report.routes = [];
         for (const index of [0, 1]) {
             const run = await evaluate(`(async()=>{s.begin(${index},${index}===1?s.carried:undefined);s.audio.setMix(0,0,true);s.scene.pause();let ticks=0,peak=0;const initial={level:s.world.weapons.weaponLevel,power:s.world.weapons.powerMeter,lives:s.world.lives,specials:s.world.weapons.specialCharges,score:s.world.score};while(ticks<120*600&&!['victory','defeat'].includes(s.world.state)){for(let i=0;i<240&&!['victory','defeat'].includes(s.world.state);i++){s.world.step(1/120,steer(s.world));s.consumeEvents();if(ticks%2===0)s.renderWorld(1/60);ticks++;peak=Math.max(peak,s.world.bullets.filter(b=>b.active).length);}await new Promise(r=>setTimeout(r,0));}const w=s.world,result={mission:${index}+1,state:w.state,seconds:w.elapsed,initial,lives:w.lives,deaths:w.deaths,level:w.weapons.weaponLevel,power:w.weapons.powerMeter,specials:w.weapons.specialCharges,score:w.score,items:w.collected,peakBullets:peak};if(w.state==='victory'){s.saveClear();s.show('result');}s.scene.resume();return result;})()`);
             report.routes.push(run); await shot('result-phase' + (index + 1)); assert.equal(run.state, 'victory', JSON.stringify(run)); assert(run.seconds >= 300); console.log('Route complete', JSON.stringify(run));

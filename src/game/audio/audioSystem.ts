@@ -85,12 +85,16 @@ export class AudioSystem {
   // --- EFEITOS SONOROS (SFX) ---
 
   /** Short, bounded cartoon accents. The approved RIVET cannon remains unchanged. */
-  playArcade(kind:'navigate'|'confirm'|'impact'|'pop'|'boom'|'orb'|'cannon'|'transition'|'special'|'bonus'|'arch-descent'|'arch-ascent'|'checkpoint'):void {
+  playArcade(kind:'navigate'|'confirm'|'impact'|'pop'|'boom'|'orb'|'cannon'|'transition'|'special'|'bonus'|'arch-descent'|'arch-ascent'|'checkpoint'|'level-up'|'boss-warning'|'graze'|'low-life'):void {
     this.unlock();
-    if(!this.ctx||!this.sfxGain||this.isMuted||this.environment==='space'||!this.allowSound('arcade-'+kind,kind==='impact'?.07:kind==='orb'?.09:kind==='bonus'?.18:.12))return;
+    if(!this.ctx||!this.sfxGain||this.isMuted||this.environment==='space'||!this.allowSound('arcade-'+kind,kind==='impact'?.07:kind==='orb'?.09:kind==='graze'?.05:kind==='bonus'?.18:.12))return;
     if(kind==='navigate'){this.tone('sine',660,880,.045,.08);return;}
     if(kind==='confirm'){this.tone('triangle',523,523,.07,.13);this.tone('sine',1046,1046,.10,.1,.06);return;}
     if(kind==='bonus'){this.tone('sine',880,1175,.075,.075);this.tone('triangle',1318,1568,.11,.06,.045);return;}
+    if(kind==='level-up'){[523.25,659.25,783.99,1046.5,1318.5].forEach((f,i)=>this.tone('triangle',f,f*1.02,.12,.11,i*.048));return;}
+    if(kind==='boss-warning'){this.tone('sawtooth',440,310,.26,.11,0);this.tone('sine',110,68,.28,.14,0);this.tone('sawtooth',440,310,.26,.11,.34);this.tone('sine',110,68,.28,.14,.34);return;}
+    if(kind==='graze'){this.tone('sine',1480,1980,.028,.045);return;}
+    if(kind==='low-life'){this.tone('square',660,520,.09,.07,0);this.tone('square',520,410,.11,.07,.13);return;}
     if(kind==='arch-descent'){this.noise(.55,.11,1650);this.tone('triangle',340,145,.48,.11);return;}
     if(kind==='arch-ascent'){this.noise(.48,.11,2200);this.tone('triangle',165,420,.46,.11);return;}
     if(kind==='checkpoint'){[523.25,659.25,783.99,1046.5].forEach((f,i)=>this.tone('triangle',f,f*1.01,.16,.11,i*.07));return;}

@@ -4,6 +4,7 @@ import type { ArcadeWorld } from './ArcadeWorld';
 import { PELAGIC_RIVET_SHEET } from './PelagicActorAnimsMath';
 import type { PelagicCommsState } from './PelagicComms';
 import { subTotalHp } from './PelagicSubmarineBoss';
+import { maxWeaponLevel, powerItemsForNextLevel } from '../systems/weaponSystem';
 
 const ICON_AMMO = 'ui-hud-ammo-icon';
 const ICON_SPECIAL = 'ui-hud-special-icon';
@@ -14,12 +15,18 @@ const FONT_BODY = 'Rajdhani, "Segoe UI", Arial, sans-serif';
 
 export interface PelagicHudStateSnapshot {
     visible: boolean;
+    pilotId: string;
     scoreText: string;
     weaponLevel: number;
     weaponLevelText: string;
+    powerMeter: number;
+    powerMeterNeeded: number;
     lives: number;
     livesText: string;
     specialCharges: number;
+    progressPercent: number;
+    chain: number;
+    practiceMode: boolean;
     radioActive: boolean;
     radioText: string;
     radioPageIndex: number;
@@ -34,6 +41,7 @@ export interface PelagicHudStateSnapshot {
     chargePercent: number;
     chargePhase: string;
     chargeTier: string;
+    scorePosition: { x: number; y: number };
     arena: { left: number; right: number; top: number; bottom: number; width: number };
 }
 
@@ -208,13 +216,16 @@ export class PelagicDesktopHud {
     private readonly heartMainIcon: Phaser.GameObjects.Image;
 
     private readonly missionBadgeText: Phaser.GameObjects.Text;
+    private readonly missionProgressText: Phaser.GameObjects.Text;
     private readonly missionTitleText: Phaser.GameObjects.Text;
+    private readonly scoreBadgeText: Phaser.GameObjects.Text;
     private readonly bayekNameText: Phaser.GameObjects.Text;
     private readonly radioHeaderText: Phaser.GameObjects.Text;
     private readonly radioBodyText: Phaser.GameObjects.Text;
     private readonly radioPageHint: Phaser.GameObjects.Text;
 
     private readonly scoreValue: Phaser.GameObjects.Text;
+    private readonly chainBadgeText: Phaser.GameObjects.Text;
 
     private readonly rivetNameText: Phaser.GameObjects.Text;
     private readonly vanguardaText: Phaser.GameObjects.Text;
@@ -224,15 +235,20 @@ export class PelagicDesktopHud {
     private readonly especialHeaderText: Phaser.GameObjects.Text;
     private readonly vidasHeaderText: Phaser.GameObjects.Text;
     private readonly vidasMultiplierText: Phaser.GameObjects.Text;
+    private readonly modeTagText: Phaser.GameObjects.Text;
 
     private readonly allNodes: Array<Phaser.GameObjects.Components.Visible & Phaser.GameObjects.GameObject>;
     private visible = false;
     private chromeDrawn = false;
 
+    private lastPilotId = '';
     private lastScoreStr = '';
     private lastWeaponLevel = -1;
+    private lastPowerMeter = -1;
     private lastSpecialCharges = -1;
     private lastLives = -1;
+    private lastProgressPct = -1;
+    private lastChain = -1;
     private lastRadioExpr = 0;
     private lastChargeSig = '';
 
@@ -242,8 +258,10 @@ export class PelagicDesktopHud {
     private radioPageTimer = 0;
     private lastRenderedRadioPage = '';
     private lastBossSignature = '';
+    private readonly sceneRef: Phaser.Scene;
 
     constructor(scene: Phaser.Scene) {
+        this.sceneRef = scene;
         ensureHudIcons(scene);
 
         const mkText = (
@@ -283,24 +301,24 @@ export class PelagicDesktopHud {
         this.frontChromeGfx = scene.add.graphics().setDepth(41.5).setVisible(false);
         this.slotsGfx = scene.add.graphics().setDepth(42.5).setVisible(false);
 
-        // Masked coastal route thumbnail (x=11..149, y=42..103 => 138x61, native ratio 420:186)
+        // Masked coastal route thumbnail (x=11..149, y=41..95 => 138x54)
         this.routeMaskGfx = scene.add.graphics().setVisible(false);
-        chamferPath(this.routeMaskGfx, 11, 42, 138, 61, 3, 3, 6, 3);
+        chamferPath(this.routeMaskGfx, 11, 41, 138, 54, 3, 3, 6, 3);
         const routeMask = this.routeMaskGfx.createGeometryMask();
         this.routeThumb = scene.add
-            .image(80, 72.5, UI_TEX.hudRoutePelagic)
-            .setDisplaySize(138, 61)
+            .image(80, 68, UI_TEX.hudRoutePelagic)
+            .setDisplaySize(138, 54)
             .setDepth(40.2)
             .setMask(routeMask)
             .setVisible(false);
 
-        // Masked Bayek half-body portrait (x=9..151, y=114..280 => 142x166, native ratio 432:504)
+        // Masked Pilot half-body portrait (x=12..148, y=139..277 => 136x138)
         this.bayekMaskGfx = scene.add.graphics().setVisible(false);
-        chamferPath(this.bayekMaskGfx, 9, 114, 142, 166, 12, 6, 8, 8);
+        chamferPath(this.bayekMaskGfx, 12, 139, 136, 138, 10, 6, 8, 8);
         const bayekMask = this.bayekMaskGfx.createGeometryMask();
         this.bayekPortrait = scene.add
-            .image(80, 197, UI_TEX.hudBayekPortrait)
-            .setDisplaySize(142, 166)
+            .image(80, 208, UI_TEX.hudBayekPortrait)
+            .setDisplaySize(136, 158)
             .setDepth(40.2)
             .setMask(bayekMask)
             .setVisible(false);
@@ -319,7 +337,9 @@ export class PelagicDesktopHud {
 
         // Typography hierarchy: balanced bold/600 weights, dark ink on bright badges, zero heavy black blur
         this.missionBadgeText = mkText(39, 16, 'MISSÃO', 9.5, '#051536', { weight: 'bold' });
-        this.missionTitleText = mkText(80, 31.5, 'FENDA PELÁGICA', 10.5, '#f2f9ff', { weight: '600', strokeThickness: 1.5 });
+        this.missionProgressText = mkText(96, 16, '0%', 8, '#7ce8ff', { weight: 'bold', strokeThickness: 1.4 });
+        this.missionTitleText = mkText(80, 31, 'FENDA PELÁGICA', 10.5, '#f2f9ff', { weight: '600', strokeThickness: 1.5 });
+        this.scoreBadgeText = mkText(34, 118, 'SCORE', 8.5, '#051536', { weight: 'bold' });
         this.bayekNameText = mkText(80, 281, 'BAYEK', 11.5, '#051536', { weight: 'bold' });
         this.radioHeaderText = mkText(33, 313, 'RÁDIO', 10.5, '#f2f9ff', { ox: 0, weight: 'bold', strokeThickness: 1.4 });
         this.radioBodyText = mkText(17, 330, '', 9.5, '#ebf6ff', {
@@ -337,7 +357,9 @@ export class PelagicDesktopHud {
             oy: 1,
         });
 
-        this.scoreValue = mkText(384, 9.5, '0', 12, '#ffffff', { weight: 'bold', strokeThickness: 1.5, depth: 46 });
+        // Score lives inside the Left Cockpit Panel (never inside the top combat arena [160..608])
+        this.scoreValue = mkText(147, 118, '0', 12.5, '#ffffff', { ox: 1, weight: 'bold', strokeThickness: 1.5, depth: 46 });
+        this.chainBadgeText = mkText(145, 108, '', 6.8, '#fde047', { ox: 1, weight: 'bold', strokeThickness: 1.5, depth: 46 });
 
         this.rivetNameText = mkText(672, 19.5, 'RIVET', 13.5, '#ffffff', { weight: 'bold', strokeThickness: 1.8 });
         this.vanguardaText = mkText(672, 37.5, 'VANGUARDA', 8, '#ffffff', {
@@ -351,6 +373,7 @@ export class PelagicDesktopHud {
         this.especialHeaderText = mkText(651, 279, 'ESPECIAL', 10.5, '#f2f9ff', { ox: 0, weight: 'bold', strokeThickness: 1.4 });
         this.vidasHeaderText = mkText(651, 359, 'VIDAS', 10.5, '#f2f9ff', { ox: 0, weight: 'bold', strokeThickness: 1.4 });
         this.vidasMultiplierText = mkText(687, 391, '× 3', 15.5, '#ffffff', { ox: 0, weight: 'bold', strokeThickness: 1.8 });
+        this.modeTagText = mkText(688, 410.5, '', 6.6, '#7ce8ff', { weight: 'bold', strokeThickness: 1.2 });
 
         this.allNodes = [
             this.sideBg,
@@ -364,12 +387,15 @@ export class PelagicDesktopHud {
             this.heartMiniIcon,
             this.heartMainIcon,
             this.missionBadgeText,
+            this.missionProgressText,
             this.missionTitleText,
+            this.scoreBadgeText,
             this.bayekNameText,
             this.radioHeaderText,
             this.radioBodyText,
             this.radioPageHint,
             this.scoreValue,
+            this.chainBadgeText,
             this.rivetNameText,
             this.vanguardaText,
             this.powerHeaderText,
@@ -378,6 +404,7 @@ export class PelagicDesktopHud {
             this.especialHeaderText,
             this.vidasHeaderText,
             this.vidasMultiplierText,
+            this.modeTagText,
         ];
     }
 
@@ -400,10 +427,14 @@ export class PelagicDesktopHud {
             this.chromeDrawn = true;
         }
         if (!show) {
+            this.lastPilotId = '';
             this.lastScoreStr = '';
             this.lastWeaponLevel = -1;
+            this.lastPowerMeter = -1;
             this.lastSpecialCharges = -1;
             this.lastLives = -1;
+            this.lastProgressPct = -1;
+            this.lastChain = -1;
             this.lastBossSignature = '';
             this.lastRadioExpr = 0;
             this.lastChargeSig = '';
@@ -434,24 +465,27 @@ export class PelagicDesktopHud {
         g.lineStyle(3.2, 0x0ea5e9, 0.35).lineBetween(160, 0, 160, 432).lineBetween(608, 0, 608, 432);
         g.lineStyle(1.4, 0x6ce9ff, 0.92).lineBetween(160, 0, 160, 432).lineBetween(608, 0, 608, 432);
 
-        // 2. Center Top Minimal Placar pill flush at Y = 0 (no bar across battlefield!)
-        drawTopPlacarChrome(g);
+        // 2. Center combat arena stays 100% unobstructed at the top (Score lives cleanly in Left Panel!)
 
         // 3. LEFT PANEL CARDS (X = 6..154)
         // A. MISSÃO
-        drawCard(g, 6, 6, 148, 102, 5, 8, 6, 5);
+        drawCard(g, 6, 6, 148, 95, 5, 8, 6, 5);
         drawAngledPill(g, 11, 9.5, 58, 13, 6, 'gold');
         drawSlashes(g, [126, 134, 142], 10, 20);
-        strokeGlow(g, () => chamferPath(g, 11, 42, 138, 61, 3, 3, 6, 3), 1.2);
+        strokeGlow(g, () => chamferPath(g, 11, 41, 138, 54, 3, 3, 6, 3), 1.2);
+
+        // A2. Dedicated SCORE card cleanly outside the combat arena (y=105..131)
+        drawCard(g, 6, 105, 148, 26, 6, 6, 6, 6);
+        drawAngledPill(g, 11, 111.5, 48, 13, 5, 'gold');
 
         // B. BAYEK Portrait Frame + overlapping Gold Nameplate (drawn on frontChromeGfx above portrait!)
-        drawCard(g, 6, 112, 148, 174, 12, 6, 8, 8, true);
+        drawCard(g, 6, 135, 148, 151, 10, 6, 8, 8, true);
         const fg = this.frontChromeGfx;
         fg.clear();
-        // Outer cyan portrait stroke cleanly above portrait mask + yellow corner & BAYEK chamfer nameplate
-        strokeGlow(fg, () => chamferPath(fg, 6, 112, 148, 174, 12, 6, 8, 8), 1.4);
+        // Outer cyan portrait stroke cleanly above portrait mask + yellow corner & PILOT chamfer nameplate
+        strokeGlow(fg, () => chamferPath(fg, 6, 135, 148, 151, 10, 6, 8, 8), 1.4);
         fg.fillStyle(0xffdc26, 0.96).beginPath()
-            .moveTo(10, 132).lineTo(10, 123).lineTo(23, 112).lineTo(31, 112).closePath().fillPath();
+            .moveTo(10, 153).lineTo(10, 145).lineTo(22, 135).lineTo(30, 135).closePath().fillPath();
         drawChamferRibbon(fg, 80, 281, 118, 20, 'gold', 8);
 
         // C. RÁDIO Card (enlarged bottom-left, zero portrait inside, zero Bullet Wake logo)
@@ -509,6 +543,24 @@ export class PelagicDesktopHud {
         for (const icon of lifeIcons) icon.setVisible(false);
         levelText.setVisible(false);
 
+        // Sync dynamic pilot identity (supports all 5 pilots while preserving Bayek HD portrait)
+        if (world.pilotId !== this.lastPilotId) {
+            this.lastPilotId = world.pilotId;
+            const c = world.pilotContract;
+            this.bayekNameText.setText(c.name.toUpperCase());
+            this.rivetNameText.setText(c.shipName);
+            this.vanguardaText.setText(c.callsign);
+            if (c.id === 'nolan') {
+                this.bayekPortrait.setTexture(UI_TEX.hudBayekPortrait).setDisplaySize(136, 158);
+                this.rivetSprite.clearTint();
+            } else {
+                if (this.sceneRef.textures.exists('arc-pilots')) {
+                    this.bayekPortrait.setTexture('arc-pilots', c.portraitFrame).setDisplaySize(136, 138);
+                }
+                this.rivetSprite.setTint(c.hullColor);
+            }
+        }
+
         // Top-down RIVET gameplay thruster frame cycle (column 3 neutral across rows 0..3)
         const rivetFrame = (Math.floor(clock * 10) % 4) * 7 + 3;
         if (this.rivetSprite.frame.name !== String(rivetFrame)) {
@@ -526,24 +578,44 @@ export class PelagicDesktopHud {
         if (world.lives !== this.lastLives) {
             this.lastLives = world.lives;
             this.vidasMultiplierText.setText(`× ${Math.max(0, world.lives)}`);
+            this.vidasMultiplierText.setColor(world.lives <= 1 ? '#ff7b8a' : '#ffffff');
         }
 
-        // Assisted subtle badge right beside top-right Pause button if enabled
-        if (world.isAssisted) {
-            assistBadge
-                .setStyle({
-                    fontFamily: FONT_HEAD,
-                    fontSize: '7.5px',
-                    fontStyle: '700',
-                    color: '#8cfff3',
-                    stroke: '#041430',
-                    strokeThickness: 1.5,
-                })
-                .setOrigin(0.5)
-                .setPosition(640, 412)
-                .setVisible(false); // keep right panel uncluttered; status tracked cleanly in snapshot
-        } else {
-            assistBadge.setVisible(false);
+        // Mode indicator tag (PRÁTICA / ASSISTIDO) tucked cleanly at bottom of VIDAS card
+        const modeLabel = world.practiceMode
+            ? 'TREINO'
+            : world.isAssisted
+                ? 'ASSISTIDO'
+                : world.continuesUsed > 0
+                    ? `CONT ×${world.continuesUsed}`
+                    : '';
+        if (this.modeTagText.text !== modeLabel) {
+            this.modeTagText.setText(modeLabel);
+            this.modeTagText.setColor(world.practiceMode ? '#fde047' : world.isAssisted ? '#8cfff3' : '#fca5a5');
+        }
+        this.modeTagText.setVisible(this.visible && modeLabel.length > 0);
+        assistBadge.setVisible(false);
+
+        // Route progress percentage / BOSS badge
+        const bossActive = !!(world.boss?.sub && world.boss.sub.phase !== 'done') ||
+            !!(world.boss && world.boss.phase !== 'absent' && world.boss.phase !== 'sink' && world.boss.parts.length > 0);
+        const progressPct = Math.round(world.progressRatio * 100);
+        const progressChanged = progressPct !== this.lastProgressPct;
+        if (progressChanged || (bossActive && this.missionProgressText.text !== 'CHEFE')) {
+            this.lastProgressPct = progressPct;
+            this.missionProgressText.setText(bossActive ? 'CHEFE' : `${progressPct}%`);
+            this.missionProgressText.setColor(bossActive ? '#ffd94a' : '#7ce8ff');
+        }
+
+        // Chain badge inside Left Panel SCORE card when >= 5
+        if (world.chain !== this.lastChain) {
+            this.lastChain = world.chain;
+            const showChain = this.visible && world.chain >= 5;
+            this.chainBadgeText.setVisible(showChain);
+            if (showChain) {
+                this.chainBadgeText.setText(`×${world.chain}`);
+                this.chainBadgeText.setColor(world.chain >= 20 ? '#ff9f43' : '#fde047');
+            }
         }
 
         // Persistent Radio Message (replaces ONLY when a new message arrives; NEVER cleared on cooldown!)
@@ -576,17 +648,21 @@ export class PelagicDesktopHud {
             this.radioPageHint.setText(hintText);
         }
 
-        // Redraw dynamic gauges / CARGA bar / boss HP only when state changes
+        // Redraw dynamic gauges / partial P meter / route bar / CARGA bar / boss HP only when state changes
         const bossSig = this.computeBossSignature(world);
         const cSnap = world.chargedShot.snapshot();
         const chargeSig = `${cSnap.phase}:${Math.round(cSnap.ratio * 100)}`;
+        const meterSig = world.weapons.powerMeter;
         if (
             world.weapons.weaponLevel !== this.lastWeaponLevel ||
+            meterSig !== this.lastPowerMeter ||
             world.weapons.specialCharges !== this.lastSpecialCharges ||
             chargeSig !== this.lastChargeSig ||
-            bossSig !== this.lastBossSignature
+            bossSig !== this.lastBossSignature ||
+            progressChanged
         ) {
             this.lastWeaponLevel = world.weapons.weaponLevel;
+            this.lastPowerMeter = meterSig;
             this.lastSpecialCharges = world.weapons.specialCharges;
             this.lastChargeSig = chargeSig;
             this.lastBossSignature = bossSig;
@@ -616,8 +692,18 @@ export class PelagicDesktopHud {
         const g = this.slotsGfx;
         g.clear();
 
-        // Shared horizontal rounded-rectangle gauge renderer for both POWER & ESPECIAL
-        const drawGaugeRow = (rowY: number, count: number) => {
+        // 0. Micro route progress bar tucked cleanly along bottom of route thumbnail (x=12..148, y=91..95)
+        const rTrackX = 12;
+        const rTrackY = 91;
+        const rTrackW = 136;
+        g.fillStyle(0x03112a, 0.9).fillRoundedRect(rTrackX, rTrackY, rTrackW, 4, 2);
+        const rFillW = Math.round(rTrackW * Math.max(0, Math.min(1, world.progressRatio)));
+        if (rFillW > 0) {
+            g.fillGradientStyle(0x38e4ff, 0xffe066, 0x0ea5e9, 0xf59e0b, 1).fillRoundedRect(rTrackX, rTrackY, Math.max(4, rFillW), 4, 2);
+        }
+
+        // Shared horizontal rounded-rectangle gauge renderer for both POWER (with partial progress) & ESPECIAL
+        const drawGaugeRow = (rowY: number, count: number, partialRatio = 0) => {
             const w = 21.5;
             const h = 15.5;
             for (let i = 0; i < 5; i++) {
@@ -629,13 +715,25 @@ export class PelagicDesktopHud {
                     g.lineStyle(1.3, 0xffe86b, 0.98).strokeRoundedRect(x, rowY, w, h, 3.5);
                 } else {
                     g.fillStyle(0x04173c, 0.52).fillRoundedRect(x, rowY, w, h, 3.5);
-                    g.lineStyle(1.1, 0x3b86d1, 0.84).strokeRoundedRect(x, rowY, w, h, 3.5);
+                    if (i === count && partialRatio > 0) {
+                        const pw = Math.max(4.5, (w - 3) * Math.min(1, partialRatio));
+                        g.fillGradientStyle(0x67e8f9, 0xffe066, 0x0284c7, 0xf59e0b, 0.95)
+                            .fillRoundedRect(x + 1.5, rowY + 1.5, pw, h - 3, 2.5);
+                        g.lineStyle(1.2, 0x67e8f9, 0.96).strokeRoundedRect(x, rowY, w, h, 3.5);
+                    } else {
+                        g.lineStyle(1.1, 0x3b86d1, 0.84).strokeRoundedRect(x, rowY, w, h, 3.5);
+                    }
                 }
             }
         };
 
-        // 1. POWER: 5 horizontal rounded rectangles inside [621..755, y=209..224]
-        drawGaugeRow(209, world.weapons.weaponLevel);
+        // 1. POWER: 5 horizontal rounded rectangles + partial P meter on next block
+        const maxLv = maxWeaponLevel(world.pilotId);
+        const neededP = world.weapons.weaponLevel < maxLv
+            ? powerItemsForNextLevel(world.pilotId, world.weapons.weaponLevel)
+            : 0;
+        const partialPowerRatio = neededP > 0 ? Math.min(1, world.weapons.powerMeter / neededP) : 0;
+        drawGaugeRow(209, world.weapons.weaponLevel, partialPowerRatio);
 
         // 1b. Compact CARGA bar tucked cleanly inside lower strip of POWER card (y=236..243)
         const cSnap = world.chargedShot.snapshot();
@@ -663,16 +761,16 @@ export class PelagicDesktopHud {
         // 2. ESPECIAL: identical horizontal rounded rectangles inside [621..755, y=299..314.5]
         drawGaugeRow(299, world.weapons.specialCharges);
 
-        // 3. Boss HP compact bar tucked below central Placar ONLY during boss fight
+        // 3. Boss HP compact bar tucked flush at top edge (y=4..17) ONLY during boss fight
         if (world.boss?.sub && world.boss.sub.phase !== 'done') {
             const sub = world.boss.sub;
             const sec = sub.sections[sub.activeSection];
             const totals = subTotalHp(sub);
-            g.fillStyle(0x041430, 0.86).fillRoundedRect(236, 24, 296, 13, 4);
-            g.lineStyle(1.1, 0x4ae6ff, 0.85).strokeRoundedRect(236, 24, 296, 13, 4);
+            g.fillStyle(0x041430, 0.86).fillRoundedRect(236, 4, 296, 13, 4);
+            g.lineStyle(1.1, 0x4ae6ff, 0.85).strokeRoundedRect(236, 4, 296, 13, 4);
             bossHudLabel
                 .setStyle({ fontFamily: FONT_HEAD, fontSize: '8px', fontStyle: '700', color: '#ffe654', stroke: '#041430', strokeThickness: 1.8 })
-                .setPosition(244, 30.5)
+                .setPosition(244, 10.5)
                 .setText(`${sec.index + 1}/5 ${sec.name}`)
                 .setVisible(true);
             for (let i = 0; i < sub.sections.length; i++) {
@@ -682,12 +780,12 @@ export class PelagicDesktopHud {
                 const sCur = Math.max(0, sItem.hullHp) + sItem.parts.reduce((acc, p) => acc + Math.max(0, p.hp), 0);
                 const sMax = sItem.hullMaxHp + sItem.parts.reduce((acc, p) => acc + p.maxHp, 0);
                 const ratio = sMax > 0 ? Math.max(0, Math.min(1, sCur / sMax)) : 0;
-                g.fillStyle(0x0b2649, 0.95).fillRoundedRect(px, 27, pw, 7, 2);
+                g.fillStyle(0x0b2649, 0.95).fillRoundedRect(px, 7, pw, 7, 2);
                 if (ratio > 0) {
                     const col = i === sub.activeSection ? (totals.current < totals.max * 0.25 ? 0xff6e54 : 0xffd84d) : 0x2292d6;
-                    g.fillStyle(col, 0.96).fillRoundedRect(px, 27, pw * ratio, 7, 2);
+                    g.fillStyle(col, 0.96).fillRoundedRect(px, 7, pw * ratio, 7, 2);
                 }
-                g.lineStyle(0.8, i === sub.activeSection ? 0xfff1a6 : 0x66d7ff, 0.85).strokeRoundedRect(px, 27, pw, 7, 2);
+                g.lineStyle(0.8, i === sub.activeSection ? 0xfff1a6 : 0x66d7ff, 0.85).strokeRoundedRect(px, 7, pw, 7, 2);
             }
         } else if (world.boss && world.boss.phase !== 'absent' && world.boss.phase !== 'sink' && world.boss.parts.length > 0) {
             const curHp = world.boss.parts.reduce((acc, p) => acc + Math.max(0, p.hp), 0);
@@ -695,14 +793,14 @@ export class PelagicDesktopHud {
             const ratio = Math.max(0, Math.min(1, curHp / maxHp));
             bossHudLabel
                 .setStyle({ fontFamily: FONT_HEAD, fontSize: '8px', fontStyle: '700', color: '#ffe654', stroke: '#041430', strokeThickness: 1.8 })
-                .setPosition(244, 30.5)
+                .setPosition(244, 10.5)
                 .setText('FORÇA NAVAL')
                 .setVisible(curHp > 0);
             if (curHp > 0) {
-                g.fillStyle(0x041430, 0.86).fillRoundedRect(236, 24, 296, 13, 4);
-                g.lineStyle(1.1, 0x4ae6ff, 0.85).strokeRoundedRect(236, 24, 296, 13, 4);
-                g.fillStyle(0x280c18, 0.95).fillRoundedRect(326, 27, 198, 7, 2.5);
-                if (ratio > 0) g.fillStyle(0xff4f52, 1).fillRoundedRect(326, 27, Math.max(4, 198 * ratio), 7, 2.5);
+                g.fillStyle(0x041430, 0.86).fillRoundedRect(236, 4, 296, 13, 4);
+                g.lineStyle(1.1, 0x4ae6ff, 0.85).strokeRoundedRect(236, 4, 296, 13, 4);
+                g.fillStyle(0x280c18, 0.95).fillRoundedRect(326, 7, 198, 7, 2.5);
+                if (ratio > 0) g.fillStyle(0xff4f52, 1).fillRoundedRect(326, 7, Math.max(4, 198 * ratio), 7, 2.5);
             }
         } else {
             bossHudLabel.setVisible(false);
@@ -714,14 +812,24 @@ export class PelagicDesktopHud {
         pauseBtn?: Phaser.GameObjects.Container,
     ): PelagicHudStateSnapshot {
         const cSnap = world.chargedShot.snapshot();
+        const maxLv = maxWeaponLevel(world.pilotId);
+        const neededP = world.weapons.weaponLevel < maxLv
+            ? powerItemsForNextLevel(world.pilotId, world.weapons.weaponLevel)
+            : 0;
         return {
             visible: this.visible,
+            pilotId: world.pilotId,
             scoreText: this.scoreValue.text,
             weaponLevel: world.weapons.weaponLevel,
             weaponLevelText: this.powerHeaderText.text,
+            powerMeter: world.weapons.powerMeter,
+            powerMeterNeeded: neededP,
             lives: world.lives,
             livesText: this.vidasMultiplierText.text,
             specialCharges: world.weapons.specialCharges,
+            progressPercent: Math.round(world.progressRatio * 100),
+            chain: world.chain,
+            practiceMode: world.practiceMode,
             radioActive: this.visible && this.persistentRadioSource.length > 0,
             radioText: this.radioBodyText.text,
             radioPageIndex: this.radioPageIndex,
@@ -736,6 +844,7 @@ export class PelagicDesktopHud {
             chargePercent: cSnap.percent,
             chargePhase: cSnap.phase,
             chargeTier: cSnap.tier,
+            scorePosition: { x: this.scoreValue.x, y: this.scoreValue.y },
             arena: {
                 left: world.arena.left,
                 right: world.arena.right,
@@ -797,31 +906,6 @@ function drawCard(
         g.fillPath();
     }
     strokeGlow(g, () => chamferPath(g, x, y, w, h, tl, tr, br, bl), 1.4);
-}
-
-function drawTopPlacarChrome(g: Phaser.GameObjects.Graphics): void {
-    const drawPlate = () =>
-        g.beginPath()
-            .moveTo(334, 0)
-            .lineTo(434, 0)
-            .lineTo(426, 19)
-            .lineTo(342, 19)
-            .closePath();
-
-    g.fillGradientStyle(0x032257, 0x032257, 0x021336, 0x021336, 0.94);
-    drawPlate();
-    g.fillPath();
-
-    // Small yellow angled end-caps matching reference #4
-    g.fillStyle(0xffd91f, 0.96).beginPath()
-        .moveTo(324, 0).lineTo(332, 0).lineTo(339, 16).lineTo(332, 16).closePath().fillPath();
-    g.fillStyle(0xffd91f, 0.96).beginPath()
-        .moveTo(436, 0).lineTo(444, 0).lineTo(436, 16).lineTo(429, 16).closePath().fillPath();
-
-    g.lineStyle(2.4, 0x0ea5e9, 0.35);
-    g.beginPath().moveTo(334, 0).lineTo(342, 19).lineTo(426, 19).lineTo(434, 0).strokePath();
-    g.lineStyle(1.2, 0x6ce9ff, 0.95);
-    g.beginPath().moveTo(334, 0).lineTo(342, 19).lineTo(426, 19).lineTo(434, 0).strokePath();
 }
 
 function drawAngledPill(
