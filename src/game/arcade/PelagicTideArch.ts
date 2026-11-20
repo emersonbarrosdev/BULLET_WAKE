@@ -45,6 +45,9 @@ export interface TideArchBoatSpec {
 }
 
 export interface PelagicCheckpointSnapshot {
+    survival?: import('./HullIntegrity.ts').HullSnapshot;
+    pilotId?: import('./ArcadeContracts.ts').PilotId;
+    hitsReceived?: number;
     missionId: number;
     checkpointId: 'tide-arch-clear';
     route: number;

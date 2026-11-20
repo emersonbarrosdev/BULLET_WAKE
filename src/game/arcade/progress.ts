@@ -15,11 +15,11 @@ export function readArcadeProgress(raw:string|null):ArcadeProgress {
    const {weaponLevel,powerMeter,specialCharges}=flight.weapons;
    const cap=maxWeaponLevel(flight.pilotId);
    if(![weaponLevel,powerMeter,specialCharges,flight.lives,flight.score].every(Number.isFinite)||weaponLevel<1||weaponLevel>cap||powerMeter<0||powerMeter>3||specialCharges<0||specialCharges>5||flight.lives<1||flight.lives>5||flight.score<0)continue;
-   result.flights[flight.clearedStage]=stageFlightSnapshot(flight.clearedStage,{...createPlayerWeapons(flight.pilotId),weaponLevel,powerMeter,specialCharges},flight.lives,flight.score);
+   result.flights[flight.clearedStage]=stageFlightSnapshot(flight.clearedStage,{...createPlayerWeapons(flight.pilotId),weaponLevel,powerMeter,specialCharges},flight.lives,flight.score,flight.survival);
   }
  }catch{/* Invalid storage must not prevent starting a fresh run. */}
  return result;
 }
 export function recordArcadeClear(progress:ArcadeProgress,flight:CampaignFlight):ArcadeProgress {
- return {cleared:[...new Set([...progress.cleared,flight.clearedStage])],flights:{...progress.flights,[flight.clearedStage]:stageFlightSnapshot(flight.clearedStage,flight.weapons,flight.lives,flight.score)}};
+ return {cleared:[...new Set([...progress.cleared,flight.clearedStage])],flights:{...progress.flights,[flight.clearedStage]:stageFlightSnapshot(flight.clearedStage,flight.weapons,flight.lives,flight.score,flight.survival)}};
 }

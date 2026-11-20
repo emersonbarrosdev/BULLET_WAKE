@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { UI_FONT, UI_TEX } from './ArcadeMenuArt';
 import type { ArcadeWorld } from './ArcadeWorld';
+import { HULL_STATES } from './HullIntegrity';
+import { drawHullSegments } from './HullHud';
 import { PELAGIC_RIVET_SHEET } from './PelagicActorAnimsMath';
 import type { PelagicCommsState } from './PelagicComms';
 import { subTotalHp } from './PelagicSubmarineBoss';
@@ -247,6 +249,8 @@ export class PelagicDesktopHud {
     private lastPowerMeter = -1;
     private lastSpecialCharges = -1;
     private lastLives = -1;
+    private lastHull = -1;
+    private compactTouch = false;
     private lastProgressPct = -1;
     private lastChain = -1;
     private lastRadioExpr = 0;
@@ -536,8 +540,11 @@ export class PelagicDesktopHud {
         introRadioActive: boolean,
         clock: number,
         dt: number,
+        compactTouch = false,
     ): void {
         if (!this.visible) this.setVisible(true);
+        const touchLayoutChanged = this.compactTouch !== compactTouch;
+        this.compactTouch = compactTouch;
 
         // Legacy per-icon sprites stay hidden on desktop Fenda (single cumulative heart × N is used instead)
         for (const icon of lifeIcons) icon.setVisible(false);
@@ -574,9 +581,20 @@ export class PelagicDesktopHud {
             this.lastScoreStr = scoreStr;
         }
 
-        // Lives cumulative multiplier (e.g. "× 3", "× 12")
-        if (world.lives !== this.lastLives) {
+        const usesHull = world.survivalRule === 'hull-v1';
+        const hullChanged = this.lastHull !== (usesHull ? world.hull : -1);
+        this.lastHull = usesHull ? world.hull : -1;
+        this.heartMiniIcon.setVisible(this.visible && !usesHull);
+        this.heartMainIcon.setVisible(this.visible && !usesHull);
+        this.vidasHeaderText.setText(usesHull ? 'CASCO' : 'VIDAS');
+        this.vidasHeaderText.setX(usesHull && compactTouch ? 633 : 651);
+        if (usesHull) {
+            this.vidasMultiplierText.setPosition(compactTouch ? 658 : 688, 402).setOrigin(.5).setFontSize(7.5)
+                .setText(compactTouch ? `${world.hull}/${world.hullMaximum}` : `${world.hull}/${world.hullMaximum} • ${HULL_STATES[world.hullState].label}`)
+                .setColor(world.hull === 1 ? '#ff7b8a' : '#b8fff1');
+        } else if (world.lives !== this.lastLives || this.vidasMultiplierText.y !== 391) {
             this.lastLives = world.lives;
+            this.vidasMultiplierText.setPosition(687, 391).setOrigin(0, .5).setFontSize(15.5);
             this.vidasMultiplierText.setText(`× ${Math.max(0, world.lives)}`);
             this.vidasMultiplierText.setColor(world.lives <= 1 ? '#ff7b8a' : '#ffffff');
         }
@@ -659,7 +677,7 @@ export class PelagicDesktopHud {
             world.weapons.specialCharges !== this.lastSpecialCharges ||
             chargeSig !== this.lastChargeSig ||
             bossSig !== this.lastBossSignature ||
-            progressChanged
+            progressChanged || hullChanged || touchLayoutChanged
         ) {
             this.lastWeaponLevel = world.weapons.weaponLevel;
             this.lastPowerMeter = meterSig;
@@ -734,6 +752,7 @@ export class PelagicDesktopHud {
             : 0;
         const partialPowerRatio = neededP > 0 ? Math.min(1, world.weapons.powerMeter / neededP) : 0;
         drawGaugeRow(209, world.weapons.weaponLevel, partialPowerRatio);
+        if (world.survivalRule === 'hull-v1') drawHullSegments(g, 633, 378, this.compactTouch ? 50 : 110, 14, world.hull, world.hullMaximum);
 
         // 1b. Compact CARGA bar tucked cleanly inside lower strip of POWER card (y=236..243)
         const cSnap = world.chargedShot.snapshot();

@@ -1,0 +1,44 @@
+.bw-mobile{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;color:#f2f8ff;background:linear-gradient(#04132bf0,#051a35f5),url('/assets/arcade/ui/sky-panorama.webp') center/cover;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:16px;line-height:1.35;isolation:isolate;touch-action:pan-y;overscroll-behavior:contain;-webkit-tap-highlight-color:transparent}
+.bw-mobile *{box-sizing:border-box}
+.bw-mobile-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#41d9ff #092047}
+.bw-mobile-body{width:100%;max-width:520px;margin:auto;padding:calc(20px + env(safe-area-inset-top)) 22px 24px;display:flex;flex-direction:column;gap:16px}
+.bw-mobile-header{margin:0 0 4px;padding:0 0 18px;border-bottom:1px solid #48d8ff66;text-align:center}
+.bw-mobile-eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#73e5ff;margin:0 0 7px}
+.bw-mobile h1,.bw-mobile h2,.bw-mobile p{margin:0}
+.bw-mobile h1{font:800 clamp(21px,5.6vw,28px)/1.2 'Oxanium',sans-serif;color:#ffe57d;overflow-wrap:anywhere}
+.bw-mobile h2{font:700 18px/1.3 'Oxanium',sans-serif}
+.bw-mobile-subtitle{color:#c0d8ee;font-size:15px;margin-top:10px!important}
+.bw-mobile-copy{font-size:16px;white-space:pre-line;overflow-wrap:anywhere}
+.bw-mobile-copy.hint{font-size:14px;color:#b7d5e9}.bw-mobile-copy.gold{color:#ffe57d}
+.bw-mobile-section-title{font-size:16px!important;color:#72e6ff;padding-top:8px}
+.bw-mobile-footer{flex:none;display:flex;flex-direction:column;gap:10px;width:100%;max-width:520px;margin:0 auto;padding:12px 22px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(#06162beb,#06162b);border-top:1px solid #4ce6ff30}
+.bw-mobile-footer:empty{display:none}
+.bw-mobile-button{position:relative;flex:none;width:100%;min-height:54px;padding:14px 24px;border:0;color:#f1f8ff;background:linear-gradient(#76e5ff 0 2px,#2371c9 2px,#104d99 48%,#092957 calc(100% - 3px),#2ab6ec calc(100% - 3px));clip-path:polygon(15px 0,calc(100% - 15px) 0,100% 50%,calc(100% - 15px) 100%,15px 100%,0 50%);font:700 17px/1.25 'Oxanium',sans-serif;text-align:center;text-shadow:0 2px 1px #04142d;cursor:pointer;touch-action:manipulation}
+.bw-mobile-button.primary{background:linear-gradient(#fff5bb 0 3px,#ffe882 3px,#ffd13a 48%,#f59c16 calc(100% - 4px),#ffe78e calc(100% - 4px));color:#102444;text-shadow:0 1px #fff4b6}
+.bw-mobile-button.danger{background:linear-gradient(#ffb59d,#c83c4e 8%,#762140 94%,#ff7a75);color:#fff4ef}
+.bw-mobile-button.back{background:linear-gradient(#a2d1f9 0 2px,#23518b 2px,#12325c 95%,#6b9ac5 95%)}
+.bw-mobile-button:disabled{background:linear-gradient(#314765,#14263f);color:#90a4bc;cursor:default;opacity:.7}
+.bw-mobile-button:active{filter:brightness(1.18)}.bw-mobile button:focus-visible,.bw-mobile input:focus-visible{outline:3px solid #fff4b6;outline-offset:3px}
+.bw-mobile-button.compact{font:700 14px/1.3 'Oxanium',sans-serif;min-height:48px;padding:12px 18px}
+.bw-mobile-screen-title{background:linear-gradient(#0c53ac10,#06326110 42%,#061b4955),url('/assets/arcade/ui/sky-panorama.webp') center/cover}
+.bw-mobile-screen-title .bw-mobile-body{min-height:100%;gap:16px;justify-content:center;padding-top:calc(10px + env(safe-area-inset-top));padding-bottom:24px}
+.bw-mobile-brand{width:100%;display:flex;justify-content:center;margin:-2vh auto 1vh}
+.bw-mobile-brand img{width:100%;max-width:390px;height:auto;max-height:34svh;object-fit:contain;filter:drop-shadow(0 6px 8px #03205088)}
+.bw-mobile-screen-title .bw-mobile-button{min-height:58px;font-size:17px}
+.bw-mobile-screen-title .bw-mobile-button.compact{min-height:48px;font-size:14px}
+.bw-mobile-pilot{display:flex;gap:18px;align-items:center;padding:16px;background:linear-gradient(135deg,#1d4c7d,#081e3b);border:1px solid #5be1ff88;border-radius:16px}
+.bw-mobile-pilot img{width:108px;height:108px;object-fit:contain;flex:none}.bw-mobile-pilot h2{color:#ffe57d;font-size:23px}.bw-mobile-pilot p{color:#8debff;font-size:14px;margin-top:8px;white-space:pre-line}
+.bw-mobile-pilots{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+.bw-mobile-pilots button{padding:8px 2px;background:#0b294c;border:1px solid #477d9c;border-radius:9px;color:#d6e8f6;font:700 14px/1.3 'Rajdhani',sans-serif;min-width:0;cursor:pointer}
+.bw-mobile-pilots button.selected{border:2px solid #ffe57d;background:#175182;color:#ffe57d}.bw-mobile-pilots img{display:block;width:100%;aspect-ratio:1;object-fit:contain}.bw-mobile-pilots span{display:block}.bw-mobile-pilots small{display:block;font-size:10px;font-weight:500}
+.bw-mobile-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
+.bw-mobile-metrics>div{padding:12px;background:#0c2b4b;border:1px solid #3d9abb66;border-radius:9px}
+.bw-mobile-metrics dt{font-size:13px;color:#a7c6db}.bw-mobile-metrics dd{font:700 19px/1.2 'Oxanium',sans-serif;color:#ffe57d;margin:5px 0 0;overflow-wrap:anywhere}
+.bw-mobile-card{overflow:hidden;background:linear-gradient(135deg,#123b67,#071d38);border:1px solid #45c4e68c;border-radius:14px;flex:none}
+.bw-mobile-card-content{padding:18px;display:flex;flex-direction:column;gap:12px}.bw-mobile-card-content h2{color:#ffe57d}.bw-mobile-card-content>p{font-size:15px;white-space:pre-line}.bw-mobile-route-art{width:100%;height:112px;object-fit:cover;display:block}
+.bw-mobile-tabs{display:flex;gap:6px;flex:none}.bw-mobile-tabs button{flex:1;min-width:0;min-height:48px;padding:8px 5px;border:1px solid #3fc9ed99;border-radius:8px;background:#12365c;color:#d5edff;font:700 14px/1.2 'Rajdhani',sans-serif;cursor:pointer}.bw-mobile-tabs button.active{background:#ffe17b;color:#102444;border-color:#fff1b1}
+.bw-mobile-setting{display:flex;gap:12px;align-items:center;justify-content:space-between;background:#0d2949;border:1px solid #3c759855;border-radius:10px;padding:12px}
+.bw-mobile-setting>div:first-child{display:flex;flex-direction:column;gap:4px;min-width:0}.bw-mobile-setting strong{color:#ffe57d;font-size:17px}.bw-mobile-setting>div:last-child{display:flex;gap:8px}.bw-mobile-setting button{width:44px;height:44px;background:#164b7b;border:1px solid #52c9ec;border-radius:8px;color:#f0faff;font:700 23px 'Oxanium',sans-serif;cursor:pointer;touch-action:manipulation}
+.bw-mobile-volume{display:grid;grid-template-columns:1fr auto;gap:10px;padding:14px;background:#0d2949;border-radius:10px}.bw-mobile-volume strong{color:#ffe57d}.bw-mobile-volume input{grid-column:1/-1;width:100%;height:32px;margin:0;accent-color:#55e2ff;touch-action:pan-x}
+@media(min-height:800px){.bw-mobile-screen-title .bw-mobile-body{gap:20px}.bw-mobile-screen-title .bw-mobile-brand{margin-bottom:3vh}.bw-mobile-screen-title .bw-mobile-button{min-height:62px}}
+@media(prefers-reduced-motion:no-preference){.bw-mobile-brand{animation:bw-mobile-arrive .3s ease-out}@keyframes bw-mobile-arrive{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}}

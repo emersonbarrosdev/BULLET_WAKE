@@ -1,5 +1,6 @@
 import { createPlayerWeapons, type PlayerWeaponsState } from './weaponSystem.ts';
 import { initialPlayerHealth, type PlayerHealth } from './combat.ts';
+import { normalizeHullSnapshot, type HullSnapshot } from '../arcade/HullIntegrity.ts';
 
 /** A stage boundary is not a death, Continue, replay or new campaign. */
 export interface CampaignFlight {
@@ -8,10 +9,12 @@ export interface CampaignFlight {
   weapons: PlayerWeaponsState;
   lives: number;
   score: number;
+  survival?: HullSnapshot;
 }
 
-export function stageFlightSnapshot(stage:number,weapons:PlayerWeaponsState,lives:number,score:number):CampaignFlight {
-  return {pilotId:weapons.pilotId,clearedStage:stage,weapons:{...weapons},lives,score};
+export function stageFlightSnapshot(stage:number,weapons:PlayerWeaponsState,lives:number,score:number,survival?:HullSnapshot):CampaignFlight {
+  const snapshot = normalizeHullSnapshot(survival);
+  return {pilotId:weapons.pilotId,clearedStage:stage,weapons:{...weapons},lives,score,...(snapshot ? {survival:snapshot} : {})};
 }
 
 export function enterStage(pilotId:PlayerWeaponsState['pilotId'],stage:number,carry?:CampaignFlight):{weapons:PlayerWeaponsState;health:PlayerHealth;score:number} {

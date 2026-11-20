@@ -218,6 +218,7 @@ export class PelagicActorAnims {
     g.clear();
 
     if (!alive) {
+        playerSprite.setVisible(false);
       this.hide(); this.trailL = []; this.trailR = [];
       return;
     }

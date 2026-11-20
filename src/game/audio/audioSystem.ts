@@ -303,6 +303,11 @@ export class AudioSystem {
   playPickup(type: string): void {
     this.unlock();
     if (!this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
+    if (type === 'repair') {
+      [740, 1109, 1480].forEach((freq, i) => this.tone('triangle', freq, freq * 1.015, .11, .12, i * .055));
+      this.tone('sine', 370, 740, .17, .06);
+      return;
+    }
     const melodies:Record<string,number[]>={power:[659,880],upgrade:[523,659,784,1047],full_power:[523,784,1047],health:[392,523,659],special:[349,523,1047],bomb:[349,523,1047],speed:[880,1175],score:[1047,1319],weapon_ion:[587,880],weapon_green:[440,698],weapon_red:[330,659],missile:[392,784]};
     (melodies[type]??[659,987]).forEach((freq,i)=>this.tone('sine',freq,freq,.12,.16,i*.055));
   }

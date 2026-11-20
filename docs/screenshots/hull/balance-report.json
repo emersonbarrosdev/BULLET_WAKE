@@ -1,0 +1,1123 @@
+{
+  "generatedAt": "2026-11-20T08:50:59.010Z",
+  "method": "Deterministic arcade-route steer bot; no invulnerability, continues, checkpoint jumps or forced pickups.",
+  "humanLimitations": [
+    "These are automated simulations, not human playtests or evidence that a difficulty is fair for humans.",
+    "Steering inspects current simulation entities and predicts projectile positions; people cannot access this exact information.",
+    "The existing steering policy was designed for classic survival and may miss repair drones or choose unsafe collection paths.",
+    "One fixed seed per combination cannot establish population win rates, accessibility or pilot learning curves.",
+    "The default run uses Nolan only; --pilots=nolan,cora,lyra,harlan,bento expands the matrix. Unit tests separately cover all five pilots.",
+    "No rendering, audio, device latency or visual readability is evaluated."
+  ],
+  "configuration": {
+    "pilots": [
+      "nolan"
+    ],
+    "capacities": [
+      3,
+      4,
+      5
+    ],
+    "difficulties": [
+      "easy",
+      "normal",
+      "hard"
+    ],
+    "missions": [
+      1,
+      2
+    ],
+    "hz": 120,
+    "steeringHz": 30,
+    "timeLimitSeconds": 600,
+    "extraRepairOpportunitySeconds": {
+      "UP": 230,
+      "SIDE": 122
+    },
+    "recommendedCapacity": null
+  },
+  "byCapacity": [
+    {
+      "maxHull": 3,
+      "runs": 6,
+      "wins": 5,
+      "timeouts": 0,
+      "meanHits": 1.167,
+      "meanRepairs": 1.667,
+      "meanProgress": 0.88,
+      "meanPower": 2.587
+    },
+    {
+      "maxHull": 4,
+      "runs": 6,
+      "wins": 5,
+      "timeouts": 0,
+      "meanHits": 1.333,
+      "meanRepairs": 1.667,
+      "meanProgress": 0.882,
+      "meanPower": 2.586
+    },
+    {
+      "maxHull": 5,
+      "runs": 6,
+      "wins": 5,
+      "timeouts": 0,
+      "meanHits": 1.5,
+      "meanRepairs": 1.667,
+      "meanProgress": 0.884,
+      "meanPower": 2.583
+    }
+  ],
+  "results": [
+    {
+      "missionId": 1,
+      "perspective": "UP",
+      "pilotId": "nolan",
+      "difficulty": "easy",
+      "maxHull": 3,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 510.692,
+      "elapsedSeconds": 505.075,
+      "routeSeconds": 360,
+      "progress": 1,
+      "score": 164440,
+      "hullRemaining": 1,
+      "deaths": 0,
+      "hits": 4,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 97.217,
+      "meanPower": 1.726,
+      "finalPower": 1,
+      "bossSeconds": 145.067,
+      "recoverySeconds": [
+        36.267,
+        42.1
+      ],
+      "meanRecoverySeconds": 39.184,
+      "transitions": [
+        {
+          "seconds": 53.642,
+          "hull": 3,
+          "power": 2
+        },
+        {
+          "seconds": 86.8,
+          "hull": 2,
+          "power": 1
+        },
+        {
+          "seconds": 123.058,
+          "hull": 2,
+          "power": 2
+        },
+        {
+          "seconds": 185.158,
+          "hull": 1,
+          "power": 1
+        },
+        {
+          "seconds": 227.25,
+          "hull": 1,
+          "power": 2
+        },
+        {
+          "seconds": 232.925,
+          "hull": 2,
+          "power": 2
+        },
+        {
+          "seconds": 290.108,
+          "hull": 3,
+          "power": 2
+        },
+        {
+          "seconds": 315.483,
+          "hull": 3,
+          "power": 3
+        },
+        {
+          "seconds": 358.367,
+          "hull": 2,
+          "power": 2
+        },
+        {
+          "seconds": 455.625,
+          "hull": 1,
+          "power": 1
+        }
+      ]
+    },
+    {
+      "missionId": 2,
+      "perspective": "SIDE",
+      "pilotId": "nolan",
+      "difficulty": "easy",
+      "maxHull": 3,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 313.633,
+      "elapsedSeconds": 308.017,
+      "routeSeconds": 300,
+      "progress": 1,
+      "score": 52385,
+      "hullRemaining": 3,
+      "deaths": 0,
+      "hits": 0,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 0,
+      "meanPower": 2.968,
+      "finalPower": 5,
+      "bossSeconds": 8.008,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 45.7,
+          "hull": 3,
+          "power": 2
+        },
+        {
+          "seconds": 97.517,
+          "hull": 3,
+          "power": 3
+        },
+        {
+          "seconds": 204.575,
+          "hull": 3,
+          "power": 4
+        },
+        {
+          "seconds": 277.958,
+          "hull": 3,
+          "power": 5
+        }
+      ]
+    },
+    {
+      "missionId": 1,
+      "perspective": "UP",
+      "pilotId": "nolan",
+      "difficulty": "normal",
+      "maxHull": 3,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 419.317,
+      "elapsedSeconds": 413.7,
+      "routeSeconds": 360,
+      "progress": 1,
+      "score": 245605,
+      "hullRemaining": 3,
+      "deaths": 0,
+      "hits": 0,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 0,
+      "meanPower": 3.611,
+      "finalPower": 5,
+      "bossSeconds": 53.692,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 39.117,
+          "hull": 3,
+          "power": 2
+        },
+        {
+          "seconds": 98.9,
+          "hull": 3,
+          "power": 3
+        },
+        {
+          "seconds": 166.142,
+          "hull": 3,
+          "power": 4
+        },
+        {
+          "seconds": 270.5,
+          "hull": 3,
+          "power": 5
+        }
+      ]
+    },
+    {
+      "missionId": 2,
+      "perspective": "SIDE",
+      "pilotId": "nolan",
+      "difficulty": "normal",
+      "maxHull": 3,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 313.633,
+      "elapsedSeconds": 308.017,
+      "routeSeconds": 300,
+      "progress": 1,
+      "score": 52800,
+      "hullRemaining": 3,
+      "deaths": 0,
+      "hits": 0,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 0,
+      "meanPower": 2.968,
+      "finalPower": 5,
+      "bossSeconds": 8.008,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 45.692,
+          "hull": 3,
+          "power": 2
+        },
+        {
+          "seconds": 97.533,
+          "hull": 3,
+          "power": 3
+        },
+        {
+          "seconds": 204.575,
+          "hull": 3,
+          "power": 4
+        },
+        {
+          "seconds": 278.025,
+          "hull": 3,
+          "power": 5
+        }
+      ]
+    },
+    {
+      "missionId": 1,
+      "perspective": "UP",
+      "pilotId": "nolan",
+      "difficulty": "hard",
+      "maxHull": 3,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "defeat",
+      "win": false,
+      "timedOut": false,
+      "simulatedSeconds": 103.383,
+      "elapsedSeconds": 101.175,
+      "routeSeconds": 101.175,
+      "progress": 0.281,
+      "score": 44320,
+      "hullRemaining": 0,
+      "deaths": 1,
+      "hits": 3,
+      "repairsCollected": 0,
+      "repairDeliveriesSeen": 0,
+      "criticalSeconds": 5.3,
+      "meanPower": 1.277,
+      "finalPower": 1,
+      "bossSeconds": 0,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 53.825,
+          "hull": 3,
+          "power": 2
+        },
+        {
+          "seconds": 81.825,
+          "hull": 2,
+          "power": 1
+        },
+        {
+          "seconds": 95.875,
+          "hull": 1,
+          "power": 1
+        },
+        {
+          "seconds": 101.175,
+          "hull": 0,
+          "power": 1
+        }
+      ]
+    },
+    {
+      "missionId": 2,
+      "perspective": "SIDE",
+      "pilotId": "nolan",
+      "difficulty": "hard",
+      "maxHull": 3,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 314.2,
+      "elapsedSeconds": 308.583,
+      "routeSeconds": 300,
+      "progress": 1,
+      "score": 52875,
+      "hullRemaining": 3,
+      "deaths": 0,
+      "hits": 0,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 0,
+      "meanPower": 2.97,
+      "finalPower": 5,
+      "bossSeconds": 8.575,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 45.7,
+          "hull": 3,
+          "power": 2
+        },
+        {
+          "seconds": 97.475,
+          "hull": 3,
+          "power": 3
+        },
+        {
+          "seconds": 204.542,
+          "hull": 3,
+          "power": 4
+        },
+        {
+          "seconds": 278.575,
+          "hull": 3,
+          "power": 5
+        }
+      ]
+    },
+    {
+      "missionId": 1,
+      "perspective": "UP",
+      "pilotId": "nolan",
+      "difficulty": "easy",
+      "maxHull": 4,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 510.692,
+      "elapsedSeconds": 505.075,
+      "routeSeconds": 360,
+      "progress": 1,
+      "score": 164440,
+      "hullRemaining": 2,
+      "deaths": 0,
+      "hits": 4,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 0,
+      "meanPower": 1.726,
+      "finalPower": 1,
+      "bossSeconds": 145.067,
+      "recoverySeconds": [
+        36.267,
+        42.1
+      ],
+      "meanRecoverySeconds": 39.184,
+      "transitions": [
+        {
+          "seconds": 53.642,
+          "hull": 4,
+          "power": 2
+        },
+        {
+          "seconds": 86.8,
+          "hull": 3,
+          "power": 1
+        },
+        {
+          "seconds": 123.058,
+          "hull": 3,
+          "power": 2
+        },
+        {
+          "seconds": 185.158,
+          "hull": 2,
+          "power": 1
+        },
+        {
+          "seconds": 227.25,
+          "hull": 2,
+          "power": 2
+        },
+        {
+          "seconds": 232.925,
+          "hull": 3,
+          "power": 2
+        },
+        {
+          "seconds": 290.108,
+          "hull": 4,
+          "power": 2
+        },
+        {
+          "seconds": 315.483,
+          "hull": 4,
+          "power": 3
+        },
+        {
+          "seconds": 358.367,
+          "hull": 3,
+          "power": 2
+        },
+        {
+          "seconds": 455.625,
+          "hull": 2,
+          "power": 1
+        }
+      ]
+    },
+    {
+      "missionId": 2,
+      "perspective": "SIDE",
+      "pilotId": "nolan",
+      "difficulty": "easy",
+      "maxHull": 4,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 313.633,
+      "elapsedSeconds": 308.017,
+      "routeSeconds": 300,
+      "progress": 1,
+      "score": 52385,
+      "hullRemaining": 4,
+      "deaths": 0,
+      "hits": 0,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 0,
+      "meanPower": 2.968,
+      "finalPower": 5,
+      "bossSeconds": 8.008,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 45.7,
+          "hull": 4,
+          "power": 2
+        },
+        {
+          "seconds": 97.517,
+          "hull": 4,
+          "power": 3
+        },
+        {
+          "seconds": 204.575,
+          "hull": 4,
+          "power": 4
+        },
+        {
+          "seconds": 277.958,
+          "hull": 4,
+          "power": 5
+        }
+      ]
+    },
+    {
+      "missionId": 1,
+      "perspective": "UP",
+      "pilotId": "nolan",
+      "difficulty": "normal",
+      "maxHull": 4,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 419.317,
+      "elapsedSeconds": 413.7,
+      "routeSeconds": 360,
+      "progress": 1,
+      "score": 245605,
+      "hullRemaining": 4,
+      "deaths": 0,
+      "hits": 0,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 0,
+      "meanPower": 3.611,
+      "finalPower": 5,
+      "bossSeconds": 53.692,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 39.117,
+          "hull": 4,
+          "power": 2
+        },
+        {
+          "seconds": 98.9,
+          "hull": 4,
+          "power": 3
+        },
+        {
+          "seconds": 166.142,
+          "hull": 4,
+          "power": 4
+        },
+        {
+          "seconds": 270.5,
+          "hull": 4,
+          "power": 5
+        }
+      ]
+    },
+    {
+      "missionId": 2,
+      "perspective": "SIDE",
+      "pilotId": "nolan",
+      "difficulty": "normal",
+      "maxHull": 4,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 313.633,
+      "elapsedSeconds": 308.017,
+      "routeSeconds": 300,
+      "progress": 1,
+      "score": 52800,
+      "hullRemaining": 4,
+      "deaths": 0,
+      "hits": 0,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 0,
+      "meanPower": 2.968,
+      "finalPower": 5,
+      "bossSeconds": 8.008,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 45.692,
+          "hull": 4,
+          "power": 2
+        },
+        {
+          "seconds": 97.533,
+          "hull": 4,
+          "power": 3
+        },
+        {
+          "seconds": 204.575,
+          "hull": 4,
+          "power": 4
+        },
+        {
+          "seconds": 278.025,
+          "hull": 4,
+          "power": 5
+        }
+      ]
+    },
+    {
+      "missionId": 1,
+      "perspective": "UP",
+      "pilotId": "nolan",
+      "difficulty": "hard",
+      "maxHull": 4,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "defeat",
+      "win": false,
+      "timedOut": false,
+      "simulatedSeconds": 106.075,
+      "elapsedSeconds": 103.867,
+      "routeSeconds": 103.867,
+      "progress": 0.289,
+      "score": 45570,
+      "hullRemaining": 0,
+      "deaths": 1,
+      "hits": 4,
+      "repairsCollected": 0,
+      "repairDeliveriesSeen": 0,
+      "criticalSeconds": 2.692,
+      "meanPower": 1.27,
+      "finalPower": 1,
+      "bossSeconds": 0,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 53.825,
+          "hull": 4,
+          "power": 2
+        },
+        {
+          "seconds": 81.825,
+          "hull": 3,
+          "power": 1
+        },
+        {
+          "seconds": 95.875,
+          "hull": 2,
+          "power": 1
+        },
+        {
+          "seconds": 101.175,
+          "hull": 1,
+          "power": 1
+        },
+        {
+          "seconds": 103.867,
+          "hull": 0,
+          "power": 1
+        }
+      ]
+    },
+    {
+      "missionId": 2,
+      "perspective": "SIDE",
+      "pilotId": "nolan",
+      "difficulty": "hard",
+      "maxHull": 4,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 314.2,
+      "elapsedSeconds": 308.583,
+      "routeSeconds": 300,
+      "progress": 1,
+      "score": 52875,
+      "hullRemaining": 4,
+      "deaths": 0,
+      "hits": 0,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 0,
+      "meanPower": 2.97,
+      "finalPower": 5,
+      "bossSeconds": 8.575,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 45.7,
+          "hull": 4,
+          "power": 2
+        },
+        {
+          "seconds": 97.475,
+          "hull": 4,
+          "power": 3
+        },
+        {
+          "seconds": 204.542,
+          "hull": 4,
+          "power": 4
+        },
+        {
+          "seconds": 278.575,
+          "hull": 4,
+          "power": 5
+        }
+      ]
+    },
+    {
+      "missionId": 1,
+      "perspective": "UP",
+      "pilotId": "nolan",
+      "difficulty": "easy",
+      "maxHull": 5,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 510.692,
+      "elapsedSeconds": 505.075,
+      "routeSeconds": 360,
+      "progress": 1,
+      "score": 164440,
+      "hullRemaining": 3,
+      "deaths": 0,
+      "hits": 4,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 0,
+      "meanPower": 1.726,
+      "finalPower": 1,
+      "bossSeconds": 145.067,
+      "recoverySeconds": [
+        36.267,
+        42.1
+      ],
+      "meanRecoverySeconds": 39.184,
+      "transitions": [
+        {
+          "seconds": 53.642,
+          "hull": 5,
+          "power": 2
+        },
+        {
+          "seconds": 86.8,
+          "hull": 4,
+          "power": 1
+        },
+        {
+          "seconds": 123.058,
+          "hull": 4,
+          "power": 2
+        },
+        {
+          "seconds": 185.158,
+          "hull": 3,
+          "power": 1
+        },
+        {
+          "seconds": 227.25,
+          "hull": 3,
+          "power": 2
+        },
+        {
+          "seconds": 232.925,
+          "hull": 4,
+          "power": 2
+        },
+        {
+          "seconds": 290.108,
+          "hull": 5,
+          "power": 2
+        },
+        {
+          "seconds": 315.483,
+          "hull": 5,
+          "power": 3
+        },
+        {
+          "seconds": 358.367,
+          "hull": 4,
+          "power": 2
+        },
+        {
+          "seconds": 455.625,
+          "hull": 3,
+          "power": 1
+        }
+      ]
+    },
+    {
+      "missionId": 2,
+      "perspective": "SIDE",
+      "pilotId": "nolan",
+      "difficulty": "easy",
+      "maxHull": 5,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 313.633,
+      "elapsedSeconds": 308.017,
+      "routeSeconds": 300,
+      "progress": 1,
+      "score": 52385,
+      "hullRemaining": 5,
+      "deaths": 0,
+      "hits": 0,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 0,
+      "meanPower": 2.968,
+      "finalPower": 5,
+      "bossSeconds": 8.008,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 45.7,
+          "hull": 5,
+          "power": 2
+        },
+        {
+          "seconds": 97.517,
+          "hull": 5,
+          "power": 3
+        },
+        {
+          "seconds": 204.575,
+          "hull": 5,
+          "power": 4
+        },
+        {
+          "seconds": 277.958,
+          "hull": 5,
+          "power": 5
+        }
+      ]
+    },
+    {
+      "missionId": 1,
+      "perspective": "UP",
+      "pilotId": "nolan",
+      "difficulty": "normal",
+      "maxHull": 5,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 419.317,
+      "elapsedSeconds": 413.7,
+      "routeSeconds": 360,
+      "progress": 1,
+      "score": 245605,
+      "hullRemaining": 5,
+      "deaths": 0,
+      "hits": 0,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 0,
+      "meanPower": 3.611,
+      "finalPower": 5,
+      "bossSeconds": 53.692,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 39.117,
+          "hull": 5,
+          "power": 2
+        },
+        {
+          "seconds": 98.9,
+          "hull": 5,
+          "power": 3
+        },
+        {
+          "seconds": 166.142,
+          "hull": 5,
+          "power": 4
+        },
+        {
+          "seconds": 270.5,
+          "hull": 5,
+          "power": 5
+        }
+      ]
+    },
+    {
+      "missionId": 2,
+      "perspective": "SIDE",
+      "pilotId": "nolan",
+      "difficulty": "normal",
+      "maxHull": 5,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 313.633,
+      "elapsedSeconds": 308.017,
+      "routeSeconds": 300,
+      "progress": 1,
+      "score": 52800,
+      "hullRemaining": 5,
+      "deaths": 0,
+      "hits": 0,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 0,
+      "meanPower": 2.968,
+      "finalPower": 5,
+      "bossSeconds": 8.008,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 45.692,
+          "hull": 5,
+          "power": 2
+        },
+        {
+          "seconds": 97.533,
+          "hull": 5,
+          "power": 3
+        },
+        {
+          "seconds": 204.575,
+          "hull": 5,
+          "power": 4
+        },
+        {
+          "seconds": 278.025,
+          "hull": 5,
+          "power": 5
+        }
+      ]
+    },
+    {
+      "missionId": 1,
+      "perspective": "UP",
+      "pilotId": "nolan",
+      "difficulty": "hard",
+      "maxHull": 5,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "defeat",
+      "win": false,
+      "timedOut": false,
+      "simulatedSeconds": 111.933,
+      "elapsedSeconds": 109.725,
+      "routeSeconds": 109.725,
+      "progress": 0.305,
+      "score": 47080,
+      "hullRemaining": 0,
+      "deaths": 1,
+      "hits": 5,
+      "repairsCollected": 0,
+      "repairDeliveriesSeen": 0,
+      "criticalSeconds": 5.858,
+      "meanPower": 1.255,
+      "finalPower": 1,
+      "bossSeconds": 0,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 53.825,
+          "hull": 5,
+          "power": 2
+        },
+        {
+          "seconds": 81.825,
+          "hull": 4,
+          "power": 1
+        },
+        {
+          "seconds": 95.875,
+          "hull": 3,
+          "power": 1
+        },
+        {
+          "seconds": 101.175,
+          "hull": 2,
+          "power": 1
+        },
+        {
+          "seconds": 103.867,
+          "hull": 1,
+          "power": 1
+        },
+        {
+          "seconds": 109.725,
+          "hull": 0,
+          "power": 1
+        }
+      ]
+    },
+    {
+      "missionId": 2,
+      "perspective": "SIDE",
+      "pilotId": "nolan",
+      "difficulty": "hard",
+      "maxHull": 5,
+      "survivalRule": "hull-v1",
+      "seed": 1337,
+      "hz": 120,
+      "steeringHz": 30,
+      "state": "victory",
+      "win": true,
+      "timedOut": false,
+      "simulatedSeconds": 314.2,
+      "elapsedSeconds": 308.583,
+      "routeSeconds": 300,
+      "progress": 1,
+      "score": 52875,
+      "hullRemaining": 5,
+      "deaths": 0,
+      "hits": 0,
+      "repairsCollected": 2,
+      "repairDeliveriesSeen": 2,
+      "criticalSeconds": 0,
+      "meanPower": 2.97,
+      "finalPower": 5,
+      "bossSeconds": 8.575,
+      "recoverySeconds": [],
+      "meanRecoverySeconds": null,
+      "transitions": [
+        {
+          "seconds": 45.7,
+          "hull": 5,
+          "power": 2
+        },
+        {
+          "seconds": 97.475,
+          "hull": 5,
+          "power": 3
+        },
+        {
+          "seconds": 204.542,
+          "hull": 5,
+          "power": 4
+        },
+        {
+          "seconds": 278.575,
+          "hull": 5,
+          "power": 5
+        }
+      ]
+    }
+  ]
+}

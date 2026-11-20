@@ -9,3 +9,6 @@ coverage/
 *.log
 
 tmp/
+android/.debug.keystore
+output/android/
+output/android-layout/

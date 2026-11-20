@@ -4,6 +4,11 @@ import { GAME_WIDTH, GAME_HEIGHT } from '../constants';
 const resizeHandlers = new WeakMap<Phaser.Scene, () => void>();
 const virtualSizes = new WeakMap<Phaser.Scene, { w: number; h: number; cx?: number; cy?: number }>();
 
+/** Render above CSS resolution on dense phone displays, with a bounded GPU budget. */
+export function renderPixelRatio(): number {
+  return Math.min(2, Math.max(1, typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1));
+}
+
 /** Returns current logical/virtual world bounds rendered by the scene camera. */
 export function getCombatVirtualSize(scene: Phaser.Scene): { w: number; h: number; cx?: number; cy?: number } {
   return virtualSizes.get(scene) ?? { w: GAME_WIDTH, h: GAME_HEIGHT };
@@ -29,14 +34,14 @@ export function enableCombatResolution(scene: Phaser.Scene): void {
     const v = getCombatVirtualSize(scene);
     const parent = scene.game.canvas?.parentElement;
     if (!parent) return;
-    const width = parent.clientWidth;
-    const height = parent.clientHeight;
+    const width = Math.round(parent.clientWidth * renderPixelRatio());
+    const height = Math.round(parent.clientHeight * renderPixelRatio());
     if (width <= 0 || height <= 0) return;
     scene.scale.setGameSize(width, height);
     scene.cameras.main
       .setViewport(0, 0, width, height)
       .setSize(width, height)
-      .setZoom(width / v.w, height / v.h)
+      .setZoom(Math.min(width / v.w, height / v.h))
       .centerOn(v.cx ?? v.w / 2, v.cy ?? v.h / 2);
   };
   resizeHandlers.set(scene, resize);

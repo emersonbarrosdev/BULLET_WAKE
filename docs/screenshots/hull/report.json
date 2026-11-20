@@ -1,0 +1,1212 @@
+{
+  "status": "passed",
+  "errors": [],
+  "captures": [
+    {
+      "name": "mission-1-intact",
+      "bytes": 1301889,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-1-intact-detail",
+      "bytes": 185825,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-1-light",
+      "bytes": 1302105,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-1-light-detail",
+      "bytes": 197304,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-1-damaged",
+      "bytes": 1302047,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-1-damaged-detail",
+      "bytes": 194003,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-1-critical",
+      "bytes": 1301694,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-1-critical-detail",
+      "bytes": 198472,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-1-destroyed",
+      "bytes": 1291561,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-1-destroyed-detail",
+      "bytes": 192902,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-1-repair-2-item",
+      "bytes": 200030,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-1-repair-2",
+      "bytes": 1302603,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-1-repair-2-detail",
+      "bytes": 197834,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-1-repair-3-item",
+      "bytes": 200022,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-1-repair-3",
+      "bytes": 1302176,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-1-repair-3-detail",
+      "bytes": 195101,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-1-repair-4-item",
+      "bytes": 195893,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-1-repair-4",
+      "bytes": 1302186,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-1-repair-4-detail",
+      "bytes": 195205,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-2-intact",
+      "bytes": 335874,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-2-intact-detail",
+      "bytes": 31469,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-2-light",
+      "bytes": 338563,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-2-light-detail",
+      "bytes": 32890,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-2-damaged",
+      "bytes": 338238,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-2-damaged-detail",
+      "bytes": 41596,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-2-critical",
+      "bytes": 339659,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-2-critical-detail",
+      "bytes": 47942,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-2-destroyed",
+      "bytes": 349870,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-2-destroyed-detail",
+      "bytes": 99209,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-2-repair-2-item",
+      "bytes": 56997,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-2-repair-2",
+      "bytes": 339670,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-2-repair-2-detail",
+      "bytes": 50047,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-2-repair-3-item",
+      "bytes": 61792,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-2-repair-3",
+      "bytes": 338273,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-2-repair-3-detail",
+      "bytes": 42976,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-2-repair-4-item",
+      "bytes": 50906,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mission-2-repair-4",
+      "bytes": 338407,
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "mission-2-repair-4-detail",
+      "bytes": 42775,
+      "width": 480,
+      "height": 480
+    },
+    {
+      "name": "mobile-portrait-critical",
+      "bytes": 666294,
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "mobile-touch-pause",
+      "bytes": 236821,
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "states": [
+    {
+      "mission": 1,
+      "hull": 4,
+      "maximum": 4,
+      "condition": "intact",
+      "power": 5,
+      "meter": 0,
+      "hits": 0,
+      "deaths": 0,
+      "state": "play",
+      "repairs": 0,
+      "art": {
+        "objects": 12,
+        "visible": 0,
+        "condition": "intact",
+        "clock": 0,
+        "repairActive": false,
+        "destructionActive": false
+      },
+      "playerVisible": true,
+      "playerTexture": "pelagic-rivet-up",
+      "oldLivesVisible": false,
+      "footer": {
+        "visible": false,
+        "text": "PONTOS 0",
+        "y": 424
+      },
+      "hud": ""
+    },
+    {
+      "mission": 1,
+      "hull": 3,
+      "maximum": 4,
+      "condition": "light",
+      "power": 4,
+      "meter": 0,
+      "hits": 1,
+      "deaths": 0,
+      "state": "play",
+      "repairs": 0,
+      "art": {
+        "objects": 12,
+        "visible": 2,
+        "condition": "light",
+        "clock": 0.2,
+        "repairActive": false,
+        "destructionActive": false
+      },
+      "playerVisible": true,
+      "playerTexture": "pelagic-rivet-up",
+      "oldLivesVisible": false,
+      "footer": {
+        "visible": false,
+        "text": "PONTOS 0",
+        "y": 424
+      },
+      "hud": ""
+    },
+    {
+      "mission": 1,
+      "hull": 2,
+      "maximum": 4,
+      "condition": "damaged",
+      "power": 3,
+      "meter": 0,
+      "hits": 2,
+      "deaths": 0,
+      "state": "play",
+      "repairs": 0,
+      "art": {
+        "objects": 12,
+        "visible": 3,
+        "condition": "damaged",
+        "clock": 0.48000000000000004,
+        "repairActive": false,
+        "destructionActive": false
+      },
+      "playerVisible": true,
+      "playerTexture": "pelagic-rivet-up",
+      "oldLivesVisible": false,
+      "footer": {
+        "visible": false,
+        "text": "PONTOS 0",
+        "y": 424
+      },
+      "hud": ""
+    },
+    {
+      "mission": 1,
+      "hull": 1,
+      "maximum": 4,
+      "condition": "critical",
+      "power": 2,
+      "meter": 0,
+      "hits": 3,
+      "deaths": 0,
+      "state": "play",
+      "repairs": 0,
+      "art": {
+        "objects": 12,
+        "visible": 7,
+        "condition": "critical",
+        "clock": 0.76,
+        "repairActive": false,
+        "destructionActive": false
+      },
+      "playerVisible": true,
+      "playerTexture": "pelagic-rivet-up",
+      "oldLivesVisible": false,
+      "footer": {
+        "visible": false,
+        "text": "PONTOS 0",
+        "y": 424
+      },
+      "hud": ""
+    },
+    {
+      "mission": 1,
+      "hull": 0,
+      "maximum": 4,
+      "condition": "destroyed",
+      "power": 2,
+      "meter": 0,
+      "hits": 4,
+      "deaths": 1,
+      "state": "defeat",
+      "repairs": 0,
+      "art": {
+        "objects": 12,
+        "visible": 1,
+        "condition": "destroyed",
+        "clock": 1.04,
+        "repairActive": false,
+        "destructionActive": true
+      },
+      "playerVisible": false,
+      "playerTexture": "pelagic-rivet-up",
+      "oldLivesVisible": false,
+      "footer": {
+        "visible": false,
+        "text": "PONTOS 0",
+        "y": 424
+      },
+      "hud": ""
+    },
+    {
+      "mission": 2,
+      "hull": 4,
+      "maximum": 4,
+      "condition": "intact",
+      "power": 5,
+      "meter": 0,
+      "hits": 0,
+      "deaths": 0,
+      "state": "play",
+      "repairs": 0,
+      "art": {
+        "objects": 12,
+        "visible": 0,
+        "condition": "intact",
+        "clock": 0,
+        "repairActive": false,
+        "destructionActive": false
+      },
+      "playerVisible": true,
+      "playerTexture": "arc-rivet",
+      "oldLivesVisible": false,
+      "footer": {
+        "visible": true,
+        "text": "PONTOS 0",
+        "y": 424
+      },
+      "hud": "BAYEK / RIVET     NV 5     CASCO 4/4"
+    },
+    {
+      "mission": 2,
+      "hull": 3,
+      "maximum": 4,
+      "condition": "light",
+      "power": 4,
+      "meter": 0,
+      "hits": 1,
+      "deaths": 0,
+      "state": "play",
+      "repairs": 0,
+      "art": {
+        "objects": 12,
+        "visible": 2,
+        "condition": "light",
+        "clock": 0.2,
+        "repairActive": false,
+        "destructionActive": false
+      },
+      "playerVisible": true,
+      "playerTexture": "arc-rivet",
+      "oldLivesVisible": false,
+      "footer": {
+        "visible": true,
+        "text": "PONTOS 0",
+        "y": 424
+      },
+      "hud": "BAYEK / RIVET     NV 4     CASCO 3/4"
+    },
+    {
+      "mission": 2,
+      "hull": 2,
+      "maximum": 4,
+      "condition": "damaged",
+      "power": 3,
+      "meter": 0,
+      "hits": 2,
+      "deaths": 0,
+      "state": "play",
+      "repairs": 0,
+      "art": {
+        "objects": 12,
+        "visible": 3,
+        "condition": "damaged",
+        "clock": 0.48000000000000004,
+        "repairActive": false,
+        "destructionActive": false
+      },
+      "playerVisible": true,
+      "playerTexture": "arc-rivet",
+      "oldLivesVisible": false,
+      "footer": {
+        "visible": true,
+        "text": "PONTOS 0",
+        "y": 424
+      },
+      "hud": "BAYEK / RIVET     NV 3     CASCO 2/4"
+    },
+    {
+      "mission": 2,
+      "hull": 1,
+      "maximum": 4,
+      "condition": "critical",
+      "power": 2,
+      "meter": 0,
+      "hits": 3,
+      "deaths": 0,
+      "state": "play",
+      "repairs": 0,
+      "art": {
+        "objects": 12,
+        "visible": 7,
+        "condition": "critical",
+        "clock": 0.76,
+        "repairActive": false,
+        "destructionActive": false
+      },
+      "playerVisible": true,
+      "playerTexture": "arc-rivet",
+      "oldLivesVisible": false,
+      "footer": {
+        "visible": true,
+        "text": "PONTOS 0",
+        "y": 424
+      },
+      "hud": "BAYEK / RIVET     NV 2     CASCO 1/4"
+    },
+    {
+      "mission": 2,
+      "hull": 0,
+      "maximum": 4,
+      "condition": "destroyed",
+      "power": 2,
+      "meter": 0,
+      "hits": 4,
+      "deaths": 1,
+      "state": "defeat",
+      "repairs": 0,
+      "art": {
+        "objects": 12,
+        "visible": 1,
+        "condition": "destroyed",
+        "clock": 1.04,
+        "repairActive": false,
+        "destructionActive": true
+      },
+      "playerVisible": false,
+      "playerTexture": "arc-rivet",
+      "oldLivesVisible": false,
+      "footer": {
+        "visible": true,
+        "text": "PONTOS 0",
+        "y": 424
+      },
+      "hud": "BAYEK / RIVET     NV 2     CASCO 0/4"
+    }
+  ],
+  "repairs": [
+    {
+      "before": {
+        "mission": 1,
+        "hull": 1,
+        "maximum": 4,
+        "condition": "critical",
+        "power": 2,
+        "meter": 0,
+        "hits": 3,
+        "deaths": 0,
+        "state": "play",
+        "repairs": 0,
+        "art": {
+          "objects": 12,
+          "visible": 7,
+          "condition": "critical",
+          "clock": 0.8400000000000001,
+          "repairActive": false,
+          "destructionActive": false
+        },
+        "playerVisible": true,
+        "playerTexture": "pelagic-rivet-up",
+        "oldLivesVisible": false,
+        "footer": {
+          "visible": false,
+          "text": "PONTOS 0",
+          "y": 424
+        },
+        "hud": ""
+      },
+      "after": {
+        "mission": 1,
+        "hull": 2,
+        "maximum": 4,
+        "condition": "damaged",
+        "power": 2,
+        "meter": 0,
+        "hits": 3,
+        "deaths": 0,
+        "state": "play",
+        "repairs": 1,
+        "art": {
+          "objects": 12,
+          "visible": 5,
+          "condition": "damaged",
+          "clock": 0.9600000000000001,
+          "repairActive": true,
+          "destructionActive": false
+        },
+        "playerVisible": true,
+        "playerTexture": "pelagic-rivet-up",
+        "oldLivesVisible": false,
+        "footer": {
+          "visible": false,
+          "text": "PONTOS 250",
+          "y": 424
+        },
+        "hud": ""
+      },
+      "collection": {
+        "id": 1,
+        "removed": true,
+        "events": [
+          {
+            "type": "repair",
+            "text": "REPARO DE CASCO 2/4"
+          },
+          {
+            "type": "pickup",
+            "text": "repair"
+          }
+        ]
+      }
+    },
+    {
+      "before": {
+        "mission": 1,
+        "hull": 2,
+        "maximum": 4,
+        "condition": "damaged",
+        "power": 2,
+        "meter": 0,
+        "hits": 3,
+        "deaths": 0,
+        "state": "play",
+        "repairs": 1,
+        "art": {
+          "objects": 12,
+          "visible": 5,
+          "condition": "damaged",
+          "clock": 0.9600000000000001,
+          "repairActive": true,
+          "destructionActive": false
+        },
+        "playerVisible": true,
+        "playerTexture": "pelagic-rivet-up",
+        "oldLivesVisible": false,
+        "footer": {
+          "visible": false,
+          "text": "PONTOS 250",
+          "y": 424
+        },
+        "hud": ""
+      },
+      "after": {
+        "mission": 1,
+        "hull": 3,
+        "maximum": 4,
+        "condition": "light",
+        "power": 2,
+        "meter": 0,
+        "hits": 3,
+        "deaths": 0,
+        "state": "play",
+        "repairs": 2,
+        "art": {
+          "objects": 12,
+          "visible": 2,
+          "condition": "light",
+          "clock": 1.08,
+          "repairActive": true,
+          "destructionActive": false
+        },
+        "playerVisible": true,
+        "playerTexture": "pelagic-rivet-up",
+        "oldLivesVisible": false,
+        "footer": {
+          "visible": false,
+          "text": "PONTOS 500",
+          "y": 424
+        },
+        "hud": ""
+      },
+      "collection": {
+        "id": 2,
+        "removed": true,
+        "events": [
+          {
+            "type": "repair",
+            "text": "REPARO DE CASCO 3/4"
+          },
+          {
+            "type": "pickup",
+            "text": "repair"
+          }
+        ]
+      }
+    },
+    {
+      "before": {
+        "mission": 1,
+        "hull": 3,
+        "maximum": 4,
+        "condition": "light",
+        "power": 2,
+        "meter": 0,
+        "hits": 3,
+        "deaths": 0,
+        "state": "play",
+        "repairs": 2,
+        "art": {
+          "objects": 12,
+          "visible": 2,
+          "condition": "light",
+          "clock": 1.08,
+          "repairActive": true,
+          "destructionActive": false
+        },
+        "playerVisible": true,
+        "playerTexture": "pelagic-rivet-up",
+        "oldLivesVisible": false,
+        "footer": {
+          "visible": false,
+          "text": "PONTOS 500",
+          "y": 424
+        },
+        "hud": ""
+      },
+      "after": {
+        "mission": 1,
+        "hull": 4,
+        "maximum": 4,
+        "condition": "intact",
+        "power": 2,
+        "meter": 0,
+        "hits": 3,
+        "deaths": 0,
+        "state": "play",
+        "repairs": 3,
+        "art": {
+          "objects": 12,
+          "visible": 1,
+          "condition": "intact",
+          "clock": 1.2000000000000002,
+          "repairActive": true,
+          "destructionActive": false
+        },
+        "playerVisible": true,
+        "playerTexture": "pelagic-rivet-up",
+        "oldLivesVisible": false,
+        "footer": {
+          "visible": false,
+          "text": "PONTOS 750",
+          "y": 424
+        },
+        "hud": ""
+      },
+      "collection": {
+        "id": 3,
+        "removed": true,
+        "events": [
+          {
+            "type": "repair",
+            "text": "REPARO DE CASCO 4/4"
+          },
+          {
+            "type": "pickup",
+            "text": "repair"
+          }
+        ]
+      }
+    },
+    {
+      "before": {
+        "mission": 2,
+        "hull": 1,
+        "maximum": 4,
+        "condition": "critical",
+        "power": 2,
+        "meter": 0,
+        "hits": 3,
+        "deaths": 0,
+        "state": "play",
+        "repairs": 0,
+        "art": {
+          "objects": 12,
+          "visible": 7,
+          "condition": "critical",
+          "clock": 0.8400000000000001,
+          "repairActive": false,
+          "destructionActive": false
+        },
+        "playerVisible": true,
+        "playerTexture": "arc-rivet",
+        "oldLivesVisible": false,
+        "footer": {
+          "visible": true,
+          "text": "PONTOS 0",
+          "y": 424
+        },
+        "hud": "BAYEK / RIVET     NV 2     CASCO 1/4"
+      },
+      "after": {
+        "mission": 2,
+        "hull": 2,
+        "maximum": 4,
+        "condition": "damaged",
+        "power": 2,
+        "meter": 0,
+        "hits": 3,
+        "deaths": 0,
+        "state": "play",
+        "repairs": 1,
+        "art": {
+          "objects": 12,
+          "visible": 5,
+          "condition": "damaged",
+          "clock": 0.9600000000000001,
+          "repairActive": true,
+          "destructionActive": false
+        },
+        "playerVisible": true,
+        "playerTexture": "arc-rivet",
+        "oldLivesVisible": false,
+        "footer": {
+          "visible": true,
+          "text": "PONTOS 250",
+          "y": 424
+        },
+        "hud": "BAYEK / RIVET     NV 2     CASCO 2/4"
+      },
+      "collection": {
+        "id": 1,
+        "removed": true,
+        "events": [
+          {
+            "type": "repair",
+            "text": "REPARO DE CASCO 2/4"
+          },
+          {
+            "type": "pickup",
+            "text": "repair"
+          }
+        ]
+      }
+    },
+    {
+      "before": {
+        "mission": 2,
+        "hull": 2,
+        "maximum": 4,
+        "condition": "damaged",
+        "power": 2,
+        "meter": 0,
+        "hits": 3,
+        "deaths": 0,
+        "state": "play",
+        "repairs": 1,
+        "art": {
+          "objects": 12,
+          "visible": 5,
+          "condition": "damaged",
+          "clock": 0.9600000000000001,
+          "repairActive": true,
+          "destructionActive": false
+        },
+        "playerVisible": true,
+        "playerTexture": "arc-rivet",
+        "oldLivesVisible": false,
+        "footer": {
+          "visible": true,
+          "text": "PONTOS 250",
+          "y": 424
+        },
+        "hud": "BAYEK / RIVET     NV 2     CASCO 2/4"
+      },
+      "after": {
+        "mission": 2,
+        "hull": 3,
+        "maximum": 4,
+        "condition": "light",
+        "power": 2,
+        "meter": 0,
+        "hits": 3,
+        "deaths": 0,
+        "state": "play",
+        "repairs": 2,
+        "art": {
+          "objects": 12,
+          "visible": 2,
+          "condition": "light",
+          "clock": 1.08,
+          "repairActive": true,
+          "destructionActive": false
+        },
+        "playerVisible": true,
+        "playerTexture": "arc-rivet",
+        "oldLivesVisible": false,
+        "footer": {
+          "visible": true,
+          "text": "PONTOS 500",
+          "y": 424
+        },
+        "hud": "BAYEK / RIVET     NV 2     CASCO 3/4"
+      },
+      "collection": {
+        "id": 2,
+        "removed": true,
+        "events": [
+          {
+            "type": "repair",
+            "text": "REPARO DE CASCO 3/4"
+          },
+          {
+            "type": "pickup",
+            "text": "repair"
+          }
+        ]
+      }
+    },
+    {
+      "before": {
+        "mission": 2,
+        "hull": 3,
+        "maximum": 4,
+        "condition": "light",
+        "power": 2,
+        "meter": 0,
+        "hits": 3,
+        "deaths": 0,
+        "state": "play",
+        "repairs": 2,
+        "art": {
+          "objects": 12,
+          "visible": 2,
+          "condition": "light",
+          "clock": 1.08,
+          "repairActive": true,
+          "destructionActive": false
+        },
+        "playerVisible": true,
+        "playerTexture": "arc-rivet",
+        "oldLivesVisible": false,
+        "footer": {
+          "visible": true,
+          "text": "PONTOS 500",
+          "y": 424
+        },
+        "hud": "BAYEK / RIVET     NV 2     CASCO 3/4"
+      },
+      "after": {
+        "mission": 2,
+        "hull": 4,
+        "maximum": 4,
+        "condition": "intact",
+        "power": 2,
+        "meter": 0,
+        "hits": 3,
+        "deaths": 0,
+        "state": "play",
+        "repairs": 3,
+        "art": {
+          "objects": 12,
+          "visible": 1,
+          "condition": "intact",
+          "clock": 1.2000000000000002,
+          "repairActive": true,
+          "destructionActive": false
+        },
+        "playerVisible": true,
+        "playerTexture": "arc-rivet",
+        "oldLivesVisible": false,
+        "footer": {
+          "visible": true,
+          "text": "PONTOS 750",
+          "y": 424
+        },
+        "hud": "BAYEK / RIVET     NV 2     CASCO 4/4"
+      },
+      "collection": {
+        "id": 3,
+        "removed": true,
+        "events": [
+          {
+            "type": "repair",
+            "text": "REPARO DE CASCO 4/4"
+          },
+          {
+            "type": "pickup",
+            "text": "repair"
+          }
+        ]
+      }
+    }
+  ],
+  "inputs": {
+    "touch": {
+      "moved": true,
+      "fired": true,
+      "held": true,
+      "critical": true,
+      "pause": true
+    },
+    "gamepads": [
+      {
+        "id": "Xbox 360 Controller (XInput STANDARD GAMEPAD)",
+        "moved": true,
+        "fired": true,
+        "screen": "play",
+        "x": 422.0624999999992,
+        "beforeX": 384,
+        "lastInput": {
+          "x": 0.7500000000000001,
+          "y": 0,
+          "fire": true,
+          "special": false,
+          "charge": false,
+          "focus": false
+        },
+        "suppressed": false,
+        "pause": true
+      },
+      {
+        "id": "Sony DualSense Wireless Controller (Vendor: 054c Product: 0ce6)",
+        "moved": true,
+        "fired": true,
+        "screen": "play",
+        "x": 419.88749999999925,
+        "beforeX": 384,
+        "lastInput": {
+          "x": 0.7500000000000001,
+          "y": 0,
+          "fire": true,
+          "special": false,
+          "charge": false,
+          "focus": false
+        },
+        "suppressed": false,
+        "pause": true
+      }
+    ]
+  },
+  "performance": [
+    {
+      "quality": 0,
+      "seconds": 8.011999999976156,
+      "frames": 478,
+      "medianMs": 16.700000000000728,
+      "p95Ms": 16.799999999999272,
+      "objects": 12,
+      "peakVisible": 8,
+      "critical": true,
+      "heap": 69140356
+    },
+    {
+      "quality": 2,
+      "seconds": 8.004699999999998,
+      "frames": 479,
+      "medianMs": 16.700000000000728,
+      "p95Ms": 16.799999999999272,
+      "objects": 12,
+      "peakVisible": 8,
+      "critical": true,
+      "heap": 76471527
+    }
+  ],
+  "limitations": [
+    "Browser emulation only; physical Android/controllers and human playtests are not certified."
+  ],
+  "textures": [
+    {
+      "key": "hull-scars-up",
+      "actualKey": "hull-scars-up",
+      "width": 192,
+      "height": 64,
+      "frames": 3
+    },
+    {
+      "key": "hull-scars-side",
+      "actualKey": "hull-scars-side",
+      "width": 192,
+      "height": 64,
+      "frames": 3
+    },
+    {
+      "key": "hull-smoke",
+      "actualKey": "hull-smoke",
+      "width": 512,
+      "height": 64,
+      "frames": 8
+    },
+    {
+      "key": "hull-flame",
+      "actualKey": "hull-flame",
+      "width": 512,
+      "height": 64,
+      "frames": 8
+    },
+    {
+      "key": "hull-spark",
+      "actualKey": "hull-spark",
+      "width": 256,
+      "height": 64,
+      "frames": 4
+    },
+    {
+      "key": "hull-repair",
+      "actualKey": "hull-repair",
+      "width": 512,
+      "height": 64,
+      "frames": 8
+    },
+    {
+      "key": "hull-destruction",
+      "actualKey": "hull-destruction",
+      "width": 1024,
+      "height": 128,
+      "frames": 8
+    },
+    {
+      "key": "hull-repair-pickup",
+      "actualKey": "hull-repair-pickup",
+      "width": 512,
+      "height": 64,
+      "frames": 8
+    },
+    {
+      "key": "arc-rivet",
+      "actualKey": "arc-rivet",
+      "width": 1024,
+      "height": 512,
+      "frames": 8
+    },
+    {
+      "key": "pelagic-rivet-up",
+      "actualKey": "pelagic-rivet-up",
+      "width": 1792,
+      "height": 1024,
+      "frames": 28
+    }
+  ],
+  "pause": {
+    "before": {
+      "objects": 12,
+      "visible": 7,
+      "condition": "critical",
+      "clock": 0.8400000000000001,
+      "repairActive": false,
+      "destructionActive": false
+    },
+    "after": {
+      "objects": 12,
+      "visible": 7,
+      "condition": "critical",
+      "clock": 0.8400000000000001,
+      "repairActive": false,
+      "destructionActive": false
+    },
+    "gameplayUnchanged": true
+  },
+  "renderRates": [
+    {
+      "fps": 30,
+      "clock": 2.0000000000000027,
+      "objects": 12,
+      "unchanged": true
+    },
+    {
+      "fps": 60,
+      "clock": 1.9999999999999978,
+      "objects": 12,
+      "unchanged": true
+    },
+    {
+      "fps": 120,
+      "clock": 1.9999999999999953,
+      "objects": 12,
+      "unchanged": true
+    }
+  ],
+  "restartCounts": [
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12
+  ],
+  "mobile": {
+    "mission": 1,
+    "hull": 1,
+    "maximum": 4,
+    "condition": "critical",
+    "power": 2,
+    "meter": 0,
+    "hits": 3,
+    "deaths": 0,
+    "state": "play",
+    "repairs": 0,
+    "art": {
+      "objects": 12,
+      "visible": 7,
+      "condition": "critical",
+      "clock": 0.8400000000000001,
+      "repairActive": false,
+      "destructionActive": false
+    },
+    "playerVisible": true,
+    "playerTexture": "pelagic-rivet-up",
+    "oldLivesVisible": false,
+    "footer": {
+      "visible": true,
+      "text": "PONTOS 0",
+      "y": 825
+    },
+    "hud": "1/4 CRÍTICO"
+  },
+  "renderer": {
+    "type": 2,
+    "gpu": "ANGLE (AMD, AMD Radeon(TM) Graphics (0x00001681) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+  }
+}

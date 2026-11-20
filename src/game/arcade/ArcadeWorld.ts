@@ -57,6 +57,7 @@ import {
 import { clamp, sweepEllipse, type Box } from './geometry.ts';
 import { collectPowerItem, createPlayerWeapons, getPrimaryProjectiles, getSecondaryProjectiles, type PlayerWeaponsState } from '../systems/weaponSystem.ts';
 import { enterStage, type CampaignFlight } from '../systems/campaignFlight.ts';
+import { HULL_RULES, HULL_REPAIR_OPPORTUNITY, hullCondition, loseHullPower, normalizeHullSnapshot, type SurvivalRule, type HullSnapshot } from './HullIntegrity.ts';
 import { prepareSurface, moveSurface, waterCorridor, type SurfaceRoute } from './PelagicEnvironment.ts';
 import {
     PELAGIC_CONVOY_CLEAR_BONUS,
@@ -140,13 +141,13 @@ export interface Actor {
 }
 export interface ArcadeBomb { id: number; x: number; y: number; age: number; phase: 'flight' | 'blast'; radius: number; }
 export interface Bullet { active: boolean; x: number; y: number; px: number; py: number; vx: number; vy: number; damage: number; radius: number; enemy: boolean; missile: boolean; enemyMissile?: boolean; homing: boolean; age: number; scale: number; color: number; charged?: boolean; chargeTier?: 'partial' | 'full'; pierceRemaining?: number; hitTargetIds?: Set<number>; grazed?: boolean; waveAmp?: number; waveFreq?: number; wavePhase?: number; presentation?: 'violet' | 'emerald' | 'amber' | 'celestial'; }
-export interface Cargo { id: number; x: number; y: number; vx: number; vy: number; kind: 'power' | 'life' | 'special'; crate: boolean; hp: number; age: number; recoveryP?: number; drone?: SupplyDroneState; flash?: number; dropPop?: number; retryCount?: number; expired?: boolean; }
+export interface Cargo { id: number; x: number; y: number; vx: number; vy: number; kind: 'power' | 'life' | 'special' | 'repair'; crate: boolean; hp: number; age: number; recoveryP?: number; drone?: SupplyDroneState; flash?: number; dropPop?: number; retryCount?: number; expired?: boolean; }
 export interface Component { id: number; x: number; y: number; dx: number; dy: number; hp: number; maxHp: number; radius: number; flash: number; warning: number; angle: number; }
 export interface Boss { mini: boolean; x: number; y: number; size: number; age: number; phase: 'enter' | 'fight' | 'retreat' | 'absent' | 'return' | 'sink'; configuration: number; timer: number; attack: number; attackTime: number; volley: number; aimX: number; aimY: number; parts: Component[]; flash?: number; sub?: SubmarineBossState; }
 export interface Obstacle { id: number; x: number; y: number; width: number; height: number; kind: 'roof' | 'gate' | 'barrier'; warning: number; hp: number; age: number; }
 /** A destroyed coastal emplacement remains attached to its original terrain. */
 export interface CoastalWreck { anchor?: number; customAnchor?: boolean; family?: 'tank' | 'tower'; id: number; x: number; y: number; worldY: number; size: number; age: number; }
-export interface WorldEvent { type: 'shot' | 'charged-shot' | 'charge-start' | 'charge-windup' | 'charge-full' | 'missile' | 'enemy-shot' | 'impact' | 'explosion' | 'pickup' | 'death' | 'special' | 'boss' | 'boss-warning' | 'return' | 'mini' | 'victory' | 'defeat' | 'radio' | 'bonus' | 'comms' | 'arch' | 'checkpoint' | 'graze' | 'level-up'; x: number; y: number; size?: number; text?: string; }
+export interface WorldEvent { type: 'shot' | 'charged-shot' | 'charge-start' | 'charge-windup' | 'charge-full' | 'missile' | 'enemy-shot' | 'impact' | 'explosion' | 'pickup' | 'death' | 'damage' | 'repair' | 'special' | 'boss' | 'boss-warning' | 'return' | 'mini' | 'victory' | 'defeat' | 'radio' | 'bonus' | 'comms' | 'arch' | 'checkpoint' | 'graze' | 'level-up'; x: number; y: number; size?: number; text?: string; }
 export type BossContactQuery = (boss: Boss, ax: number, ay: number, bx: number, by: number, radius: number) => number | null;
 export type SubHullContactQuery = (sub: SubmarineBossState, sectionIndex: number, ax: number, ay: number, bx: number, by: number, radius: number) => number | null;
 export type ContactQuery = (actor: Actor, ax: number, ay: number, bx: number, by: number, radius: number) => number | null;
@@ -161,6 +162,9 @@ export interface ArcadeWorldOptions {
     difficulty?: GameDifficulty | 'arcade';
     pilotId?: PilotId;
     practiceMode?: boolean;
+    survivalRule?: SurvivalRule;
+    /** QA variants; production uses the four-segment configuration on every difficulty. */
+    maxHull?: number;
 }
 
 export class ArcadeWorld {
@@ -169,6 +173,19 @@ export class ArcadeWorld {
     readonly pilotId: PilotId;
     readonly pilotContract: PilotCombatContract;
     practiceMode = false;
+    readonly survivalRule: SurvivalRule;
+    readonly hullMaximum: number;
+    hull = 0;
+    hitsReceived = 0;
+    repairsCollected = 0;
+    rulesChanged = false;
+    criticalSeconds = 0;
+    activeSeconds = 0;
+    powerLevelSeconds = 0;
+    powerRecoverySeconds: number[] = [];
+    private recoveryTarget = 0;
+    private recoveryStartedAt = 0;
+    private repairOpportunityClaimed = false;
     weapons: PlayerWeaponsState = createPlayerWeapons('nolan'); lives = 3; score = 0; kills = 0; deaths = 0; collected = 0; specialsUsed = 0; continuesUsed = 0; grazeCount = 0; chain = 0; maxChain = 0; chainTimer = 0; bossElapsed = 0; elapsed = 0; route = 0; scroll = 0; scrollSpeed = 38; region = 0; player = { x: 384, y: 368, invulnerable: 2.5, bank: 0, altitude: 1, focusActive: false };
     state: 'intro' | 'play' | 'exit' | 'victory' | 'defeat' = 'intro'; introTime = 2.2; exitTime = 0; specialTime = 0; missileTime = 0; specialEdge = false; specialImpact?: { x: number; y: number };
     contact?: ContactQuery; bossContact?: BossContactQuery; subHullContact?: SubHullContactQuery; accessibility = false; assisted = false;
@@ -193,6 +210,11 @@ export class ArcadeWorld {
         this.mission = mission;
         this.pilotId = getPilotContract(options?.pilotId ?? carry?.pilotId ?? 'nolan').id;
         this.pilotContract = getPilotContract(this.pilotId);
+        this.survivalRule = options?.survivalRule ?? carry?.survival?.rule ?? 'classic-v1';
+        if (carry && (carry.survival?.rule ?? 'classic-v1') !== this.survivalRule) carry = undefined;
+        const savedHull = normalizeHullSnapshot(carry?.survival);
+        this.hullMaximum = savedHull?.maximum ?? (options?.maxHull === 3 || options?.maxHull === 5 ? options.maxHull : HULL_RULES.maximum);
+        this.hull = this.hullMaximum;
         this.practiceMode = Boolean(options?.practiceMode);
         const mIdx = Math.max(0, MISSIONS.indexOf(mission));
         this.stageDirector = new ArcadeStageDirector(mission, mIdx);
@@ -211,6 +233,12 @@ export class ArcadeWorld {
             this.arena = { left: 16, right: 752, top: 40, bottom: 414 };
         }
         const restored = enterStage(this.pilotId, mission.id, carry); this.weapons = restored.weapons; this.lives = restored.health.lives; this.score = restored.score;
+        if (this.survivalRule === 'hull-v1') {
+            // One aircraft, four impacts. A legacy three-life save never becomes extra hull.
+            this.lives = 1;
+            const validBoundary = carry?.pilotId === this.pilotId && carry.clearedStage + 1 === mission.id && savedHull?.current;
+            if (validBoundary && savedHull) this.hull = savedHull.current;
+        }
         this.player.x = this.arenaCenterX; this.player.y = this.playerHomeY;
     }
     setSeed(seed: number): void {
@@ -225,13 +253,16 @@ export class ArcadeWorld {
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     }
     get up(): boolean { return this.mission.perspective === 'UP'; }
+    get hullState() { return hullCondition(this.hull, this.hullMaximum); }
+    get survivalRemaining(): number { return this.survivalRule === 'hull-v1' ? this.hull : this.lives; }
+    get survivalSnapshot(): HullSnapshot | undefined { return this.survivalRule === 'hull-v1' ? { rule: this.survivalRule, current: this.hull, maximum: this.hullMaximum } : undefined; }
     get stageDuration(): number { return stageDurationFor(this.mission.perspective); }
     get progressRatio(): number { return clamp(this.route / Math.max(1, this.stageDuration), 0, 1); }
     get arenaWidth(): number { return this.arena.right - this.arena.left; }
     get arenaCenterX(): number { return (this.arena.left + this.arena.right) * 0.5; }
     get playerHomeY(): number { return this.up ? this.arena.bottom - 52 : 228; }
     get hasActiveCheckpoint(): boolean { return !!this.checkpoint; }
-    get isAssisted(): boolean { return this.up && this.assisted; }
+    get isAssisted(): boolean { return (this.up || this.survivalRule === 'hull-v1') && this.assisted; }
     get difficulty(): GameDifficulty { return this._difficulty; }
     set difficulty(mode: GameDifficulty) { this.setDifficulty(mode); }
     get hard(): boolean { return this._difficulty !== 'easy'; }
@@ -239,7 +270,7 @@ export class ArcadeWorld {
     /** Assisted mode eases death recovery without silently downgrading Easy/Normal/Hard difficulty profiles. */
     get effectiveDifficulty(): GameDifficulty { return this._difficulty; }
     get difficultyProfile(): DifficultyProfile { return DIFFICULTY_PROFILES[this.effectiveDifficulty]; }
-    get competitiveEligible(): boolean { return !this.isAssisted && !this.practiceMode && this.continuesUsed === 0; }
+    get competitiveEligible(): boolean { return !this.isAssisted && !this.practiceMode && !this.rulesChanged && this.continuesUsed === 0; }
     evaluateRun(victory = this.state === 'victory'): { evaluation: RunEvaluationResult; achievements: AchievementId[] } {
         const b = this.pelagicScoring.snapshot();
         const evaluation = evaluateArcadeRun({
@@ -248,8 +279,9 @@ export class ArcadeWorld {
             difficulty: this.effectiveDifficulty,
             score: this.score,
             deaths: this.deaths,
+            hitsReceived: this.hitsReceived,
             specialsUsed: this.specialsUsed,
-            continuesUsed: this.continuesUsed,
+            continuesUsed: this.continuesUsed + (this.rulesChanged ? 1 : 0),
             assisted: this.isAssisted,
             practiceMode: this.practiceMode,
             formationsCleared: b.formationsCleared,
@@ -268,6 +300,7 @@ export class ArcadeWorld {
             victory,
             competitiveEligible: evaluation.competitiveEligible,
             deaths: this.deaths,
+            hitsReceived: this.hitsReceived,
             specialsUsed: this.specialsUsed,
             sectorsClean: b.sectorsClean,
             totalSectors: this.mission.regions.length,
@@ -283,7 +316,8 @@ export class ArcadeWorld {
     continueFromDefeat(): boolean {
         if (this.state !== 'defeat') return false;
         this.continuesUsed++;
-        this.lives = 3;
+        this.lives = this.survivalRule === 'hull-v1' ? 1 : 3;
+        this.hull = this.hullMaximum;
         this.weapons.specialCharges = Math.max(this.weapons.specialCharges, 2);
         this.weapons.weaponLevel = Math.max(1, Math.min(this.weapons.weaponLevel, 2)) as PlayerWeaponsState['weaponLevel'];
         this.weapons.powerMeter = 0;
@@ -303,6 +337,7 @@ export class ArcadeWorld {
     setDifficulty(mode: GameDifficulty | 'arcade'): void {
         const next = normalizeGameDifficulty(mode);
         if (this._difficulty === next) return;
+        if (this.route > 0) this.rulesChanged = true;
         this._difficulty = next;
         this.syncWaveIndexToRoute();
     }
@@ -330,6 +365,15 @@ export class ArcadeWorld {
         if (this.state === 'intro') { this.chargedShot.cancel(); this.introTime -= dt; this.scroll += 25 * dt; if (this.introTime <= 0) { this.state = 'play'; if (this.up) this.emit('comms', 0, 0, 1, 'start'); else this.emit('radio', 0, 0, 1, 'Cidade Solar, a RIVET chegou!'); } return; }
         if (this.state === 'exit') { this.chargedShot.cancel(); this.exitTime += dt; this.scroll += 30 * dt; this.updateWrecks(dt); if (this.up) this.player.y -= 130 * dt; else this.player.x += 250 * dt; if (this.exitTime >= 3.4) this.state = 'victory'; return; }
         this.elapsed += dt;
+        this.activeSeconds += dt;
+        if (this.survivalRule === 'hull-v1') {
+            this.criticalSeconds += this.hull === 1 ? dt : 0;
+            this.powerLevelSeconds += this.weapons.weaponLevel * dt;
+            if (this.recoveryTarget && this.weapons.weaponLevel >= this.recoveryTarget) {
+                this.powerRecoverySeconds.push(this.elapsed - this.recoveryStartedAt);
+                this.recoveryTarget = 0;
+            }
+        }
         const advanceRoute = !this.directorPaused && (!this.devSandboxIsolated || Boolean(this.devIsolatedEventId));
         if (advanceRoute) {
             this.route = Math.min(this.stageDuration, this.route + dt);
@@ -449,11 +493,15 @@ export class ArcadeWorld {
                     if (this.route >= spec.at && !this.specialEventsTriggered.has(spec.id)) this.triggerSpecialEvent(spec.id);
                 }
                 const rareId = `stage-${this.mission.id}-special-rare-visitor`;
-                if ((!iso || iso === rareId) && isRareVisitorEligible(true, this.route, this.deaths, this.kills, this.rareSpawnCount > 0 || this.specialEventsTriggered.has('rare-visitor'), false)) {
+                if ((!iso || iso === rareId) && isRareVisitorEligible(true, this.route, this.hitsReceived, this.kills, this.rareSpawnCount > 0 || this.specialEventsTriggered.has('rare-visitor'), false)) {
                     this.triggerSpecialEvent('rare-visitor');
                 }
             }
             const supplies = this.activeSupplies;
+            if (this.survivalRule === 'hull-v1' && !iso && !this.repairOpportunityClaimed && this.route >= HULL_REPAIR_OPPORTUNITY[this.mission.perspective]) {
+                this.repairOpportunityClaimed = true;
+                this.spawnSupplyDrone('repair', { supplyKey: `hull-repair-${this.mission.id}` });
+            }
             while (this.supplyIndex < supplies.length && this.route >= supplies[this.supplyIndex].at) {
                 const idx = this.supplyIndex++;
                 const c = supplies[idx];
@@ -628,6 +676,9 @@ export class ArcadeWorld {
             rareSpawnCount: this.rareSpawnCount,
             score: this.score,
             lives: Math.min(3, Math.max(1, this.lives)),
+            survival: this.survivalSnapshot,
+            pilotId: this.pilotId,
+            hitsReceived: this.hitsReceived,
             weaponLevel: this.weapons.weaponLevel,
             powerMeter: this.weapons.powerMeter,
             specialCharges: Math.min(2, this.weapons.specialCharges),
@@ -644,7 +695,8 @@ export class ArcadeWorld {
 
     /** Restores gameplay from an activated Arco das Marés checkpoint without infinite resources or score-farming. */
     restartFromCheckpoint(snapshot = this.checkpoint): boolean {
-        if (!this.up || !snapshot || !snapshot.tideArchCompleted) return false;
+        if (!this.up || !snapshot || !snapshot.tideArchCompleted || (snapshot.pilotId && snapshot.pilotId !== this.pilotId) || (snapshot.survival?.rule ?? 'classic-v1') !== this.survivalRule || (snapshot.survival && snapshot.survival.maximum !== this.hullMaximum)) return false;
+        this.continuesUsed++;
         this.clearArenaEntities();
         this.events.length = 0;
         this.state = 'play';
@@ -668,8 +720,10 @@ export class ArcadeWorld {
         while (cpSupIdx < cpSupplies.length && cpSupplies[cpSupIdx].at <= snapshot.route) cpSupIdx++;
         this.supplyIndex = cpSupIdx;
         this.score = snapshot.score;
-        this.lives = 3;
-        this.weapons = createPlayerWeapons('nolan');
+        this.lives = this.survivalRule === 'hull-v1' ? 1 : 3;
+        this.hull = this.hullMaximum;
+        this.hitsReceived = Math.max(this.hitsReceived, snapshot.hitsReceived ?? 0);
+        this.weapons = createPlayerWeapons(this.pilotId);
         this.weapons.weaponLevel = snapshot.weaponLevel;
         this.weapons.powerMeter = snapshot.powerMeter;
         this.weapons.specialCharges = Math.min(2, snapshot.specialCharges);
@@ -1625,6 +1679,31 @@ export class ArcadeWorld {
     }
     private hurtPlayer(): void {
         if (this.devInvincible || this.player.invulnerable > 0 || this.specialTime > 0 || this.state !== 'play') return;
+        this.hitsReceived++;
+        if (this.survivalRule === 'hull-v1') {
+            this.hull = Math.max(0, this.hull - 1);
+            this.chain = 0; this.chainTimer = 0;
+            if (this.up) {
+                this.pelagicScoring.onPlayerDeath();
+                if (this.tideArch.isActive) this.tideArch.hadDamageDuringArch = true;
+            }
+            if (this.hull > 0) {
+                if (this.weapons.weaponLevel > 1) {
+                    if (!this.recoveryTarget) this.recoveryStartedAt = this.elapsed;
+                    this.recoveryTarget = Math.max(this.recoveryTarget, this.weapons.weaponLevel);
+                }
+                loseHullPower(this.weapons);
+                this.player.invulnerable = HULL_RULES.protectionSeconds;
+                this.emit('damage', this.player.x, this.player.y, this.hull, `CASCO ${this.hull}/${this.hullMaximum} • POWER NV ${this.weapons.weaponLevel}`);
+            } else {
+                this.chargedShot.cancel();
+                this.lives = 0; this.deaths++;
+                this.state = 'defeat';
+                this.emit('death', this.player.x, this.player.y);
+                this.emit('defeat');
+            }
+            return;
+        }
         this.chargedShot.cancel();
         this.chain = 0;
         this.chainTimer = 0;
@@ -1691,10 +1770,19 @@ export class ArcadeWorld {
         for (const b of this.bullets) if (b.enemy && Math.hypot(b.x - this.player.x, b.y - this.player.y) < ASSISTED_RESPAWN_BULLET_CLEAR_RADIUS) b.active = false;
         for (const e of this.enemies) if (!e.ground && e.y > safeRespawnY - 125) e.cooldown = Math.max(e.cooldown, ASSISTED_LOWER_LANE_ENEMY_COOLDOWN);
     }
+    private collectHullRepair(x: number, y: number): void {
+        if (this.survivalRule !== 'hull-v1' || this.hull <= 0 || this.state !== 'play') return;
+        this.repairsCollected++;
+        const full = this.hull >= this.hullMaximum;
+        this.hull = Math.min(this.hullMaximum, this.hull + 1);
+        this.score += full ? HULL_RULES.fullRepairScore : HULL_RULES.repairScore;
+        this.emit('repair', x, y, this.hull, full ? `CASCO COMPLETO +${HULL_RULES.fullRepairScore}` : `REPARO DE CASCO ${this.hull}/${this.hullMaximum}`);
+    }
     private spawnSupplyDrone(
         kind: Cargo['kind'],
         opts?: { supplyKey?: string },
     ): Cargo {
+        if (kind === 'life' && this.survivalRule === 'hull-v1') kind = 'repair';
         const plan = createSupplyDronePlan(this.arena, this.up, this.supplySpawnCounter++, opts);
         const entry: Cargo = {
             id: ++this.sequence,
@@ -1724,6 +1812,7 @@ export class ArcadeWorld {
         this.emit('explosion', target.x, target.y, .45);
     }
     private updateCargo(dt: number): void {
+        if (this.state === 'defeat') return;
         for (const c of this.cargo) {
             c.age += dt;
             if (c.flash && c.flash > 0) c.flash = Math.max(0, c.flash - dt);
@@ -1755,6 +1844,8 @@ export class ArcadeWorld {
                             }
                             if (this.up && prevWeaponLevel < cap && this.weapons.weaponLevel === cap) this.emit('comms', c.x, c.y, 1, 'pickup:full');
                         }
+                    } else if (c.kind === 'repair' || (c.kind === 'life' && this.survivalRule === 'hull-v1')) {
+                        this.collectHullRepair(c.x, c.y);
                     } else if (c.kind === 'life') { this.score += this.lives === 5 ? 5000 : 250; this.lives = Math.min(5, this.lives + 1); if (this.up) this.emit('comms', c.x, c.y, 1, 'pickup:life'); }
                     else { this.score += this.weapons.specialCharges === 5 ? 5000 : 250; this.weapons.specialCharges = Math.min(5, this.weapons.specialCharges + 1); if (this.up) this.emit('comms', c.x, c.y, 1, 'pickup:special'); }
                     c.age = 100; this.collected++; this.emit('pickup', c.x, c.y, 1, c.kind);

@@ -49,6 +49,7 @@ export interface SimulationAchievementSignals {
   readonly victory: boolean;
   readonly competitiveEligible: boolean;
   readonly deaths: number;
+  readonly hitsReceived?: number;
   readonly specialsUsed: number;
   readonly sectorsClean: number;
   readonly totalSectors: number;
@@ -72,7 +73,7 @@ export function evaluateSimulationAchievements(sig: SimulationAchievementSignals
 
   if (sig.competitiveEligible) {
     earned.push('one_cc');
-    if (sig.deaths === 0) earned.push('no_miss');
+    if ((sig.hitsReceived ?? sig.deaths) === 0) earned.push('no_miss');
     if (sig.specialsUsed === 0) earned.push('no_bomb');
     if (sig.missionId === 1 && sig.totalSectors > 0 && sig.sectorsClean >= sig.totalSectors) {
       earned.push('all_sectors_clean');
