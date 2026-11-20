@@ -116,7 +116,7 @@ Esses resultados sustentam manter quatro como referência inicial solicitada, ma
 | Severidade | Pendência |
 |---|---|
 | Crítico | Nenhum defeito confirmado nos checks concluídos |
-| Alto | Nenhum defeito confirmado; aprovação em aparelho físico ainda depende da conexão e playtest |
+| Alto | Loading a 0% no primeiro APK corrigido; inicialização e entrada em partida confirmadas no Samsung SM-G980F |
 | Médio | Balanceamento humano, pressão inicial da Fenda Difícil e disponibilidade real de reparos |
 | Médio | Áudio, térmica, latência, multitouch, rotação e controles físicos no Android precisam de validação no dispositivo |
 | Baixo | Aviso legado de máscara WebGL e tamanho do bundle |
@@ -124,8 +124,10 @@ Esses resultados sustentam manter quatro como referência inicial solicitada, ma
 
 ## 12 Entrega Android
 
-APK: `output/android/BULLET_WAKE-hull-preview.apk`, pacote `dev.emersonbarros.bulletwake.preview`, nome **BULLET WAKE Teste**, versão `0.1.0-hull-preview`. Tamanho: **54.835.671 bytes**. Assinatura local de teste verificada. O SHA-256 e os dados de build ficam em `output/android/build-report.json`.
+APK: `output/android/BULLET_WAKE-hull-preview.apk`, pacote `dev.emersonbarros.bulletwake.preview`, nome **Bullet Wake**, versão `0.1.0-hull-preview.1`. Tamanho: **53.754.327 bytes**. Assinatura local de teste verificada. O SHA-256 e os dados de build ficam em `output/android/build-report.json`.
 
-Na verificação inicial, `adb devices -l` não listou dispositivos e a descoberta mDNS também estava vazia. O instalador aguarda depuração USB autorizada; só um relatório `output/android/install-report.json` com `installed=true` e `launched=true` confirma instalação e abertura. Este relatório não declara o celular aprovado sem essa evidência.
+Validação no Samsung SM-G980F, Android 13/API 33, em 20/11/2026: instalação por atualização, carregamento a 100%, fontes carregadas, menu visível, seleção de piloto e missão por toque e entrada em Fenda com nave/HUD/controles renderizados. Capturas em `output/android/device-screen.png`, `device-pilot.png`, `device-missions.png` e `device-gameplay.png`. Isso confirma o fluxo inicial no aparelho, sem certificar uma campanha completa, áudio, desempenho sustentado ou multitouch.
+
+O primeiro APK abria a Activity mas ficava em 0%: a inspeção da WebView mostrou 404 para JS/CSS/fontes. O AAPT2 no Windows havia escrito caminhos ZIP com barras invertidas. O empacotamento agora usa JAR para os assets e valida todos os caminhos antes de assinar. A confirmação de abertura da Activity pelo instalador, sozinha, não comprova que o jogo carregou.
 
 O código permanece na branch da funcionalidade, para revisão; não foi feito merge automático na master.

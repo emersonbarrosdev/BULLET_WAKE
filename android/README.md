@@ -11,7 +11,9 @@ npm run android:install
 
 O primeiro comando valida TypeScript, gera o build de produção e cria `output/android/BULLET_WAKE-hull-preview.apk`. O segundo aguarda até dez minutos por exatamente um dispositivo com depuração USB autorizada, instala preservando dados e abre a Activity. Não desinstala aplicativos para contornar conflitos de assinatura.
 
-O pacote de teste é `dev.emersonbarros.bulletwake.preview`, nome **BULLET WAKE Teste**, Android mínimo 9 / API 28 e alvo API 34. Usa assinatura local de depuração em `.debug.keystore`, ignorada pelo Git. A inspeção nativa de WebView fica disponível nesse APK de teste; o bundle do jogo continua sem seus globals e painéis de desenvolvimento.
+O pacote de teste é `dev.emersonbarros.bulletwake.preview`, nome **Bullet Wake**, Android mínimo 9 / API 28 e alvo API 34. Usa assinatura local de depuração em `.debug.keystore`, ignorada pelo Git. A inspeção nativa de WebView fica disponível nesse APK de teste; o bundle do jogo continua sem seus globals e painéis de desenvolvimento.
+
+Os recursos web são adicionados com JAR para garantir caminhos ZIP com `/` também no Windows. A geração verifica a presença de todos os arquivos de `dist` e rejeita caminhos com barras invertidas antes de assinar o APK.
 
 O app permite rotação, mantém o ecrã ligado durante o uso, pausa ao perder foco e encaminha o botão Voltar para ESC no jogo. Fenda usa a apresentação vertical em retrato; Cidade Solar pede paisagem. A gravação é local a este pacote, separada da versão de navegador.
 
