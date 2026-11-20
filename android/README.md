@@ -25,4 +25,6 @@ QA de retrato: `node scripts/portrait-browser-check.mjs` registra capturas e ver
 
 O relatório de build registra tamanho e SHA-256. Um relatório de instalação só é escrito após o ADB confirmar instalação e abertura no aparelho. A existência do APK não certifica desempenho, áudio, multitoque ou controles em hardware físico.
 
+Em 20/11/2026, a versão `0.1.0-hull-preview.2` foi instalada no Samsung SM-G980F / Android 13 e revisada em 18 telas/variações. O fluxo físico em treino confirmou tiro automático, movimento junto com CARGA, carga/soltura, especial, derrota, pausa e confirmação de saída. O relatório e as capturas ficam em `output/android/device-portrait`. Resultado/encerramento continuam validados por fixtures de navegador; campanha completa e desempenho sustentado no aparelho não foram certificados.
+
 Referências oficiais: [AAPT2](https://developer.android.com/tools/aapt2), [assinatura e build por linha de comando](https://developer.android.com/build/building-cmdline), [apksigner](https://developer.android.com/tools/apksigner).
