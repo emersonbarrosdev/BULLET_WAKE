@@ -15,7 +15,13 @@ O pacote de teste é `dev.emersonbarros.bulletwake.preview`, nome **Bullet Wake*
 
 Os recursos web são adicionados com JAR para garantir caminhos ZIP com `/` também no Windows. A geração verifica a presença de todos os arquivos de `dist` e rejeita caminhos com barras invertidas antes de assinar o APK.
 
-O app permite rotação, mantém o ecrã ligado durante o uso, pausa ao perder foco e encaminha o botão Voltar para ESC no jogo. Fenda usa a apresentação vertical em retrato; Cidade Solar pede paisagem. A gravação é local a este pacote, separada da versão de navegador.
+O app usa orientação vertical, mantém a tela ligada durante o uso, pausa ao perder foco e encaminha o botão Voltar para ESC no jogo. Fenda ocupa a área vertical; Cidade Solar mantém a proporção de sua arena horizontal dentro da tela vertical, com os controles no espaço inferior. A gravação é local a este pacote, separada da versão de navegador.
+
+Menus e modais usam composição própria de retrato, texto nativo e botões com alvo mínimo de 44 px CSS. O conteúdo extenso tem rolagem; as ações de retorno e confirmação permanecem acessíveis no rodapé. A tela inicial usa logo maior no alto e botões separados. O canvas de combate renderiza até 2× a resolução CSS e a câmera usa escala uniforme.
+
+No touch, a nave atira automaticamente durante o voo. Existem analógico, CARGA e ESP, além da pausa. Segurar CARGA suspende a rajada e soltar dispara o tiro carregado. Isso não altera a opção de disparo acessível do teclado/controle.
+
+QA de retrato: `node scripts/portrait-browser-check.mjs` registra capturas e verificações em `output/android-layout` para 320×640, 360×774 e 412×915. Os estados de derrota, resultado e encerramento usam fixtures de desenvolvimento; as capturas não significam conclusão humana da campanha. `node scripts/hull-browser-check.mjs --out=output/android-layout/hull --skip-performance` cobre dano, reparo, controles e pausa. Os relatórios de navegador distinguem emulação de validação no aparelho.
 
 O relatório de build registra tamanho e SHA-256. Um relatório de instalação só é escrito após o ADB confirmar instalação e abertura no aparelho. A existência do APK não certifica desempenho, áudio, multitoque ou controles em hardware físico.
 

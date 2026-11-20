@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, copyFileSync, cpSync, writeFileSync, readFileSync, renameSync } from 'node:fs';
-import { resolve, join } from 'node:path';
+import { existsSync, mkdirSync, readdirSync, copyFileSync, cpSync, writeFileSync, readFileSync, renameSync, realpathSync, rmSync } from 'node:fs';
+import { resolve, join, sep } from 'node:path';
 import { createHash } from 'node:crypto';
 import { homedir } from 'node:os';
 
@@ -20,10 +20,15 @@ for (const p of [out, work, join(work,'classes'), join(work,'dex'), join(work,'r
 copyFileSync('public/assets/brand/bullet-wake-logo-compact.png', join(work, 'res/drawable/icon.png'));
 run(join(tools, 'aapt2' + suffix), ['compile', '--dir', join(work,'res'), '-o', join(work,'resources.zip')]);
 const unsigned = join(work,'unsigned.apk'), aligned = join(work,'aligned.apk'), apk = join(out,'BULLET_WAKE-hull-preview.apk');
-run(join(tools,'aapt2' + suffix), ['link', '-o', unsigned, '-I', androidJar, '--manifest', resolve('android/AndroidManifest.xml'), '--min-sdk-version', '28', '--target-sdk-version', '34', '--version-code', '20261121', '--version-name', '0.1.0-hull-preview.1', join(work,'resources.zip')]);
+run(join(tools,'aapt2' + suffix), ['link', '-o', unsigned, '-I', androidJar, '--manifest', resolve('android/AndroidManifest.xml'), '--min-sdk-version', '28', '--target-sdk-version', '34', '--version-code', '20261122', '--version-name', '0.1.0-hull-preview.2', join(work,'resources.zip')]);
 // Windows AAPT2 -A stores nested asset names with backslashes, which Android's
 // AssetManager cannot resolve. JAR writes portable ZIP paths with forward slashes.
 const webAssets = join(work, 'web-assets');
+if (existsSync(webAssets)) {
+  const stagingTarget = realpathSync(webAssets), stagingRoot = realpathSync(work);
+  if (!stagingTarget.startsWith(stagingRoot + sep)) throw new Error('Asset staging directory is outside the Android build workspace.');
+  rmSync(stagingTarget, { recursive: true, force: true });
+}
 mkdirSync(webAssets, { recursive: true });
 cpSync(resolve('dist'), join(webAssets, 'assets'), { recursive: true });
 run(bin('jar'), ['--update', '--file', unsigned, '-C', webAssets, 'assets']);

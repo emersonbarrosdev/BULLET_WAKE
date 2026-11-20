@@ -63,6 +63,7 @@ import { ReplayRecorder } from './ArcadeReplay';
 import { HULL_STATES } from './HullIntegrity';
 import { drawHullSegments } from './HullHud';
 import { HullDamageArt, preloadHullDamageArt } from './HullDamageArt';
+import { PortraitMenu } from './PortraitMenu';
 
 type HangarTab = 'hangar' | 'achievements' | 'profile';
 type RunOutcome = ReturnType<ArcadeProfileStore['recordRunResult']> & { evaluation: RunEvaluationResult };
@@ -129,6 +130,7 @@ export class ArcadeScene extends Phaser.Scene {
   private runId = '';
   private footerScore!: Phaser.GameObjects.Text;
   private hullArt!: HullDamageArt;
+  private portraitMenu = new PortraitMenu();
   constructor() { super('ArcadeScene'); }
   preload(): void {
     enableCombatResolution(this);
@@ -256,7 +258,7 @@ export class ArcadeScene extends Phaser.Scene {
     for (let i = 0; i < 960; i++)this.bulletSprites.push(this.add.sprite(0, 0, 'arc-red').setVisible(false).setDepth(19.5));
     this.makeOrbTextures(); this.installTouch(); this.show('loading');
     const blur = () => { this.touchController.clearAll(); this.input.keyboard?.resetKeys(); this.renderTouchOverlay(); if (this.screen === 'play') this.show('pause'); };
-    const onResize = () => { this.touchController.clearAll(); this.syncResponsiveViewport(); this.refreshTouchLayout(); };
+    const onResize = () => { this.touchController.clearAll(); this.syncResponsiveViewport(); this.refreshTouchLayout(); this.refreshPortraitMenu(); };
     window.addEventListener('blur', blur);
     const visibility = () => { if (document.hidden) blur(); };
     document.addEventListener('visibilitychange', visibility);
@@ -272,6 +274,7 @@ export class ArcadeScene extends Phaser.Scene {
       this.scale.off('resize', onResize);
       this.backdrop.destroy(); this.pelagicAnims?.destroy();
       this.hullArt?.destroy();
+      this.portraitMenu.destroy();
     });
   }
   private makeOrbTextures(): void {
@@ -445,17 +448,19 @@ export class ArcadeScene extends Phaser.Scene {
   }
   private syncResponsiveViewport(): void {
     const mobilePortrait = this.isPortraitMobileMode();
-    const usePortraitPlay = this.screen === 'play' && !!this.world?.up && mobilePortrait;
-    const usePortraitTitle = !this.world && this.screen === 'title' && mobilePortrait;
+    const usePortraitPlay = !!this.world?.up && mobilePortrait;
     if (typeof document !== 'undefined') {
-      document.body.dataset.requireLandscape = (!!this.world && !this.world.up) ? 'true' : 'false';
+      document.body.dataset.requireLandscape = 'false';
     }
     this.portraitUpActive = usePortraitPlay;
     const targetH = this.portraitCanvasHeight();
     if (usePortraitPlay) {
       setCombatVirtualSize(this, 384, targetH);
-    } else if (usePortraitTitle) {
-      setCombatVirtualSize(this, 384, targetH, 384, 152);
+    } else if (mobilePortrait && this.world) {
+      // Preserve the SIDE battlefield proportions, with separate space for portrait controls.
+      setCombatVirtualSize(this, 768, targetH * 2);
+    } else if (mobilePortrait && !this.world) {
+      setCombatVirtualSize(this, 384, targetH);
     } else {
       setCombatVirtualSize(this, 768, 432);
     }
@@ -470,7 +475,7 @@ export class ArcadeScene extends Phaser.Scene {
       );
       this.lastHud = '';
     }
-    if (usePortraitPlay && this.touchGfx) {
+    if (mobilePortrait && this.screen === 'play' && this.touchGfx && !this.touchShown) {
       this.touchDeviceActive = true;
       this.setTouchVisible(true);
     }
@@ -1132,7 +1137,7 @@ export class ArcadeScene extends Phaser.Scene {
       } else {
         if (preGame) makeVectorPanel(this, this.ui, 222, 220, 276, 218, { kind: 'sub' });
         else makePanel(this, 222, 224, 276, 222, 'cobalt', this.ui);
-        this.text(222, 126, 'ANDROID TOUCH (PAISAGEM)', 10.5, UI.goldHex);
+        this.text(222, 126, 'ANDROID TOUCH (RETRATO)', 10.5, UI.goldHex);
         this.ui.add(this.add.image(222, 210, UI_TEX.mobileLandscape).setDisplaySize(244, 138));
         this.text(222, 302, 'MULTITOQUE LIVRE  •  ÁREA SEGURA ATIVA', 8, UI.cyanHex, { wrap: 256 });
 
@@ -1140,7 +1145,7 @@ export class ArcadeScene extends Phaser.Scene {
         else makePanel(this, 528, 224, 300, 222, 'cobalt', this.ui);
         this.text(528, 126, 'COMANDOS NA TELA', 11, UI.goldHex);
         cmdRow(414, 156, 'JOYSTICK', 'Voo preciso em 8 direções', { wide: true, badgeFont: 7.5 });
-        cmdRow(414, 187, 'TIRO', 'Segure para tiro automático', { wide: true, descColor: UI.goldHex, badgeFont: 8.5 });
+        cmdRow(414, 187, 'AUTO', 'Tiro automático durante o voo', { wide: true, descColor: UI.goldHex, badgeFont: 8.5 });
         cmdRow(414, 218, 'CARGA', 'Segure e solte (quando disponível)', { wide: true, descColor: '#67e8f9', badgeFont: 8 });
         cmdRow(414, 249, 'ESP', 'Ativar especial sem erro', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8.5 });
         cmdRow(414, 280, 'PAUSA', 'Botão no topo direito', { wide: true, badgeFont: 8 });
@@ -1473,6 +1478,169 @@ export class ArcadeScene extends Phaser.Scene {
     this.focusButtons(true);
     this.setTouchVisible(screen === 'play' || screen === 'touch-settings');
     if (screen === 'touch-settings') this.refreshTouchLayout();
+    this.refreshPortraitMenu();
+  }
+
+  private refreshPortraitMenu(): void {
+    const screen = this.screen;
+    if (!this.isPortraitMobileMode() || ['loading', 'intro', 'play'].includes(screen)) {
+      this.portraitMenu.hide();
+      this.ui?.setVisible(!['loading', 'intro'].includes(screen));
+      return;
+    }
+    const view = this.portraitMenu;
+    const titles: Partial<Record<Screen, string>> = {
+      title: 'Bullet Wake', pilot: 'Escolha seu piloto', missions: 'Escolha a rota', practice: 'Modo treino',
+      hangar: 'Hangar e perfil', pause: 'Pausa', controls: 'Controles', settings: 'Opções',
+      'touch-settings': 'Controles touch', credits: 'Créditos', 'confirm-exit': 'Sair da missão?',
+      result: 'Missão concluída!', defeat: this.world?.survivalRule === 'hull-v1' ? 'Casco destruído' : 'Fim de voo', ending: 'Do mar ao céu!',
+    };
+    view.begin(screen, titles[screen] ?? 'Bullet Wake');
+    this.ui.setVisible(false);
+    const invoke = (index: number, direction?: -1 | 1, refresh = false) => () => {
+      const button = this.buttons[index]; if (!button || button.disabled) return;
+      this.audio.unlock(); globalAudio.playArcade('confirm'); this.menuActionLocked = false;
+      if (direction === -1 && button.onLeft) button.onLeft();
+      else if (direction === 1 && button.onRight) button.onRight();
+      else button.action();
+      if (refresh && this.screen === screen) this.refreshPortraitMenu();
+    };
+    const action = (index: number, label?: string, footer = false, primary = false) => {
+      const button = this.buttons[index]; if (!button) return;
+      view.button(label ?? button.node.text, invoke(index), { disabled: button.disabled, footer, style: primary ? 'primary' : /VOLTAR|MENU|CANCELAR/.test(button.node.text) ? 'back' : 'secondary' });
+    };
+    const frame = (texture: string, index = 0) => {
+      const f = this.textures.getFrame(texture, index);
+      if (!f?.source.image) return '';
+      return view.frame(`${texture}:${index}`, f.source.image, f.cutX, f.cutY, f.cutWidth, f.cutHeight);
+    };
+    const profile = globalProfileStore.getProfile();
+    const settings = globalSave.getSettings();
+    const pilot = getPilotContract(this.selectedPilotId);
+    const w = this.world;
+    if (screen === 'title') {
+      view.logo();
+      action(0, 'Iniciar jornada', false, true); action(1, 'Controles'); action(2, 'Opções'); action(3, 'Créditos');
+      view.button('Hangar e perfil', () => { this.audio.unlock(); this.hangarTab = 'hangar'; this.show('hangar'); }, { compact: true });
+    } else if (screen === 'pilot') {
+      view.portrait(frame('arc-pilots', pilot.portraitFrame), pilot.name, `${pilot.shipName} · ${pilot.callsign}`);
+      view.pilots(listPilotContracts().map(p => ({
+        name: p.name, image: frame('arc-pilots', p.portraitFrame), selected: p.id === pilot.id,
+        unlocked: globalProfileStore.isPilotUnlocked(p.id), action: () => {
+          this.audio.unlock(); this.selectedPilotId = p.id;
+          if (globalProfileStore.isPilotUnlocked(p.id)) globalProfileStore.selectPilot(p.id);
+          this.show('pilot');
+        },
+      })));
+      view.metrics([['Velocidade', `${pilot.stats.speed}/5`], ['Armamento', `${pilot.stats.firepower}/5`], ['Blindagem', `${pilot.stats.armor}/5`], ['Saldo', `${profile.wallet.credits} CR`]]);
+      view.card(pilot.weaponName, `Especial: ${pilot.specialName}\n${pilot.specialDescription}`);
+      view.text(globalProfileStore.isPilotUnlocked(pilot.id) ? pilot.bio : pilot.unlockHint, 'hint');
+      action(0, undefined, true, true); action(1, 'Voltar', true);
+    } else if (screen === 'missions') {
+      view.text(`${pilot.name} · ${pilot.shipName}`, 'gold');
+      for (let i = 0; i < 2; i++) {
+        const mission = MISSIONS[i]; const available = i === 0 || this.arcadeProgress().cleared.includes(1);
+        const best = Math.max(globalProfileStore.bestScoreForMission(mission.id, this.selectedPilotId, globalProfileStore.getSettings().survivalRule), this.bestScoreFor(mission.id));
+        view.card(mission.name, `${perspectiveLabelPt(mission.perspective)} · ${Math.round(stageDurationFor(mission.perspective) / 60)} min\n${available ? `Recorde: ${best}` : 'Conclua a rota 01 para desbloquear.'}`, {
+          image: i === 0 ? `${import.meta.env.BASE_URL}assets/arcade/ui/route-pelagic.webp` : frame('arc-scenery', 5),
+          badge: `Rota 0${i + 1}`, label: available ? 'Iniciar missão' : 'Bloqueada', disabled: !available, action: invoke(i),
+        });
+      }
+      view.heading('Preparar voo');
+      view.setting('Dificuldade', DIFFICULTY_PROFILES[normalizeGameDifficulty(settings.difficulty)].label, invoke(3, -1, true), invoke(3, 1, true));
+      view.setting('Modo assistido', settings.assisted ? 'Ligado' : 'Desligado', invoke(4, -1, true), invoke(4, 1, true));
+      view.text(globalProfileStore.getSettings().survivalRule === 'hull-v1' ? 'Casco: 4 segmentos. REPAIR recupera 1; impactos reduzem POWER.' : 'Clássico: vidas arcade.', 'hint');
+      action(5, 'Modo treino'); action(2, 'Voltar', true);
+    } else if (screen === 'practice') {
+      view.text('Pratique setores e chefes. O treino não altera recordes competitivos nem 1CC.', 'hint');
+      action(0); action(1);
+      for (let i = 2; i < this.buttons.length - 1; i++) action(i);
+      action(this.buttons.length - 1, 'Voltar', true);
+    } else if (screen === 'hangar') {
+      view.text(`${profile.wallet.credits} créditos`, 'gold');
+      view.tabs(['Pinturas', 'Conquistas', 'Perfil'].map((label, index) => ({ label, active: this.hangarTab === ['hangar', 'achievements', 'profile'][index], action: invoke(index) })));
+      if (this.hangarTab === 'hangar') {
+        view.text('Pinturas cosméticas, sem vantagem em combate.', 'hint');
+        for (let i = 3; i < this.buttons.length - 1; i++) action(i);
+      } else if (this.hangarTab === 'achievements') {
+        for (const ach of ACHIEVEMENTS) view.card(`${profile.achievements[ach.id] ? '★ ' : ''}${ach.title}`, `${ach.description}\nRecompensa: ${ach.rewardCredits} CR`);
+      } else {
+        view.metrics([['Piloto ativo', getPilotContract(profile.selectedPilotId).name], ['Pilotos', `${profile.unlocks.pilots.length}/5`], ['Fases concluídas', `${profile.clearedStages.length}/2`], ['Conquistas', `${Object.keys(profile.achievements).length}/${ACHIEVEMENTS.length}`]]);
+        view.card('Perfil local', 'Progresso, pilotos, pinturas e recordes ficam salvos neste aparelho.');
+      }
+      action(this.buttons.length - 1, 'Voltar', true);
+    } else if (screen === 'controls') {
+      view.tabs(['PC', 'Controle', 'Android'].map((label, index) => ({ label, active: this.controlsTab === ['pc', 'gamepad', 'android'][index], action: invoke(index) })));
+      const rows = this.controlsTab === 'android'
+        ? [['Movimento', 'Use o analógico virtual para mover a nave em 8 direções.'], ['Tiro automático', 'A nave já começa atirando. Não é preciso segurar nenhum botão.'], ['Tiro carregado', 'Segure CARGA e solte para disparar. A rajada pausa enquanto a energia carrega.'], ['Especial', 'Toque em ESP para usar o especial do piloto.'], ['Pausa', 'Toque no botão no canto superior direito.']]
+        : this.controlsTab === 'pc'
+          ? [['WASD ou setas', 'Mover a nave.'], ['Espaço', 'Tiro principal.'], ['Z', 'Segurar e soltar o tiro carregado.'], ['X', 'Especial do piloto.'], ['Shift', 'Movimento preciso.'], ['Esc', 'Pausar ou voltar.']]
+          : [['Analógico esquerdo / direcional', 'Mover a nave.'], ['○ / B ou R1 / RB', 'Tiro principal.'], ['□ / X', 'Segurar e soltar o tiro carregado.'], ['× / A ou R2 / RT', 'Especial do piloto.'], ['Options / Start', 'Pausar ou retomar.']];
+      rows.forEach(([title, detail]) => view.card(title, detail));
+      view.text('Casco: 4 impactos. REPAIR recupera 1 segmento. P recupera POWER.', 'hint');
+      action(this.buttons.length - 1, 'Voltar', true);
+    } else if (screen === 'settings') {
+      const volume = (music: boolean, value: number) => {
+        globalSave.updateSettings(music ? { musicVolume: value } : { sfxVolume: value });
+        const current = globalSave.getSettings(); this.audio.setMix(current.musicVolume, current.sfxVolume, this.mute);
+      };
+      view.volume('Música', settings.musicVolume, value => volume(true, value));
+      view.volume('Efeitos', settings.sfxVolume, value => volume(false, value));
+      view.card('Disparo no Android', 'Automático durante o voo. Segure CARGA para preparar o tiro carregado.');
+      const values: [number, string, string][] = [
+        [3, 'Dificuldade', DIFFICULTY_PROFILES[normalizeGameDifficulty(settings.difficulty)].label],
+        [4, 'Modo assistido', settings.assisted ? 'Ligado' : 'Desligado'],
+        [5, 'Qualidade visual', ['Baixa', 'Média', 'Alta'][this.quality]],
+        [6, 'Reduzir tremor', globalProfileStore.getSettings().reducedShake ? 'Sim' : 'Não'],
+        [7, 'Reduzir flashes', globalProfileStore.getSettings().reducedFlash ? 'Sim' : 'Não'],
+        [8, 'Sobrevivência', globalProfileStore.getSettings().survivalRule === 'hull-v1' ? 'Casco · 4 segmentos' : 'Clássico'],
+      ];
+      values.forEach(([i, label, value]) => view.setting(label, value, invoke(i, -1, true), invoke(i, 1, true)));
+      view.text('A escolha de sobrevivência vale na próxima partida. Cada modo tem seus próprios recordes.', 'hint');
+      action(9, 'Ajustar controles touch'); action(10, 'Voltar', true);
+    } else if (screen === 'touch-settings') {
+      const touch = settings.touch;
+      const values = [touch.handedness === 'left' ? 'Canhoto' : 'Destro', ({ corner: 'Canto', raised: 'Elevada', wide: 'Aberta' })[touch.position], ({ compact: 'Pequeno', standard: 'Padrão', large: 'Grande' })[touch.size], `${Math.round(touch.opacity * 100)}%`, `${touch.offsetY}`];
+      ['Mão dominante', 'Posição', 'Tamanho', 'Visibilidade', 'Altura fina'].forEach((label, i) => view.setting(label, values[i], invoke(i, -1, true), invoke(i, 1, true)));
+      view.card('Três controles de combate', 'Analógico para mover, CARGA para carregar e ESP para o especial. O tiro principal é automático.');
+      action(5, 'Restaurar padrão'); action(6, 'Voltar', true);
+    } else if (screen === 'pause') {
+      if (w) view.metrics([['Rota', MISSIONS[this.currentMission].name], ['Progresso', `${Math.round(w.progressRatio * 100)}%`], ['Pontos', w.score], [w.survivalRule === 'hull-v1' ? 'Casco' : 'Vidas', w.survivalRule === 'hull-v1' ? `${w.hull}/${w.hullMaximum}` : w.lives]]);
+      this.buttons.forEach((_, i) => action(i, undefined, false, i === 0));
+    } else if (screen === 'confirm-exit') {
+      view.text('O progresso da fase atual será perdido ao voltar ao menu.');
+      action(0, 'Continuar na missão', true, true); action(1, 'Sair da missão', true);
+    } else if ((screen === 'result' || screen === 'defeat') && w) {
+      view.portrait(frame('arc-pilots', w.pilotId === 'nolan' ? (screen === 'result' ? 1 : 2) : w.pilotContract.portraitFrame), w.pilotContract.name, MISSIONS[this.currentMission].name);
+      const evaluation = this.lastRunOutcome?.evaluation ?? w.evaluateRun().evaluation;
+      view.metrics([['Pontos', w.score], ['Progresso', `${Math.round(w.progressRatio * 100)}%`], ['Alvos', w.kills], [screen === 'result' ? 'Rank' : 'Impactos', screen === 'result' ? evaluation.rank : w.hitsReceived]]);
+      if (screen === 'result') {
+        const seconds = Math.floor(w.elapsed);
+        view.metrics([['Tempo', `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`], ['Chain máximo', `×${w.maxChain}`], ['Graze', w.grazeCount], ['Créditos ganhos', this.lastRunOutcome?.creditsAdded ?? evaluation.creditsEarned]]);
+        if (w.up) {
+          const bonus = w.pelagicScoring.snapshot();
+          view.text(`Esquadrões ${bonus.formationsCleared} · Setores ${bonus.sectorsClean}/7 · Bônus +${bonus.totalBonus}`, 'gold');
+        }
+        const outcome = this.lastRunOutcome;
+        if (outcome?.newlyUnlockedAchievements.length) view.text(`${outcome.newlyUnlockedAchievements.length} conquista(s) desbloqueada(s)!`, 'gold');
+        if (outcome?.newlyUnlockedPilots.length) view.text(`Novos pilotos: ${outcome.newlyUnlockedPilots.map(id => getPilotContract(id).name).join(', ')}`, 'gold');
+      }
+      if (w.survivalRule === 'hull-v1') view.text(`Casco ${w.hull}/${w.hullMaximum} · Reparos ${w.repairsCollected}`, 'gold');
+      view.text(screen === 'defeat' ? 'Respire, ajuste a rota e volte ao voo.' : (evaluation.badges.join(' · ') || 'Potência, casco e especiais seguem para a próxima rota.'), 'hint');
+      this.buttons.forEach((_, i) => action(i, undefined, true, i === 0));
+    } else if (screen === 'ending') {
+      view.portrait(frame('arc-pilots', pilot.portraitFrame), pilot.name, 'Operação concluída');
+      view.text('Duas missões concluídas. A equipe de resgate tem caminho livre! Experimente novos pilotos e busque o Rank S+.');
+      view.metrics([['Recorde', this.bestScoreFor()], ['Créditos', profile.wallet.credits]]);
+      action(0, 'Voar de novo', true, true);
+    } else if (screen === 'credits') {
+      view.card('Botan Studio', 'Direção e criação\nEmerson Barros\n\nGame design e programação\nEmerson Barros');
+      view.card('Arte e áudio', 'Botan Studio · Cartoon / Anime\nBotan Studio Audio · Web Audio Synth');
+      view.card('Obrigado por voar!', 'Aos fãs dos shoot ’em ups arcade clássicos e a todos que acompanham a evolução de Bullet Wake.');
+      action(0, 'Voltar', true);
+    }
+    this.setTouchVisible(false);
+    view.end();
   }
   begin(index: number, carry?: CampaignFlight, opts?: { practiceMode?: boolean }): void {
     if (index === 0) { this.messageUntil = 0; this.activeCheckpointSnapshot = undefined; this.checkpointBannerUntil = 0; }
@@ -1571,7 +1739,7 @@ export class ArcadeScene extends Phaser.Scene {
     const activeEl = typeof document !== 'undefined' ? document.activeElement : null;
     const domInputFocused = !!activeEl && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName);
     const gp = this.pad.sample(connectedPad());
-    const just = (k: string) => !domInputFocused && Phaser.Input.Keyboard.JustDown(this.controls[k]);
+    const just = (k: string) => (k === 'ESC' || !domInputFocused) && Phaser.Input.Keyboard.JustDown(this.controls[k]);
     if (this.screen === 'loading') {
       const nowMs = performance.now();
       const elapsed = Math.max(0, (nowMs - this.loadStartMs) / 1000);
@@ -1681,7 +1849,7 @@ export class ArcadeScene extends Phaser.Scene {
       const touchCmd = this.touchController.consumeStep();
       const rawFire = held('SPACE') || gp.firePrimary || touchCmd.fire;
       if (this.suppressHeldFireUntilRelease && !rawFire) this.suppressHeldFireUntilRelease = false;
-      const fireInput = this.suppressHeldFireUntilRelease ? false : rawFire;
+      const fireInput = this.touchShown || (this.suppressHeldFireUntilRelease ? false : rawFire);
       const rawCharge = held('Z') || gp.chargeHeld || touchCmd.charge;
       if (this.suppressChargeUntilRelease && !rawCharge) this.suppressChargeUntilRelease = false;
       const chargeInput = this.suppressChargeUntilRelease ? false : rawCharge;
@@ -1758,6 +1926,10 @@ export class ArcadeScene extends Phaser.Scene {
     sp.setFlipX(active.dir > 0).setPosition(x, y).setDisplaySize(active.size, active.size).setAngle(tilt).setAlpha(0.96).setVisible(true);
   }
   private renderMenu(): void {
+    if (this.portraitMenu.visible) {
+      this.hero.setVisible(false); this.logo.setVisible(false); this.menuPlanes.forEach(s => s.setVisible(false));
+      return;
+    }
     this.footerScore.setVisible(false);
     this.decor.clear(); this.hud.setText(''); this.combatInk.clear(); const time = this.clock;
     this.hero.setVisible(false);
@@ -2564,7 +2736,8 @@ export class ArcadeScene extends Phaser.Scene {
       container.on('pointerover', () => drawCompactPc(true));
       container.on('pointerout', () => drawCompactPc(false));
     } else {
-      const pPos = this.world.up ? this.touchController.getLayout().pause : { x: 734, y: 19 };
+      const pPos = this.touchShown ? this.touchController.getLayout().pause : { x: 734, y: 19 };
+      if (!this.world.up && this.isPortraitMobileMode()) container.setScale(2);
       const w = 36, h = 19;
       container.setPosition(pPos.x, pPos.y).setSize(44, 24);
       const bg = this.add.graphics();
@@ -2589,8 +2762,14 @@ export class ArcadeScene extends Phaser.Scene {
     this.pauseBtn = container;
   }
   private refreshTouchLayout(): void {
-    const portH = this.portraitUpActive ? getCombatVirtualSize(this).h : undefined;
-    this.touchController.configure(globalSave.getSettings().touch, this.readViewportSafeInsets(), portH);
+    const portrait = this.isPortraitMobileMode();
+    const sidePortrait = portrait && !!this.world && !this.world.up;
+    const v = getCombatVirtualSize(this);
+    const scale = sidePortrait ? 2 : 1;
+    const portH = portrait ? v.h / scale : undefined;
+    const safe = this.readViewportSafeInsets();
+    const insets = { top: safe.top / scale, right: safe.right / scale, bottom: safe.bottom / scale, left: safe.left / scale };
+    this.touchController.configure(globalSave.getSettings().touch, insets, portH, true, sidePortrait ? { scale, offsetY: 0 } : undefined);
     this.syncPauseButton();
     this.renderTouchOverlay();
   }
@@ -2622,12 +2801,7 @@ export class ArcadeScene extends Phaser.Scene {
     g.fillStyle(out.stickActive ? 0x2a7ec2 : 0x154470, Math.min(0.88, op * 1.05)).fillCircle(out.knobX, out.knobY, l.joystick.knobRadius);
     g.lineStyle(1.5, 0xe8ffff, Math.min(0.95, op * 1.35)).strokeCircle(out.knobX, out.knobY, l.joystick.knobRadius);
 
-    // 2. Primary FIRE button (separated cleanly from Special)
-    const fx = l.fire.x, fy = l.fire.y, fr = l.fire.radius;
-    g.fillStyle(out.firePressed ? 0xffe062 : 0x261f0b, op * (out.firePressed ? 0.72 : 0.36)).fillCircle(fx, fy, fr);
-    g.lineStyle(1.8, 0xffdf5a, Math.min(0.96, op * (out.firePressed ? 1.5 : 1.2))).strokeCircle(fx, fy, fr);
-    g.lineStyle(1, 0xfff8c8, op * 0.45).strokeCircle(fx, fy, fr - 4);
-    this.touchFireText.setPosition(fx, fy).setFontSize(`${Math.round(10.5 * l.scale)}px`).setAlpha(Math.min(1, op + 0.28)).setScale(out.firePressed ? 0.94 : 1);
+    this.touchFireText.setVisible(false);
 
     // 3. Dedicated SPECIAL button (guarded against accidental drags; dims gracefully at 0 charges)
     const sx = l.special.x, sy = l.special.y, sr = l.special.radius;

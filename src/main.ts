@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import './style.css';
 import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from './game/constants';
 import { ArcadeScene } from './game/arcade/ArcadeScene';
+import { renderPixelRatio } from './game/render/combatResolution';
 
 async function bootGame(): Promise<void> {
   // Inicia o carregamento de fontes sem bloquear a criação imediata do canvas Phaser e do loading.
@@ -25,8 +26,8 @@ async function bootGame(): Promise<void> {
   }
 
   // Nasce já no tamanho real do viewport para evitar salto de escala ou faixas no carregamento.
-  const initWidth = Math.max(1, Math.floor(host.clientWidth || window.innerWidth || GAME_WIDTH));
-  const initHeight = Math.max(1, Math.floor(host.clientHeight || window.innerHeight || GAME_HEIGHT));
+  const initWidth = Math.max(1, Math.round((host.clientWidth || window.innerWidth || GAME_WIDTH) * renderPixelRatio()));
+  const initHeight = Math.max(1, Math.round((host.clientHeight || window.innerHeight || GAME_HEIGHT) * renderPixelRatio()));
 
   const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO, // Preferir WebGL; fallback Canvas fornecido pelo Phaser.

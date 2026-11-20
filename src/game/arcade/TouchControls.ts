@@ -33,6 +33,7 @@ export interface TouchJoystickGeometry extends TouchButtonGeometry {
 }
 
 export interface TouchLayout {
+    automaticFire?: boolean;
     joystick: TouchJoystickGeometry;
     fire: TouchButtonGeometry;
     special: TouchButtonGeometry;
@@ -390,9 +391,25 @@ export class TouchInputController {
         return this.settings;
     }
 
-    configure(settings: TouchControlSettings, insets: SafeAreaInsets = ZERO_INSETS, portraitHeight?: number): void {
+    configure(settings: TouchControlSettings, insets: SafeAreaInsets = ZERO_INSETS, portraitHeight?: number, automaticFire = false, transform?: { scale: number; offsetY: number }): void {
         this.settings = sanitizeTouchSettings(settings);
         this.layout = computeTouchLayout(this.settings, insets, portraitHeight);
+        if (automaticFire) {
+            this.layout.automaticFire = true;
+            // The freed primary-fire position becomes a generous charged-shot target.
+            this.layout.charge = { ...this.layout.fire };
+        }
+        if (transform) {
+            for (const key of ['joystick', 'fire', 'special', 'charge', 'pause'] as const) {
+                const button = this.layout[key]; if (!button) continue;
+                button.x *= transform.scale; button.y = button.y * transform.scale + transform.offsetY;
+                button.radius *= transform.scale; button.hitRadius *= transform.scale;
+            }
+            this.layout.joystick.travelRadius *= transform.scale;
+            this.layout.joystick.knobRadius *= transform.scale;
+            this.layout.moveZoneSplitX *= transform.scale;
+            this.layout.scale *= transform.scale;
+        }
         if (this.moveId === null) {
             this.stickOriginX = this.layout.joystick.x;
             this.stickOriginY = this.layout.joystick.y;
@@ -428,7 +445,7 @@ export class TouchInputController {
 
         if (!inMoveHalf) {
             const distSpec = Math.hypot(x - l.special.x, y - l.special.y);
-            const distFire = Math.hypot(x - l.fire.x, y - l.fire.y);
+            const distFire = l.automaticFire ? Infinity : Math.hypot(x - l.fire.x, y - l.fire.y);
             const distCharge = l.charge ? Math.hypot(x - l.charge.x, y - l.charge.y) : Infinity;
             // Special activates only on direct down-press strictly inside its dedicated circle, never via swipe.
             if (this.specialId === null && distSpec <= l.special.hitRadius && distSpec <= distFire && distSpec <= distCharge) {
@@ -440,7 +457,7 @@ export class TouchInputController {
                 this.chargeId = pointerId;
                 return 'charge';
             }
-            if (this.fireId === null && distFire <= l.fire.hitRadius) {
+            if (!l.automaticFire && this.fireId === null && distFire <= l.fire.hitRadius) {
                 this.fireId = pointerId;
                 this.firePulsePending = true;
                 return 'fire';
