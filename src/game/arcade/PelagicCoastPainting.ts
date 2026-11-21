@@ -351,20 +351,27 @@ export class PelagicCoastPainting {
         this.surfStrips = [0, 1].map(() => scene.add.image(192, 0, COAST_SURF_KEY).setOrigin(0, 0).setCrop(0, 0, COAST_SPLIT_HALF, 2048).setDepth(-18.77).setBlendMode(Phaser.BlendModes.ADD).setVisible(false));
         this.rightSurfStrips = [0, 1].map(() => scene.add.image(192, 0, COAST_SURF_KEY).setOrigin(0, 0).setCrop(COAST_SPLIT_HALF, 0, 384 - COAST_SPLIT_HALF, 2048).setDepth(-18.77).setBlendMode(Phaser.BlendModes.ADD).setVisible(false));
     }
-    draw(scroll: number, visible: boolean, alpha = 1, time = 0, quality = 2, arenaLeft = 192, arenaWidth = 384): void {
+    draw(scroll: number, visible: boolean, alpha = 1, time = 0, quality = 2, arenaLeft = 192, arenaWidth = 384, viewH = 432): void {
         const top = -wrapCoast(COAST_MAP_OFFSET - scroll);
         const shown = visible && alpha > .01;
         const rightX = arenaLeft + arenaWidth - 384;
-        this.strips.forEach((image, i) => image.setVisible(shown).setAlpha(alpha).setPosition(arenaLeft, top + i * COAST_MAP_PERIOD));
-        this.rightStrips.forEach((image, i) => image.setVisible(shown).setAlpha(alpha).setPosition(rightX, top + i * COAST_MAP_PERIOD));
         const shoalAlpha = alpha * (.34 + .10 * Math.sin(time * 1.35));
-        this.shoalStrips.forEach((image, i) => image.setVisible(shown && quality >= 1).setAlpha(shoalAlpha).setPosition(arenaLeft, top + i * COAST_MAP_PERIOD));
-        this.rightShoalStrips.forEach((image, i) => image.setVisible(shown && quality >= 1).setAlpha(shoalAlpha).setPosition(rightX, top + i * COAST_MAP_PERIOD));
         const surge = Math.sin(time * 2.15);
         const surfAlpha = alpha * (.28 + .24 * (.5 + .5 * surge)) * (quality === 1 ? .78 : 1);
         const surfShiftY = surge * 1.1;
-        this.surfStrips.forEach((image, i) => image.setVisible(shown && quality >= 1).setAlpha(surfAlpha).setPosition(arenaLeft, top + surfShiftY + i * COAST_MAP_PERIOD));
-        this.rightSurfStrips.forEach((image, i) => image.setVisible(shown && quality >= 1).setAlpha(surfAlpha).setPosition(rightX, top + surfShiftY + i * COAST_MAP_PERIOD));
+        const minVisY = -COAST_MAP_PERIOD - 32;
+        const maxVisY = viewH + 32;
+        for (let i = 0; i < 2; i++) {
+            const y = top + i * COAST_MAP_PERIOD;
+            const inView = shown && y > minVisY && y < maxVisY;
+            this.strips[i].setVisible(inView).setAlpha(alpha).setPosition(arenaLeft, y);
+            this.rightStrips[i].setVisible(inView).setAlpha(alpha).setPosition(rightX, y);
+            const showFx = inView && quality >= 1;
+            this.shoalStrips[i].setVisible(showFx).setAlpha(shoalAlpha).setPosition(arenaLeft, y);
+            this.rightShoalStrips[i].setVisible(showFx).setAlpha(shoalAlpha).setPosition(rightX, y);
+            this.surfStrips[i].setVisible(showFx).setAlpha(surfAlpha).setPosition(arenaLeft, y + surfShiftY);
+            this.rightSurfStrips[i].setVisible(showFx).setAlpha(surfAlpha).setPosition(rightX, y + surfShiftY);
+        }
     }
     destroy(): void {
         for (const list of [this.strips, this.rightStrips, this.shoalStrips, this.rightShoalStrips, this.surfStrips, this.rightSurfStrips]) {

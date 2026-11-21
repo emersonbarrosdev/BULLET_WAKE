@@ -41,13 +41,14 @@ async function bootGame(): Promise<void> {
       antialiasGL: !isMobileDisplay(),
       pixelArt: false,
       roundPixels: false,
+      powerPreference: 'high-performance',
     },
     fps: {
       min: 30,
       target: 60,
-      limit: isMobileDisplay() ? 62 : 0,
+      limit: isMobileDisplay() ? 72 : 0,
       forceSetTimeOut: false,
-      smoothStep: true,
+      smoothStep: !isMobileDisplay(),
     },
     scale: {
       mode: Phaser.Scale.FIT,

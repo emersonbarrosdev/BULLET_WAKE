@@ -79,6 +79,7 @@ export const HANGAR_CATALOG: readonly HangarCatalogItem[] = [
 
 export interface LocalWallet {
   credits: number;
+  gems: number;
   totalEarned: number;
   totalSpent: number;
   claimedRunIds: string[];
@@ -216,6 +217,7 @@ export function defaultProfileV4(): PlayerProfileV4 {
     },
     wallet: {
       credits: 0,
+      gems: 0,
       totalEarned: 0,
       totalSpent: 0,
       claimedRunIds: [],
@@ -323,6 +325,7 @@ export class ArcadeProfileStore {
       },
       wallet: {
         credits: Math.max(0, Math.floor(Number(raw.wallet?.credits) || 0)),
+        gems: Math.max(0, Math.floor(Number(raw.wallet?.gems) || 0)),
         totalEarned: Math.max(0, Math.floor(Number(raw.wallet?.totalEarned) || 0)),
         totalSpent: Math.max(0, Math.floor(Number(raw.wallet?.totalSpent) || 0)),
         claimedRunIds: Array.isArray(raw.wallet?.claimedRunIds) ? raw.wallet.claimedRunIds.slice(-32) : [],

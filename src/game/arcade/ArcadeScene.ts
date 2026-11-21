@@ -145,6 +145,22 @@ export class ArcadeScene extends Phaser.Scene {
   private showAllStagesModal = false;
   private showPrivacyModal = false;
   private pendingPilotPurchase?: PilotId;
+  private launchCountdown = 0;
+  private launchCountdownStep = '';
+  private readonly aliveEnemyIds = new Set<number>();
+  private readonly liveBossPartIds = new Set<number>();
+  private readonly liveCargoIds = new Set<number>();
+  private lastFooterScore = '';
+  private lastFooterFont = 0;
+  private lastPelagicLevelText = '';
+  private lastPelagicLevelFont = 0;
+  private lastPelagicSpecialText = '';
+  private lastBossHudText = '';
+  private lastBossHudFont = 0;
+  private lastTouchSpecialFont = '';
+  private lastTouchChargeFont = '';
+  private lastTouchOverlaySig = '';
+  private touchOverlayDirty = true;
   constructor() { super('ArcadeScene'); }
   preload(): void {
     enableCombatResolution(this);
@@ -565,8 +581,14 @@ export class ArcadeScene extends Phaser.Scene {
     if (!isMobileDisplay() && old !== screen && !['loading', 'intro', 'play'].includes(screen) && old !== 'loading' && old !== 'intro') globalAudio.playArcade('navigate');
     this.tweens.killAll(); this.ui.removeAll(true); this.ui.setAlpha(1).setPosition(0, 0); this.pauseBtn = undefined; this.buttons = []; this.focus = 0; this.menuActionLocked = false; this.hideIntroActors();
     this.ui.setVisible(!['loading', 'intro'].includes(screen));
+    if (screen !== 'play') {
+      this.launchCountdown = 0;
+      this.launchCountdownStep = '';
+      this.portraitMenu.hideCountdown();
+    }
     if (screen === 'result' || screen === 'defeat') { this.messageUntil = 0; this.radio.setVisible(false); }
-    if (screen !== 'play') { this.touchController.clearAll(); this.pelagicAnims?.hide(); this.clearBonusPopups(); }
+    const keepLiveScene = !!this.world && ['pause', 'confirm-exit', 'defeat', 'result', 'controller-orientation', 'controller-lost'].includes(screen);
+    if (screen !== 'play') { this.touchController.clearAll(); if (!keepLiveScene) this.pelagicAnims?.hide(); this.clearBonusPopups(); }
     const game = ['play', 'pause', 'controls', 'settings', 'touch-settings', 'confirm-exit', 'result', 'defeat'].includes(screen) && !!this.world;
     const stage1Hud = game && !!this.world?.up;
     const showPcPanel = stage1Hud && !this.portraitUpActive && !isMobileDisplay();
@@ -1547,11 +1569,13 @@ export class ArcadeScene extends Phaser.Scene {
 
   private refreshPortraitMenu(): void {
     const screen = this.screen;
-    const mobile = isMobileDisplay(), covered = mobile && !['loading', 'intro', 'play'].includes(screen);
+    const mobile = isMobileDisplay();
+    const liveBackdrop = mobile && !!this.world && ['pause', 'confirm-exit', 'defeat', 'result', 'controller-orientation', 'controller-lost'].includes(screen);
+    const covered = mobile && !['loading', 'intro', 'play'].includes(screen) && !liveBackdrop;
     this.cameras.main.setVisible(!covered);
-    const limit = mobile ? (covered ? 30 : 62) : 0;
+    const limit = mobile ? (covered ? 30 : 72) : 0;
     if (this.game.loop.fpsLimit !== limit) this.game.loop.setFPSLimit(limit);
-    if (!isMobileDisplay() || ['loading', 'intro', 'play'].includes(screen)) {
+    if (!mobile || ['loading', 'intro', 'play'].includes(screen)) {
       this.portraitMenu.hide();
       this.ui?.setVisible(!['loading', 'intro'].includes(screen));
       return;
@@ -1570,8 +1594,12 @@ export class ArcadeScene extends Phaser.Scene {
     };
     const compactHeader = screen === 'pilot' || screen === 'hangar';
     const headerBadge = compactHeader ? `${profile.wallet.credits} CR` : undefined;
-    view.begin(screen, titles[screen] ?? 'Bullet Wake', '', { compactHeader, headerBadge, footerRow: screen === 'pilot' });
+    view.begin(screen, titles[screen] ?? 'Bullet Wake', '', { compactHeader, headerBadge, footerRow: screen === 'pilot', liveBackdrop });
     this.ui.setVisible(false);
+    if (liveBackdrop && w) {
+      this.backdrop.draw(w.elapsed, w, this.quality, false);
+      this.renderWorld(0);
+    }
     const invoke = (index: number, direction?: -1 | 1, refresh = false) => () => {
       const button = this.buttons[index]; if (!button || button.disabled) return;
       this.menuActionLocked = false;
@@ -1618,7 +1646,7 @@ export class ArcadeScene extends Phaser.Scene {
           durationLabel: `${Math.round(stageDurationFor(mission.perspective) / 60)} min`,
           summary: stageSummaries[idx] ?? '',
           recordLabel: rank ? `Recorde: ${best} · Rank ${rank}` : `Recorde: ${best}`,
-          image: idx === 0 ? `${import.meta.env.BASE_URL}assets/arcade/ui/route-pelagic.webp` : frame('arc-scenery', 5),
+          image: idx === 0 ? `${import.meta.env.BASE_URL}assets/arcade/ui/route-pelagic-hd.webp` : frame('arc-scenery', 5),
           unlocked,
           unlockHint: 'Conclua a Rota 01 para desbloquear',
         };
@@ -1626,32 +1654,33 @@ export class ArcadeScene extends Phaser.Scene {
       const activeStageIdx = clamp(this.selectedHomeStage, 0, stages.length - 1);
       this.selectedHomeStage = activeStageIdx;
 
-      view.flybys([0, 4, 8].map(start => Array.from({ length: 4 }, (_, i) => frame(UI_TEX.wingmenAnim, start + i))));
       view.homeDashboard({
         stages,
         activeStageIndex: activeStageIdx,
+        flybys: [0, 4, 8].map(start => Array.from({ length: 4 }, (_, i) => frame(UI_TEX.wingmenAnim, start + i))),
         pilotName: activeHomePilot.name,
         shipName: activeHomePilot.shipName,
         avatarImage: frame('arc-pilots', activeHomePilot.portraitFrame),
         accountName: profile.account.displayName,
         accountLinked: profile.account.mode === 'linked',
         credits: profile.wallet.credits,
+        gems: profile.wallet.gems,
         onSelectStage: (idx) => {
           this.selectedHomeStage = idx;
-          this.refreshPortraitMenu();
         },
         onOpenAllStages: () => {
           this.audio.unlock();
           this.showAllStagesModal = true;
           this.refreshPortraitMenu();
         },
-        onLaunchMission: () => {
-          const picked = stages[activeStageIdx];
+        onLaunchMission: (stageIdx) => {
+          const picked = stages[stageIdx];
           if (!picked?.unlocked) return;
           this.audio.unlock();
+          this.selectedHomeStage = stageIdx;
           this.selectedPilotId = profile.selectedPilotId;
-          const carry = activeStageIdx ? prog.flights[1] : undefined;
-          this.begin(activeStageIdx, carry);
+          const carry = stageIdx ? prog.flights[1] : undefined;
+          this.beginWithCountdown(stageIdx, carry);
         },
         onPilots: () => {
           this.audio.unlock();
@@ -2050,9 +2079,19 @@ export class ArcadeScene extends Phaser.Scene {
       supplyBalance: this.world.supplyBalance,
       rapidFire: this.world.accessibility,
     });
-    this.world.bossContact = (_boss, ax, ay, bx, by, radius) => spriteContact(this.bossSprite, ax, ay, bx, by, radius);
+    this.world.bossContact = (boss, ax, ay, bx, by, radius) => {
+      const pad = boss.size * 0.72 + radius + 16;
+      const minX = ax < bx ? ax : bx, maxX = ax > bx ? ax : bx;
+      const minY = ay < by ? ay : by, maxY = ay > by ? ay : by;
+      if (maxX < boss.x - pad || minX > boss.x + pad || maxY < boss.y - pad || minY > boss.y + pad) return null;
+      return spriteContact(this.bossSprite, ax, ay, bx, by, radius);
+    };
     this.world.subHullContact = (_sub, secIdx, ax, ay, bx, by, radius) => this.subBossArt.hullContact(secIdx, ax, ay, bx, by, radius);
     this.world.contact = (e, ax, ay, bx, by, radius) => {
+      const pad = e.size * 1.55 + radius + 18;
+      const minX = ax < bx ? ax : bx, maxX = ax > bx ? ax : bx;
+      const minY = ay < by ? ay : by, maxY = ay > by ? ay : by;
+      if (maxX < e.x - pad || minX > e.x + pad || maxY < e.y - pad || minY > e.y + pad) return null;
       const sprite = this.enemySprites.get(e.id), turret = this.turrets.get(e.id), mounts = this.pelagicAnims?.mountSpritesFor(e.id);
       const customBase = e.navigation?.customAnchor ? sweepEllipse(ax, ay, bx, by, e.x, e.y, e.size * 0.34 + radius, e.size * 0.38 + radius) : null;
       let nearest = customBase ?? Infinity;
@@ -2062,6 +2101,17 @@ export class ArcadeScene extends Phaser.Scene {
       return nearest === Infinity ? null : nearest;
     };
     this.player.setVisible(true); this.audio.play(index ? 'stage2' : 'stage1'); this.show('play');
+  }
+  beginWithCountdown(index: number, carry?: CampaignFlight, opts?: { practiceMode?: boolean }): void {
+    this.begin(index, carry, opts);
+    if (this.world) {
+      this.world.introTime = 0;
+      this.world.state = 'play';
+    }
+    this.launchCountdown = 2.4;
+    this.launchCountdownStep = '3';
+    globalAudio.playArcade('navigate');
+    this.portraitMenu.showCountdown('3', `ROTA 0${index + 1} · ${MISSIONS[index].name}`, false);
   }
   beginPractice(missionIndex: number, targetSeconds: number): void {
     if (isMobileDisplay()) return;
@@ -2080,6 +2130,18 @@ export class ArcadeScene extends Phaser.Scene {
     this.refreshHudVisual();
   }
   private disposeWorld(): void {
+    this.launchCountdown = 0;
+    this.launchCountdownStep = '';
+    this.portraitMenu.hideCountdown();
+    this.lastFooterScore = '';
+    this.lastFooterFont = 0;
+    this.lastPelagicLevelText = '';
+    this.lastPelagicLevelFont = 0;
+    this.lastPelagicSpecialText = '';
+    this.lastBossHudText = '';
+    this.lastBossHudFont = 0;
+    this.lastTouchOverlaySig = '';
+    this.touchOverlayDirty = true;
     this.mobileFlightHud.hide();
     this.hullArt?.clear();
     this.touchController?.clearAll(); this.emplacements?.clear(); this.hitOverlays?.clear(); this.bombArt?.draw(); this.subBossArt?.clear(); this.bossHudLabel?.setVisible(false); this.pelagicAssistBadge?.setVisible(false); this.pelagicCheckpointBadge?.setVisible(false); this.pelagicSpecialText?.setVisible(false); this.pelagicAnims?.clear(); this.pelagicComms.reset(); this.pelagicDesktopHud?.resetComms();
@@ -2098,7 +2160,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.syncResponsiveViewport();
   }
   update(_time: number, delta: number): void {
-    const dt = Math.min(delta / 1000, .05); this.clock += dt;
+    const dt = Math.min(delta / 1000, isMobileDisplay() ? 1 / 30 : .05); this.clock += dt;
     const activeEl = typeof document !== 'undefined' ? document.activeElement : null;
     const domInputFocused = !!activeEl && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName);
     const gp = this.pad.sample(connectedPad());
@@ -2220,35 +2282,54 @@ export class ArcadeScene extends Phaser.Scene {
     } else if (escPressed || gp.pause) this.show('pause');
     const resumedFromMenu = !startedInPlay && this.screen === 'play';
     if (this.world && this.screen === 'play' && !resumedFromMenu) {
-      if (just('ENTER')) this.world.introTime = 0;
-      const held = (k: string) => !domInputFocused && Boolean(this.controls[k]?.isDown);
-      const touchCmd = this.touchController.consumeStep();
-      const rawFire = held('SPACE') || gp.firePrimary || touchCmd.fire;
-      if (this.suppressHeldFireUntilRelease && !rawFire) this.suppressHeldFireUntilRelease = false;
-      const fireInput = isMobileDisplay() || this.touchShown || (this.suppressHeldFireUntilRelease ? false : rawFire);
-      const rawCharge = held('Z') || gp.chargeHeld || touchCmd.charge;
-      if (this.suppressChargeUntilRelease && !rawCharge) this.suppressChargeUntilRelease = false;
-      const chargeInput = this.suppressChargeUntilRelease ? false : rawCharge;
-      const rawSpecialHeld = held('X') || gp.specialHeld || touchCmd.special;
-      if (this.suppressSpecialUntilRelease && !rawSpecialHeld) this.suppressSpecialUntilRelease = false;
-      const specialInput = this.suppressSpecialUntilRelease ? false : (held('X') || gp.special || touchCmd.special);
-      const focusInput = held('SHIFT') || gp.focusHeld;
-      const moveX = clamp(Number(held('D') || held('RIGHT')) - Number(held('A') || held('LEFT')) + gp.moveX + touchCmd.x, -1, 1);
-      const moveY = clamp(Number(held('S') || held('DOWN')) - Number(held('W') || held('UP')) + gp.moveY + touchCmd.y, -1, 1);
-      const input: Controls = { x: moveX, y: moveY, fire: fireInput, special: specialInput, charge: chargeInput, focus: focusInput };
-      this.lastInput = input;
-      if (!this.devSimulationPaused) {
-        this.accumulator += dt * this.devTimeScale;
-        while (this.accumulator >= 1 / 120) {
-          this.replayRecorder?.record(input);
-          this.world.step(1 / 120, input);
-          this.accumulator -= 1 / 120;
+      if (this.launchCountdown > 0) {
+        this.launchCountdown = Math.max(0, this.launchCountdown - dt);
+        if (this.launchCountdown > 0) {
+          const stepText = this.launchCountdown > 1.8 ? '3' : this.launchCountdown > 1.2 ? '2' : this.launchCountdown > 0.6 ? '1' : 'READY!';
+          const ready = stepText === 'READY!';
+          if (stepText !== this.launchCountdownStep) {
+            this.launchCountdownStep = stepText;
+            globalAudio.playArcade(ready ? 'confirm' : 'navigate');
+            this.portraitMenu.showCountdown(stepText, `ROTA 0${this.currentMission + 1} · ${MISSIONS[this.currentMission].name}`, ready);
+          }
+        } else {
+          this.launchCountdown = 0;
+          this.launchCountdownStep = '';
+          this.portraitMenu.hideCountdown();
         }
-        if (this.world.up && this.world.state !== 'intro') this.pelagicComms.step(dt * this.devTimeScale);
+        this.touchController.clearAll();
+        this.renderTouchOverlay();
+      } else {
+        if (just('ENTER')) this.world.introTime = 0;
+        const held = (k: string) => !domInputFocused && Boolean(this.controls[k]?.isDown);
+        const touchCmd = this.touchController.consumeStep();
+        const rawFire = held('SPACE') || gp.firePrimary || touchCmd.fire;
+        if (this.suppressHeldFireUntilRelease && !rawFire) this.suppressHeldFireUntilRelease = false;
+        const fireInput = isMobileDisplay() || this.touchShown || (this.suppressHeldFireUntilRelease ? false : rawFire);
+        const rawCharge = held('Z') || gp.chargeHeld || touchCmd.charge;
+        if (this.suppressChargeUntilRelease && !rawCharge) this.suppressChargeUntilRelease = false;
+        const chargeInput = this.suppressChargeUntilRelease ? false : rawCharge;
+        const rawSpecialHeld = held('X') || gp.specialHeld || touchCmd.special;
+        if (this.suppressSpecialUntilRelease && !rawSpecialHeld) this.suppressSpecialUntilRelease = false;
+        const specialInput = this.suppressSpecialUntilRelease ? false : (held('X') || gp.special || touchCmd.special);
+        const focusInput = held('SHIFT') || gp.focusHeld;
+        const moveX = clamp(Number(held('D') || held('RIGHT')) - Number(held('A') || held('LEFT')) + gp.moveX + touchCmd.x, -1, 1);
+        const moveY = clamp(Number(held('S') || held('DOWN')) - Number(held('W') || held('UP')) + gp.moveY + touchCmd.y, -1, 1);
+        const input: Controls = { x: moveX, y: moveY, fire: fireInput, special: specialInput, charge: chargeInput, focus: focusInput };
+        this.lastInput = input;
+        if (!this.devSimulationPaused) {
+          this.accumulator += dt * this.devTimeScale;
+          while (this.accumulator >= 1 / 120) {
+            this.replayRecorder?.record(input);
+            this.world.step(1 / 120, input);
+            this.accumulator -= 1 / 120;
+          }
+          if (this.world.up && this.world.state !== 'intro') this.pelagicComms.step(dt * this.devTimeScale);
+        }
+        this.consumeEvents();
+        this.renderTouchOverlay();
+        if (this.world.state === 'victory') { this.saveClear(); this.show('result'); } else if (this.world.state === 'defeat' && this.clock >= this.hullDefeatAt) this.show('defeat');
       }
-      this.consumeEvents();
-      this.renderTouchOverlay();
-      if (this.world.state === 'victory') { this.saveClear(); this.show('result'); } else if (this.world.state === 'defeat' && this.clock >= this.hullDefeatAt) this.show('defeat');
     }
     // Native menus fully cover the canvas. Keep controller navigation alive without drawing a hidden battle.
     if (this.portraitMenu.visible) return;
@@ -2426,27 +2507,41 @@ export class ArcadeScene extends Phaser.Scene {
         g.lineStyle(1.1, 0x67e8f9, 0.55).strokeCircle(nx, ny, rCore * 1.8);
       }
     }
-    const alive = new Set<number>();
+    const alive = this.aliveEnemyIds;
+    alive.clear();
     this.emplacements.draw(w, this.quality);
     for (const e of w.enemies) {
-      if (e.hp <= 0) continue; alive.add(e.id); let s = this.enemySprites.get(e.id); if (!s) { s = this.add.sprite(e.x, e.y, 'arc-enemies').setDepth(e.ground ? 2 : 8); this.enemySprites.set(e.id, s); } const enemyFrame = e.family === 'alien' ? (w.up ? 0 : 2) + Math.floor(time * 5) % 2 : e.family === 'airship' ? 12 : (w.up && e.family === 'tank' ? 7 : Math.max(0, FAMILY_ORDER.indexOf(e.family))) + (w.up ? 0 : 8); s.setOrigin(.5, .5).setFlipX(false).setPosition(e.x, e.y).setTexture(e.family === 'alien' ? 'arc-ufo' : 'arc-enemies', enemyFrame).setDisplaySize(e.size, e.size).setRotation(w.up && !e.ground && e.family !== 'alien' ? Math.PI : 0);
+      if (e.hp <= 0) continue; alive.add(e.id); let s = this.enemySprites.get(e.id); if (!s) { s = this.add.sprite(e.x, e.y, 'arc-enemies').setDepth(e.ground ? 2 : 8); this.enemySprites.set(e.id, s); }
+      const skipDefaultTex = w.up && (e.navigation?.customAnchor || e.navigation?.anchor !== undefined || e.family === 'boat' || e.family === 'ship' || Boolean(e.submarine));
+      if (!skipDefaultTex) {
+        const enemyTex = e.family === 'alien' ? 'arc-ufo' : 'arc-enemies';
+        const enemyFrame = e.family === 'alien' ? (w.up ? 0 : 2) + Math.floor(time * 5) % 2 : e.family === 'airship' ? 12 : (w.up && e.family === 'tank' ? 7 : Math.max(0, FAMILY_ORDER.indexOf(e.family))) + (w.up ? 0 : 8);
+        if (s.texture.key !== enemyTex || String(s.frame.name) !== String(enemyFrame)) s.setTexture(enemyTex, enemyFrame);
+      }
+      s.setOrigin(.5, .5).setFlipX(false).setPosition(e.x, e.y).setDisplaySize(e.size, e.size).setRotation(w.up && !e.ground && e.family !== 'alien' ? Math.PI : 0);
       if (w.up && e.navigation?.customAnchor) {
         s.setVisible(false);
       } else if (w.up && e.navigation?.anchor !== undefined) {
         const isFortressTower = e.family === 'tower';
         const towerTex = this.textures.exists(PELAGIC_TOWER_CLEAN_SHEET) ? PELAGIC_TOWER_CLEAN_SHEET : TOWER_TEXTURE;
+        const anchorTex = isFortressTower ? towerTex : EMPLACEMENT_TEXTURE;
         const scl = isFortressTower ? 1.8 : 1.3;
-        s.setVisible(true).setTexture(isFortressTower ? towerTex : EMPLACEMENT_TEXTURE, 0).setOrigin(.5, isFortressTower ? .78 : .5).setDisplaySize(e.size * scl, e.size * scl);
+        if (s.texture.key !== anchorTex || String(s.frame.name) !== '0') s.setTexture(anchorTex, 0);
+        s.setVisible(true).setOrigin(.5, isFortressTower ? .78 : .5).setDisplaySize(e.size * scl, e.size * scl);
       }
       s.clearTint().setTintMode(Phaser.TintModes.MULTIPLY).setAlpha(1);
       if (w.up && (e.family === 'boat' || e.family === 'ship')) {
+        const hullTex = 'arc-wet-hull-' + (e.family === 'boat' ? 4 : 5);
         const hullFrame = Math.floor(time * 10 + e.id * 1.7) % 6;
         const hull = resolveHullVisualTransform(e, time);
-        s.setTexture('arc-wet-hull-' + (e.family === 'boat' ? 4 : 5), hullFrame).setPosition(hull.drawX, hull.drawY).setDisplaySize(hull.displayW, hull.displayH).setRotation(hull.rotation).setDepth(hull.depth);
+        if (s.texture.key !== hullTex || String(s.frame.name) !== String(hullFrame)) s.setTexture(hullTex, hullFrame);
+        s.setPosition(hull.drawX, hull.drawY).setDisplaySize(hull.displayW, hull.displayH).setRotation(hull.rotation).setDepth(hull.depth);
       }
       if (e.submarine) {
         const subTex = this.textures.exists(PELAGIC_SUB_CLEAN_SHEET) ? PELAGIC_SUB_CLEAN_SHEET : SUB_ART;
-        s.setTexture(subTex, e.submarine.phase === 'hold' ? 1 : 0).setOrigin(.5, .57).setDisplaySize(e.size * 1.06, e.size * 1.06).setRotation(0).setFlipX(e.submarine.side > 0).setAlpha(e.submarine.exposure).setDepth(2);
+        const subFrame = e.submarine.phase === 'hold' ? 1 : 0;
+        if (s.texture.key !== subTex || String(s.frame.name) !== String(subFrame)) s.setTexture(subTex, subFrame);
+        s.setOrigin(.5, .57).setDisplaySize(e.size * 1.06, e.size * 1.06).setRotation(0).setFlipX(e.submarine.side > 0).setAlpha(e.submarine.exposure).setDepth(2);
         const subVis = clamp(e.submarine.exposure / .72, 0, 1);
         if (subVis < 1) {
           const rC = Math.round(58 + 197 * subVis), gC = Math.round(148 + 107 * subVis), bC = Math.round(202 + 53 * subVis);
@@ -2478,19 +2573,28 @@ export class ArcadeScene extends Phaser.Scene {
       }
     }
     this.renderBoss(g);
+    const playerArt = w.up ? pelagicShotSize(w.weapons.weaponLevel) : rivetShotPresentation(w.weapons.weaponLevel);
+    const hasEnemyMissileTex = this.textures.exists(PELAGIC_ENEMY_MISSILE_SHEET);
     for (let i = 0; i < w.bullets.length; i++) {
-      const b = w.bullets[i], s = this.bulletSprites[i]; s.setVisible(b.active); if (!b.active) continue;
-      if (b.enemy && b.enemyMissile && this.textures.exists(PELAGIC_ENEMY_MISSILE_SHEET)) {
-        s.clearTint().setTexture(PELAGIC_ENEMY_MISSILE_SHEET, Math.floor(b.age * 18) % 4).setDisplaySize(18, 28).setRotation(Math.atan2(b.vy, b.vx) - Math.PI / 2);
+      const b = w.bullets[i], s = this.bulletSprites[i];
+      if (!b.active) { if (s.visible) s.setVisible(false); continue; }
+      if (!s.visible) s.setVisible(true);
+      if (b.enemy && b.enemyMissile && hasEnemyMissileTex) {
+        const f = Math.floor(b.age * 18) % 4;
+        if (s.texture.key !== PELAGIC_ENEMY_MISSILE_SHEET || String(s.frame.name) !== String(f)) s.setTexture(PELAGIC_ENEMY_MISSILE_SHEET, f);
+        s.clearTint().setDisplaySize(18, 28).setRotation(Math.atan2(b.vy, b.vx) - Math.PI / 2);
       } else if (b.enemy) {
-        s.clearTint().setTexture('arc-orb-' + b.color).setDisplaySize(b.radius * 2 + 2.0, b.radius * 2 + 2.0).setRotation(0);
+        const orbTex = 'arc-orb-' + b.color;
+        if (s.texture.key !== orbTex) s.setTexture(orbTex);
+        s.clearTint().setDisplaySize(b.radius * 2 + 2.0, b.radius * 2 + 2.0).setRotation(0);
       } else if (b.charged) {
         const isFull = b.chargeTier === 'full';
-        const art = w.up ? pelagicShotSize(w.weapons.weaponLevel) : rivetShotPresentation(w.weapons.weaponLevel);
-        const bw = art.width * Math.max(1.25, b.scale * 0.9);
-        const bh = art.height * Math.max(1.4, b.scale * 1.05);
-        s.setTexture(w.up ? 'pelagic-plasma' : 'arc-red', w.up ? undefined : Math.floor(b.age * 20) % 8)
-          .setDisplaySize(bw, bh)
+        const bw = playerArt.width * Math.max(1.25, b.scale * 0.9);
+        const bh = playerArt.height * Math.max(1.4, b.scale * 1.05);
+        const chTex = w.up ? 'pelagic-plasma' : 'arc-red';
+        const chFrame = w.up ? undefined : Math.floor(b.age * 20) % 8;
+        if (s.texture.key !== chTex || (chFrame !== undefined && String(s.frame.name) !== String(chFrame))) s.setTexture(chTex, chFrame);
+        s.setDisplaySize(bw, bh)
           .setTint(isFull ? 0xfef08a : 0x67e8f9)
           .setRotation(Math.atan2(b.vy, b.vx) + Math.PI / 2);
         const spd = Math.max(1, Math.hypot(b.vx, b.vy));
@@ -2500,8 +2604,10 @@ export class ArcadeScene extends Phaser.Scene {
         g.fillStyle(isFull ? 0xfef08a : 0xa5f3fc, 0.72).fillCircle(b.x, b.y, b.radius * 0.78);
         g.fillStyle(0xffffff, 0.92).fillCircle(b.x, b.y, b.radius * 0.38);
       } else {
-        const art = w.up ? pelagicShotSize(w.weapons.weaponLevel) : rivetShotPresentation(w.weapons.weaponLevel);
-        s.clearTint().setTexture(b.missile ? 'arc-missile' : w.up ? 'pelagic-plasma' : 'arc-red', w.up && !b.missile ? undefined : Math.floor(b.age * 20) % (b.missile ? 4 : 8)).setDisplaySize(b.missile ? 17 : art.width, b.missile ? 25 : art.height).setRotation(Math.atan2(b.vy, b.vx) + Math.PI / 2);
+        const bTex = b.missile ? 'arc-missile' : w.up ? 'pelagic-plasma' : 'arc-red';
+        const bFrame = w.up && !b.missile ? undefined : Math.floor(b.age * 20) % (b.missile ? 4 : 8);
+        if (s.texture.key !== bTex || (bFrame !== undefined && String(s.frame.name) !== String(bFrame))) s.setTexture(bTex, bFrame);
+        s.clearTint().setDisplaySize(b.missile ? 17 : playerArt.width, b.missile ? 25 : playerArt.height).setRotation(Math.atan2(b.vy, b.vx) + Math.PI / 2);
         if (!b.missile && w.pilotId !== 'nolan') s.setTint(w.pilotContract.projectileTint);
       }
       s.setPosition(b.x, b.y);
@@ -2605,7 +2711,8 @@ export class ArcadeScene extends Phaser.Scene {
     }
   }
   private renderBoss(g: Phaser.GameObjects.Graphics): void {
-    const w = this.world!, b = w.boss, live = new Set<number>();
+    const w = this.world!, b = w.boss, live = this.liveBossPartIds;
+    live.clear();
     if (b?.sub) {
       this.bossSprite.setVisible(false);
       for (const [id, s] of this.partSprites) { s.destroy(); this.partSprites.delete(id); }
@@ -2636,7 +2743,8 @@ export class ArcadeScene extends Phaser.Scene {
     } for (const [id, s] of this.partSprites) if (!live.has(id)) { s.destroy(); this.partSprites.delete(id); }
   }
   private renderCargo(): void {
-    const w = this.world!, ids = new Set<number>();
+    const w = this.world!, ids = this.liveCargoIds;
+    ids.clear();
     for (const c of w.cargo) {
       ids.add(c.id);
       let sprite = this.cargoSprites.get(c.id);
@@ -2780,9 +2888,19 @@ export class ArcadeScene extends Phaser.Scene {
       return;
     }
     this.mobileFlightHud.hide();
-    this.footerScore.setVisible(!w.up || this.portraitUpActive).setText(`PONTOS ${w.score}`)
-      .setFontSize(this.portraitUpActive ? 8 : 9).setScale(1)
+    const scoreVis = !w.up || this.portraitUpActive;
+    this.footerScore.setVisible(scoreVis).setScale(1)
       .setPosition(this.portraitUpActive ? 376 : 748, this.portraitUpActive ? getCombatVirtualSize(this).h - 6 : 424);
+    const scoreFont = this.portraitUpActive ? 8 : 9;
+    if (scoreFont !== this.lastFooterFont) {
+      this.footerScore.setFontSize(scoreFont);
+      this.lastFooterFont = scoreFont;
+    }
+    const scoreStr = `PONTOS ${w.score}`;
+    if (scoreStr !== this.lastFooterScore) {
+      this.footerScore.setText(scoreStr);
+      this.lastFooterScore = scoreStr;
+    }
     if (w.up) {
       const cpVisible = this.clock < this.checkpointBannerUntil && this.screen === 'play';
       if (this.portraitUpActive) {
@@ -2793,14 +2911,28 @@ export class ArcadeScene extends Phaser.Scene {
         g.lineStyle(1.3, 0x26dcff, .85).strokeRoundedRect(4, 3, 376, 26, 7);
         this.lifeIcons.forEach((sprite, i) => sprite.setPosition(16 + i * 13.5, 16).setDisplaySize(12.5, 15).setVisible(w.survivalRule !== 'hull-v1').setAlpha(i < w.lives ? 1 : .20));
         if (w.survivalRule === 'hull-v1') drawHullSegments(g, 12, 10, 64, 12, w.hull, w.hullMaximum);
-        this.pelagicLevel.setFontSize(9.5).setOrigin(0, .5).setPosition(90, 16).setText(`NV ${w.weapons.weaponLevel}`).setVisible(true);
+        if (this.lastPelagicLevelFont !== 9.5) {
+          this.pelagicLevel.setFontSize(9.5);
+          this.lastPelagicLevelFont = 9.5;
+        }
+        const lvlStr = `NV ${w.weapons.weaponLevel}`;
+        if (lvlStr !== this.lastPelagicLevelText) {
+          this.pelagicLevel.setText(lvlStr);
+          this.lastPelagicLevelText = lvlStr;
+        }
+        this.pelagicLevel.setOrigin(0, .5).setPosition(90, 16).setVisible(true);
         for (let i = 0; i < 5; i++) {
           g.fillStyle(i < w.weapons.weaponLevel ? 0x21e3f4 : 0x103d68).fillRoundedRect(122 + i * 11, 11.5, 9, 8.5, 2);
           g.lineStyle(.6, 0x83edff, .7).strokeRoundedRect(122 + i * 11, 11.5, 9, 8.5, 2);
         }
         const sx = 188;
         g.fillStyle(0xffdc39).beginPath().moveTo(sx + 2, 8).lineTo(sx - 3, 16).lineTo(sx, 16).lineTo(sx - 2, 24).lineTo(sx + 5, 14).lineTo(sx + 1, 14).closePath().fillPath();
-        this.pelagicSpecialText.setPosition(sx + 9, 16).setText(`${w.weapons.specialCharges}`).setVisible(true);
+        const specStr = `${w.weapons.specialCharges}`;
+        if (specStr !== this.lastPelagicSpecialText) {
+          this.pelagicSpecialText.setText(specStr);
+          this.lastPelagicSpecialText = specStr;
+        }
+        this.pelagicSpecialText.setPosition(sx + 9, 16).setVisible(true);
         const cPort = w.chargedShot.snapshot();
         if (cPort.ratio > 0) {
           g.fillStyle(0x051936, 0.9).fillRoundedRect(122, 23, 53, 4, 2);
@@ -2820,7 +2952,16 @@ export class ArcadeScene extends Phaser.Scene {
           const ratio = totals.max > 0 ? clamp(totals.current / totals.max, 0, 1) : 0;
           g.fillStyle(0x051936, .88).fillRoundedRect(8, 32, 368, 12, 4);
           if (ratio > 0) g.fillStyle(ratio < .25 ? 0xff6e54 : 0xffd84d, .95).fillRoundedRect(12, 35, 360 * ratio, 6, 2);
-          this.bossHudLabel.setPosition(16, 38).setFontSize(8).setText(`${sec.index + 1}/5 ${sec.name}`).setVisible(true);
+          if (this.lastBossHudFont !== 8) {
+            this.bossHudLabel.setFontSize(8);
+            this.lastBossHudFont = 8;
+          }
+          const bossStr = `${sec.index + 1}/5 ${sec.name}`;
+          if (bossStr !== this.lastBossHudText) {
+            this.bossHudLabel.setText(bossStr);
+            this.lastBossHudText = bossStr;
+          }
+          this.bossHudLabel.setPosition(16, 38).setVisible(true);
         } else {
           this.bossHudLabel.setPosition(16, 38).setVisible(false);
         }
@@ -3212,18 +3353,28 @@ export class ArcadeScene extends Phaser.Scene {
     const insets = { top: safe.top / scale, right: safe.right / scale, bottom: safe.bottom / scale, left: safe.left / scale };
     this.touchController.configure(globalSave.getSettings().touch, insets, portH, true, portrait ? { scale, offsetY: 0, offsetX } : undefined);
     this.syncPauseButton();
+    this.touchOverlayDirty = true;
     this.renderTouchOverlay();
   }
   private renderTouchOverlay(): void {
     if (!this.touchGfx) return;
     if (!this.touchShown) {
-      this.touchGfx.clear();
+      if (this.lastTouchOverlaySig !== 'hidden') {
+        this.touchGfx.clear();
+        this.lastTouchOverlaySig = 'hidden';
+      }
       return;
     }
     const g = this.touchGfx;
     const l = this.touchController.getLayout();
     const out = this.touchController.peek();
     const op = l.opacity;
+    const hasSpecial = (this.world?.weapons.specialCharges ?? 1) > 0;
+    const chargeRatio = l.charge ? (this.world?.chargedShot.ratio ?? 0) : 0;
+    const touchSig = `${out.stickActive ? 1 : 0}|${Math.round(out.stickOriginX)}|${Math.round(out.stickOriginY)}|${Math.round(out.knobX)}|${Math.round(out.knobY)}|${out.specialPressed ? 1 : 0}|${hasSpecial ? 1 : 0}|${out.chargePressed ? 1 : 0}|${Math.round(chargeRatio * 40)}|${Math.round(op * 100)}|${Math.round(l.scale * 100)}|${Math.round(l.special.x)}|${Math.round(l.special.y)}|${l.charge ? Math.round(l.charge.x) : -1}`;
+    if (!this.touchOverlayDirty && touchSig === this.lastTouchOverlaySig) return;
+    this.touchOverlayDirty = false;
+    this.lastTouchOverlaySig = touchSig;
     g.clear();
 
     // Floating movement feedback appears where the finger is, without a fixed corner pad.
@@ -3248,23 +3399,31 @@ export class ArcadeScene extends Phaser.Scene {
 
     // 3. Dedicated SPECIAL button (guarded against accidental drags; dims gracefully at 0 charges)
     const sx = l.special.x, sy = l.special.y, sr = l.special.radius;
-    const hasSpecial = (this.world?.weapons.specialCharges ?? 1) > 0;
     const specColor = hasSpecial ? 0xff7e60 : 0x768ea6;
     g.fillStyle(out.specialPressed ? 0xff6e52 : 0x261018, op * (out.specialPressed ? 0.76 : 0.36)).fillCircle(sx, sy, sr);
     g.lineStyle(1.8, specColor, Math.min(0.96, op * (hasSpecial ? 1.2 : 0.6))).strokeCircle(sx, sy, sr);
-    this.touchSpecialText.setPosition(sx, sy).setFontSize(`${Math.round(9.5 * l.scale)}px`).setAlpha(Math.min(1, hasSpecial ? op + 0.28 : op * 0.7)).setScale(out.specialPressed ? 0.92 : 1);
+    const specFont = `${Math.round(9.5 * l.scale)}px`;
+    if (specFont !== this.lastTouchSpecialFont) {
+      this.touchSpecialText.setFontSize(specFont);
+      this.lastTouchSpecialFont = specFont;
+    }
+    this.touchSpecialText.setPosition(sx, sy).setAlpha(Math.min(1, hasSpecial ? op + 0.28 : op * 0.7)).setScale(out.specialPressed ? 0.92 : 1);
 
     // 4. Optional ergonomic CHARGED SHOT button (shown when touch layout provides room)
     if (l.charge) {
       const cx = l.charge.x, cy = l.charge.y, cr = l.charge.radius;
-      const chargeRatio = this.world?.chargedShot.ratio ?? 0;
       const activeCol = chargeRatio >= 0.99 ? 0xfef08a : 0x38bdf8;
       g.fillStyle(out.chargePressed ? 0x0ea5e9 : 0x082246, op * (out.chargePressed ? 0.75 : 0.38)).fillCircle(cx, cy, cr);
       g.lineStyle(1.7, activeCol, Math.min(0.96, op * (out.chargePressed ? 1.5 : 1.1))).strokeCircle(cx, cy, cr);
       if (chargeRatio > 0) {
         g.lineStyle(2.4, activeCol, 0.95).beginPath().arc(cx, cy, cr - 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * chargeRatio, false).strokePath();
       }
-      this.touchChargeText.setVisible(true).setPosition(cx, cy).setFontSize(`${Math.round(8.2 * l.scale)}px`).setAlpha(Math.min(1, op + 0.28)).setScale(out.chargePressed ? 0.92 : 1);
+      const chargeFont = `${Math.round(8.2 * l.scale)}px`;
+      if (chargeFont !== this.lastTouchChargeFont) {
+        this.touchChargeText.setFontSize(chargeFont);
+        this.lastTouchChargeFont = chargeFont;
+      }
+      this.touchChargeText.setVisible(true).setPosition(cx, cy).setAlpha(Math.min(1, op + 0.28)).setScale(out.chargePressed ? 0.92 : 1);
     } else {
       this.touchChargeText.setVisible(false);
     }
@@ -3297,33 +3456,34 @@ export class ArcadeScene extends Phaser.Scene {
       this.touchDeviceActive = true;
       this.setTouchVisible(true);
       this.touchController.onPointerDown(p.id, q.x, q.y);
-      this.renderTouchOverlay();
+      this.touchOverlayDirty = true;
     });
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
       if (!p.wasTouch || this.screen !== 'play') return;
       const q = this.cameras.main.getWorldPoint(p.x, p.y);
       this.touchController.onPointerMove(p.id, q.x, q.y);
-      this.renderTouchOverlay();
+      this.touchOverlayDirty = true;
     });
     const release = (p: Phaser.Input.Pointer) => {
       this.touchController.onPointerUp(p.id);
-      this.renderTouchOverlay();
+      this.touchOverlayDirty = true;
     };
     this.input.on('pointerup', release);
     this.input.on('pointerupoutside', release);
     this.input.on('pointercancel', release);
     this.input.on('gameout', () => {
       this.touchController.clearAll();
-      this.renderTouchOverlay();
+      this.touchOverlayDirty = true;
     });
   }
   private setTouchVisible(visible: boolean): void {
     const hasTouchCap = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0 || this.touchDeviceActive);
     const show = visible && !this.isMobileLandscape() && (hasTouchCap || this.screen === 'touch-settings');
     this.touchShown = show;
+    this.touchOverlayDirty = true;
     this.touchNodes.forEach(n => n.setVisible(show));
     if (show) this.refreshTouchLayout();
-    else { this.touchGfx?.clear(); this.syncPauseButton(); }
+    else { this.touchGfx?.clear(); this.lastTouchOverlaySig = 'hidden'; this.syncPauseButton(); }
   }
 
   // ---- Runtime adapters consumed exclusively when dev tooling attaches (zero prod UI) ----
@@ -3457,6 +3617,10 @@ export class ArcadeScene extends Phaser.Scene {
   refreshHudVisual(): void {
     if (!this.world) return;
     this.lastHud = '';
+    this.lastFooterScore = '';
+    this.lastPelagicLevelText = '';
+    this.lastPelagicSpecialText = '';
+    this.lastBossHudText = '';
     this.pelagicAssistBadge?.setVisible(!!this.world.up && this.world.isAssisted);
     this.renderHud();
   }

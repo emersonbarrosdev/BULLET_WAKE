@@ -13,12 +13,13 @@ type IconName =
   | 'login'
   | 'logout'
   | 'chevron'
-  | 'chevronLeft'
   | 'pilots'
   | 'shield'
   | 'check'
   | 'close'
-  | 'grid';
+  | 'grid'
+  | 'coin'
+  | 'gem';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const ICON_PATHS: Record<IconName, string> = {
@@ -33,12 +34,13 @@ const ICON_PATHS: Record<IconName, string> = {
   login: '<path d="M14 4h4.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H14" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M10 8l4 4-4 4M4 12h10" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
   logout: '<path d="M10 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H10" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M15 8l4 4-4 4M19 12H9" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
   chevron: '<path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
-  chevronLeft: '<path d="m15 6-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
   pilots: '<path d="M12 3 15 11l6 3.5-1 2.2-5-1.2V19l2 1.5v1.3L12 20.6l-5 1.2v-1.3L9 19v-3.5L4 16.7l-1-2.2L9 11 12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
   shield: '<path d="M12 3 4.5 6.2v5.4c0 4.6 3.1 8.4 7.5 9.6 4.4-1.2 7.5-5 7.5-9.6V6.2L12 3Z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="m9 12.2 2 2 4.2-4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
   check: '<path d="m5 12.5 4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>',
   close: '<path d="M6 6 18 18M18 6 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
   grid: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.8"/>',
+  coin: '<circle cx="12" cy="12" r="8.5" fill="#ffd447" fill-opacity="0.22" stroke="#ffe57d" stroke-width="2"/><path d="M12 7.5v9M9.5 10c0-1.1 1.1-1.8 2.5-1.8s2.5.7 2.5 1.8c0 1.2-1 1.6-2.5 2s-2.5.8-2.5 2c0 1.1 1.1 1.8 2.5 1.8s2.5-.7 2.5-1.8" stroke="#ffe57d" stroke-width="1.7" stroke-linecap="round"/>',
+  gem: '<path d="M7 4.5h10l4 5.2-9 10.3-9-10.3 4-5.2Z" fill="#5ce6ff" fill-opacity="0.25" stroke="#78eeff" stroke-width="1.9" stroke-linejoin="round"/><path d="M3 9.7h18M7 4.5l2.2 5.2L12 20l2.8-10.3L17 4.5" stroke="#aef6ff" stroke-width="1.3" stroke-linejoin="round"/>',
 };
 
 const DIALOG_SCREENS = new Set(['pause', 'defeat', 'result', 'confirm-exit', 'controller-orientation', 'controller-lost']);
@@ -66,15 +68,17 @@ export interface HomeStageItem {
 export interface DashboardOptions {
   readonly stages: readonly HomeStageItem[];
   readonly activeStageIndex: number;
+  readonly flybys: string[][];
   readonly pilotName: string;
   readonly shipName: string;
   readonly avatarImage: string;
   readonly accountName: string;
   readonly accountLinked: boolean;
   readonly credits: number;
+  readonly gems: number;
   readonly onSelectStage: (index: number) => void;
   readonly onOpenAllStages: () => void;
-  readonly onLaunchMission: () => void;
+  readonly onLaunchMission: (stageIndex: number) => void;
   readonly onPilots: () => void;
   readonly onProfile: () => void;
   readonly onSettings: () => void;
@@ -147,6 +151,7 @@ export class PortraitMenu {
   private body?: HTMLElement;
   private footer?: HTMLElement;
   private container?: HTMLElement;
+  private countdownEl?: HTMLElement;
   private screen = '';
   private restoreScroll = 0;
   private restoreFocus = -1;
@@ -155,13 +160,19 @@ export class PortraitMenu {
   constructor(private readonly onConfirm?: () => void) {}
   get visible(): boolean { return !!this.root; }
 
-  begin(screen: string, title: string, subtitle = '', opts: { compactHeader?: boolean; headerBadge?: string; footerRow?: boolean } = {}): void {
+  begin(
+    screen: string,
+    title: string,
+    subtitle = '',
+    opts: { compactHeader?: boolean; headerBadge?: string; footerRow?: boolean; liveBackdrop?: boolean } = {},
+  ): void {
     this.restoreScroll = this.screen === screen ? this.scroll?.scrollTop ?? 0 : 0;
     this.restoreFocus = this.screen === screen ? [...this.root?.querySelectorAll('button:not(:disabled),input') ?? []].indexOf(document.activeElement!) : -1;
     this.hide();
     this.screen = screen;
     const isDialog = DIALOG_SCREENS.has(screen);
-    const root = this.el('section', `bw-mobile bw-mobile-screen-${screen}${isDialog ? ' bw-mobile-is-dialog' : ''}`);
+    const liveCls = opts.liveBackdrop ? ' bw-live-backdrop' : '';
+    const root = this.el('section', `bw-mobile bw-mobile-screen-${screen}${isDialog ? ' bw-mobile-is-dialog' : ''}${liveCls}`);
     root.dataset.screen = screen;
     root.setAttribute('aria-label', title);
     if (isDialog) {
@@ -200,7 +211,30 @@ export class PortraitMenu {
     window.clearTimeout(this.activationTimer); this.activationTimer = undefined;
     this.root?.remove(); this.root = this.body = this.footer = this.scroll = this.container = undefined;
   }
-  destroy(): void { this.hide(); this.images.clear(); }
+  hideCountdown(): void {
+    this.countdownEl?.remove();
+    this.countdownEl = undefined;
+  }
+  showCountdown(stepText: string, subtitle: string, ready = false): void {
+    if (!this.countdownEl) {
+      const el = this.el('div', 'bw-countdown-overlay');
+      el.setAttribute('aria-live', 'assertive');
+      el.append(this.el('p', 'bw-countdown-sub'), this.el('div', 'bw-countdown-num'));
+      document.body.append(el);
+      this.countdownEl = el;
+    }
+    const sub = this.countdownEl.querySelector<HTMLElement>('.bw-countdown-sub')!;
+    const num = this.countdownEl.querySelector<HTMLElement>('.bw-countdown-num')!;
+    if (sub.textContent !== subtitle) sub.textContent = subtitle;
+    if (num.textContent !== stepText) {
+      num.textContent = stepText;
+      num.className = `bw-countdown-num${ready ? ' is-ready' : ''}`;
+      // Trigger crisp pop animation on each step change
+      void num.offsetWidth;
+      num.classList.add('is-pop');
+    }
+  }
+  destroy(): void { this.hide(); this.hideCountdown(); this.images.clear(); }
 
   private el<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text?: string): HTMLElementTagNameMap[K] {
     const node = document.createElement(tag); node.className = className;
@@ -225,24 +259,11 @@ export class PortraitMenu {
   }
   heading(text: string): void { this.target()?.append(this.el('h2', 'bw-mobile-section-title', text)); }
 
-  flybys(aircraft: string[][]): void {
-    const layer = this.el('div', 'bw-mobile-flybys'); layer.setAttribute('aria-hidden', 'true');
-    aircraft.forEach((frames, i) => {
-      const flight = this.el('span', `bw-mobile-flyby flyby-${i}`);
-      frames.forEach((src, index) => {
-        const img = this.el('img', 'bw-mobile-wingman-frame'); img.src = src; img.alt = ''; img.draggable = false;
-        img.style.animationDelay = `${-index / 16}s`; flight.append(img);
-      });
-      layer.append(flight);
-    });
-    this.root?.prepend(layer);
-  }
-
   homeDashboard(opts: DashboardOptions): void {
     const shell = this.el('div', 'bw-dash');
-    const stage = opts.stages[opts.activeStageIndex] ?? opts.stages[0];
+    let currentIdx = Math.max(0, Math.min(opts.stages.length - 1, opts.activeStageIndex));
 
-    // Top bar: compact HD logo on left, profile chip + settings gear on right.
+    // Row 1: Top bar — Logo left, Credits (star) + Controls (gamepad) + Settings (gear) right.
     const topbar = this.el('header', 'bw-dash-topbar');
     const brand = this.el('div', 'bw-dash-logo');
     const logoImg = this.el('img');
@@ -251,163 +272,233 @@ export class PortraitMenu {
     brand.append(logoImg);
 
     const tools = this.el('div', 'bw-dash-tools');
+    const iconBtns: Array<{ icon: IconName; label: string; cls: string; action: () => void }> = [
+      { icon: 'credits', label: 'Créditos', cls: 'bw-dash-icon-btn bw-dash-credits', action: opts.onCredits },
+      { icon: 'controls', label: 'Controles', cls: 'bw-dash-icon-btn bw-dash-controls', action: opts.onControls },
+      { icon: 'gear', label: 'Configurações', cls: 'bw-dash-icon-btn bw-dash-gear', action: opts.onSettings },
+    ];
+    for (const item of iconBtns) {
+      const btn = this.el('button', item.cls);
+      btn.type = 'button';
+      btn.setAttribute('aria-label', item.label);
+      btn.append(this.icon(item.icon, 'bw-ico bw-ico-gear'));
+      this.bindAction(btn, item.action);
+      tools.append(btn);
+    }
+    topbar.append(brand, tools);
+
+    // Row 2: Profile & Currencies strip (Profile + active pilot on left; Credits + Gems pills on right).
+    const statusBar = this.el('div', 'bw-dash-status-bar');
     const profileBtn = this.el('button', 'bw-dash-profile');
     profileBtn.type = 'button';
-    profileBtn.setAttribute('aria-label', `Perfil: ${opts.accountName}, ${opts.credits} créditos`);
+    profileBtn.setAttribute('aria-label', `Perfil: ${opts.accountName}, piloto ${opts.pilotName}`);
     const avatar = this.el('img', 'bw-dash-avatar');
     avatar.src = opts.avatarImage; avatar.alt = ''; avatar.draggable = false;
     const pInfo = this.el('span', 'bw-dash-profile-copy');
     pInfo.append(
       this.el('strong', '', opts.accountLinked ? opts.accountName : 'Convidado'),
-      this.el('small', '', `${opts.credits} CR`),
+      this.el('small', '', `${opts.pilotName} · ${opts.shipName}`),
     );
     profileBtn.append(avatar, pInfo);
     this.bindAction(profileBtn, opts.onProfile);
 
-    const gearBtn = this.el('button', 'bw-dash-gear');
-    gearBtn.type = 'button';
-    gearBtn.setAttribute('aria-label', 'Configurações');
-    gearBtn.append(this.icon('gear', 'bw-ico bw-ico-gear'));
-    this.bindAction(gearBtn, opts.onSettings);
+    const currencies = this.el('div', 'bw-dash-currencies');
+    const crPill = this.el('span', 'bw-currency-pill cr');
+    crPill.setAttribute('aria-label', `${opts.credits} créditos`);
+    crPill.append(this.icon('coin', 'bw-ico bw-ico-curr'), this.el('strong', '', `${opts.credits}`));
+    const gemPill = this.el('span', 'bw-currency-pill gem');
+    gemPill.setAttribute('aria-label', `${opts.gems} gemas`);
+    gemPill.append(this.icon('gem', 'bw-ico bw-ico-curr'), this.el('strong', '', `${opts.gems}`));
+    currencies.append(crPill, gemPill);
+    statusBar.append(profileBtn, currencies);
 
-    tools.append(profileBtn, gearBtn);
-    topbar.append(brand, tools);
+    // Row 3: Dedicated aerial corridor where flyby planes pass exclusively.
+    const skyLane = this.el('div', 'bw-dash-sky-lane');
+    skyLane.setAttribute('aria-hidden', 'true');
+    opts.flybys.forEach((frames, i) => {
+      const flight = this.el('span', `bw-mobile-flyby flyby-${i}`);
+      frames.forEach((src, index) => {
+        const img = this.el('img', 'bw-mobile-wingman-frame'); img.src = src; img.alt = ''; img.draggable = false;
+        img.style.animationDelay = `${-index / 16}s`; flight.append(img);
+      });
+      skyLane.append(flight);
+    });
 
-    // Center: Swipeable Stage Carousel (replaces giant ship showcase & standalone missions screen).
+    // Row 4: Smooth Swipe Stage Carousel (narrower, taller, zero arrows, dots only).
     const carousel = this.el('section', 'bw-stage-carousel');
     carousel.setAttribute('aria-label', 'Fases da campanha');
 
-    const card = this.el('button', `bw-stage-hero-card${stage.unlocked ? '' : ' is-locked'}`);
-    card.type = 'button';
-    card.setAttribute('aria-label', `${stage.badge} ${stage.name}${stage.unlocked ? '' : ', bloqueada'}. Toque para ver todas as fases`);
+    const viewport = this.el('div', 'bw-stage-viewport');
+    const track = this.el('div', 'bw-stage-track');
 
-    const media = this.el('div', 'bw-stage-hero-media');
-    const img = this.el('img', 'bw-stage-hero-img');
-    img.src = stage.image; img.alt = stage.name; img.draggable = false;
-    media.append(img);
+    opts.stages.forEach((stage) => {
+      const slide = this.el('div', 'bw-stage-slide');
+      const card = this.el('button', `bw-stage-hero-card${stage.unlocked ? '' : ' is-locked'}`);
+      card.type = 'button';
+      card.setAttribute('aria-label', `${stage.badge} ${stage.name}${stage.unlocked ? '' : ', bloqueada'}. Toque para ver todas as fases`);
 
-    const topTags = this.el('div', 'bw-stage-hero-tags');
-    topTags.append(
-      this.el('span', `bw-stage-badge${stage.unlocked ? '' : ' locked'}`, stage.badge),
-      this.el('span', 'bw-stage-mode-pill', `${stage.perspectiveLabel} · ${stage.durationLabel}`),
-    );
-    media.append(topTags);
+      const media = this.el('div', 'bw-stage-hero-media');
+      const img = this.el('img', 'bw-stage-hero-img');
+      img.src = stage.image; img.alt = stage.name; img.draggable = false;
+      media.append(img);
 
-    if (!stage.unlocked) {
-      const centerLock = this.el('div', 'bw-center-lock');
-      centerLock.append(this.icon('lock', 'bw-ico bw-ico-lock-lg'));
-      media.append(centerLock);
-    }
+      const topTags = this.el('div', 'bw-stage-hero-tags');
+      topTags.append(
+        this.el('span', `bw-stage-badge${stage.unlocked ? '' : ' locked'}`, stage.badge),
+        this.el('span', 'bw-stage-mode-pill', `${stage.perspectiveLabel} · ${stage.durationLabel}`),
+      );
+      media.append(topTags);
 
-    const body = this.el('div', 'bw-stage-hero-body');
-    const titleRow = this.el('div', 'bw-stage-hero-title-row');
-    titleRow.append(this.el('h2', '', stage.name));
-    const allTag = this.el('span', 'bw-stage-all-hint');
-    allTag.append(this.icon('grid', 'bw-ico bw-ico-xs'), this.el('span', '', 'Fases'));
-    titleRow.append(allTag);
+      if (!stage.unlocked) {
+        const centerLock = this.el('div', 'bw-center-lock');
+        centerLock.append(this.icon('lock', 'bw-ico bw-ico-lock-lg'));
+        media.append(centerLock);
+      }
 
-    body.append(
-      titleRow,
-      this.el('p', 'bw-stage-hero-summary', stage.summary),
-    );
-    const metaRow = this.el('div', 'bw-stage-hero-meta');
-    metaRow.append(
-      this.el('span', `bw-stage-record${stage.unlocked ? '' : ' locked'}`, stage.unlocked ? stage.recordLabel : stage.unlockHint),
-      this.el('span', 'bw-stage-pilot-tag', `${opts.pilotName} · ${opts.shipName}`),
-    );
-    body.append(metaRow);
+      const body = this.el('div', 'bw-stage-hero-body');
+      const titleRow = this.el('div', 'bw-stage-hero-title-row');
+      titleRow.append(this.el('h2', '', stage.name));
+      const allTag = this.el('span', 'bw-stage-all-hint');
+      allTag.append(this.icon('grid', 'bw-ico bw-ico-xs'), this.el('span', '', 'Fases'));
+      titleRow.append(allTag);
 
-    card.append(media, body);
+      body.append(titleRow, this.el('p', 'bw-stage-hero-summary', stage.summary));
+      const metaRow = this.el('div', 'bw-stage-hero-meta');
+      metaRow.append(
+        this.el('span', `bw-stage-record${stage.unlocked ? '' : ' locked'}`, stage.unlocked ? stage.recordLabel : stage.unlockHint),
+      );
+      body.append(metaRow);
 
-    // Support horizontal swipe on the stage card to switch phases + tap to open all-stages modal.
-    let swipeStart: { x: number; y: number } | undefined;
-    let swiped = false;
-    card.addEventListener('pointerdown', e => {
-      if (e.button !== 0) return;
-      swipeStart = { x: e.clientX, y: e.clientY };
-      swiped = false;
-      card.classList.add('is-pressed');
+      card.append(media, body);
+      slide.append(card);
+      track.append(slide);
     });
-    card.addEventListener('pointermove', e => {
-      if (!swipeStart) return;
+    viewport.append(track);
+
+    // Pagination dots ONLY (no left/right arrow buttons).
+    const dotsWrap = this.el('div', 'bw-stage-dots');
+    dotsWrap.setAttribute('role', 'tablist');
+    dotsWrap.setAttribute('aria-label', 'Selecionar fase');
+    const dotButtons: HTMLButtonElement[] = [];
+
+    // Primary Launch CTA + 3-Tile Bottom Dock (Pilotos, Hangar, Loja highlighted!).
+    const actions = this.el('div', 'bw-dash-actions');
+    const playBtn = this.el('button', 'bw-mobile-button primary bw-dash-play');
+    playBtn.type = 'button';
+
+    const syncStageUI = (instant = false) => {
+      const stage = opts.stages[currentIdx] ?? opts.stages[0];
+      track.style.transition = instant ? 'none' : 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)';
+      track.style.transform = `translate3d(${-currentIdx * 100}%, 0, 0)`;
+      dotButtons.forEach((btn, idx) => {
+        btn.classList.toggle('active', idx === currentIdx);
+        btn.setAttribute('aria-selected', String(idx === currentIdx));
+      });
+      playBtn.disabled = !stage.unlocked;
+      playBtn.className = `bw-mobile-button ${stage.unlocked ? 'primary' : 'secondary'} bw-dash-play`;
+      playBtn.replaceChildren(
+        this.icon(stage.unlocked ? 'play' : 'lock', 'bw-ico bw-ico-play'),
+        this.el('span', '', 'Iniciar missão'),
+      );
+    };
+
+    const goToStage = (nextIdx: number) => {
+      const clamped = Math.max(0, Math.min(opts.stages.length - 1, nextIdx));
+      const changed = clamped !== currentIdx;
+      currentIdx = clamped;
+      syncStageUI(false);
+      if (changed) opts.onSelectStage(currentIdx);
+    };
+
+    opts.stages.forEach((st, idx) => {
+      const dotBtn = this.el('button', `bw-stage-dot${idx === currentIdx ? ' active' : ''}${st.unlocked ? '' : ' locked'}`);
+      dotBtn.type = 'button';
+      dotBtn.setAttribute('role', 'tab');
+      dotBtn.setAttribute('aria-selected', String(idx === currentIdx));
+      dotBtn.setAttribute('aria-label', `${st.badge}: ${st.name}`);
+      dotBtn.append(this.el('span', 'bw-stage-dot-pip'));
+      this.bindAction(dotBtn, () => goToStage(idx));
+      dotButtons.push(dotBtn);
+      dotsWrap.append(dotBtn);
+    });
+
+    // Real 1:1 finger-tracking horizontal swipe with smooth spring snap + tap to open All Stages modal!
+    let swipeStart: { x: number; y: number; id: number; time: number } | undefined;
+    let dragging = false;
+    let lastDx = 0;
+    viewport.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      swipeStart = { x: e.clientX, y: e.clientY, id: e.pointerId, time: performance.now() };
+      dragging = false;
+      lastDx = 0;
+      track.style.transition = 'none';
+    });
+    viewport.addEventListener('pointermove', e => {
+      if (!swipeStart || e.pointerId !== swipeStart.id) return;
       const dx = e.clientX - swipeStart.x;
       const dy = e.clientY - swipeStart.y;
-      if (Math.abs(dx) > 32 && Math.abs(dx) > Math.abs(dy) * 1.2) {
-        swiped = true;
-        card.classList.remove('is-pressed');
-        const nextIdx = (opts.activeStageIndex + (dx < 0 ? 1 : -1) + opts.stages.length) % opts.stages.length;
-        swipeStart = undefined;
-        this.onConfirm?.();
-        opts.onSelectStage(nextIdx);
+      if (!dragging && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.15) {
+        dragging = true;
+      }
+      if (dragging) {
+        lastDx = dx;
+        const width = Math.max(1, viewport.clientWidth);
+        const edgeResist = (currentIdx === 0 && dx > 0) || (currentIdx === opts.stages.length - 1 && dx < 0) ? 0.32 : 1;
+        const pct = -currentIdx * 100 + ((dx * edgeResist) / width) * 100;
+        track.style.transform = `translate3d(${pct}%, 0, 0)`;
       }
     });
-    const clearSwipe = () => { swipeStart = undefined; card.classList.remove('is-pressed'); };
-    card.addEventListener('pointerup', clearSwipe);
-    card.addEventListener('pointercancel', clearSwipe);
-    card.addEventListener('pointerleave', clearSwipe);
-    card.addEventListener('click', () => {
-      if (swiped || this.activationTimer !== undefined) { swiped = false; return; }
-      card.classList.add('is-confirmed');
+    const finishSwipe = (e: PointerEvent, cancelled = false) => {
+      if (!swipeStart || e.pointerId !== swipeStart.id) return;
+      const wasDragging = dragging;
+      const elapsed = Math.max(1, performance.now() - swipeStart.time);
+      const dx = lastDx;
+      swipeStart = undefined;
+      dragging = false;
+      lastDx = 0;
+      if (wasDragging) {
+        const width = Math.max(1, viewport.clientWidth);
+        const fastFlick = Math.abs(dx) > 24 && Math.abs(dx) / elapsed > 0.35;
+        if (!cancelled && (Math.abs(dx) > width * 0.2 || fastFlick)) {
+          const next = currentIdx + (dx < 0 ? 1 : -1);
+          if (next >= 0 && next < opts.stages.length) {
+            this.onConfirm?.();
+            goToStage(next);
+            return;
+          }
+        }
+        syncStageUI(false);
+      }
+    };
+    viewport.addEventListener('pointerup', e => finishSwipe(e, false));
+    viewport.addEventListener('pointercancel', e => finishSwipe(e, true));
+    viewport.addEventListener('click', e => {
+      const btn = (e.target as HTMLElement | null)?.closest('.bw-stage-hero-card');
+      if (!btn || Math.abs(lastDx) > 8 || this.activationTimer !== undefined) return;
+      btn.classList.add('is-confirmed');
       this.onConfirm?.(); window.BulletWakeAndroid?.menuFeedback?.();
       this.activationTimer = window.setTimeout(() => {
-        this.activationTimer = undefined; card.classList.remove('is-confirmed');
-        if (card.isConnected) opts.onOpenAllStages();
+        this.activationTimer = undefined; btn.classList.remove('is-confirmed');
+        if (btn.isConnected) opts.onOpenAllStages();
       }, 90);
     });
 
-    // Pagination dots + subtle prev/next buttons underneath the card.
-    const pager = this.el('div', 'bw-stage-pager');
-    const prevBtn = this.el('button', 'bw-stage-arrow');
-    prevBtn.type = 'button';
-    prevBtn.setAttribute('aria-label', 'Fase anterior');
-    prevBtn.append(this.icon('chevronLeft', 'bw-ico bw-ico-sm'));
-    this.bindAction(prevBtn, () => opts.onSelectStage((opts.activeStageIndex - 1 + opts.stages.length) % opts.stages.length));
+    carousel.append(viewport, dotsWrap);
 
-    const dots = this.el('div', 'bw-stage-dots');
-    dots.setAttribute('role', 'tablist');
-    dots.setAttribute('aria-label', 'Selecionar fase');
-    opts.stages.forEach((st, idx) => {
-      const dotBtn = this.el('button', `bw-stage-dot${idx === opts.activeStageIndex ? ' active' : ''}${st.unlocked ? '' : ' locked'}`);
-      dotBtn.type = 'button';
-      dotBtn.setAttribute('role', 'tab');
-      dotBtn.setAttribute('aria-selected', String(idx === opts.activeStageIndex));
-      dotBtn.setAttribute('aria-label', `${st.badge}: ${st.name}`);
-      dotBtn.append(this.el('span', 'bw-stage-dot-pip'));
-      this.bindAction(dotBtn, () => opts.onSelectStage(idx));
-      dots.append(dotBtn);
+    this.bindAction(playBtn, () => {
+      const st = opts.stages[currentIdx];
+      if (st?.unlocked) opts.onLaunchMission(currentIdx);
     });
-
-    const nextBtn = this.el('button', 'bw-stage-arrow');
-    nextBtn.type = 'button';
-    nextBtn.setAttribute('aria-label', 'Próxima fase');
-    nextBtn.append(this.icon('chevron', 'bw-ico bw-ico-sm'));
-    this.bindAction(nextBtn, () => opts.onSelectStage((opts.activeStageIndex + 1) % opts.stages.length));
-
-    pager.append(prevBtn, dots, nextBtn);
-    carousel.append(card, pager);
-
-    // Primary Launch CTA + Bottom Dashboard Dock.
-    const actions = this.el('div', 'bw-dash-actions');
-    const playBtn = this.el('button', `bw-mobile-button ${stage.unlocked ? 'primary' : 'secondary'} bw-dash-play`);
-    playBtn.type = 'button';
-    playBtn.disabled = !stage.unlocked;
-    playBtn.append(
-      this.icon(stage.unlocked ? 'play' : 'lock', 'bw-ico bw-ico-play'),
-      this.el('span', '', 'Iniciar missão'),
-    );
-    if (stage.unlocked) this.bindAction(playBtn, opts.onLaunchMission);
 
     const dock = this.el('nav', 'bw-dash-dock');
     dock.setAttribute('aria-label', 'Menu principal');
-    const tiles: Array<{ label: string; icon: IconName; locked?: boolean; action?: () => void }> = [
+    const tiles: Array<{ label: string; icon: IconName; locked?: boolean; shop?: boolean; action?: () => void }> = [
       { label: 'Pilotos', icon: 'pilots', action: opts.onPilots },
       { label: 'Hangar', icon: 'hangar', action: opts.onHangar },
-      { label: 'Loja', icon: 'shop', locked: true },
-      { label: 'Controles', icon: 'controls', action: opts.onControls },
-      { label: 'Créditos', icon: 'credits', action: opts.onCredits },
+      { label: 'Loja', icon: 'shop', locked: true, shop: true },
     ];
     for (const tile of tiles) {
-      const btn = this.el('button', `bw-dash-tile${tile.locked ? ' is-locked' : ''}`);
+      const btn = this.el('button', `bw-dash-tile${tile.shop ? ' is-shop' : ''}${tile.locked ? ' is-locked' : ''}`);
       btn.type = 'button';
       if (tile.locked) {
         btn.disabled = true;
@@ -422,8 +513,9 @@ export class PortraitMenu {
       dock.append(btn);
     }
 
+    syncStageUI(true);
     actions.append(playBtn, dock);
-    shell.append(topbar, carousel, actions);
+    shell.append(topbar, statusBar, skyLane, carousel, actions);
     this.body?.append(shell);
   }
 
@@ -488,7 +580,6 @@ export class PortraitMenu {
       this.el('p', 'bw-modal-desc', 'Antes de continuar, confirme nossa Política de Privacidade e LGPD. Seu progresso e preferências ficam salvos apenas localmente neste aparelho.'),
     );
 
-    // Expandable full Privacy Policy & LGPD drawer
     const policyBox = this.el('div', 'bw-policy-box');
     const policyToggle = this.el('button', 'bw-policy-toggle');
     policyToggle.type = 'button';
@@ -510,7 +601,6 @@ export class PortraitMenu {
     });
     policyBox.append(policyToggle, policyBody);
 
-    // Mandatory LGPD checkbox
     const consentLabel = this.el('label', 'bw-consent-row');
     const checkbox = this.el('input', 'bw-consent-check');
     checkbox.type = 'checkbox';
@@ -521,7 +611,6 @@ export class PortraitMenu {
       this.el('span', '', 'Li e aceito a Política de Privacidade e os termos da LGPD (Lei nº 13.709/2018).'),
     );
 
-    // Optional local account codename
     const field = this.el('div', 'bw-field');
     const input = this.el('input', 'bw-input');
     input.type = 'text';
@@ -632,7 +721,6 @@ export class PortraitMenu {
   pilotShowcase(opts: PilotShowcaseOptions): void {
     const wrap = this.el('div', 'bw-pilot-layout');
 
-    // Section 1: Pilot Profile + Service History
     const pilotCard = this.el('section', 'bw-pilot-card');
     const pilotTop = this.el('div', 'bw-pilot-card-top');
     const avatar = this.el('div', `bw-pilot-avatar${opts.unlocked ? '' : ' is-locked'}`);
@@ -666,7 +754,6 @@ export class PortraitMenu {
     }
     pilotCard.append(pilotTop, historyRow);
 
-    // Section 2: Ship Card + Segmented Stat Bars
     const shipCard = this.el('section', 'bw-ship-card');
     const shipTop = this.el('div', 'bw-ship-card-top');
     const shipBay = this.el('div', 'bw-pilot-ship-bay');

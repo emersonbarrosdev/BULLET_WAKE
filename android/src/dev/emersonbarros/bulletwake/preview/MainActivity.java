@@ -41,6 +41,7 @@ public final class MainActivity extends Activity implements InputManager.InputDe
         updateControllers();
         game.addJavascriptInterface(new MobileBridge(), "BulletWakeAndroid");
         game.setBackgroundColor(Color.rgb(4, 13, 33));
+        game.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         WebView.setWebContentsDebuggingEnabled(true); // Test APK: native inspection, no game DevTools bundle.
         WebSettings settings = game.getSettings();
         settings.setJavaScriptEnabled(true);

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { ArcadeWorld, Controls } from './ArcadeWorld';
 import { clamp } from './geometry';
+import { isMobileDisplay } from './MobileDisplay';
 import {
   PELAGIC_RIVET_SHEET,
   PELAGIC_ENEMY_AIR_SHEET,
@@ -92,6 +93,7 @@ export class PelagicActorAnims {
   private slipstreaks: Array<{ x: number; y: number; len: number; speed: number; alpha: number }> = [];
 
   private enemyTracks = new Map<number, EnemyTrack>();
+  private readonly seenEnemies = new Set<number>();
   private mountSprites = new Map<number, Phaser.GameObjects.Sprite[]>();
   private rotorSprites = new Map<number, Phaser.GameObjects.Sprite[]>();
   private missileTrailClock = 0;
@@ -440,7 +442,7 @@ export class PelagicActorAnims {
 
       // Subtle slipstream streaks across lane scaled by climb / exit velocity
       const speedScale = w.state === 'exit' ? 1.9 : advancing ? 1.45 : braking ? .55 : 1.0;
-      const streakCount = quality > 1 ? this.slipstreaks.length : 7;
+      const streakCount = isMobileDisplay() ? 5 : (quality > 1 ? this.slipstreaks.length : 7);
       const laneLeft = w.arena.left + 12;
       const laneSpan = Math.max(120, w.arenaWidth - 24);
       const maxBottom = Math.max(452, w.arena.bottom + 24);
@@ -473,7 +475,8 @@ export class PelagicActorAnims {
     const gsh = this.groundShadowGfx;
     sh.setVisible(true);
     gsh.clear().setVisible(true);
-    const seen = new Set<number>();
+    const seen = this.seenEnemies;
+    seen.clear();
 
     for (const e of w.enemies) {
       if (e.hp <= 0) continue;

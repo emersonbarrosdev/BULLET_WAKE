@@ -21,6 +21,7 @@ import { PelagicTideArchRenderer } from './PelagicTideArchArt';
 import { installMenuAnims, UI_TEX } from './ArcadeMenuArt';
 import { clamp } from './geometry';
 import { getCombatVirtualSize } from '../render/combatResolution';
+import { isMobileDisplay } from './MobileDisplay';
 import { SUB_BEAM_HALF_W, SUB_SECTION_HEIGHT, subSectionCenterY } from './PelagicSubmarineBoss';
 
 const STAGE1_LEFT = 160, STAGE1_WIDTH = 448;
@@ -88,6 +89,7 @@ export class ArcadeBackdrop {
   private tideArch: PelagicTideArchRenderer;
   private menuSky: Phaser.GameObjects.Image;
   private navTrack = new Map<number, NavHistory>();
+  private readonly seenActors = new Set<number>();
 
   constructor(private scene: Phaser.Scene) {
     this.ink = scene.add.graphics().setDepth(-20);
@@ -155,11 +157,12 @@ export class ArcadeBackdrop {
       else if (ta.phase === 'ascent') archCoastRecede = clamp(1 - ta.phaseTime / 3.2, 0, 1);
       else archCoastRecede = 1;
     }
+    const mobile = isMobileDisplay();
     const coastAlpha = (1 - openOcean) * (1 - archCoastRecede * 0.94);
-    this.coastPainting.draw(world?.scroll ?? 0, up, coastAlpha, world?.elapsed ?? time, quality, areaLeft, areaWidth);
+    this.coastPainting.draw(world?.scroll ?? 0, up, coastAlpha, world?.elapsed ?? time, quality, areaLeft, areaWidth, viewH);
     this.oceanDepth.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up);
-    this.waterSwell.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up && quality >= 1);
-    this.water.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up);
+    this.waterSwell.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up && quality >= 1 && !mobile);
+    this.water.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setAlpha(mobile ? .86 : .78).setVisible(up);
     this.oceanCaustics.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up && quality >= 1);
     if (!world) {
       this.navTrack.clear();
@@ -216,27 +219,33 @@ export class ArcadeBackdrop {
 
   private ocean(w: ArcadeWorld, quality: number, openOcean = 0, coastAlpha = 1, areaLeft = STAGE1_LEFT, areaWidth = STAGE1_WIDTH, viewH = 432): void {
     const time = w.elapsed;
-    this.ink.fillStyle(0x042b62).fillRect(areaLeft, 0, areaWidth, viewH);
+    const mobile = isMobileDisplay();
+    if (!this.oceanDepth.visible) this.ink.fillStyle(0x042b62).fillRect(areaLeft, 0, areaWidth, viewH);
     this.oceanDepth.tilePositionY = -(w.scroll * .84 + time * 1.1);
     this.oceanDepth.tilePositionX = Math.cos(time * .16) * 2.1;
 
-    const swell = swellScrollOffset(w.scroll, time);
-    this.waterSwell.tilePositionY = swell.y;
-    this.waterSwell.tilePositionX = swell.x;
-    this.waterSwell.setAlpha(.34 + .08 * Math.sin(time * 1.15));
+    if (this.waterSwell.visible) {
+      const swell = swellScrollOffset(w.scroll, time);
+      this.waterSwell.tilePositionY = swell.y;
+      this.waterSwell.tilePositionX = swell.x;
+      this.waterSwell.setAlpha(.34 + .08 * Math.sin(time * 1.15));
+    }
 
     this.water.tilePositionY = waterScrollOffset(w.scroll, time);
     this.water.tilePositionX = waterDriftX(time);
 
-    const caustics = causticsScrollOffset(w.scroll, time);
-    this.oceanCaustics.tilePositionY = caustics.y;
-    this.oceanCaustics.tilePositionX = caustics.x;
-    this.oceanCaustics.setAlpha(caustics.alpha * (quality > 1 ? 1.05 : .78));
+    if (this.oceanCaustics.visible) {
+      const caustics = causticsScrollOffset(w.scroll, time);
+      this.oceanCaustics.tilePositionY = caustics.y;
+      this.oceanCaustics.tilePositionX = caustics.x;
+      this.oceanCaustics.setAlpha(caustics.alpha * (quality > 1 ? 1.05 : .78));
+    }
 
     // Submerged parallax reefs drifting beneath waves along coastal shelves (fades out into open sea)
     if (quality > 0 && coastAlpha > .02) {
       const reefPeriod = Math.max(620, viewH + 180);
-      for (let i = 0; i < this.deepReefs.length; i++) {
+      const reefCount = mobile ? 4 : this.deepReefs.length;
+      for (let i = 0; i < reefCount; i++) {
         const ry = ((i * 77 + w.scroll * .86) % reefPeriod + reefPeriod) % reefPeriod - 70;
         const side = i % 2 === 0 ? -1 : 1;
         const rx = side < 0 ? areaLeft + 36 + (i * 19) % 48 : areaLeft + areaWidth - 36 - (i * 23) % 48;
@@ -246,7 +255,7 @@ export class ArcadeBackdrop {
 
     // Animated 2.5D wave crests with natural birth -> peak -> dissipate lifecycle even when scroll pauses
     const archOpening = w.tideArch.isActive ? computeArchOpening(areaLeft, areaLeft + areaWidth) : null;
-    const waveCount = quality > 1 ? 16 : quality === 1 ? 10 : 0;
+    const waveCount = quality > 1 ? (mobile ? 8 : 16) : quality === 1 ? (mobile ? 5 : 10) : 0;
     const wavePeriod = Math.max(460, viewH + 40);
     for (let i = 0; i < waveCount; i++) {
       const wy = ((i * 29 + w.scroll * 1.02 + time * 9.5) % wavePeriod + wavePeriod) % wavePeriod - 20;
@@ -270,8 +279,8 @@ export class ArcadeBackdrop {
       this.waveSprites[i].setVisible(true).setFrame(frame).setPosition(wx, wy).setDisplaySize(wSize, wSize * .46).setAlpha(pulse);
     }
 
-    // Soft underwater sunlight glints (strictly beneath coast strips at depth -19.00, never orange/red)
-    if (quality >= 1) {
+    // Soft underwater sunlight glints (desktop only: skips 448 per-frame ellipse triangles on mobile GPU)
+    if (quality >= 1 && !mobile) {
       const glintCount = quality > 1 ? 14 : 7;
       const glintPeriod = Math.max(460, viewH + 40);
       const wg = this.waterGlint;
@@ -297,7 +306,8 @@ export class ArcadeBackdrop {
 
     // Actual hull contact, altitude shadows, speed-aware naval wakes, coherent submarine ripples and seagulls
     const g = this.seaFx, splash = this.surfaceSplash;
-    const seenActors = new Set<number>();
+    const seenActors = this.seenActors;
+    seenActors.clear();
     let shadow = 0, wake = 0;
     for (const e of w.enemies) {
       if (shadow >= this.shadows.length - 1) break;
