@@ -46,7 +46,7 @@ async function bootGame(): Promise<void> {
     fps: {
       min: 30,
       target: 60,
-      limit: isMobileDisplay() ? 72 : 0,
+      limit: 0,
       forceSetTimeOut: false,
       smoothStep: !isMobileDisplay(),
     },

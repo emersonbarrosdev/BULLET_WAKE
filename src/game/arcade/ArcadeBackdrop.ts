@@ -160,9 +160,9 @@ export class ArcadeBackdrop {
     const mobile = isMobileDisplay();
     const coastAlpha = (1 - openOcean) * (1 - archCoastRecede * 0.94);
     this.coastPainting.draw(world?.scroll ?? 0, up, coastAlpha, world?.elapsed ?? time, quality, areaLeft, areaWidth, viewH);
-    this.oceanDepth.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up);
+    this.oceanDepth.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up && !mobile);
     this.waterSwell.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up && quality >= 1 && !mobile);
-    this.water.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setAlpha(mobile ? .86 : .78).setVisible(up);
+    this.water.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setAlpha(mobile ? 1 : .78).setVisible(up);
     this.oceanCaustics.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up && quality >= 1 && !mobile);
     if (!world) {
       this.navTrack.clear();
@@ -225,9 +225,11 @@ export class ArcadeBackdrop {
   private ocean(w: ArcadeWorld, quality: number, openOcean = 0, coastAlpha = 1, areaLeft = STAGE1_LEFT, areaWidth = STAGE1_WIDTH, viewH = 432): void {
     const time = w.elapsed;
     const mobile = isMobileDisplay();
-    if (!this.oceanDepth.visible) this.ink.fillStyle(0x042b62).fillRect(areaLeft, 0, areaWidth, viewH);
-    this.oceanDepth.tilePositionY = -(w.scroll * .84 + time * 1.1);
-    this.oceanDepth.tilePositionX = Math.cos(time * .16) * 2.1;
+    if (!this.oceanDepth.visible && !this.water.visible) this.ink.fillStyle(0x042b62).fillRect(areaLeft, 0, areaWidth, viewH);
+    if (this.oceanDepth.visible) {
+      this.oceanDepth.tilePositionY = -(w.scroll * .84 + time * 1.1);
+      this.oceanDepth.tilePositionX = Math.cos(time * .16) * 2.1;
+    }
 
     if (this.waterSwell.visible) {
       const swell = swellScrollOffset(w.scroll, time);
@@ -378,8 +380,10 @@ export class ArcadeBackdrop {
       const angle = heading - Math.PI / 2;
       const fx = Math.cos(angle), fy = Math.sin(angle), sx = -fy, sy = fx;
 
-      // 1. Anchored underwater keel contact pocket directly aligned to heading (replaces buoy rings)
-      g.fillStyle(0x021735, .30).fillEllipse(e.x + fx * e.size * .02 + 1.5, e.y + fy * e.size * .02 + 2.5, e.size * .42, e.size * .72);
+      // 1. Anchored underwater keel contact pocket directly aligned to heading (desktop; mobile uses wet-hull + wake sprites)
+      if (!mobile) {
+        g.fillStyle(0x021735, .30).fillEllipse(e.x + fx * e.size * .02 + 1.5, e.y + fy * e.size * .02 + 2.5, e.size * .42, e.size * .72);
+      }
 
       // 2. Animated propeller wash sprite aligned strictly behind the stern
       if (wake < this.wakes.length) {

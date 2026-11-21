@@ -165,27 +165,33 @@ export function computeTouchLayout(
         const joyRadius = Math.round(33 * scale * 10) / 10;
         const travelRadius = Math.round(29 * scale * 10) / 10;
         const knobRadius = Math.round(13.5 * scale * 10) / 10;
-        const fireRadius = Math.round(27 * scale * 10) / 10;
-        const specialRadius = Math.round(21 * scale * 10) / 10;
+        const btnRadius = Math.round(30 * scale * 10) / 10;
+        const fireRadius = btnRadius;
+        const specialRadius = btnRadius;
         const mirrorX = clean.handedness === 'left';
         const pad = 12;
-        const lift = clean.position === 'raised' ? 28 : clean.position === 'wide' ? 4 : 10;
-        const baseY = ph - safeBottom - joyRadius - 24 - lift + clean.offsetY;
+        const lift = clean.position === 'raised' ? 28 : clean.position === 'wide' ? 4 : 8;
+        const baseY = ph - safeBottom - btnRadius - 20 - lift + clean.offsetY;
         const leftX = safeLeft + joyRadius + pad + (mirrorX ? -clean.offsetX : clean.offsetX);
         const rightX = pw - safeRight - fireRadius - pad + (mirrorX ? -clean.offsetX : clean.offsetX);
         const joyX = clamp(mirrorX ? pw - safeRight - joyRadius - pad : leftX, safeLeft + joyRadius + 8, pw - safeRight - joyRadius - 8);
         const fireX = clamp(mirrorX ? safeLeft + fireRadius + pad : rightX, safeLeft + fireRadius + 8, pw - safeRight - fireRadius - 8);
         const minControlY = ph * 0.56;
         const joyY = clamp(baseY, minControlY, ph - safeBottom - joyRadius - 10);
-        const fireY = clamp(baseY + 4, minControlY, ph - safeBottom - fireRadius - 10);
-        const specX = clamp(fireX + (mirrorX ? 4 : -4), safeLeft + specialRadius + 8, pw - safeRight - specialRadius - 8);
-        const specY = clamp(fireY - (fireRadius + specialRadius + 20), minControlY - 74, fireY - fireRadius - specialRadius - 14);
-        const pauseX = clamp(pw - Math.max(20, safeRight + 20), 344, pw - 16);
-        const pauseY = clamp(Math.max(17, safeTop + 15), 16, 26);
+        const fireY = clamp(baseY, minControlY, ph - safeBottom - fireRadius - 10);
+        const btnGap = Math.round(18 * scale);
+        const specX = clamp(
+            fireX + (mirrorX ? 1 : -1) * (fireRadius + specialRadius + btnGap),
+            safeLeft + specialRadius + 8,
+            pw - safeRight - specialRadius - 8,
+        );
+        const specY = clamp(fireY + Math.round(6 * scale), minControlY, ph - safeBottom - specialRadius - 8);
+        const pauseX = clamp(pw - Math.max(24, safeRight + 24), 346, pw - 20);
+        const pauseY = clamp(Math.max(16, safeTop + 16), 16, 26);
 
         const chargeRadius = Math.round(19 * scale * 10) / 10;
         const chargeX = clamp(fireX + (mirrorX ? 1 : -1) * (fireRadius + chargeRadius + 16), safeLeft + chargeRadius + 8, pw - safeRight - chargeRadius - 8);
-        const chargeY = clamp(fireY - 4, minControlY, ph - safeBottom - chargeRadius - 10);
+        const chargeY = clamp(fireY - (fireRadius + chargeRadius + 16), minControlY - 74, ph - safeBottom - chargeRadius - 10);
         const chargeClear =
             Math.hypot(chargeX - joyX, chargeY - joyY) >= joyRadius + chargeRadius + 16 &&
             Math.hypot(chargeX - fireX, chargeY - fireY) >= fireRadius + chargeRadius + 12 &&
@@ -193,8 +199,8 @@ export function computeTouchLayout(
 
         return {
             joystick: { x: joyX, y: joyY, radius: joyRadius, hitRadius: joyRadius + 16, travelRadius, knobRadius },
-            fire: { x: fireX, y: fireY, radius: fireRadius, hitRadius: fireRadius + 10 },
-            special: { x: specX, y: specY, radius: specialRadius, hitRadius: specialRadius + 6 },
+            fire: { x: fireX, y: fireY, radius: fireRadius, hitRadius: fireRadius + 8 },
+            special: { x: specX, y: specY, radius: specialRadius, hitRadius: specialRadius + 8 },
             charge: chargeClear ? { x: chargeX, y: chargeY, radius: chargeRadius, hitRadius: chargeRadius + 6 } : null,
             pause: { x: pauseX, y: pauseY, radius: 17, hitRadius: 23 },
             moveZoneSplitX: pw / 2,

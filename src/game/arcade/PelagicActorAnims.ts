@@ -547,11 +547,13 @@ export class PelagicActorAnims {
           .setRotation(hull.rotation)
           .setDepth(hull.depth);
 
-        // Altitude-driven 2.5D shadow offset beneath helicopter (scaled proportionally with fuselage)
-        const alt = e.altitude ?? .9;
-        const shOffX = 8 + alt * 10, shOffY = 10 + alt * 12;
-        const shScale = clamp(1.04 - alt * .22, .64, 1);
-        sh.fillStyle(0x06162c, .26).fillEllipse(hull.drawX + shOffX, hull.drawY + shOffY, e.size * .82 * shScale, e.size * .54 * shScale);
+        // Altitude-driven 2.5D shadow offset beneath helicopter (desktop only; mobile avoids Graphics shader switch)
+        if (!isMobileDisplay()) {
+          const alt = e.altitude ?? .9;
+          const shOffX = 8 + alt * 10, shOffY = 10 + alt * 12;
+          const shScale = clamp(1.04 - alt * .22, .64, 1);
+          sh.fillStyle(0x06162c, .26).fillEllipse(hull.drawX + shOffX, hull.drawY + shOffY, e.size * .82 * shScale, e.size * .54 * shScale);
+        }
 
         // Animated spinning main + tail rotors anchored cleanly on painted swashplate hub
         if (this.scene.textures.exists(PELAGIC_ROTOR_SHEET)) {

@@ -1317,7 +1317,7 @@
 /* Discreet non-blocking in-flight Sector Banner (portrait mobile) */
 .bw-sector-banner {
   position: fixed;
-  top: calc(52px + env(safe-area-inset-top));
+  top: calc(76px + env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
   z-index: 95;

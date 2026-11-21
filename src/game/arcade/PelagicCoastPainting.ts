@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { isMobileDisplay } from './MobileDisplay';
 import {
     COAST_MAP_KEY, COAST_MAP_OFFSET, COAST_MAP_PERIOD, COAST_MAP_SCALE,
     coastBankShift, rawCoastBoundaryAtMapY, wrapCoast,
@@ -366,7 +367,7 @@ export class PelagicCoastPainting {
             const inView = shown && y > minVisY && y < maxVisY;
             this.strips[i].setVisible(inView).setAlpha(alpha).setPosition(arenaLeft, y);
             this.rightStrips[i].setVisible(inView).setAlpha(alpha).setPosition(rightX, y);
-            const showFx = inView && quality >= 1;
+            const showFx = inView && quality >= 1 && !isMobileDisplay();
             this.shoalStrips[i].setVisible(showFx).setAlpha(shoalAlpha).setPosition(arenaLeft, y);
             this.rightShoalStrips[i].setVisible(showFx).setAlpha(shoalAlpha).setPosition(rightX, y);
             this.surfStrips[i].setVisible(showFx).setAlpha(surfAlpha).setPosition(arenaLeft, y + surfShiftY);

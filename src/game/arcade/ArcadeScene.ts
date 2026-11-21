@@ -97,7 +97,7 @@ export class ArcadeScene extends Phaser.Scene {
   private contactWarmup?: SpriteContactWarmup;
   private splashHandoffCommitted = false; private bootOverlayDismissed = false; private loadErrors: string[] = [];
   private controlsTab: ControlsTab = 'pc'; private lastControlsPadId = ''; private nextControlsFocus?: number; private controlsPadPreview: 'auto' | 'playstation' | 'xbox' = 'auto';
-  private enemySprites = new Map<number, Phaser.GameObjects.Sprite>(); private cargoSprites = new Map<number, Phaser.GameObjects.Sprite>(); private cargoExtras = new Map<number, { shadow: Phaser.GameObjects.Image; glow: Phaser.GameObjects.Image; prop: Phaser.GameObjects.Sprite }>(); private partSprites = new Map<number, Phaser.GameObjects.Sprite>(); private bulletSprites: Phaser.GameObjects.Image[] = []; private effects: Effect[] = [];
+  private enemySprites = new Map<number, Phaser.GameObjects.Sprite>(); private enemySpritePool: Phaser.GameObjects.Sprite[] = []; private cargoSprites = new Map<number, Phaser.GameObjects.Sprite>(); private cargoExtras = new Map<number, { shadow: Phaser.GameObjects.Image; glow: Phaser.GameObjects.Image; prop: Phaser.GameObjects.Sprite }>(); private partSprites = new Map<number, Phaser.GameObjects.Sprite>(); private bulletSprites: Phaser.GameObjects.Image[] = []; private effects: Effect[] = [];
   private bonusPopups: BonusPopup[] = []; private bonusPopupPool: Phaser.GameObjects.Text[] = [];
   private turrets = new Map<number, Phaser.GameObjects.Sprite>(); private effectPool: Phaser.GameObjects.Sprite[] = [];
   private controls!: Record<string, Phaser.Input.Keyboard.Key>; private pad = new GamepadReader(); buttons: MenuButton[] = []; private focus = 0;
@@ -166,7 +166,7 @@ export class ArcadeScene extends Phaser.Scene {
   private lastBossHudText = '';
   private lastBossHudFont = 0;
   private lastTouchSpecialFont = '';
-  private lastTouchChargeFont = '';
+  private lastTouchSpecialText = '';
   private lastTouchOverlaySig = '';
   private touchOverlayDirty = true;
   constructor() { super('ArcadeScene'); }
@@ -554,7 +554,7 @@ export class ArcadeScene extends Phaser.Scene {
       this.pelagicAssistBadge?.setVisible(inGameScreen && !!this.world.isAssisted && !usePortraitPlay && !isMobileDisplay());
       if (!isMobileDisplay()) this.world.setArenaBounds(
         usePortraitPlay
-          ? { left: 0, right: 384, top: 34, bottom: targetH - 14 }
+          ? { left: 0, right: 384, top: 58, bottom: targetH - 14 }
           : { left: 160, right: 608, top: 18, bottom: 424 },
       );
       this.lastHud = '';
@@ -1585,8 +1585,7 @@ export class ArcadeScene extends Phaser.Scene {
     const liveBackdrop = mobile && !!this.world && ['pause', 'confirm-exit', 'defeat', 'result', 'controller-orientation', 'controller-lost'].includes(screen);
     const covered = mobile && !['loading', 'intro', 'play'].includes(screen) && !liveBackdrop;
     this.cameras.main.setVisible(!covered);
-    const limit = mobile ? (covered ? 30 : 72) : 0;
-    if (this.game.loop.fpsLimit !== limit) this.game.loop.setFPSLimit(limit);
+    if (this.game.loop.fpsLimit !== 0) this.game.loop.setFPSLimit(0);
     if (!mobile || ['loading', 'intro', 'play'].includes(screen)) {
       this.portraitMenu.hide();
       this.ui?.setVisible(!['loading', 'intro'].includes(screen));
@@ -2157,7 +2156,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.world = new ArcadeWorld(MISSIONS[index], carry, {
       ...(index === 0 ? {
         upLayout: usePortrait ? 'portrait' : 'pc',
-        arena: usePortrait ? { left: 0, right: portrait.w, top: 34, bottom: portrait.h - 14 } : { left: 384 - mobileArenaWidth / 2, right: 384 + mobileArenaWidth / 2, top: 18, bottom: 424 },
+        arena: usePortrait ? { left: 0, right: portrait.w, top: 58, bottom: portrait.h - 14 } : { left: 384 - mobileArenaWidth / 2, right: 384 + mobileArenaWidth / 2, top: 18, bottom: 424 },
       } : {}),
       playerSidePadding: isMobileDisplay() ? (index === 0 ? 24 : 26) : 14,
       aircraftScale: isMobileDisplay() ? (this.isMobileLandscape() ? 1.14 : 1.2) : 1,
@@ -2280,7 +2279,7 @@ export class ArcadeScene extends Phaser.Scene {
     const viewport = getCombatVirtualSize(this);
     this.cameras?.main?.centerOn(viewport.cx ?? viewport.w / 2, viewport.cy ?? viewport.h / 2);
     this.world = undefined; this.pelagicDesktopHud?.setVisible(false); this.portraitHudImg?.setVisible(false); this.player?.setVisible(false); this.bossSprite?.setVisible(false); this.lifeIcons.forEach(s => s.setVisible(false)); this.hud?.setText(''); this.radio?.setVisible(false); this.combatInk?.clear().setVisible(false); this.decor?.clear().setVisible(false); this.lastHud = '';
-    for (const map of [this.enemySprites, this.partSprites, this.turrets]) { for (const s of map.values()) s.destroy(); map.clear(); } for (const s of this.cargoSprites.values()) s.destroy(); this.cargoSprites.clear(); for (const ex of this.cargoExtras.values()) { ex.shadow.destroy(); ex.glow.destroy(); ex.prop.destroy(); } this.cargoExtras.clear(); for (const s of this.bulletSprites) s?.setVisible(false); for (const e of this.effects) { e.sprite.setVisible(false); this.effectPool.push(e.sprite); } this.effects = []; globalAudio.stopCombatEffects();
+    for (const s of this.enemySprites.values()) { s.setVisible(false); this.enemySpritePool.push(s); } this.enemySprites.clear(); for (const map of [this.partSprites, this.turrets]) { for (const s of map.values()) s.destroy(); map.clear(); } for (const s of this.cargoSprites.values()) s.destroy(); this.cargoSprites.clear(); for (const ex of this.cargoExtras.values()) { ex.shadow.destroy(); ex.glow.destroy(); ex.prop.destroy(); } this.cargoExtras.clear(); for (const s of this.bulletSprites) s?.setVisible(false); for (const e of this.effects) { e.sprite.setVisible(false); this.effectPool.push(e.sprite); } this.effects = []; globalAudio.stopCombatEffects();
     this.syncResponsiveViewport();
   }
   update(_time: number, delta: number): void {
@@ -2653,7 +2652,7 @@ export class ArcadeScene extends Phaser.Scene {
     alive.clear();
     this.emplacements.draw(w, this.quality);
     for (const e of w.enemies) {
-      if (e.hp <= 0) continue; alive.add(e.id); let s = this.enemySprites.get(e.id); if (!s) { s = this.add.sprite(e.x, e.y, 'arc-enemies').setDepth(e.ground ? 2 : 8); this.enemySprites.set(e.id, s); }
+      if (e.hp <= 0) continue; alive.add(e.id); let s = this.enemySprites.get(e.id); if (!s) { s = (this.enemySpritePool.pop() ?? this.add.sprite(e.x, e.y, 'arc-enemies')).setPosition(e.x, e.y).setDepth(e.ground ? 2 : 8).setVisible(true); this.enemySprites.set(e.id, s); }
       const skipDefaultTex = w.up && (e.navigation?.customAnchor || e.navigation?.anchor !== undefined || e.family === 'boat' || e.family === 'ship' || Boolean(e.submarine));
       if (!skipDefaultTex) {
         const enemyTex = e.family === 'alien' ? 'arc-ufo' : 'arc-enemies';
@@ -2706,7 +2705,7 @@ export class ArcadeScene extends Phaser.Scene {
         g.fillStyle(0x04122a, 0.85).fillRoundedRect(bx - 1, by - 1, bw + 2, 4.5, 2);
         g.fillStyle(ratio < 0.3 ? 0xff5a52 : ratio < 0.65 ? 0xffd84d : 0x38e4ff, 0.95).fillRoundedRect(bx, by, Math.max(2, bw * ratio), 2.5, 1);
       }
-    } for (const [id, s] of this.enemySprites) if (!alive.has(id)) { s.destroy(); this.enemySprites.delete(id); this.turrets.get(id)?.destroy(); this.turrets.delete(id); }
+    } for (const [id, s] of this.enemySprites) if (!alive.has(id)) { s.setVisible(false); this.enemySpritePool.push(s); this.enemySprites.delete(id); this.turrets.get(id)?.destroy(); this.turrets.delete(id); }
     if (w.up) {
       this.pelagicAnims.updateEnemies(w, this.enemySprites, this.turrets, dt, this.quality, (sp, fl) => this.hitOverlays.draw(sp, fl), this.devWeaponDebug);
       for (const e of w.enemies) {
@@ -3029,6 +3028,7 @@ export class ArcadeScene extends Phaser.Scene {
     hull: number,
     hullMax: number,
     weaponLevel: number,
+    specialCharges: number,
     chargeRatio: number,
     chargeFull: boolean,
     hasSubBoss: boolean,
@@ -3036,10 +3036,10 @@ export class ArcadeScene extends Phaser.Scene {
   ): Phaser.GameObjects.Image {
     const key = 'arc-portrait-hud';
     let tex = this.textures.exists(key) ? (this.textures.get(key) as Phaser.Textures.CanvasTexture) : null;
-    if (!tex) tex = this.textures.createCanvas(key, 768, 96)!;
+    if (!tex) tex = this.textures.createCanvas(key, 768, 156)!;
     const ctx = tex.context;
     ctx.setTransform(2, 0, 0, 2, 0, 0);
-    ctx.clearRect(0, 0, 384, 48);
+    ctx.clearRect(0, 0, 384, 78);
 
     const roundRect = (x: number, y: number, w: number, h: number, r: number) => {
       ctx.beginPath();
@@ -3052,17 +3052,53 @@ export class ArcadeScene extends Phaser.Scene {
     };
     const hexRgb = (c: number) => `${(c >> 16) & 255},${(c >> 8) & 255},${c & 255}`;
 
-    // Top HUD capsule
-    roundRect(4, 3, 376, 26, 7);
-    ctx.fillStyle = 'rgba(5,25,54,0.90)';
+    // Taller 2-row tactical header capsule (376 x 52)
+    roundRect(4, 3, 376, 52, 8);
+    const bgGrad = ctx.createLinearGradient(0, 3, 0, 55);
+    bgGrad.addColorStop(0, 'rgba(4,20,48,0.92)');
+    bgGrad.addColorStop(1, 'rgba(7,31,68,0.88)');
+    ctx.fillStyle = bgGrad;
     ctx.fill();
     ctx.lineWidth = 1.3;
-    ctx.strokeStyle = 'rgba(38,220,255,0.85)';
+    ctx.strokeStyle = 'rgba(42,224,255,0.86)';
     ctx.stroke();
 
-    // Chamfered hull segments
+    // Subtle top gloss & horizontal divider between Row 1 (Score + Pause) and Row 2 (Power | Hull | Special)
+    ctx.beginPath();
+    ctx.moveTo(14, 4.2);
+    ctx.lineTo(370, 4.2);
+    ctx.lineWidth = 0.8;
+    ctx.strokeStyle = 'rgba(180,248,255,0.22)';
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(10, 29);
+    ctx.lineTo(374, 29);
+    ctx.lineWidth = 0.8;
+    ctx.strokeStyle = 'rgba(68,224,255,0.26)';
+    ctx.stroke();
+
+    // ROW 2 LEFT: 5 weapon power pips (+ charge bar neatly underneath when charging)
+    for (let i = 0; i < 5; i++) {
+      roundRect(46 + i * 13, 37, 10.5, 9, 2);
+      ctx.fillStyle = i < weaponLevel ? '#22e5ff' : '#0d335a';
+      ctx.fill();
+      ctx.lineWidth = 0.7;
+      ctx.strokeStyle = i < weaponLevel ? 'rgba(195,252,255,0.90)' : 'rgba(92,165,208,0.52)';
+      ctx.stroke();
+    }
+    if (chargeRatio > 0) {
+      roundRect(46, 48.5, 62.5, 3.4, 1.7);
+      ctx.fillStyle = 'rgba(4,18,40,0.92)';
+      ctx.fill();
+      roundRect(46, 48.5, Math.max(3, 62.5 * chargeRatio), 3.4, 1.7);
+      ctx.fillStyle = chargeFull ? 'rgba(254,240,138,0.98)' : 'rgba(56,189,248,0.98)';
+      ctx.fill();
+    }
+
+    // ROW 2 CENTER: Chamfered hull segments (prominent & centered)
     if (survivalRule === 'hull-v1') {
-      const x = 12, y = 10, width = 64, height = 12, gap = 3;
+      const x = 142, y = 36, width = 78, height = 12, gap = 3.5;
       const cell = (width - gap * (hullMax - 1)) / hullMax;
       const color = hexRgb(HULL_STATES[hullCondition(hull, hullMax)].color);
       const cut = Math.min(4, height * 0.25);
@@ -3076,62 +3112,50 @@ export class ArcadeScene extends Phaser.Scene {
         ctx.lineTo(left, y + height);
         ctx.lineTo(left, y + cut);
         ctx.closePath();
-        ctx.fillStyle = i < hull ? `rgba(${color},0.95)` : 'rgba(9,34,63,0.80)';
+        ctx.fillStyle = i < hull ? `rgba(${color},0.96)` : 'rgba(9,34,63,0.82)';
         ctx.fill();
         ctx.lineWidth = 1;
-        ctx.strokeStyle = i < hull ? 'rgba(217,255,255,0.90)' : 'rgba(65,97,130,0.90)';
+        ctx.strokeStyle = i < hull ? 'rgba(220,255,255,0.92)' : 'rgba(65,97,130,0.90)';
         ctx.stroke();
         if (i < hull) {
           ctx.beginPath();
           ctx.moveTo(left + cut + 1, y + 2);
           ctx.lineTo(left + cell - 3, y + 2);
-          ctx.strokeStyle = 'rgba(255,255,255,0.60)';
+          ctx.strokeStyle = 'rgba(255,255,255,0.62)';
           ctx.stroke();
         }
       }
     }
 
-    // 5 weapon power pips
+    // ROW 2 RIGHT: Special icon (golden bolt) + mini charge pips
+    const sx = 304, sy = 42;
+    ctx.beginPath();
+    ctx.moveTo(sx + 2.2, sy - 7.5);
+    ctx.lineTo(sx - 3.6, sy + 0.5);
+    ctx.lineTo(sx - 0.2, sy + 0.5);
+    ctx.lineTo(sx - 2.2, sy + 8);
+    ctx.lineTo(sx + 5.2, sy - 1);
+    ctx.lineTo(sx + 1.2, sy - 1);
+    ctx.closePath();
+    ctx.fillStyle = specialCharges > 0 ? '#ffe04a' : '#587898';
+    ctx.fill();
     for (let i = 0; i < 5; i++) {
-      roundRect(122 + i * 11, 11.5, 9, 8.5, 2);
-      ctx.fillStyle = i < weaponLevel ? '#21e3f4' : '#103d68';
+      roundRect(315 + i * 6.5, 39, 4.5, 6.2, 1.5);
+      ctx.fillStyle = i < specialCharges ? '#ffd644' : 'rgba(18,50,86,0.85)';
       ctx.fill();
-      ctx.lineWidth = 0.6;
-      ctx.strokeStyle = 'rgba(131,237,255,0.70)';
-      ctx.stroke();
     }
 
-    // Gold lightning icon for specials
-    const sx = 188;
-    ctx.beginPath();
-    ctx.moveTo(sx + 2, 8);
-    ctx.lineTo(sx - 3, 16);
-    ctx.lineTo(sx, 16);
-    ctx.lineTo(sx - 2, 24);
-    ctx.lineTo(sx + 5, 14);
-    ctx.lineTo(sx + 1, 14);
-    ctx.closePath();
-    ctx.fillStyle = '#ffdc39';
-    ctx.fill();
-
-    // Charged shot gauge
-    if (chargeRatio > 0) {
-      roundRect(122, 23, 53, 4, 2);
+    // Submarine boss HP strip (cleanly below 2-row header)
+    if (hasSubBoss) {
+      roundRect(8, 58, 368, 13, 4);
       ctx.fillStyle = 'rgba(5,25,54,0.90)';
       ctx.fill();
-      roundRect(122, 23, Math.max(3, 53 * chargeRatio), 4, 2);
-      ctx.fillStyle = chargeFull ? 'rgba(254,240,138,0.96)' : 'rgba(56,189,248,0.96)';
-      ctx.fill();
-    }
-
-    // Submarine boss HP strip
-    if (hasSubBoss) {
-      roundRect(8, 32, 368, 12, 4);
-      ctx.fillStyle = 'rgba(5,25,54,0.88)';
-      ctx.fill();
+      ctx.lineWidth = 0.8;
+      ctx.strokeStyle = 'rgba(255,216,77,0.45)';
+      ctx.stroke();
       if (bossRatio > 0) {
-        roundRect(12, 35, 360 * bossRatio, 6, 2);
-        ctx.fillStyle = bossRatio < 0.25 ? 'rgba(255,110,84,0.95)' : 'rgba(255,216,77,0.95)';
+        roundRect(12, 61.5, 360 * bossRatio, 6, 2);
+        ctx.fillStyle = bossRatio < 0.25 ? 'rgba(255,110,84,0.96)' : 'rgba(255,216,77,0.96)';
         ctx.fill();
       }
     }
@@ -3160,7 +3184,7 @@ export class ArcadeScene extends Phaser.Scene {
         const sub = w.boss?.sub;
         const hp = sub ? subTotalHp(sub) : undefined;
         this.mobileFlightHud.draw({
-          width: view.sidebar + host.getBoundingClientRect().left, ship: w.pilotContract.shipName, image,
+          width: view.sidebar + host.getBoundingClientRect().left, ship: w.pilotContract.shipName, image, score: w.score,
           hull: w.survivalRule === 'hull-v1' ? w.hull : w.lives, maximum: w.survivalRule === 'hull-v1' ? w.hullMaximum : Math.max(3, w.lives), classic: w.survivalRule !== 'hull-v1',
           power: w.weapons.weaponLevel, charge: w.chargedShot.snapshot().ratio, specials: w.weapons.specialCharges,
           boss: hp && hp.max > 0 ? `Chefe  ${Math.ceil(hp.current / hp.max * 100)}%` : undefined,
@@ -3170,9 +3194,13 @@ export class ArcadeScene extends Phaser.Scene {
     }
     this.mobileFlightHud.hide();
     const scoreVis = !w.up || this.portraitUpActive;
-    this.footerScore.setVisible(scoreVis).setScale(1)
-      .setPosition(this.portraitUpActive ? 376 : 748, this.portraitUpActive ? getCombatVirtualSize(this).h - 6 : 424);
-    const scoreFont = this.portraitUpActive ? 8 : 9;
+    this.footerScore.setVisible(scoreVis).setScale(1);
+    if (this.portraitUpActive) {
+      this.footerScore.setOrigin(0.5, 0.5).setPosition(192, 16);
+    } else {
+      this.footerScore.setOrigin(1, 1).setPosition(748, 424);
+    }
+    const scoreFont = this.portraitUpActive ? 13 : 9;
     if (scoreFont !== this.lastFooterFont) {
       this.footerScore.setFontSize(scoreFont);
       this.lastFooterFont = scoreFont;
@@ -3196,17 +3224,17 @@ export class ArcadeScene extends Phaser.Scene {
         const bossRatio = subTotals && subTotals.max > 0 ? clamp(subTotals.current / subTotals.max, 0, 1) : 0;
         const viewport = getCombatVirtualSize(this), scale = viewport.w / 384;
         const left = (viewport.cx ?? viewport.w / 2) - viewport.w / 2;
-        const decorSig = `port|${w.survivalRule}|${w.hull}|${w.hullMaximum}|${w.weapons.weaponLevel}|${Math.round(cPort.ratio * 32)}|${cPort.isFull ? 1 : 0}|${hasSubBoss ? Math.round(bossRatio * 100) : -1}|${Math.round(scale * 1000)}|${Math.round(left)}`;
+        const decorSig = `port2|${w.survivalRule}|${w.hull}|${w.hullMaximum}|${w.weapons.weaponLevel}|${w.weapons.specialCharges}|${Math.round(cPort.ratio * 32)}|${cPort.isFull ? 1 : 0}|${hasSubBoss ? Math.round(bossRatio * 100) : -1}|${Math.round(scale * 1000)}|${Math.round(left)}`;
         if (decorSig !== this.lastDecorSig) {
           this.lastDecorSig = decorSig;
           g.clear().setVisible(false);
-          const img = this.drawPortraitHudTexture(w.survivalRule, w.hull, w.hullMaximum, w.weapons.weaponLevel, cPort.ratio, cPort.isFull, hasSubBoss, bossRatio);
-          img.setVisible(true).setPosition(left, 0).setDisplaySize(384 * scale, 48 * scale);
+          const img = this.drawPortraitHudTexture(w.survivalRule, w.hull, w.hullMaximum, w.weapons.weaponLevel, w.weapons.specialCharges, cPort.ratio, cPort.isFull, hasSubBoss, bossRatio);
+          img.setVisible(true).setPosition(left, 0).setDisplaySize(384 * scale, 78 * scale);
         } else if (this.portraitHudImg && !this.portraitHudImg.visible) {
           this.portraitHudImg.setVisible(true);
         }
         [this.hud, this.pelagicLevel, this.pelagicSpecialText, this.pelagicCheckpointBadge, this.bossHudLabel].forEach(node => node.setScale(1));
-        this.lifeIcons.forEach((sprite, i) => sprite.setPosition(16 + i * 13.5, 16).setDisplaySize(12.5, 15).setVisible(w.survivalRule !== 'hull-v1').setAlpha(i < w.lives ? 1 : .20));
+        this.lifeIcons.forEach((sprite, i) => sprite.setPosition(160 + i * 15, 42).setDisplaySize(13, 15.5).setVisible(w.survivalRule !== 'hull-v1').setAlpha(i < w.lives ? 1 : .20));
         if (this.lastPelagicLevelFont !== 9.5) {
           this.pelagicLevel.setFontSize(9.5);
           this.lastPelagicLevelFont = 9.5;
@@ -3216,22 +3244,22 @@ export class ArcadeScene extends Phaser.Scene {
           this.pelagicLevel.setText(lvlStr);
           this.lastPelagicLevelText = lvlStr;
         }
-        this.pelagicLevel.setOrigin(0, .5).setPosition(90, 16).setVisible(true);
-        const specStr = `${w.weapons.specialCharges}`;
+        this.pelagicLevel.setOrigin(0, .5).setPosition(12, 41.5).setVisible(true);
+        const specStr = `×${w.weapons.specialCharges}`;
         if (specStr !== this.lastPelagicSpecialText) {
           this.pelagicSpecialText.setText(specStr);
           this.lastPelagicSpecialText = specStr;
         }
-        this.pelagicSpecialText.setPosition(197, 16).setVisible(true);
-        const scoreLine = w.survivalRule === 'hull-v1' ? `${w.hull}/${w.hullMaximum} ${HULL_STATES[w.hullState].label}` : `${w.lives} VIDAS`;
-        this.hud.setPosition(344, 16);
-        if (scoreLine !== this.lastHud) {
-          this.hud.setFontSize(8.5).setColor('#b8fff1').setStroke('#032f74', 2).setOrigin(1, .5);
-          this.hud.setText(scoreLine).setPosition(344, 16);
-          this.lastHud = scoreLine;
+        this.pelagicSpecialText.setOrigin(1, .5).setPosition(372, 42).setVisible(true);
+        const hullLine = w.survivalRule === 'hull-v1' ? `${w.hull}/${w.hullMaximum}` : `${w.lives}×`;
+        this.hud.setPosition(w.survivalRule === 'hull-v1' ? 226 : 210, 42);
+        if (hullLine !== this.lastHud) {
+          this.hud.setFontSize(9.5).setColor('#c2fff4').setStroke('#032f74', 2).setOrigin(0, .5);
+          this.hud.setText(hullLine).setPosition(w.survivalRule === 'hull-v1' ? 226 : 210, 42);
+          this.lastHud = hullLine;
         }
         this.pelagicAssistBadge.setVisible(false);
-        this.pelagicCheckpointBadge.setPosition(192, 46).setVisible(cpVisible);
+        this.pelagicCheckpointBadge.setPosition(192, 66).setVisible(cpVisible);
         if (hasSubBoss) {
           const sec = w.boss!.sub!.sections[w.boss!.sub!.activeSection];
           if (this.lastBossHudFont !== 8) {
@@ -3243,14 +3271,14 @@ export class ArcadeScene extends Phaser.Scene {
             this.bossHudLabel.setText(bossStr);
             this.lastBossHudText = bossStr;
           }
-          this.bossHudLabel.setPosition(16, 38).setVisible(true);
+          this.bossHudLabel.setPosition(16, 64.5).setVisible(true);
         } else {
-          this.bossHudLabel.setPosition(16, 38).setVisible(false);
+          this.bossHudLabel.setPosition(16, 64.5).setVisible(false);
         }
         if (scale !== 1 || left !== 0) {
           [this.hud, this.pelagicLevel, this.pelagicSpecialText, this.pelagicCheckpointBadge, this.bossHudLabel, ...this.lifeIcons].forEach(node => node.setPosition(left + node.x * scale, node.y * scale).setScale(node.scaleX * scale, node.scaleY * scale));
           // Scale the existing texture; resizing the font here uploaded it twice every frame.
-          this.footerScore.setScale(scale).setPosition(left + viewport.w - 8 * scale, viewport.h - 6 * scale);
+          this.footerScore.setScale(scale).setPosition(left + 192 * scale, 16 * scale);
         }
         return;
       }
@@ -3365,7 +3393,7 @@ export class ArcadeScene extends Phaser.Scene {
         if (sz >= 1.6) {
           this.shakeTime = Math.max(this.shakeTime, 0.2);
           this.shakeAmp = Math.max(this.shakeAmp, 3.0);
-          this.hitStopTime = Math.max(this.hitStopTime, 0.042);
+          if (!isMobileDisplay()) this.hitStopTime = Math.max(this.hitStopTime, 0.042);
           this.impactFlashAlpha = Math.max(this.impactFlashAlpha, 0.24);
         }
         if (e.text !== 'special-blast') { this.layeredExplosion(e); if (w.up) this.pelagicAnims.spawnEnemyDestruction(e.x, e.y, e.text, sz, this.quality); }
@@ -3674,9 +3702,11 @@ export class ArcadeScene extends Phaser.Scene {
     const l = this.touchController.getLayout();
     const out = this.touchController.peek();
     const op = l.opacity;
-    const hasSpecial = (this.world?.weapons.specialCharges ?? 1) > 0;
+    const specCount = this.world?.weapons.specialCharges ?? 1;
+    const hasSpecial = specCount > 0;
     const chargeRatio = l.charge ? (this.world?.chargedShot.ratio ?? 0) : 0;
-    const touchSig = `${out.stickActive ? 1 : 0}|${Math.round(out.stickOriginX)}|${Math.round(out.stickOriginY)}|${Math.round(out.knobX)}|${Math.round(out.knobY)}|${out.specialPressed ? 1 : 0}|${hasSpecial ? 1 : 0}|${out.chargePressed ? 1 : 0}|${Math.round(chargeRatio * 40)}|${Math.round(op * 100)}|${Math.round(l.scale * 100)}|${Math.round(l.special.x)}|${Math.round(l.special.y)}|${l.charge ? Math.round(l.charge.x) : -1}`;
+    const chargeFull = chargeRatio >= 0.99;
+    const touchSig = `${out.stickActive ? 1 : 0}|${Math.round(out.stickOriginX)}|${Math.round(out.stickOriginY)}|${Math.round(out.knobX)}|${Math.round(out.knobY)}|${out.specialPressed ? 1 : 0}|${specCount}|${out.chargePressed ? 1 : 0}|${Math.round(chargeRatio * 40)}|${Math.round(op * 100)}|${Math.round(l.scale * 100)}|${Math.round(l.special.x)}|${Math.round(l.special.y)}|${l.charge ? Math.round(l.charge.x) : -1}`;
     if (!this.touchOverlayDirty && touchSig === this.lastTouchOverlaySig) return;
     this.touchOverlayDirty = false;
     this.lastTouchOverlaySig = touchSig;
@@ -3703,49 +3733,163 @@ export class ArcadeScene extends Phaser.Scene {
     }
 
     this.touchFireText.setVisible(false);
+    this.touchChargeText.setVisible(false);
 
-    // Dedicated SPECIAL button sprite quad
+    // Sculpted equal-size SPECIAL medallion button (baked icon + label + live charge count badge)
     const sx = l.special.x, sy = l.special.y, sr = l.special.radius;
-    const specColor = hasSpecial ? (out.specialPressed ? 0xff9b7a : 0xff7e60) : 0x768ea6;
+    const specTex = hasSpecial ? 'arc-btn-special' : 'arc-btn-special-empty';
+    if (this.touchSpecDisc.texture.key !== specTex) this.touchSpecDisc.setTexture(specTex);
+    const specScale = out.specialPressed ? 0.91 : 1;
     this.touchSpecDisc
       .setVisible(true)
+      .clearTint()
       .setPosition(sx, sy)
-      .setDisplaySize(sr * 2, sr * 2)
-      .setTint(specColor)
-      .setAlpha(Math.min(0.95, op * (out.specialPressed ? 1.35 : hasSpecial ? 0.95 : 0.55)));
-    const specFont = `${Math.round(9.5 * l.scale)}px`;
+      .setDisplaySize(sr * 2 * specScale, sr * 2 * specScale)
+      .setAlpha(Math.min(0.98, Math.max(0.55, op + 0.34) * (out.specialPressed ? 1.08 : hasSpecial ? 1 : 0.62)));
+    const specFont = `${Math.round(8.5 * l.scale)}px`;
     if (specFont !== this.lastTouchSpecialFont) {
       this.touchSpecialText.setFontSize(specFont);
       this.lastTouchSpecialFont = specFont;
     }
-    this.touchSpecialText.setPosition(sx, sy).setAlpha(Math.min(1, hasSpecial ? op + 0.28 : op * 0.7)).setScale(out.specialPressed ? 0.92 : 1);
+    const specBadge = `×${specCount}`;
+    if (specBadge !== this.lastTouchSpecialText) {
+      this.touchSpecialText.setText(specBadge);
+      this.lastTouchSpecialText = specBadge;
+    }
+    this.touchSpecialText
+      .setVisible(true)
+      .setPosition(sx + sr * 0.56, sy - sr * 0.56)
+      .setAlpha(Math.min(1, hasSpecial ? op + 0.44 : op * 0.72))
+      .setScale(specScale);
 
-    // Optional ergonomic CHARGED SHOT button sprite quad (+ Graphics arc ONLY while actively charging!)
+    // Sculpted equal-size CHARGED SHOT medallion button (+ glowing rim arc ONLY while actively charging!)
     if (l.charge) {
       const cx = l.charge.x, cy = l.charge.y, cr = l.charge.radius;
-      const activeCol = chargeRatio >= 0.99 ? 0xfef08a : 0x38bdf8;
+      const chargeTex = chargeFull ? 'arc-btn-charge-full' : 'arc-btn-charge';
+      if (this.touchChargeDisc.texture.key !== chargeTex) this.touchChargeDisc.setTexture(chargeTex);
+      const chgScale = out.chargePressed ? 0.91 : 1;
       this.touchChargeDisc
         .setVisible(true)
+        .clearTint()
         .setPosition(cx, cy)
-        .setDisplaySize(cr * 2, cr * 2)
-        .setTint(activeCol)
-        .setAlpha(Math.min(0.95, op * (out.chargePressed ? 1.35 : 0.95)));
+        .setDisplaySize(cr * 2 * chgScale, cr * 2 * chgScale)
+        .setAlpha(Math.min(0.98, Math.max(0.55, op + 0.34) * (out.chargePressed ? 1.08 : 1)));
       if (chargeRatio > 0) {
-        g.lineStyle(2.4, activeCol, 0.95).beginPath().arc(cx, cy, cr - 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * chargeRatio, false).strokePath();
+        const activeCol = chargeFull ? 0xfef08a : 0x38e4ff;
+        g.lineStyle(3.0, activeCol, 0.98).beginPath().arc(cx, cy, cr * chgScale - 2.5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * chargeRatio, false).strokePath();
       }
-      const chargeFont = `${Math.round(8.2 * l.scale)}px`;
-      if (chargeFont !== this.lastTouchChargeFont) {
-        this.touchChargeText.setFontSize(chargeFont);
-        this.lastTouchChargeFont = chargeFont;
-      }
-      this.touchChargeText.setVisible(true).setPosition(cx, cy).setAlpha(Math.min(1, op + 0.28)).setScale(out.chargePressed ? 0.92 : 1);
     } else {
       this.touchChargeDisc.setVisible(false);
-      this.touchChargeText.setVisible(false);
     }
     g.setVisible(g.commandBuffer.length > 0);
   }
   private installTouch(): void {
+    const bakeActionMedallion = (
+      key: string,
+      opts: { rimTop: string; rimBot: string; coreTop: string; coreBot: string; glow: string; iconCol: string; label: string; labelCol: string; kind: 'charge' | 'special' },
+    ) => {
+      if (this.textures.exists(key)) return;
+      const t = this.textures.createCanvas(key, 160, 160)!;
+      const c = t.context;
+      const cx = 80, cy = 80;
+
+      // Soft ambient drop shadow & outer aura
+      const aura = c.createRadialGradient(cx, cy, 52, cx, cy, 78);
+      aura.addColorStop(0, opts.glow);
+      aura.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = aura;
+      c.beginPath(); c.arc(cx, cy, 78, 0, Math.PI * 2); c.fill();
+
+      // Sculpted outer metallic ring
+      const rim = c.createLinearGradient(cx, 12, cx, 148);
+      rim.addColorStop(0, opts.rimTop);
+      rim.addColorStop(1, opts.rimBot);
+      c.beginPath(); c.arc(cx, cy, 70, 0, Math.PI * 2);
+      c.fillStyle = rim; c.fill();
+
+      // Inner tactical glass core
+      const core = c.createRadialGradient(cx, 54, 8, cx, cy, 64);
+      core.addColorStop(0, opts.coreTop);
+      core.addColorStop(1, opts.coreBot);
+      c.beginPath(); c.arc(cx, cy, 62, 0, Math.PI * 2);
+      c.fillStyle = core; c.fill();
+
+      // Subtle inner precision track
+      c.beginPath(); c.arc(cx, cy, 55, 0, Math.PI * 2);
+      c.lineWidth = 2; c.strokeStyle = 'rgba(255,255,255,0.20)'; c.stroke();
+
+      // Top glass specular crescent
+      c.save();
+      c.beginPath(); c.arc(cx, cy, 60, 0, Math.PI * 2); c.clip();
+      const gloss = c.createLinearGradient(cx, 18, cx, 78);
+      gloss.addColorStop(0, 'rgba(255,255,255,0.34)');
+      gloss.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = gloss;
+      c.beginPath(); c.ellipse(cx, 38, 56, 30, 0, 0, Math.PI * 2); c.fill();
+      c.restore();
+
+      // Upper-center crisp icon
+      c.save();
+      c.shadowColor = opts.iconCol;
+      c.shadowBlur = 12;
+      if (opts.kind === 'special') {
+        // Heroic starburst + lightning bolt emblem
+        const iy = 62;
+        c.strokeStyle = 'rgba(255,244,186,0.45)';
+        c.lineWidth = 2.5;
+        for (let i = 0; i < 8; i++) {
+          const a = (i * Math.PI) / 4;
+          c.beginPath();
+          c.moveTo(cx + Math.cos(a) * 18, iy + Math.sin(a) * 18);
+          c.lineTo(cx + Math.cos(a) * 28, iy + Math.sin(a) * 28);
+          c.stroke();
+        }
+        c.beginPath();
+        c.moveTo(cx + 6, iy - 27);
+        c.lineTo(cx - 14, iy + 2);
+        c.lineTo(cx - 1, iy + 2);
+        c.lineTo(cx - 8, iy + 27);
+        c.lineTo(cx + 16, iy - 4);
+        c.lineTo(cx + 2, iy - 4);
+        c.closePath();
+        c.fillStyle = opts.iconCol;
+        c.fill();
+        c.lineWidth = 2.2;
+        c.strokeStyle = '#ffffff';
+        c.stroke();
+      } else {
+        // Precision plasma charge reticle + energy core emblem
+        const iy = 62;
+        c.strokeStyle = opts.iconCol;
+        c.lineWidth = 4;
+        c.beginPath(); c.arc(cx, iy, 21, 0, Math.PI * 2); c.stroke();
+        for (let i = 0; i < 4; i++) {
+          const a = (i * Math.PI) / 2;
+          c.beginPath();
+          c.moveTo(cx + Math.cos(a) * 14, iy + Math.sin(a) * 14);
+          c.lineTo(cx + Math.cos(a) * 29, iy + Math.sin(a) * 29);
+          c.stroke();
+        }
+        c.beginPath(); c.arc(cx, iy, 9.5, 0, Math.PI * 2);
+        c.fillStyle = '#ffffff'; c.fill();
+        c.beginPath(); c.arc(cx, iy, 5.5, 0, Math.PI * 2);
+        c.fillStyle = opts.iconCol; c.fill();
+      }
+      c.restore();
+
+      // High-contrast label neatly anchored in lower third
+      c.font = `800 18px "Oxanium", "Rajdhani", sans-serif`;
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.lineWidth = 5;
+      c.strokeStyle = 'rgba(4, 14, 34, 0.92)';
+      c.strokeText(opts.label, cx, 114);
+      c.fillStyle = opts.labelCol;
+      c.fillText(opts.label, cx, 114);
+
+      t.refresh();
+    };
+
     if (!this.textures.exists('arc-touch-ring')) {
       const t = this.textures.createCanvas('arc-touch-ring', 96, 96)!;
       const c = t.context;
@@ -3764,14 +3908,39 @@ export class ArcadeScene extends Phaser.Scene {
       c.lineWidth = 3.5; c.strokeStyle = 'rgba(255, 255, 255, 0.98)'; c.stroke();
       t.refresh();
     }
+    bakeActionMedallion('arc-btn-charge', {
+      rimTop: '#8ff4ff', rimBot: '#1478c8',
+      coreTop: 'rgba(16, 76, 134, 0.90)', coreBot: 'rgba(4, 22, 52, 0.94)',
+      glow: 'rgba(46, 212, 255, 0.42)', iconCol: '#6cf2ff',
+      label: 'CARGA', labelCol: '#e4fcff', kind: 'charge',
+    });
+    bakeActionMedallion('arc-btn-charge-full', {
+      rimTop: '#fff7b0', rimBot: '#e89514',
+      coreTop: 'rgba(138, 92, 16, 0.92)', coreBot: 'rgba(48, 24, 6, 0.95)',
+      glow: 'rgba(255, 224, 96, 0.56)', iconCol: '#fff08a',
+      label: 'CARGA', labelCol: '#fff8cf', kind: 'charge',
+    });
+    bakeActionMedallion('arc-btn-special', {
+      rimTop: '#ffe47a', rimBot: '#e85d1a',
+      coreTop: 'rgba(148, 56, 14, 0.90)', coreBot: 'rgba(46, 16, 10, 0.94)',
+      glow: 'rgba(255, 162, 54, 0.48)', iconCol: '#ffe152',
+      label: 'ESPECIAL', labelCol: '#fff3c4', kind: 'special',
+    });
+    bakeActionMedallion('arc-btn-special-empty', {
+      rimTop: '#6c8aa6', rimBot: '#2f455e',
+      coreTop: 'rgba(28, 44, 68, 0.84)', coreBot: 'rgba(10, 20, 36, 0.88)',
+      glow: 'rgba(92, 128, 164, 0.22)', iconCol: '#7c98b4',
+      label: 'ESPECIAL', labelCol: '#9cb5cc', kind: 'special',
+    });
+
     this.touchGfx = this.add.graphics().setDepth(65.5).setVisible(false);
     this.touchJoyRing = this.add.image(0, 0, 'arc-touch-ring').setDepth(65).setVisible(false);
     this.touchJoyKnob = this.add.image(0, 0, 'arc-touch-knob').setDepth(65.1).setVisible(false);
-    this.touchSpecDisc = this.add.image(0, 0, 'arc-touch-ring').setDepth(65).setVisible(false);
-    this.touchChargeDisc = this.add.image(0, 0, 'arc-touch-ring').setDepth(65).setVisible(false);
+    this.touchSpecDisc = this.add.image(0, 0, 'arc-btn-special').setDepth(65).setVisible(false);
+    this.touchChargeDisc = this.add.image(0, 0, 'arc-btn-charge').setDepth(65).setVisible(false);
     this.touchFireText = this.add.text(0, 0, 'TIRO', { fontFamily: FONT, fontSize: '10.5px', fontStyle: 'bold', color: '#fff8d4', stroke: '#081b38', strokeThickness: 2.5 }).setResolution(2).setOrigin(.5).setDepth(66);
     this.touchChargeText = this.add.text(0, 0, 'CARGA', { fontFamily: FONT, fontSize: '8.2px', fontStyle: 'bold', color: '#a5f3fc', stroke: '#081b38', strokeThickness: 2.2 }).setResolution(2).setOrigin(.5).setDepth(66);
-    this.touchSpecialText = this.add.text(0, 0, 'ESP', { fontFamily: FONT, fontSize: '9.5px', fontStyle: 'bold', color: '#ffe4dc', stroke: '#081b38', strokeThickness: 2.5 }).setResolution(2).setOrigin(.5).setDepth(66);
+    this.touchSpecialText = this.add.text(0, 0, '×3', { fontFamily: FONT, fontSize: '8.5px', fontStyle: 'bold', color: '#ffe875', stroke: '#081b38', strokeThickness: 3 }).setResolution(2).setOrigin(.5).setDepth(66);
     this.touchNodes = [this.touchGfx, this.touchJoyRing, this.touchJoyKnob, this.touchSpecDisc, this.touchChargeDisc, this.touchFireText, this.touchChargeText, this.touchSpecialText];
     this.setTouchVisible(false);
 
