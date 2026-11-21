@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { ArcadeWorld, type Actor, type WorldEvent, type Controls } from './ArcadeWorld';
 import { ArcadeBackdrop } from './ArcadeBackdrop';
 import { ArcadeAudio } from './ArcadeAudio';
-import { MISSIONS, type Encounter, type Family } from './content';
+import { MISSIONS, regionAt, type Encounter, type Family } from './content';
 import { connectedPad, detectPadProfile, GamepadReader, padLabels, type PadProfile } from '../systems/gamepadInput';
 import { globalSave } from '../systems/saveSystem';
 import { globalAudio } from '../audio/audioSystem';
@@ -147,6 +147,10 @@ export class ArcadeScene extends Phaser.Scene {
   private showAllStagesModal = false;
   private showPrivacyModal = false;
   private pendingPilotPurchase?: PilotId;
+  private pendingSkinPurchase?: string;
+  private lastAnnouncedRegion = -1;
+  private hitStopTime = 0;
+  private impactFlashAlpha = 0;
   private launchCountdown = 0;
   private launchCountdownStep = '';
   private readonly aliveEnemyIds = new Set<number>();
@@ -566,6 +570,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.showAllStagesModal = false;
     this.showPrivacyModal = false;
     this.pendingPilotPurchase = undefined;
+    this.pendingSkinPurchase = undefined;
     const old = this.screen; this.screen = screen;
     this.syncResponsiveViewport();
     if (screen !== 'loading' && screen !== 'intro') this.destroyLoadOverlay();
@@ -589,7 +594,9 @@ export class ArcadeScene extends Phaser.Scene {
     if (screen !== 'play') {
       this.launchCountdown = 0;
       this.launchCountdownStep = '';
+      this.hitStopTime = 0;
       this.portraitMenu.hideCountdown();
+      this.portraitMenu.hideSectorBanner();
     }
     if (screen === 'result' || screen === 'defeat') { this.messageUntil = 0; this.radio.setVisible(false); }
     const keepLiveScene = !!this.world && ['pause', 'confirm-exit', 'defeat', 'result', 'controller-orientation', 'controller-lost'].includes(screen);
@@ -1651,7 +1658,7 @@ export class ArcadeScene extends Phaser.Scene {
           durationLabel: `${Math.round(stageDurationFor(mission.perspective) / 60)} min`,
           summary: stageSummaries[idx] ?? '',
           recordLabel: rank ? `Recorde: ${best} · Rank ${rank}` : `Recorde: ${best}`,
-          image: idx === 0 ? `${import.meta.env.BASE_URL}assets/arcade/ui/route-pelagic-hd.webp` : frame('arc-scenery', 5),
+          image: idx === 0 ? `${import.meta.env.BASE_URL}assets/arcade/ui/route-pelagic-hd.webp` : `${import.meta.env.BASE_URL}assets/arcade/ui/route-solar-hd.webp`,
           unlocked,
           unlockHint: 'Conclua a Rota 01 para desbloquear',
         };
@@ -1844,10 +1851,81 @@ export class ArcadeScene extends Phaser.Scene {
     } else if (screen === 'hangar') {
       view.tabs([{ label: 'Perfil', tab: 'profile', index: 2 }, { label: 'Pinturas', tab: 'hangar', index: 0 }, { label: 'Conquistas', tab: 'achievements', index: 1 }].map(({ label, tab, index }) => ({ label, active: this.hangarTab === tab, action: invoke(index) })));
       if (this.hangarTab === 'hangar') {
-        view.text('Pinturas cosméticas, sem vantagem em combate.', 'hint');
-        for (let i = 3; i < this.buttons.length - 1; i++) action(i);
+        const activeProfilePilot = getPilotContract(profile.selectedPilotId);
+        const skins = HANGAR_CATALOG.filter(item => item.kind === 'skin');
+        const equippedId = profile.unlocks.equippedSkins[activeProfilePilot.id] ?? 'skin:classic';
+        const activeSkin = skins.find(s => s.id === equippedId) ?? skins[0];
+        const swatchFor = (skin: (typeof skins)[number]): string =>
+          skin.id === 'skin:classic'
+            ? 'linear-gradient(135deg, #e63946 0%, #f1faee 55%, #38bdf8 100%)'
+            : `#${(skin.tintHex ?? 0xffffff).toString(16).padStart(6, '0')}`;
+        view.hangarPaintShowcase({
+          pilotName: activeProfilePilot.name,
+          shipName: activeProfilePilot.shipName,
+          shipImage: shipFrameFor(activeProfilePilot),
+          activeSkinName: activeSkin?.name ?? 'Pintura Clássica',
+          activeSkinDesc: activeSkin?.description ?? 'Esquema original de fábrica, sem vantagem em combate.',
+          items: skins.map(skin => {
+            const owned = profile.unlocks.skins.includes(skin.id);
+            const equipped = equippedId === skin.id;
+            const canAfford = profile.wallet.credits >= skin.cost;
+            return {
+              id: skin.id,
+              name: skin.name,
+              description: skin.description,
+              swatchHex: swatchFor(skin),
+              cost: skin.cost,
+              owned,
+              equipped,
+              canAfford,
+              action: () => {
+                this.audio.unlock();
+                if (owned) {
+                  globalProfileStore.equipSkin(activeProfilePilot.id, skin.id);
+                  globalAudio.playArcade('confirm');
+                  this.refreshPortraitMenu();
+                } else if (canAfford) {
+                  this.pendingSkinPurchase = skin.id;
+                  this.refreshPortraitMenu();
+                }
+              },
+            };
+          }),
+        });
+        if (this.pendingSkinPurchase) {
+          const targetSkin = skins.find(s => s.id === this.pendingSkinPurchase);
+          if (targetSkin) {
+            const previewTint = targetSkin.tintHex && targetSkin.tintHex !== 0xffffff ? targetSkin.tintHex : (activeProfilePilot.id === 'nolan' ? undefined : activeProfilePilot.hullColor);
+            view.confirmSkinPurchaseModal({
+              shipImage: frame(PELAGIC_RIVET_SHEET, 3, previewTint),
+              skinName: targetSkin.name,
+              shipName: activeProfilePilot.shipName,
+              cost: targetSkin.cost,
+              currentCredits: profile.wallet.credits,
+              onConfirm: () => {
+                const res = globalProfileStore.buyHangarItem(targetSkin.id);
+                if (res.ok) {
+                  globalProfileStore.equipSkin(activeProfilePilot.id, targetSkin.id);
+                  globalAudio.playArcade('level-up');
+                }
+                this.pendingSkinPurchase = undefined;
+                this.refreshPortraitMenu();
+              },
+              onCancel: () => {
+                this.pendingSkinPurchase = undefined;
+                this.refreshPortraitMenu();
+              },
+            });
+          }
+        }
       } else if (this.hangarTab === 'achievements') {
-        for (const ach of ACHIEVEMENTS) view.card(`${profile.achievements[ach.id] ? '★ ' : ''}${ach.title}`, `${ach.description}\nRecompensa: ${ach.rewardCredits} CR`);
+        view.achievementsList(ACHIEVEMENTS.map(ach => ({
+          title: ach.title,
+          description: ach.description,
+          rewardCredits: ach.rewardCredits,
+          rewardGems: 5,
+          unlocked: Boolean(profile.achievements[ach.id]),
+        })));
       } else {
         const activeProfilePilot = getPilotContract(profile.selectedPilotId);
         view.accountCard({
@@ -1868,6 +1946,8 @@ export class ArcadeScene extends Phaser.Scene {
         view.metrics([
           ['Piloto ativo', `${activeProfilePilot.name} · ${activeProfilePilot.shipName}`],
           ['Pilotos', `${profile.unlocks.pilots.length}/5`],
+          ['Créditos', `${profile.wallet.credits} CR`],
+          ['Gemas', profile.wallet.gems],
           ['Fases concluídas', `${profile.clearedStages.length}/2`],
           ['Conquistas', `${Object.keys(profile.achievements).length}/${ACHIEVEMENTS.length}`],
         ]);
@@ -1995,12 +2075,26 @@ export class ArcadeScene extends Phaser.Scene {
         action(1, 'Sair da missão', false, false, true);
       });
     } else if ((screen === 'result' || screen === 'defeat') && w) {
-      view.portrait(frame('arc-pilots', w.pilotId === 'nolan' ? (screen === 'result' ? 1 : 2) : w.pilotContract.portraitFrame), w.pilotContract.name, MISSIONS[this.currentMission].name);
-      const evaluation = this.lastRunOutcome?.evaluation ?? w.evaluateRun().evaluation;
-      view.metrics([['Pontos', w.score], ['Progresso', `${Math.round(w.progressRatio * 100)}%`], ['Alvos', w.kills], [screen === 'result' ? 'Rank' : 'Impactos', screen === 'result' ? evaluation.rank : w.hitsReceived]]);
+      const evaluation = this.lastRunOutcome?.evaluation ?? w.evaluateRun(screen === 'result').evaluation;
+      view.resultHero({
+        avatarImage: frame('arc-pilots', w.pilotId === 'nolan' ? (screen === 'result' ? 1 : 2) : w.pilotContract.portraitFrame),
+        pilotName: w.pilotContract.name,
+        missionName: MISSIONS[this.currentMission].name,
+        rank: screen === 'result' ? evaluation.rank : undefined,
+        creditsEarned: this.lastRunOutcome?.creditsAdded ?? (screen === 'result' ? evaluation.creditsEarned : 0),
+        gemsEarned: this.lastRunOutcome?.gemsAdded ?? 0,
+        defeat: screen === 'defeat',
+      });
       if (screen === 'result') {
         const seconds = Math.floor(w.elapsed);
-        view.metrics([['Tempo', `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`], ['Chain máximo', `×${w.maxChain}`], ['Graze', w.grazeCount], ['Créditos ganhos', this.lastRunOutcome?.creditsAdded ?? evaluation.creditsEarned]]);
+        view.metrics([
+          ['Pontos', w.score],
+          ['Alvos', w.kills],
+          ['Tempo', `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`],
+          ['Chain máximo', `×${w.maxChain}`],
+          ['Graze', w.grazeCount],
+          ['Progresso', `${Math.round(w.progressRatio * 100)}%`],
+        ]);
         if (w.up) {
           const bonus = w.pelagicScoring.snapshot();
           view.text(`Esquadrões ${bonus.formationsCleared} · Setores ${bonus.sectorsClean}/7 · Bônus +${bonus.totalBonus}`, 'gold');
@@ -2008,11 +2102,27 @@ export class ArcadeScene extends Phaser.Scene {
         const outcome = this.lastRunOutcome;
         if (outcome?.newlyUnlockedAchievements.length) view.text(`${outcome.newlyUnlockedAchievements.length} conquista(s) desbloqueada(s)!`, 'gold');
         if (outcome?.newlyUnlockedPilots.length) view.text(`Novos pilotos: ${outcome.newlyUnlockedPilots.map(id => getPilotContract(id).name).join(', ')}`, 'gold');
+      } else {
+        view.metrics([
+          ['Pontos', w.score],
+          ['Progresso', `${Math.round(w.progressRatio * 100)}%`],
+          ['Alvos', w.kills],
+          ['Impactos', w.hitsReceived],
+        ]);
       }
       if (w.survivalRule === 'hull-v1') view.text(`Casco ${w.hull}/${w.hullMaximum} · Reparos ${w.repairsCollected}`, 'gold');
       view.text(screen === 'defeat' ? 'Respire, ajuste a rota e volte ao voo.' : (evaluation.badges.join(' · ') || 'Potência, casco e especiais seguem para a próxima rota.'), 'hint');
+      const mobileLabels: Record<string, string> = {
+        'PRÓXIMA: CIDADE SOLAR': 'Próxima: Cidade Solar',
+        'VOLTAR AO TREINO': 'Voltar ao treino',
+        'VER ENCERRAMENTO': 'Ver encerramento',
+        'CONTINUAR DO CHECKPOINT': 'Continuar do checkpoint',
+        'CONTINUAR (NÃO-1CC)': 'Continuar (não-1CC)',
+        'REINICIAR FASE': 'Reiniciar fase',
+        'MENU': 'Menu principal',
+      };
       view.dialogActions(() => {
-        this.buttons.forEach((_, i) => action(i, undefined, false, i === 0));
+        this.buttons.forEach((btn, i) => action(i, mobileLabels[btn.node.text] ?? btn.node.text, false, i === 0));
       });
     } else if (screen === 'ending') {
       view.portrait(frame('arc-pilots', pilot.portraitFrame), pilot.name, 'Operação concluída');
@@ -2064,6 +2174,9 @@ export class ArcadeScene extends Phaser.Scene {
     this.shakeTime = 0;
     this.shakeAmp = 0;
     this.damageFlashAlpha = 0;
+    this.impactFlashAlpha = 0;
+    this.hitStopTime = 0;
+    this.lastAnnouncedRegion = 0;
     this.bossWarningUntil = 0;
     this.firstSortieHintUntil = this.clock + 3.8;
     this.hullDefeatAt = 0;
@@ -2115,7 +2228,7 @@ export class ArcadeScene extends Phaser.Scene {
     }
     this.launchCountdown = 2.4;
     this.launchCountdownStep = '3';
-    globalAudio.playArcade('navigate');
+    globalAudio.playCountdown('3');
     this.portraitMenu.showCountdown('3', `ROTA 0${index + 1} · ${MISSIONS[index].name}`, false);
   }
   beginPractice(missionIndex: number, targetSeconds: number): void {
@@ -2137,7 +2250,11 @@ export class ArcadeScene extends Phaser.Scene {
   private disposeWorld(): void {
     this.launchCountdown = 0;
     this.launchCountdownStep = '';
+    this.lastAnnouncedRegion = -1;
+    this.hitStopTime = 0;
+    this.impactFlashAlpha = 0;
     this.portraitMenu.hideCountdown();
+    this.portraitMenu.hideSectorBanner();
     this.lastFooterScore = '';
     this.lastFooterFont = 0;
     this.scoreUploadCooldown = 0;
@@ -2296,7 +2413,7 @@ export class ArcadeScene extends Phaser.Scene {
           const ready = stepText === 'READY!';
           if (stepText !== this.launchCountdownStep) {
             this.launchCountdownStep = stepText;
-            globalAudio.playArcade(ready ? 'confirm' : 'navigate');
+            globalAudio.playCountdown(stepText as '3' | '2' | '1' | 'READY!');
             this.portraitMenu.showCountdown(stepText, `ROTA 0${this.currentMission + 1} · ${MISSIONS[this.currentMission].name}`, ready);
           }
         } else {
@@ -2325,13 +2442,25 @@ export class ArcadeScene extends Phaser.Scene {
         const input: Controls = { x: moveX, y: moveY, fire: fireInput, special: specialInput, charge: chargeInput, focus: focusInput };
         this.lastInput = input;
         if (!this.devSimulationPaused) {
-          this.accumulator += dt * this.devTimeScale;
-          while (this.accumulator >= 1 / 120) {
-            this.replayRecorder?.record(input);
-            this.world.step(1 / 120, input);
-            this.accumulator -= 1 / 120;
+          if (this.hitStopTime > 0) {
+            this.hitStopTime = Math.max(0, this.hitStopTime - dt);
+          } else {
+            this.accumulator += dt * this.devTimeScale;
+            while (this.accumulator >= 1 / 120) {
+              this.replayRecorder?.record(input);
+              this.world.step(1 / 120, input);
+              this.accumulator -= 1 / 120;
+            }
+            if (this.world.up && this.world.state !== 'intro') this.pelagicComms.step(dt * this.devTimeScale);
+            if (this.portraitUpActive && this.world.up && this.world.state === 'play' && !this.world.boss) {
+              const reg = regionAt(this.world.route, 'UP');
+              if (reg > this.lastAnnouncedRegion && reg > 0 && this.world.route > 10) {
+                this.lastAnnouncedRegion = reg;
+                const regionName = MISSIONS[0].regions[reg];
+                if (regionName) this.portraitMenu.showSectorBanner(reg + 1, regionName);
+              }
+            }
           }
-          if (this.world.up && this.world.state !== 'intro') this.pelagicComms.step(dt * this.devTimeScale);
         }
         this.consumeEvents();
         this.renderTouchOverlay();
@@ -2347,6 +2476,11 @@ export class ArcadeScene extends Phaser.Scene {
     this.devOverlayCallback?.(this, delta);
   }
   private backMobileMenu(): void {
+    if (this.pendingSkinPurchase) {
+      this.pendingSkinPurchase = undefined;
+      this.refreshPortraitMenu();
+      return;
+    }
     if (this.pendingPilotPurchase) {
       this.pendingPilotPurchase = undefined;
       this.refreshPortraitMenu();
@@ -2704,6 +2838,12 @@ export class ArcadeScene extends Phaser.Scene {
       if (!prefs.reducedFlash && this.screen === 'play') {
         const a = this.damageFlashAlpha * 0.45;
         g.lineStyle(18, 0xff2a4d, a).strokeRect(w.arena.left + 9, w.arena.top + 9, w.arenaWidth - 18, (w.arena.bottom - w.arena.top) - 18);
+      }
+    }
+    if (this.impactFlashAlpha > 0) {
+      this.impactFlashAlpha = Math.max(0, this.impactFlashAlpha - dt * 2.4);
+      if (!prefs.reducedFlash && this.screen === 'play') {
+        g.fillStyle(0xffffff, this.impactFlashAlpha * 0.55).fillRect(w.arena.left, w.arena.top, w.arenaWidth, w.arena.bottom - w.arena.top);
       }
     }
 
@@ -3222,7 +3362,12 @@ export class ArcadeScene extends Phaser.Scene {
       else if (e.type === 'explosion') {
         const sz = e.size ?? 1;
         globalAudio.playArcade(sz > 1.3 ? 'boom' : 'pop');
-        if (sz >= 1.6) { this.shakeTime = Math.max(this.shakeTime, 0.2); this.shakeAmp = Math.max(this.shakeAmp, 3.0); }
+        if (sz >= 1.6) {
+          this.shakeTime = Math.max(this.shakeTime, 0.2);
+          this.shakeAmp = Math.max(this.shakeAmp, 3.0);
+          this.hitStopTime = Math.max(this.hitStopTime, 0.042);
+          this.impactFlashAlpha = Math.max(this.impactFlashAlpha, 0.24);
+        }
         if (e.text !== 'special-blast') { this.layeredExplosion(e); if (w.up) this.pelagicAnims.spawnEnemyDestruction(e.x, e.y, e.text, sz, this.quality); }
       }
       else if (e.type === 'damage') {

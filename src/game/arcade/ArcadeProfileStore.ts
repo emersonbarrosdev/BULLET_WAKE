@@ -477,15 +477,19 @@ export class ArcadeProfileStore {
     kills?: number;
     achievements: readonly AchievementId[];
     flight?: CampaignFlight;
-  }): { newRecord: boolean; newlyUnlockedAchievements: AchievementId[]; newlyUnlockedPilots: PilotId[]; creditsAdded: number } {
+  }): { newRecord: boolean; newlyUnlockedAchievements: AchievementId[]; newlyUnlockedPilots: PilotId[]; creditsAdded: number; gemsAdded: number } {
     let newRecord = false;
     const newlyUnlockedAchievements: AchievementId[] = [];
     const newlyUnlockedPilots: PilotId[] = [];
+    let firstClearBonusGems = 0;
 
     if (params.victory && (params.missionId === 1 || params.missionId === 2)) {
       if (!this.profile.clearedStages.includes(params.missionId)) {
         this.profile.clearedStages.push(params.missionId);
         this.profile.clearedStages.sort((a, b) => a - b);
+        firstClearBonusGems = 15;
+      } else {
+        firstClearBonusGems = 5;
       }
       if (params.flight) {
         const flight = structuredClone(params.flight);
@@ -521,13 +525,18 @@ export class ArcadeProfileStore {
     }
 
     let creditsAdded = 0;
+    let gemsAdded = 0;
     if (!this.profile.wallet.claimedRunIds.includes(params.runId)) {
       this.profile.wallet.claimedRunIds.push(params.runId);
       if (this.profile.wallet.claimedRunIds.length > 32) {
         this.profile.wallet.claimedRunIds.shift();
       }
       creditsAdded = Math.max(0, Math.round(params.creditsEarned + achievementBonusCredits));
+      const rankGems = params.victory ? (params.rank === 'S+' ? 10 : params.rank === 'S' ? 5 : params.rank === 'A' ? 2 : 0) : 0;
+      const achGems = newlyUnlockedAchievements.length * 5;
+      gemsAdded = Math.max(0, firstClearBonusGems + rankGems + achGems);
       this.profile.wallet.credits += creditsAdded;
+      this.profile.wallet.gems = (this.profile.wallet.gems ?? 0) + gemsAdded;
       this.profile.wallet.totalEarned += creditsAdded;
 
       const prevStats = this.profile.pilotStats[params.pilotId] ?? { sorties: 0, clears: 0, kills: 0, bestScore: 0 };
@@ -540,7 +549,7 @@ export class ArcadeProfileStore {
     }
 
     this.save();
-    return { newRecord, newlyUnlockedAchievements, newlyUnlockedPilots, creditsAdded };
+    return { newRecord, newlyUnlockedAchievements, newlyUnlockedPilots, creditsAdded, gemsAdded };
   }
 
   bestScoreForMission(missionId?: number, pilotId?: PilotId, survivalRule: SurvivalRule = 'classic-v1'): number {

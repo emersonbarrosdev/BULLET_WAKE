@@ -118,6 +118,25 @@ export class AudioSystem {
     const large=kind==='boom';this.noise(large?.27:.14,large?.3:.2,large?2400:3100);this.tone('sine',large?160:340,large?45:100,large?.25:.13,large?.22:.13);this.tone('triangle',large?680:950,220,.07,.06);
   }
 
+  /** Distinct ascending arcade countdown tones (3 -> 2 -> 1 -> READY! chord + afterburner burst). */
+  playCountdown(step: '3' | '2' | '1' | 'READY!'): void {
+    this.unlock();
+    if (!this.foreground || !this.ctx || !this.sfxGain || this.isMuted || this.environment === 'space') return;
+    if (step === '3') {
+      this.tone('triangle', 392, 392, 0.13, 0.14, 0);
+      this.tone('sine', 196, 196, 0.14, 0.11, 0);
+    } else if (step === '2') {
+      this.tone('triangle', 523.25, 523.25, 0.13, 0.15, 0);
+      this.tone('sine', 261.63, 261.63, 0.14, 0.11, 0);
+    } else if (step === '1') {
+      this.tone('triangle', 659.25, 659.25, 0.14, 0.16, 0);
+      this.tone('sine', 329.63, 329.63, 0.15, 0.12, 0);
+    } else {
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this.tone('triangle', f, f * 1.015, 0.24, 0.12, i * 0.028));
+      this.noise(0.18, 0.09, 2600);
+    }
+  }
+
   playShot(pilotId: 'nolan' | 'cora' | 'harlan' | 'lyra' | 'bento', level = 1): void {
     this.unlock();
     if (!this.foreground || !this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;

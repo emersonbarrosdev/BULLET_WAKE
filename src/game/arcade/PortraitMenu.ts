@@ -19,7 +19,8 @@ type IconName =
   | 'close'
   | 'grid'
   | 'coin'
-  | 'gem';
+  | 'gem'
+  | 'trophy';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const ICON_PATHS: Record<IconName, string> = {
@@ -41,6 +42,7 @@ const ICON_PATHS: Record<IconName, string> = {
   grid: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.8"/>',
   coin: '<circle cx="12" cy="12" r="8.5" fill="#ffd447" fill-opacity="0.22" stroke="#ffe57d" stroke-width="2"/><path d="M12 7.5v9M9.5 10c0-1.1 1.1-1.8 2.5-1.8s2.5.7 2.5 1.8c0 1.2-1 1.6-2.5 2s-2.5.8-2.5 2c0 1.1 1.1 1.8 2.5 1.8s2.5-.7 2.5-1.8" stroke="#ffe57d" stroke-width="1.7" stroke-linecap="round"/>',
   gem: '<path d="M7 4.5h10l4 5.2-9 10.3-9-10.3 4-5.2Z" fill="#5ce6ff" fill-opacity="0.25" stroke="#78eeff" stroke-width="1.9" stroke-linejoin="round"/><path d="M3 9.7h18M7 4.5l2.2 5.2L12 20l2.8-10.3L17 4.5" stroke="#aef6ff" stroke-width="1.3" stroke-linejoin="round"/>',
+  trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0V4Z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8 6H5.5a2 2 0 0 0 0 4H8M16 6h2.5a2 2 0 0 1 0 4H16M12 13v4M9 20h6M10 17h4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
 };
 
 const DIALOG_SCREENS = new Set(['pause', 'defeat', 'result', 'confirm-exit', 'controller-orientation', 'controller-lost']);
@@ -144,6 +146,55 @@ export interface AccountCardOptions {
   readonly onLogout: () => void;
 }
 
+export interface HangarPaintItem {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly cost: number;
+  readonly swatchHex: string;
+  readonly owned: boolean;
+  readonly equipped: boolean;
+  readonly canAfford: boolean;
+  readonly action: () => void;
+}
+
+export interface HangarPaintShowcaseOptions {
+  readonly pilotName: string;
+  readonly shipName: string;
+  readonly shipImage: string;
+  readonly activeSkinName: string;
+  readonly activeSkinDesc: string;
+  readonly items: readonly HangarPaintItem[];
+}
+
+export interface ConfirmSkinPurchaseOptions {
+  readonly shipImage: string;
+  readonly skinName: string;
+  readonly shipName: string;
+  readonly cost: number;
+  readonly currentCredits: number;
+  readonly onConfirm: () => void;
+  readonly onCancel: () => void;
+}
+
+export interface AchievementViewItem {
+  readonly title: string;
+  readonly description: string;
+  readonly rewardCredits: number;
+  readonly rewardGems: number;
+  readonly unlocked: boolean;
+}
+
+export interface ResultHeroOptions {
+  readonly avatarImage: string;
+  readonly pilotName: string;
+  readonly missionName: string;
+  readonly rank?: string;
+  readonly creditsEarned?: number;
+  readonly gemsEarned?: number;
+  readonly defeat?: boolean;
+}
+
 /** Mobile menus use crisp CSS layout, native text, and vector icons independent of the combat camera. */
 export class PortraitMenu {
   private root?: HTMLElement;
@@ -152,6 +203,8 @@ export class PortraitMenu {
   private footer?: HTMLElement;
   private container?: HTMLElement;
   private countdownEl?: HTMLElement;
+  private sectorBannerEl?: HTMLElement;
+  private sectorBannerTimer?: number;
   private screen = '';
   private restoreScroll = 0;
   private restoreFocus = -1;
@@ -215,6 +268,26 @@ export class PortraitMenu {
     this.countdownEl?.remove();
     this.countdownEl = undefined;
   }
+  hideSectorBanner(): void {
+    if (this.sectorBannerTimer !== undefined) {
+      window.clearTimeout(this.sectorBannerTimer);
+      this.sectorBannerTimer = undefined;
+    }
+    this.sectorBannerEl?.remove();
+    this.sectorBannerEl = undefined;
+  }
+  showSectorBanner(sectorNumber: number, sectorName: string): void {
+    this.hideSectorBanner();
+    const el = this.el('div', 'bw-sector-banner');
+    el.setAttribute('aria-live', 'polite');
+    el.append(
+      this.el('span', 'bw-sector-tag', `SETOR 0${sectorNumber}`),
+      this.el('strong', 'bw-sector-name', sectorName),
+    );
+    document.body.append(el);
+    this.sectorBannerEl = el;
+    this.sectorBannerTimer = window.setTimeout(() => this.hideSectorBanner(), 2200);
+  }
   showCountdown(stepText: string, subtitle: string, ready = false): void {
     if (!this.countdownEl) {
       const el = this.el('div', 'bw-countdown-overlay');
@@ -234,7 +307,7 @@ export class PortraitMenu {
       num.classList.add('is-pop');
     }
   }
-  destroy(): void { this.hide(); this.hideCountdown(); this.images.clear(); }
+  destroy(): void { this.hide(); this.hideCountdown(); this.hideSectorBanner(); this.images.clear(); }
 
   private el<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text?: string): HTMLElementTagNameMap[K] {
     const node = document.createElement(tag); node.className = className;
@@ -857,6 +930,148 @@ export class PortraitMenu {
       card.append(form);
     }
     this.body?.append(card);
+  }
+
+  hangarPaintShowcase(opts: HangarPaintShowcaseOptions): void {
+    const stage = this.el('section', 'bw-paint-stage');
+    const bay = this.el('div', 'bw-pilot-ship-bay bw-paint-bay');
+    const img = this.el('img'); img.src = opts.shipImage; img.alt = opts.shipName; img.draggable = false;
+    bay.append(img);
+    const meta = this.el('div', 'bw-paint-stage-copy');
+    meta.append(
+      this.el('span', 'bw-ship-eyebrow', `${opts.pilotName} · ${opts.shipName}`),
+      this.el('h2', '', opts.activeSkinName),
+      this.el('p', '', opts.activeSkinDesc),
+    );
+    stage.append(bay, meta);
+    this.body?.append(stage);
+
+    const list = this.el('div', 'bw-paint-list');
+    for (const item of opts.items) {
+      const btn = this.el('button', `bw-paint-card${item.equipped ? ' is-equipped' : ''}${!item.owned ? ' is-locked' : ''}`);
+      btn.type = 'button';
+      btn.disabled = item.equipped || (!item.owned && !item.canAfford);
+
+      const swatch = this.el('span', 'bw-paint-swatch');
+      swatch.style.background = item.swatchHex;
+      if (!item.owned) swatch.append(this.icon('lock', 'bw-ico bw-ico-lock'));
+
+      const copy = this.el('div', 'bw-paint-card-copy');
+      copy.append(this.el('strong', '', item.name), this.el('small', '', item.description));
+
+      const pillText = item.equipped ? 'Equipada' : item.owned ? 'Equipar' : `${item.cost} CR`;
+      const pill = this.el('span', `bw-paint-pill${item.equipped ? ' active' : item.owned ? ' owned' : item.canAfford ? ' buy' : ' locked'}`, pillText);
+
+      btn.append(swatch, copy, pill);
+      this.bindAction(btn, item.action);
+      list.append(btn);
+    }
+    this.body?.append(list);
+  }
+
+  confirmSkinPurchaseModal(opts: ConfirmSkinPurchaseOptions): void {
+    const overlay = this.el('div', 'bw-modal-overlay bw-purchase-overlay');
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', `Confirmar compra de ${opts.skinName}`);
+
+    const card = this.el('div', 'bw-modal-card');
+    const preview = this.el('div', 'bw-purchase-preview');
+    const sImg = this.el('img', 'bw-purchase-ship'); sImg.src = opts.shipImage; sImg.alt = opts.shipName; sImg.draggable = false;
+    preview.append(sImg);
+
+    const head = this.el('div', 'bw-modal-head');
+    head.append(
+      preview,
+      this.el('p', 'bw-mobile-eyebrow', 'Confirmação de pintura'),
+      this.el('h2', '', `Adquirir ${opts.skinName}?`),
+      this.el('p', 'bw-modal-desc', `Pintura cosmética para ${opts.shipName} · Valor: ${opts.cost} CR\nSaldo atual: ${opts.currentCredits} CR · Após a compra: ${Math.max(0, opts.currentCredits - opts.cost)} CR`),
+    );
+
+    const actions = this.el('div', 'bw-dialog-actions');
+    const okBtn = this.el('button', 'bw-mobile-button primary');
+    okBtn.type = 'button';
+    okBtn.append(this.icon('check', 'bw-ico bw-ico-btn'), this.el('span', '', `Confirmar compra (${opts.cost} CR)`));
+    this.bindAction(okBtn, opts.onConfirm);
+
+    const cancelBtn = this.el('button', 'bw-mobile-button back', 'Cancelar');
+    cancelBtn.type = 'button';
+    this.bindAction(cancelBtn, opts.onCancel);
+
+    actions.append(okBtn, cancelBtn);
+    card.append(head, actions);
+    overlay.append(card);
+    this.root?.append(overlay);
+  }
+
+  achievementsList(items: readonly AchievementViewItem[]): void {
+    const unlockedCount = items.filter(i => i.unlocked).length;
+    const summary = this.el('section', 'bw-ach-summary');
+    const head = this.el('div', 'bw-ach-summary-head');
+    head.append(
+      this.el('span', '', 'Progresso de conquistas'),
+      this.el('strong', '', `${unlockedCount}/${items.length}`),
+    );
+    const track = this.el('div', 'bw-ach-progress');
+    const fill = this.el('div', 'bw-ach-progress-fill');
+    fill.style.width = `${items.length ? Math.round((unlockedCount / items.length) * 100) : 0}%`;
+    track.append(fill);
+    summary.append(head, track);
+    this.body?.append(summary);
+
+    const list = this.el('div', 'bw-ach-list');
+    for (const item of items) {
+      const card = this.el('article', `bw-ach-card${item.unlocked ? ' is-unlocked' : ' is-locked'}`);
+      const badge = this.el('div', 'bw-ach-icon');
+      badge.append(this.icon(item.unlocked ? 'trophy' : 'lock', 'bw-ico'));
+
+      const copy = this.el('div', 'bw-ach-copy');
+      const top = this.el('div', 'bw-ach-top');
+      top.append(
+        this.el('h3', '', item.title),
+        this.el('span', `bw-ach-status${item.unlocked ? ' done' : ''}`, item.unlocked ? 'Concluída' : 'Bloqueada'),
+      );
+      const rewards = this.el('div', 'bw-ach-rewards');
+      const cr = this.el('span', 'bw-ach-chip cr');
+      cr.append(this.icon('coin', 'bw-ico bw-ico-xs'), this.el('span', '', `+${item.rewardCredits} CR`));
+      const gm = this.el('span', 'bw-ach-chip gem');
+      gm.append(this.icon('gem', 'bw-ico bw-ico-xs'), this.el('span', '', `+${item.rewardGems}`));
+      rewards.append(cr, gm);
+
+      copy.append(top, this.el('p', '', item.description), rewards);
+      card.append(badge, copy);
+      list.append(card);
+    }
+    this.body?.append(list);
+  }
+
+  resultHero(opts: ResultHeroOptions): void {
+    const hero = this.el('div', `bw-result-hero${opts.defeat ? ' is-defeat' : ''}`);
+    const img = this.el('img', 'bw-result-avatar'); img.src = opts.avatarImage; img.alt = opts.pilotName; img.draggable = false;
+    const copy = this.el('div', 'bw-result-copy');
+    copy.append(this.el('h2', '', opts.pilotName), this.el('p', '', opts.missionName));
+    if ((opts.creditsEarned ?? 0) > 0 || (opts.gemsEarned ?? 0) > 0) {
+      const pills = this.el('div', 'bw-reward-pills');
+      if ((opts.creditsEarned ?? 0) > 0) {
+        const cr = this.el('span', 'bw-currency-pill cr');
+        cr.append(this.icon('coin', 'bw-ico bw-ico-xs'), this.el('span', '', `+${opts.creditsEarned} CR`));
+        pills.append(cr);
+      }
+      if ((opts.gemsEarned ?? 0) > 0) {
+        const gm = this.el('span', 'bw-currency-pill gem');
+        gm.append(this.icon('gem', 'bw-ico bw-ico-xs'), this.el('span', '', `+${opts.gemsEarned}`));
+        pills.append(gm);
+      }
+      copy.append(pills);
+    }
+    hero.append(img, copy);
+    if (opts.rank) {
+      const tier = opts.rank === 'S+' || opts.rank === 'S' ? 'gold' : opts.rank === 'A' ? 'cyan' : 'cobalt';
+      const emblem = this.el('div', `bw-rank-emblem ${tier}`);
+      emblem.append(this.el('small', '', 'RANK'), this.el('strong', '', opts.rank));
+      hero.append(emblem);
+    }
+    this.target()?.append(hero);
   }
 
   settingsGroup(title: string, build: () => void): void {
