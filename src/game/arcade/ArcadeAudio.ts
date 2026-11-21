@@ -6,7 +6,7 @@ export class ArcadeAudio {
  private foreground=true;
  private targetVol():number{
   if(this.muted)return 0;
-  const stageDuck=this.track==='stage1'||this.track==='stage2'?0.78:0.95;
+  const stageDuck=this.track==='stage1'||this.track==='stage2'?0.48:0.86;
   return Math.min(1,this.volume*stageDuck);
  }
  private clearFade():void{
