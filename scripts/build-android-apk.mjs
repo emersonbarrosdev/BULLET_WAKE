@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { homedir } from 'node:os';
 
 const root = resolve('.');
+const versionCode = '20261128', versionName = '0.1.0-hull-preview.8';
 const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT ?? join(homedir(), 'AppData/Local/Android/Sdk');
 const jdk = process.env.JAVA_HOME;
 if (!jdk) throw new Error('JAVA_HOME must point to JDK 17 or newer.');
@@ -20,7 +21,7 @@ for (const p of [out, work, join(work,'classes'), join(work,'dex'), join(work,'r
 copyFileSync('public/assets/brand/bullet-wake-logo-compact.png', join(work, 'res/drawable/icon.png'));
 run(join(tools, 'aapt2' + suffix), ['compile', '--dir', join(work,'res'), '-o', join(work,'resources.zip')]);
 const unsigned = join(work,'unsigned.apk'), aligned = join(work,'aligned.apk'), apk = join(out,'BULLET_WAKE-hull-preview.apk');
-run(join(tools,'aapt2' + suffix), ['link', '-o', unsigned, '-I', androidJar, '--manifest', resolve('android/AndroidManifest.xml'), '--min-sdk-version', '28', '--target-sdk-version', '34', '--version-code', '20261122', '--version-name', '0.1.0-hull-preview.2', join(work,'resources.zip')]);
+run(join(tools,'aapt2' + suffix), ['link', '-o', unsigned, '-I', androidJar, '--manifest', resolve('android/AndroidManifest.xml'), '--min-sdk-version', '28', '--target-sdk-version', '34', '--version-code', versionCode, '--version-name', versionName, join(work,'resources.zip')]);
 // Windows AAPT2 -A stores nested asset names with backslashes, which Android's
 // AssetManager cannot resolve. JAR writes portable ZIP paths with forward slashes.
 const webAssets = join(work, 'web-assets');
@@ -55,6 +56,6 @@ run(java, ['-jar',join(tools,'lib/apksigner.jar'),'verify','--verbose',signed]);
 copyFileSync(signed, apk + '.tmp');
 renameSync(apk + '.tmp', apk);
 const bytes = readFileSync(apk);
-const report = { apk, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex'), packageId:'dev.emersonbarros.bulletwake.preview', minSdk:28,targetSdk:34,buildTools:toolVersion,platform,productionBuild:true,offlineAssets:true,signing:'local debug key',builtAt:new Date().toISOString() };
+const report = { apk, versionName, versionCode: Number(versionCode), bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex'), packageId:'dev.emersonbarros.bulletwake.preview', minSdk:28,targetSdk:34,buildTools:toolVersion,platform,productionBuild:true,offlineAssets:true,signing:'local debug key',builtAt:new Date().toISOString() };
 writeFileSync(join(out,'build-report.json'), JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report,null,2));

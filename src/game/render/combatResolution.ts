@@ -3,6 +3,14 @@ import { GAME_WIDTH, GAME_HEIGHT } from '../constants';
 
 const resizeHandlers = new WeakMap<Phaser.Scene, () => void>();
 const virtualSizes = new WeakMap<Phaser.Scene, { w: number; h: number; cx?: number; cy?: number }>();
+const leftInsets = new WeakMap<Phaser.Scene, number>();
+
+/** Reserve a mobile sidebar outside the world camera, including camera/input coordinates. */
+export function setCombatLeftInset(scene: Phaser.Scene, fraction: number): void {
+  if ((leftInsets.get(scene) ?? 0) === fraction) return;
+  leftInsets.set(scene, fraction);
+  resizeHandlers.get(scene)?.();
+}
 
 /** Render above CSS resolution on dense phone displays, with a bounded GPU budget. */
 export function renderPixelRatio(): number {
@@ -31,17 +39,19 @@ export function enableCombatResolution(scene: Phaser.Scene): void {
   }
 
   const resize = (): void => {
-    const v = getCombatVirtualSize(scene);
     const parent = scene.game.canvas?.parentElement;
     if (!parent) return;
     const width = Math.round(parent.clientWidth * renderPixelRatio());
     const height = Math.round(parent.clientHeight * renderPixelRatio());
     if (width <= 0 || height <= 0) return;
     scene.scale.setGameSize(width, height);
+    // Scale listeners may update mobile layout synchronously; use their final dimensions.
+    const v = getCombatVirtualSize(scene);
+    const left = Math.round(width * (leftInsets.get(scene) ?? 0));
     scene.cameras.main
-      .setViewport(0, 0, width, height)
-      .setSize(width, height)
-      .setZoom(Math.min(width / v.w, height / v.h))
+      .setViewport(left, 0, width - left, height)
+      .setSize(width - left, height)
+      .setZoom(Math.min((width - left) / v.w, height / v.h))
       .centerOn(v.cx ?? v.w / 2, v.cy ?? v.h / 2);
   };
   resizeHandlers.set(scene, resize);
@@ -51,6 +61,7 @@ export function enableCombatResolution(scene: Phaser.Scene): void {
     window.removeEventListener('resize', resize);
     resizeHandlers.delete(scene);
     virtualSizes.delete(scene);
+    leftInsets.delete(scene);
     scene.scale.setGameSize(GAME_WIDTH, GAME_HEIGHT);
   });
 }

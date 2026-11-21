@@ -16,6 +16,7 @@ import type { WeaponLevel } from '../systems/weaponSystem.ts';
 export type GameDifficulty = 'easy' | 'normal' | 'hard';
 export type SavedDifficulty = GameDifficulty | 'arcade';
 export type SupplyEntry = { readonly at: number; readonly kind: (typeof SUPPLIES)[number]['kind'] };
+export type SupplyBalance = 'classic-v1' | 'balanced-v2';
 
 export const NORMAL_RESPAWN_INVULNERABLE = 3.5;
 export const NORMAL_RESPAWN_BULLET_CLEAR_RADIUS = 130;
@@ -287,11 +288,33 @@ export const FENDA_NORMAL_SUPPLIES: readonly SupplyEntry[] = [
   { at: 322, kind: 'power' },
 ];
 
+/** Earlier upgrades, recovery in each half and four finite special refills. No arch drops. */
+export const BALANCED_SUPPLIES: Readonly<Record<'UP' | 'SIDE', readonly SupplyEntry[]>> = {
+  UP: [
+    { at: 10, kind: 'power' }, { at: 26, kind: 'power' }, { at: 44, kind: 'special' },
+    { at: 58, kind: 'power' }, { at: 76, kind: 'life' }, { at: 94, kind: 'power' },
+    { at: 112, kind: 'power' }, { at: 124, kind: 'power' }, { at: 138, kind: 'power' }, { at: 164, kind: 'power' },
+    { at: 174, kind: 'special' }, { at: 220, kind: 'power' }, { at: 244, kind: 'power' },
+    { at: 262, kind: 'special' }, { at: 280, kind: 'power' }, { at: 294, kind: 'life' },
+    { at: 318, kind: 'power' }, { at: 340, kind: 'special' },
+  ],
+  SIDE: [
+    { at: 10, kind: 'power' }, { at: 26, kind: 'power' }, { at: 44, kind: 'special' },
+    { at: 60, kind: 'power' }, { at: 80, kind: 'life' }, { at: 100, kind: 'power' },
+    { at: 118, kind: 'power' }, { at: 132, kind: 'power' }, { at: 145, kind: 'special' },
+    { at: 196, kind: 'power' }, { at: 208, kind: 'special' }, { at: 220, kind: 'power' },
+    { at: 236, kind: 'life' }, { at: 254, kind: 'power' }, { at: 276, kind: 'power' },
+    { at: 290, kind: 'special' },
+  ],
+};
+
 export function buildMissionSupplies(
   mission: Mission,
   difficulty: GameDifficulty,
   assisted = false,
+  balance: SupplyBalance = 'classic-v1',
 ): readonly SupplyEntry[] {
+  if (balance === 'balanced-v2') return BALANCED_SUPPLIES[mission.perspective];
   if (mission.perspective === 'UP') {
     if (difficulty === 'normal' && !assisted) return FENDA_NORMAL_SUPPLIES;
     return FENDA_BASE_SUPPLIES;

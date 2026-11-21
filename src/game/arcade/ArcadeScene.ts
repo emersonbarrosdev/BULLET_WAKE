@@ -6,9 +6,10 @@ import { MISSIONS, type Encounter, type Family } from './content';
 import { connectedPad, detectPadProfile, GamepadReader, padLabels, type PadProfile } from '../systems/gamepadInput';
 import { globalSave } from '../systems/saveSystem';
 import { globalAudio } from '../audio/audioSystem';
+import { watchApplicationFocus } from '../audio/ApplicationFocus';
 import { stageFlightSnapshot, type CampaignFlight } from '../systems/campaignFlight';
-import { spriteContact } from '../render/SpriteSilhouette';
-import { enableCombatResolution, getCombatVirtualSize, setCombatVirtualSize } from '../render/combatResolution';
+import { spriteContact, SpriteContactWarmup } from '../render/SpriteSilhouette';
+import { enableCombatResolution, getCombatVirtualSize, setCombatVirtualSize, setCombatLeftInset } from '../render/combatResolution';
 import { clamp, sweepEllipse } from './geometry';
 import { readArcadeProgress, recordArcadeClear } from './progress';
 import { pelagicShotSize } from './PelagicPresentation';
@@ -18,11 +19,13 @@ import { SUPPLY_DRONE_DISPLAY_SIZE, SUPPLY_DRONE_PROP_SIZE } from './SupplyDrone
 import { subTotalHp } from './PelagicSubmarineBoss';
 import { EMPLACEMENT_TEXTURE, GUN_SMOKE_TEXTURE, TOWER_TEXTURE, PelagicEmplacements } from './PelagicEmplacements';
 import { PelagicActorAnims, preloadPelagicActorAnims } from './PelagicActorAnims';
-import { PELAGIC_RIVET_SHEET } from './PelagicActorAnimsMath';
+import { PELAGIC_RIVET_SHEET, PELAGIC_ENEMY_AIR_SHEET, PELAGIC_UFO_SHEET } from './PelagicActorAnimsMath';
 import { preloadTideArchArt } from './PelagicTideArchArt';
 import type { PelagicCheckpointSnapshot, TideArchPhase } from './PelagicTideArch';
 import {
   PELAGIC_ENEMY_MISSILE_SHEET,
+  PELAGIC_HELI_SHEET,
+  PELAGIC_TURRETS_SHEET,
   PELAGIC_SUB_CLEAN_SHEET,
   PELAGIC_TOWER_CLEAN_SHEET,
   resolveHullVisualTransform,
@@ -64,11 +67,13 @@ import { HULL_STATES } from './HullIntegrity';
 import { drawHullSegments } from './HullHud';
 import { HullDamageArt, preloadHullDamageArt } from './HullDamageArt';
 import { PortraitMenu } from './PortraitMenu';
+import { isMobileDisplay, MobileDisplay, mobileLandscapeViewport, mobilePortraitViewport, type MobileOrientation } from './MobileDisplay';
+import { MobileFlightHud } from './MobileFlightHud';
 
 type HangarTab = 'hangar' | 'achievements' | 'profile';
 type RunOutcome = ReturnType<ArcadeProfileStore['recordRunResult']> & { evaluation: RunEvaluationResult };
 
-type Screen = 'loading' | 'intro' | 'title' | 'pilot' | 'missions' | 'practice' | 'hangar' | 'play' | 'pause' | 'controls' | 'settings' | 'touch-settings' | 'credits' | 'confirm-exit' | 'result' | 'defeat' | 'ending';
+type Screen = 'loading' | 'intro' | 'title' | 'options' | 'controller-orientation' | 'controller-lost' | 'pilot' | 'missions' | 'practice' | 'hangar' | 'play' | 'pause' | 'controls' | 'settings' | 'touch-settings' | 'credits' | 'confirm-exit' | 'result' | 'defeat' | 'ending';
 type OpeningState = 'LOADING' | 'STUDIO_SPLASH' | 'MAIN_MENU' | 'READY';
 type OpeningPhase = 'BOOT' | 'LOADING' | 'LOADING_COMPLETE' | 'STUDIO_SPLASH' | 'STUDIO_EXIT' | 'TITLE_READY' | 'TITLE_VISIBLE';
 type ControlsTab = 'pc' | 'gamepad' | 'android';
@@ -89,6 +94,7 @@ export class ArcadeScene extends Phaser.Scene {
   private titleRevealVeil?: Phaser.GameObjects.Rectangle;
   private introSkipFade?: number;
   private loadStartMs = 0; private loadCompleteAtMs?: number; private loadRealProgress = 0; private loadVisualProgress = 0;
+  private contactWarmup?: SpriteContactWarmup;
   private splashHandoffCommitted = false; private bootOverlayDismissed = false; private loadErrors: string[] = [];
   private controlsTab: ControlsTab = 'pc'; private lastControlsPadId = ''; private nextControlsFocus?: number; private controlsPadPreview: 'auto' | 'playstation' | 'xbox' = 'auto';
   private enemySprites = new Map<number, Phaser.GameObjects.Sprite>(); private cargoSprites = new Map<number, Phaser.GameObjects.Sprite>(); private cargoExtras = new Map<number, { shadow: Phaser.GameObjects.Image; glow: Phaser.GameObjects.Image; prop: Phaser.GameObjects.Sprite }>(); private partSprites = new Map<number, Phaser.GameObjects.Sprite>(); private bulletSprites: Phaser.GameObjects.Sprite[] = []; private effects: Effect[] = [];
@@ -130,7 +136,15 @@ export class ArcadeScene extends Phaser.Scene {
   private runId = '';
   private footerScore!: Phaser.GameObjects.Text;
   private hullArt!: HullDamageArt;
-  private portraitMenu = new PortraitMenu();
+  private portraitMenu = new PortraitMenu(() => { this.audio.unlock(); globalAudio.playArcade('confirm'); });
+  private mobileDisplay = new MobileDisplay();
+  private mobileFlightHud = new MobileFlightHud();
+  private landscapeEnabled = false;
+  private controllerReturnScreen: Screen = 'title';
+  private selectedHomeStage?: number;
+  private showAllStagesModal = false;
+  private showPrivacyModal = false;
+  private pendingPilotPurchase?: PilotId;
   constructor() { super('ArcadeScene'); }
   preload(): void {
     enableCombatResolution(this);
@@ -174,7 +188,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.load.on('progress', (n: number) => {
       this.loadRealProgress = Math.max(this.loadRealProgress, clamp(n, 0, 1));
       const elapsed = Math.max(0, (performance.now() - this.loadStartMs) / 1000);
-      this.syncLoadVisual(Math.min(this.loadRealProgress * 0.98, clamp(elapsed / 0.55, 0.02, 0.98)));
+      this.syncLoadVisual(Math.min(this.loadRealProgress * 0.90, clamp(elapsed / 0.55, 0.02, 0.90)));
     });
     this.load.on('loaderror', (file: { key?: string; url?: string }) => {
       this.loadErrors.push(String(file?.url ?? file?.key ?? 'unknown'));
@@ -228,6 +242,13 @@ export class ArcadeScene extends Phaser.Scene {
     this.pelagicAnims = new PelagicActorAnims(this);
     this.hullArt = new HullDamageArt(this);
     this.backdrop = new ArcadeBackdrop(this); this.emplacements = new PelagicEmplacements(this); this.decor = this.add.graphics().setDepth(40); this.combatInk = this.add.graphics().setDepth(12);
+    this.contactWarmup = new SpriteContactWarmup(this.textures, [
+      'arc-enemies', 'arc-ufo', 'arc-boss', 'arc-wet-hull-4', 'arc-wet-hull-5',
+      'arc-wet-boss-0', 'arc-wet-boss-1', 'arc-wet-boss-2',
+      PELAGIC_ENEMY_AIR_SHEET, PELAGIC_UFO_SHEET, PELAGIC_HELI_SHEET,
+      PELAGIC_TURRETS_SHEET, PELAGIC_SUB_CLEAN_SHEET, PELAGIC_TOWER_CLEAN_SHEET,
+      SUB_ART, SUB_HULL_ART, SUB_PARTS_ART, EMPLACEMENT_TEXTURE, TOWER_TEXTURE,
+    ]);
     this.vfxGfx = this.add.graphics().setDepth(52);
     this.warningBannerText = this.add.text(384, 108, '', { fontFamily: FONT, fontSize: '13.5px', fontStyle: 'bold', color: '#ffe654', stroke: '#3a0612', strokeThickness: 3.5, align: 'center' }).setResolution(2).setOrigin(.5).setDepth(53).setVisible(false);
     this.sortieHintText = this.add.text(384, 416, '', { fontFamily: FONT, fontSize: '8.5px', fontStyle: 'bold', color: '#c8f4ff', stroke: '#04122e', strokeThickness: 2.5, align: 'center' }).setResolution(2).setOrigin(.5).setDepth(53).setVisible(false);
@@ -259,22 +280,23 @@ export class ArcadeScene extends Phaser.Scene {
     this.makeOrbTextures(); this.installTouch(); this.show('loading');
     const blur = () => { this.touchController.clearAll(); this.input.keyboard?.resetKeys(); this.renderTouchOverlay(); if (this.screen === 'play') this.show('pause'); };
     const onResize = () => { this.touchController.clearAll(); this.syncResponsiveViewport(); this.refreshTouchLayout(); this.refreshPortraitMenu(); };
-    window.addEventListener('blur', blur);
-    const visibility = () => { if (document.hidden) blur(); };
-    document.addEventListener('visibilitychange', visibility);
+    const stopWatchingFocus = watchApplicationFocus(active => {
+      this.audio.setForeground(active); globalAudio.setForeground(active);
+      if (!active) blur();
+    });
     window.addEventListener('resize', onResize);
     window.addEventListener('orientationchange', onResize);
     this.scale.on('resize', onResize);
     this.events.once('shutdown', () => {
       this.audio.stop(); globalAudio.stopCombatEffects();
-      window.removeEventListener('blur', blur);
-      document.removeEventListener('visibilitychange', visibility);
+      stopWatchingFocus();
       window.removeEventListener('resize', onResize);
       window.removeEventListener('orientationchange', onResize);
       this.scale.off('resize', onResize);
       this.backdrop.destroy(); this.pelagicAnims?.destroy();
       this.hullArt?.destroy();
       this.portraitMenu.destroy();
+      this.mobileFlightHud.hide();
     });
   }
   private makeOrbTextures(): void {
@@ -437,25 +459,62 @@ export class ArcadeScene extends Phaser.Scene {
     }));
   }
   private isPortraitMobileMode(): boolean {
-    if (typeof window === 'undefined') return false;
-    const portrait = window.innerHeight > window.innerWidth * 1.05;
-    const touchCapable = this.touchDeviceActive || matchMedia('(pointer: coarse)').matches || (('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 900);
-    return portrait && touchCapable;
+    return isMobileDisplay() && window.innerHeight > window.innerWidth * 1.05;
+  }
+  private isMobileLandscape(): boolean {
+    return isMobileDisplay() && this.landscapeEnabled && this.mobileDisplay.connected && window.innerWidth > window.innerHeight;
+  }
+  private async changeMobileOrientation(mode: MobileOrientation): Promise<void> {
+    if (!await this.mobileDisplay.orient(mode)) return;
+    this.landscapeEnabled = mode === 'landscape';
+    globalProfileStore.updateSettings({ mobileOrientation: mode });
+    this.touchController.clearAll();
+    this.syncResponsiveViewport(); this.setTouchVisible(this.screen === 'play'); this.refreshPortraitMenu();
+  }
+  private checkMobileController(browserConnected: boolean): boolean {
+    if (!isMobileDisplay()) return false;
+    const event = this.mobileDisplay.poll(this.clock, browserConnected, !['loading', 'intro'].includes(this.screen));
+    if (event === 'connected') {
+      if (this.screen !== 'controller-lost') this.controllerReturnScreen = this.screen === 'play' ? 'pause' : this.screen;
+      this.audio.pause(); this.show('controller-orientation');
+      return true;
+    }
+    if (event === 'disconnected') {
+      const wasLandscape = this.landscapeEnabled;
+      this.landscapeEnabled = false;
+      void this.mobileDisplay.orient('portrait');
+      if (this.screen === 'controller-orientation') this.show(this.controllerReturnScreen);
+      if (wasLandscape) {
+        this.controllerReturnScreen = this.world ? 'pause' : this.screen;
+        this.audio.pause(); this.show('controller-lost');
+      } else this.refreshPortraitMenu();
+      return true;
+    }
+    return false;
   }
   private portraitCanvasHeight(): number {
     if (typeof window === 'undefined' || window.innerWidth <= 0) return 682;
-    return clamp(Math.round((384 * window.innerHeight) / window.innerWidth), 600, 860);
+    const host = this.game.canvas?.parentElement;
+    return 384 * (host?.clientHeight || innerHeight) / (host?.clientWidth || innerWidth);
   }
   private syncResponsiveViewport(): void {
     const mobilePortrait = this.isPortraitMobileMode();
     const usePortraitPlay = !!this.world?.up && mobilePortrait;
+    const landscape = this.isMobileLandscape() && !!this.world;
+    const parent = this.game.canvas?.parentElement;
+    const landscapeView = landscape ? mobileLandscapeViewport(parent?.clientWidth || innerWidth, parent?.clientHeight || innerHeight, this.world!.arena, this.world!.up) : undefined;
     if (typeof document !== 'undefined') {
       document.body.dataset.requireLandscape = 'false';
     }
     this.portraitUpActive = usePortraitPlay;
     const targetH = this.portraitCanvasHeight();
-    if (usePortraitPlay) {
-      setCombatVirtualSize(this, 384, targetH);
+    setCombatLeftInset(this, landscapeView?.fraction ?? 0);
+    if (landscapeView) {
+      setCombatVirtualSize(this, landscapeView.w, landscapeView.h, landscapeView.cx, landscapeView.cy);
+    } else if (usePortraitPlay) {
+      const a = this.world!.arena;
+      const v = mobilePortraitViewport(parent?.clientWidth || innerWidth, parent?.clientHeight || innerHeight, a);
+      setCombatVirtualSize(this, v.w, v.h, v.cx);
     } else if (mobilePortrait && this.world) {
       // Preserve the SIDE battlefield proportions, with separate space for portrait controls.
       setCombatVirtualSize(this, 768, targetH * 2);
@@ -466,21 +525,26 @@ export class ArcadeScene extends Phaser.Scene {
     }
     if (this.world?.up) {
       const inGameScreen = ['play', 'pause', 'controls', 'settings', 'touch-settings', 'confirm-exit', 'result', 'defeat'].includes(this.screen);
-      this.pelagicDesktopHud?.setVisible(inGameScreen && !usePortraitPlay);
-      this.pelagicAssistBadge?.setVisible(inGameScreen && !!this.world.isAssisted && !usePortraitPlay);
-      this.world.setArenaBounds(
+      this.pelagicDesktopHud?.setVisible(inGameScreen && !usePortraitPlay && !isMobileDisplay());
+      this.pelagicAssistBadge?.setVisible(inGameScreen && !!this.world.isAssisted && !usePortraitPlay && !isMobileDisplay());
+      if (!isMobileDisplay()) this.world.setArenaBounds(
         usePortraitPlay
           ? { left: 0, right: 384, top: 34, bottom: targetH - 14 }
           : { left: 160, right: 608, top: 18, bottom: 424 },
       );
       this.lastHud = '';
     }
+    if (!landscape || this.screen !== 'play') this.mobileFlightHud.hide();
     if (mobilePortrait && this.screen === 'play' && this.touchGfx && !this.touchShown) {
       this.touchDeviceActive = true;
       this.setTouchVisible(true);
     }
   }
   show(screen: Screen): void {
+    if (isMobileDisplay() && (screen === 'practice' || screen === 'missions')) screen = 'title';
+    this.showAllStagesModal = false;
+    this.showPrivacyModal = false;
+    this.pendingPilotPurchase = undefined;
     const old = this.screen; this.screen = screen;
     this.syncResponsiveViewport();
     if (screen !== 'loading' && screen !== 'intro') this.destroyLoadOverlay();
@@ -498,14 +562,14 @@ export class ArcadeScene extends Phaser.Scene {
       this.openingState = 'READY';
     }
     if (this.openingHistory.at(-1) !== this.openingState) this.openingHistory.push(this.openingState);
-    if (old !== screen && !['loading', 'intro', 'play'].includes(screen) && old !== 'loading' && old !== 'intro') globalAudio.playArcade('navigate');
+    if (!isMobileDisplay() && old !== screen && !['loading', 'intro', 'play'].includes(screen) && old !== 'loading' && old !== 'intro') globalAudio.playArcade('navigate');
     this.tweens.killAll(); this.ui.removeAll(true); this.ui.setAlpha(1).setPosition(0, 0); this.pauseBtn = undefined; this.buttons = []; this.focus = 0; this.menuActionLocked = false; this.hideIntroActors();
     this.ui.setVisible(!['loading', 'intro'].includes(screen));
     if (screen === 'result' || screen === 'defeat') { this.messageUntil = 0; this.radio.setVisible(false); }
     if (screen !== 'play') { this.touchController.clearAll(); this.pelagicAnims?.hide(); this.clearBonusPopups(); }
     const game = ['play', 'pause', 'controls', 'settings', 'touch-settings', 'confirm-exit', 'result', 'defeat'].includes(screen) && !!this.world;
     const stage1Hud = game && !!this.world?.up;
-    const showPcPanel = stage1Hud && !this.portraitUpActive;
+    const showPcPanel = stage1Hud && !this.portraitUpActive && !isMobileDisplay();
     this.pelagicDesktopHud.setVisible(showPcPanel); this.pelagicLevel.setVisible(stage1Hud);
     this.pelagicSpecialText?.setVisible(stage1Hud && this.portraitUpActive);
     this.pelagicAssistBadge.setVisible(stage1Hud && !!this.world?.isAssisted && !this.portraitUpActive);
@@ -795,7 +859,7 @@ export class ArcadeScene extends Phaser.Scene {
         this.menuActionLocked = false;
         this.show('missions');
       }, 158, 28, { fontSize: 10.2, variant: 'secondary' });
-      this.button(654, 366, 'MODO TREINO', () => { this.practiceMission = 0; this.show('practice'); }, 144, 28, { fontSize: 10.5, variant: 'secondary' });
+      if (!isMobileDisplay()) this.button(654, 366, 'MODO TREINO', () => { this.practiceMission = 0; this.show('practice'); }, 144, 28, { fontSize: 10.5, variant: 'secondary' });
       makeMenuHintBar(this, this.ui, 417, connectedPad()?.id, { adjust: true });
       if (old !== 'missions') playMenuScreenEntrance(this, this.ui, 200);
     } else if (screen === 'practice') {
@@ -821,22 +885,22 @@ export class ArcadeScene extends Phaser.Scene {
 
       const checkpoints = this.practiceMission === 0
         ? [
-            { label: '01 • CÉU ABERTO (0s)', at: 0 },
-            { label: '02 • COSTA CORAL (60s)', at: 60 },
-            { label: '03 • ARQUIPÉLAGO (115s)', at: 115 },
-            { label: '04 • CORRENTE NORTE (160s)', at: 160 },
-            { label: '05 • ARCO DAS MARÉS (180s)', at: 180 },
-            { label: '06 • BLOQUEIO NAVAL (230s)', at: 230 },
-            { label: '07 • MAR ABERTO (295s)', at: 295 },
-            { label: 'CHEFE • COLOSSO ABISSAL', at: 360 },
-          ]
+          { label: '01 • CÉU ABERTO (0s)', at: 0 },
+          { label: '02 • COSTA CORAL (60s)', at: 60 },
+          { label: '03 • ARQUIPÉLAGO (115s)', at: 115 },
+          { label: '04 • CORRENTE NORTE (160s)', at: 160 },
+          { label: '05 • ARCO DAS MARÉS (180s)', at: 180 },
+          { label: '06 • BLOQUEIO NAVAL (230s)', at: 230 },
+          { label: '07 • MAR ABERTO (295s)', at: 295 },
+          { label: 'CHEFE • COLOSSO ABISSAL', at: 360 },
+        ]
         : [
-            { label: '01 • ENTRADA SOLAR (0s)', at: 0 },
-            { label: '02 • DISTRITO CENTRAL (85s)', at: 85 },
-            { label: '03 • MINI-CHEFE GIRO (155s)', at: 155 },
-            { label: '04 • ALTA ATMOSFERA (225s)', at: 225 },
-            { label: 'CHEFE • FORTALEZA SOLAR', at: 300 },
-          ];
+          { label: '01 • ENTRADA SOLAR (0s)', at: 0 },
+          { label: '02 • DISTRITO CENTRAL (85s)', at: 85 },
+          { label: '03 • MINI-CHEFE GIRO (155s)', at: 155 },
+          { label: '04 • ALTA ATMOSFERA (225s)', at: 225 },
+          { label: 'CHEFE • FORTALEZA SOLAR', at: 300 },
+        ];
       checkpoints.forEach((cp, idx) => {
         const col = idx % 2;
         const row = Math.floor(idx / 2);
@@ -1144,7 +1208,7 @@ export class ArcadeScene extends Phaser.Scene {
         if (preGame) makeVectorPanel(this, this.ui, 528, 220, 300, 218, { kind: 'sub' });
         else makePanel(this, 528, 224, 300, 222, 'cobalt', this.ui);
         this.text(528, 126, 'COMANDOS NA TELA', 11, UI.goldHex);
-        cmdRow(414, 156, 'JOYSTICK', 'Voo preciso em 8 direções', { wide: true, badgeFont: 7.5 });
+        cmdRow(414, 156, 'ARRASTE', 'Movimento livre sob o dedo', { wide: true, badgeFont: 7.5 });
         cmdRow(414, 187, 'AUTO', 'Tiro automático durante o voo', { wide: true, descColor: UI.goldHex, badgeFont: 8.5 });
         cmdRow(414, 218, 'CARGA', 'Segure e solte (quando disponível)', { wide: true, descColor: '#67e8f9', badgeFont: 8 });
         cmdRow(414, 249, 'ESP', 'Ativar especial sem erro', { wide: true, gold: true, descColor: UI.cyanHex, badgeFont: 8.5 });
@@ -1483,133 +1547,419 @@ export class ArcadeScene extends Phaser.Scene {
 
   private refreshPortraitMenu(): void {
     const screen = this.screen;
-    if (!this.isPortraitMobileMode() || ['loading', 'intro', 'play'].includes(screen)) {
+    const mobile = isMobileDisplay(), covered = mobile && !['loading', 'intro', 'play'].includes(screen);
+    this.cameras.main.setVisible(!covered);
+    const limit = mobile ? (covered ? 30 : 62) : 0;
+    if (this.game.loop.fpsLimit !== limit) this.game.loop.setFPSLimit(limit);
+    if (!isMobileDisplay() || ['loading', 'intro', 'play'].includes(screen)) {
       this.portraitMenu.hide();
       this.ui?.setVisible(!['loading', 'intro'].includes(screen));
       return;
     }
     const view = this.portraitMenu;
+    const profile = globalProfileStore.getProfile();
+    const settings = globalSave.getSettings();
+    const pilot = getPilotContract(this.selectedPilotId);
+    const w = this.world;
     const titles: Partial<Record<Screen, string>> = {
       title: 'Bullet Wake', pilot: 'Escolha seu piloto', missions: 'Escolha a rota', practice: 'Modo treino',
-      hangar: 'Hangar e perfil', pause: 'Pausa', controls: 'Controles', settings: 'Opções',
+      options: 'Menu', hangar: 'Perfil e Hangar', pause: 'Pausa', controls: 'Controles', settings: 'Configurações',
+      'controller-orientation': 'Controle conectado', 'controller-lost': 'Controle desconectado',
       'touch-settings': 'Controles touch', credits: 'Créditos', 'confirm-exit': 'Sair da missão?',
       result: 'Missão concluída!', defeat: this.world?.survivalRule === 'hull-v1' ? 'Casco destruído' : 'Fim de voo', ending: 'Do mar ao céu!',
     };
-    view.begin(screen, titles[screen] ?? 'Bullet Wake');
+    const compactHeader = screen === 'pilot' || screen === 'hangar';
+    const headerBadge = compactHeader ? `${profile.wallet.credits} CR` : undefined;
+    view.begin(screen, titles[screen] ?? 'Bullet Wake', '', { compactHeader, headerBadge, footerRow: screen === 'pilot' });
     this.ui.setVisible(false);
     const invoke = (index: number, direction?: -1 | 1, refresh = false) => () => {
       const button = this.buttons[index]; if (!button || button.disabled) return;
-      this.audio.unlock(); globalAudio.playArcade('confirm'); this.menuActionLocked = false;
+      this.menuActionLocked = false;
       if (direction === -1 && button.onLeft) button.onLeft();
       else if (direction === 1 && button.onRight) button.onRight();
       else button.action();
       if (refresh && this.screen === screen) this.refreshPortraitMenu();
     };
-    const action = (index: number, label?: string, footer = false, primary = false) => {
+    const action = (index: number, label?: string, footer = false, primary = false, danger = false) => {
       const button = this.buttons[index]; if (!button) return;
-      view.button(label ?? button.node.text, invoke(index), { disabled: button.disabled, footer, style: primary ? 'primary' : /VOLTAR|MENU|CANCELAR/.test(button.node.text) ? 'back' : 'secondary' });
+      const style = danger ? 'danger' : primary ? 'primary' : /VOLTAR|MENU|CANCELAR/.test(button.node.text) ? 'back' : 'secondary';
+      view.button(label ?? button.node.text, invoke(index), { disabled: button.disabled, footer, style });
     };
-    const frame = (texture: string, index = 0) => {
+    const frame = (texture: string, index = 0, tintHex?: number) => {
       const f = this.textures.getFrame(texture, index);
       if (!f?.source.image) return '';
-      return view.frame(`${texture}:${index}`, f.source.image, f.cutX, f.cutY, f.cutWidth, f.cutHeight);
+      return view.frame(`${texture}:${index}`, f.source.image, f.cutX, f.cutY, f.cutWidth, f.cutHeight, tintHex);
     };
-    const profile = globalProfileStore.getProfile();
-    const settings = globalSave.getSettings();
-    const pilot = getPilotContract(this.selectedPilotId);
-    const w = this.world;
+    const shipFrameFor = (p: ReturnType<typeof getPilotContract>) => {
+      const skinTint = globalProfileStore.getEquippedSkinTint(p.id);
+      const tint = skinTint !== 0xffffff ? skinTint : (p.id === 'nolan' ? undefined : p.hullColor);
+      return frame(PELAGIC_RIVET_SHEET, 3, tint);
+    };
+
     if (screen === 'title') {
-      view.logo();
-      action(0, 'Iniciar jornada', false, true); action(1, 'Controles'); action(2, 'Opções'); action(3, 'Créditos');
-      view.button('Hangar e perfil', () => { this.audio.unlock(); this.hangarTab = 'hangar'; this.show('hangar'); }, { compact: true });
+      const activeHomePilot = getPilotContract(profile.selectedPilotId);
+      const prog = this.arcadeProgress();
+      const cleared1 = prog.cleared.includes(1);
+      if (this.selectedHomeStage === undefined) this.selectedHomeStage = cleared1 ? 1 : 0;
+      const stageSummaries = [
+        'Sobrevoe o arquipélago, cruze o Arco das Marés e enfrente o Colosso Abissal.',
+        'Rompa a defesa aérea da metrópole suspensa até a Fortaleza Solar.',
+      ];
+      const rule = globalProfileStore.getSettings().survivalRule;
+      const stages = MISSIONS.slice(0, 2).map((mission, idx) => {
+        const unlocked = idx === 0 || cleared1;
+        const best = Math.max(globalProfileStore.bestScoreForMission(mission.id, profile.selectedPilotId, rule), this.bestScoreFor(mission.id));
+        const rank = globalProfileStore.bestRankForMission(mission.id, profile.selectedPilotId, rule);
+        return {
+          index: idx,
+          badge: `Rota 0${idx + 1}`,
+          name: mission.name,
+          perspectiveLabel: perspectiveLabelPt(mission.perspective),
+          durationLabel: `${Math.round(stageDurationFor(mission.perspective) / 60)} min`,
+          summary: stageSummaries[idx] ?? '',
+          recordLabel: rank ? `Recorde: ${best} · Rank ${rank}` : `Recorde: ${best}`,
+          image: idx === 0 ? `${import.meta.env.BASE_URL}assets/arcade/ui/route-pelagic.webp` : frame('arc-scenery', 5),
+          unlocked,
+          unlockHint: 'Conclua a Rota 01 para desbloquear',
+        };
+      });
+      const activeStageIdx = clamp(this.selectedHomeStage, 0, stages.length - 1);
+      this.selectedHomeStage = activeStageIdx;
+
+      view.flybys([0, 4, 8].map(start => Array.from({ length: 4 }, (_, i) => frame(UI_TEX.wingmenAnim, start + i))));
+      view.homeDashboard({
+        stages,
+        activeStageIndex: activeStageIdx,
+        pilotName: activeHomePilot.name,
+        shipName: activeHomePilot.shipName,
+        avatarImage: frame('arc-pilots', activeHomePilot.portraitFrame),
+        accountName: profile.account.displayName,
+        accountLinked: profile.account.mode === 'linked',
+        credits: profile.wallet.credits,
+        onSelectStage: (idx) => {
+          this.selectedHomeStage = idx;
+          this.refreshPortraitMenu();
+        },
+        onOpenAllStages: () => {
+          this.audio.unlock();
+          this.showAllStagesModal = true;
+          this.refreshPortraitMenu();
+        },
+        onLaunchMission: () => {
+          const picked = stages[activeStageIdx];
+          if (!picked?.unlocked) return;
+          this.audio.unlock();
+          this.selectedPilotId = profile.selectedPilotId;
+          const carry = activeStageIdx ? prog.flights[1] : undefined;
+          this.begin(activeStageIdx, carry);
+        },
+        onPilots: () => {
+          this.audio.unlock();
+          this.selectedPilotId = profile.selectedPilotId;
+          this.show('pilot');
+        },
+        onProfile: () => {
+          this.audio.unlock();
+          this.hangarTab = 'profile';
+          this.show('hangar');
+        },
+        onSettings: () => {
+          this.audio.unlock();
+          this.pauseOrigin = 'title';
+          this.show('settings');
+        },
+        onHangar: () => {
+          this.audio.unlock();
+          this.hangarTab = 'hangar';
+          this.show('hangar');
+        },
+        onControls: () => {
+          this.audio.unlock();
+          this.pauseOrigin = 'title';
+          this.controlsTab = this.mobileDisplay.connected ? 'gamepad' : 'android';
+          this.show('controls');
+        },
+        onCredits: () => {
+          this.audio.unlock();
+          this.show('credits');
+        },
+      });
+      if (this.showAllStagesModal) {
+        view.stageGridModal({
+          stages,
+          activeStageIndex: activeStageIdx,
+          onPickStage: (idx) => {
+            this.selectedHomeStage = idx;
+            this.showAllStagesModal = false;
+            this.refreshPortraitMenu();
+          },
+          onClose: () => {
+            this.showAllStagesModal = false;
+            this.refreshPortraitMenu();
+          },
+        });
+      }
+      if (!profile.account.welcomePromptSeen || !profile.account.privacyAccepted) {
+        view.welcomeLoginModal({
+          defaultName: profile.account.mode === 'linked' ? profile.account.displayName : '',
+          initialPrivacyAccepted: Boolean(profile.account.privacyAccepted),
+          onLogin: (name) => {
+            this.audio.unlock();
+            globalProfileStore.signInLocal(name);
+            this.refreshPortraitMenu();
+          },
+          onGuest: () => {
+            this.audio.unlock();
+            globalProfileStore.markWelcomeSeen();
+            this.refreshPortraitMenu();
+          },
+        });
+      }
+    } else if (screen === 'options') {
+      view.button('Perfil e Hangar', () => { this.hangarTab = 'profile'; this.show('hangar'); });
+      view.button('Controles', () => { this.pauseOrigin = 'title'; this.controlsTab = this.mobileDisplay.connected ? 'gamepad' : 'android'; this.show('controls'); });
+      view.button('Créditos', () => this.show('credits'));
+      view.button('Configurações', () => { this.pauseOrigin = 'title'; this.show('settings'); });
+      view.button('Voltar', () => this.show('title'), { footer: true, style: 'back' });
+    } else if (screen === 'controller-orientation') {
+      view.text('Quer jogar com o celular na horizontal?');
+      view.card('Modo paisagem', 'Controle para mover, carregar e usar o especial. Os instrumentos da nave ficam na lateral esquerda.');
+      view.text('Você também pode mudar isso depois em Configurações.', 'hint');
+      if (w) view.text('A área de voo desta partida será preservada. Novas partidas usam o campo amplo em paisagem.', 'hint');
+      view.dialogActions(() => {
+        view.button('Usar paisagem', () => { this.show(this.controllerReturnScreen); void this.changeMobileOrientation('landscape'); }, { style: 'primary' });
+        view.button('Continuar em retrato', () => { this.show(this.controllerReturnScreen); void this.changeMobileOrientation('portrait'); });
+      });
+    } else if (screen === 'controller-lost') {
+      view.text('Voltamos ao retrato para você continuar com os controles de toque.');
+      if (w) view.text('A partida está pausada e seu progresso foi mantido.', 'hint');
+      view.dialogActions(() => {
+        view.button('Continuar', () => this.show(this.controllerReturnScreen), { style: 'primary' });
+      });
     } else if (screen === 'pilot') {
-      view.portrait(frame('arc-pilots', pilot.portraitFrame), pilot.name, `${pilot.shipName} · ${pilot.callsign}`);
-      view.pilots(listPilotContracts().map(p => ({
-        name: p.name, image: frame('arc-pilots', p.portraitFrame), selected: p.id === pilot.id,
-        unlocked: globalProfileStore.isPilotUnlocked(p.id), action: () => {
-          this.audio.unlock(); this.selectedPilotId = p.id;
+      const unlocked = globalProfileStore.isPilotUnlocked(pilot.id);
+      const canAfford = profile.wallet.credits >= pilot.creditCost;
+      const history = globalProfileStore.getPilotHistory(pilot.id);
+      view.pilotShowcase({
+        portraitImage: frame('arc-pilots', pilot.id === 'nolan' ? 3 : pilot.portraitFrame),
+        shipImage: shipFrameFor(pilot),
+        name: pilot.name,
+        nationality: pilot.nationality,
+        shipName: pilot.shipName,
+        callsign: pilot.callsign,
+        weaponName: pilot.weaponName,
+        specialName: pilot.specialName,
+        detail: unlocked ? pilot.bio : pilot.unlockHint,
+        unlocked,
+        stats: pilot.stats,
+        history,
+      });
+      view.pilotStrip(listPilotContracts().map(p => ({
+        name: p.name,
+        image: frame('arc-pilots', p.portraitFrame),
+        selected: p.id === pilot.id,
+        unlocked: globalProfileStore.isPilotUnlocked(p.id),
+        cost: p.creditCost,
+        action: () => {
+          this.audio.unlock();
+          this.selectedPilotId = p.id;
+          this.pendingPilotPurchase = undefined;
           if (globalProfileStore.isPilotUnlocked(p.id)) globalProfileStore.selectPilot(p.id);
           this.show('pilot');
         },
       })));
-      view.metrics([['Velocidade', `${pilot.stats.speed}/5`], ['Armamento', `${pilot.stats.firepower}/5`], ['Blindagem', `${pilot.stats.armor}/5`], ['Saldo', `${profile.wallet.credits} CR`]]);
-      view.card(pilot.weaponName, `Especial: ${pilot.specialName}\n${pilot.specialDescription}`);
-      view.text(globalProfileStore.isPilotUnlocked(pilot.id) ? pilot.bio : pilot.unlockHint, 'hint');
-      action(0, undefined, true, true); action(1, 'Voltar', true);
-    } else if (screen === 'missions') {
-      view.text(`${pilot.name} · ${pilot.shipName}`, 'gold');
-      for (let i = 0; i < 2; i++) {
-        const mission = MISSIONS[i]; const available = i === 0 || this.arcadeProgress().cleared.includes(1);
-        const best = Math.max(globalProfileStore.bestScoreForMission(mission.id, this.selectedPilotId, globalProfileStore.getSettings().survivalRule), this.bestScoreFor(mission.id));
-        view.card(mission.name, `${perspectiveLabelPt(mission.perspective)} · ${Math.round(stageDurationFor(mission.perspective) / 60)} min\n${available ? `Recorde: ${best}` : 'Conclua a rota 01 para desbloquear.'}`, {
-          image: i === 0 ? `${import.meta.env.BASE_URL}assets/arcade/ui/route-pelagic.webp` : frame('arc-scenery', 5),
-          badge: `Rota 0${i + 1}`, label: available ? 'Iniciar missão' : 'Bloqueada', disabled: !available, action: invoke(i),
+      view.button('Voltar', () => this.show('title'), { footer: true, style: 'back' });
+      if (unlocked) {
+        view.button('Confirmar piloto', () => {
+          globalProfileStore.selectPilot(pilot.id);
+          this.show('title');
+        }, { footer: true, style: 'primary', icon: 'check' });
+      } else if (canAfford) {
+        view.button(`Comprar · ${pilot.creditCost} CR`, () => {
+          this.pendingPilotPurchase = pilot.id;
+          this.refreshPortraitMenu();
+        }, { footer: true, style: 'primary' });
+      } else {
+        view.button(`${pilot.creditCost} CR`, () => { }, { footer: true, style: 'secondary', disabled: true, icon: 'lock' });
+      }
+      if (this.pendingPilotPurchase) {
+        const targetPilot = getPilotContract(this.pendingPilotPurchase);
+        view.confirmPurchaseModal({
+          portraitImage: frame('arc-pilots', targetPilot.portraitFrame),
+          shipImage: shipFrameFor(targetPilot),
+          pilotName: targetPilot.name,
+          shipName: targetPilot.shipName,
+          cost: targetPilot.creditCost,
+          currentCredits: profile.wallet.credits,
+          onConfirm: () => {
+            const res = globalProfileStore.buyHangarItem(`pilot:${targetPilot.id}`);
+            if (res.ok) {
+              globalProfileStore.selectPilot(targetPilot.id);
+              this.selectedPilotId = targetPilot.id;
+              globalAudio.playArcade('level-up');
+            }
+            this.pendingPilotPurchase = undefined;
+            this.refreshPortraitMenu();
+          },
+          onCancel: () => {
+            this.pendingPilotPurchase = undefined;
+            this.refreshPortraitMenu();
+          },
         });
       }
-      view.heading('Preparar voo');
-      view.setting('Dificuldade', DIFFICULTY_PROFILES[normalizeGameDifficulty(settings.difficulty)].label, invoke(3, -1, true), invoke(3, 1, true));
-      view.setting('Modo assistido', settings.assisted ? 'Ligado' : 'Desligado', invoke(4, -1, true), invoke(4, 1, true));
-      view.text(globalProfileStore.getSettings().survivalRule === 'hull-v1' ? 'Casco: 4 segmentos. REPAIR recupera 1; impactos reduzem POWER.' : 'Clássico: vidas arcade.', 'hint');
-      action(5, 'Modo treino'); action(2, 'Voltar', true);
-    } else if (screen === 'practice') {
-      view.text('Pratique setores e chefes. O treino não altera recordes competitivos nem 1CC.', 'hint');
-      action(0); action(1);
-      for (let i = 2; i < this.buttons.length - 1; i++) action(i);
-      action(this.buttons.length - 1, 'Voltar', true);
     } else if (screen === 'hangar') {
-      view.text(`${profile.wallet.credits} créditos`, 'gold');
-      view.tabs(['Pinturas', 'Conquistas', 'Perfil'].map((label, index) => ({ label, active: this.hangarTab === ['hangar', 'achievements', 'profile'][index], action: invoke(index) })));
+      view.tabs([{ label: 'Perfil', tab: 'profile', index: 2 }, { label: 'Pinturas', tab: 'hangar', index: 0 }, { label: 'Conquistas', tab: 'achievements', index: 1 }].map(({ label, tab, index }) => ({ label, active: this.hangarTab === tab, action: invoke(index) })));
       if (this.hangarTab === 'hangar') {
         view.text('Pinturas cosméticas, sem vantagem em combate.', 'hint');
         for (let i = 3; i < this.buttons.length - 1; i++) action(i);
       } else if (this.hangarTab === 'achievements') {
         for (const ach of ACHIEVEMENTS) view.card(`${profile.achievements[ach.id] ? '★ ' : ''}${ach.title}`, `${ach.description}\nRecompensa: ${ach.rewardCredits} CR`);
       } else {
-        view.metrics([['Piloto ativo', getPilotContract(profile.selectedPilotId).name], ['Pilotos', `${profile.unlocks.pilots.length}/5`], ['Fases concluídas', `${profile.clearedStages.length}/2`], ['Conquistas', `${Object.keys(profile.achievements).length}/${ACHIEVEMENTS.length}`]]);
-        view.card('Perfil local', 'Progresso, pilotos, pinturas e recordes ficam salvos neste aparelho.');
+        const activeProfilePilot = getPilotContract(profile.selectedPilotId);
+        view.accountCard({
+          avatarImage: frame('arc-pilots', activeProfilePilot.portraitFrame),
+          linked: profile.account.mode === 'linked',
+          displayName: profile.account.displayName,
+          onLogin: (name) => {
+            this.audio.unlock();
+            globalProfileStore.signInLocal(name);
+            this.refreshPortraitMenu();
+          },
+          onLogout: () => {
+            this.audio.unlock();
+            globalProfileStore.signOutLocal();
+            this.refreshPortraitMenu();
+          },
+        });
+        view.metrics([
+          ['Piloto ativo', `${activeProfilePilot.name} · ${activeProfilePilot.shipName}`],
+          ['Pilotos', `${profile.unlocks.pilots.length}/5`],
+          ['Fases concluídas', `${profile.clearedStages.length}/2`],
+          ['Conquistas', `${Object.keys(profile.achievements).length}/${ACHIEVEMENTS.length}`],
+        ]);
       }
-      action(this.buttons.length - 1, 'Voltar', true);
+      view.button('Voltar', () => this.show('title'), { footer: true, style: 'back' });
     } else if (screen === 'controls') {
-      view.tabs(['PC', 'Controle', 'Android'].map((label, index) => ({ label, active: this.controlsTab === ['pc', 'gamepad', 'android'][index], action: invoke(index) })));
+      if (this.controlsTab === 'pc') this.controlsTab = 'android';
+      view.tabs([
+        { label: 'Touch', active: this.controlsTab === 'android', action: () => { this.controlsTab = 'android'; this.refreshPortraitMenu(); } },
+        { label: 'Controle', active: this.controlsTab === 'gamepad', action: () => { this.controlsTab = 'gamepad'; this.refreshPortraitMenu(); } },
+      ]);
       const rows = this.controlsTab === 'android'
-        ? [['Movimento', 'Use o analógico virtual para mover a nave em 8 direções.'], ['Tiro automático', 'A nave já começa atirando. Não é preciso segurar nenhum botão.'], ['Tiro carregado', 'Segure CARGA e solte para disparar. A rajada pausa enquanto a energia carrega.'], ['Especial', 'Toque em ESP para usar o especial do piloto.'], ['Pausa', 'Toque no botão no canto superior direito.']]
-        : this.controlsTab === 'pc'
-          ? [['WASD ou setas', 'Mover a nave.'], ['Espaço', 'Tiro principal.'], ['Z', 'Segurar e soltar o tiro carregado.'], ['X', 'Especial do piloto.'], ['Shift', 'Movimento preciso.'], ['Esc', 'Pausar ou voltar.']]
-          : [['Analógico esquerdo / direcional', 'Mover a nave.'], ['○ / B ou R1 / RB', 'Tiro principal.'], ['□ / X', 'Segurar e soltar o tiro carregado.'], ['× / A ou R2 / RT', 'Especial do piloto.'], ['Options / Start', 'Pausar ou retomar.']];
+        ? [['Movimento livre', 'Toque e arraste em qualquer área livre. O controle acompanha seu dedo em todas as direções e para ao soltar.'], ['Tiro automático', 'A nave dispara automaticamente durante o voo. Não é preciso segurar botão de tiro.'], ['Tiro carregado', 'Segure CARGA e solte para liberar o disparo carregado.'], ['Especial', 'Toque em ESP para ativar a habilidade especial do piloto.'], ['Pausa', 'Toque no botão de pausa no canto superior direito.']]
+        : [['Analógico esquerdo / direcional', 'Mover a nave.'], ['○ / B ou R1 / RB', 'Tiro principal.'], ['□ / X', 'Segurar e soltar o tiro carregado.'], ['× / A ou R2 / RT', 'Especial do piloto.'], ['Options / Start', 'Pausar ou retomar.']];
       rows.forEach(([title, detail]) => view.card(title, detail));
       view.text('Casco: 4 impactos. REPAIR recupera 1 segmento. P recupera POWER.', 'hint');
-      action(this.buttons.length - 1, 'Voltar', true);
+      view.button('Voltar', () => this.show(this.world ? 'pause' : this.pauseOrigin), { footer: true, style: 'back' });
     } else if (screen === 'settings') {
       const volume = (music: boolean, value: number) => {
         globalSave.updateSettings(music ? { musicVolume: value } : { sfxVolume: value });
         const current = globalSave.getSettings(); this.audio.setMix(current.musicVolume, current.sfxVolume, this.mute);
       };
-      view.volume('Música', settings.musicVolume, value => volume(true, value));
-      view.volume('Efeitos', settings.sfxVolume, value => volume(false, value));
-      view.card('Disparo no Android', 'Automático durante o voo. Segure CARGA para preparar o tiro carregado.');
-      const values: [number, string, string][] = [
-        [3, 'Dificuldade', DIFFICULTY_PROFILES[normalizeGameDifficulty(settings.difficulty)].label],
-        [4, 'Modo assistido', settings.assisted ? 'Ligado' : 'Desligado'],
-        [5, 'Qualidade visual', ['Baixa', 'Média', 'Alta'][this.quality]],
-        [6, 'Reduzir tremor', globalProfileStore.getSettings().reducedShake ? 'Sim' : 'Não'],
-        [7, 'Reduzir flashes', globalProfileStore.getSettings().reducedFlash ? 'Sim' : 'Não'],
-        [8, 'Sobrevivência', globalProfileStore.getSettings().survivalRule === 'hull-v1' ? 'Casco · 4 segmentos' : 'Clássico'],
-      ];
-      values.forEach(([i, label, value]) => view.setting(label, value, invoke(i, -1, true), invoke(i, 1, true)));
-      view.text('A escolha de sobrevivência vale na próxima partida. Cada modo tem seus próprios recordes.', 'hint');
-      action(9, 'Ajustar controles touch'); action(10, 'Voltar', true);
+      const curDiff = normalizeGameDifficulty(settings.difficulty);
+      const profSettings = globalProfileStore.getSettings();
+      view.settingsGroup('Áudio', () => {
+        view.volume('Música', settings.musicVolume, value => volume(true, value));
+        view.volume('Efeitos', settings.sfxVolume, value => volume(false, value));
+        view.toggle('Silenciar áudio', this.mute, () => {
+          this.mute = !this.mute;
+          globalSave.updateSettings({ isMuted: this.mute });
+          const current = globalSave.getSettings();
+          this.audio.setMix(current.musicVolume, current.sfxVolume, this.mute);
+          this.refreshPortraitMenu();
+        }, 'Desativa música e efeitos rapidamente');
+      });
+      view.settingsGroup('Jogabilidade', () => {
+        view.segmented('Dificuldade', (['easy', 'normal', 'hard'] as const).map(d => ({
+          label: DIFFICULTY_PROFILES[d].label,
+          active: curDiff === d,
+          action: () => { globalSave.updateSettings({ difficulty: d }); this.refreshPortraitMenu(); },
+        })));
+        view.toggle('Modo assistido', settings.assisted, () => {
+          globalSave.updateSettings({ assisted: !settings.assisted });
+          this.refreshPortraitMenu();
+        }, 'Ajuda extra de sobrevivência (não conta para 1CC)');
+        view.segmented('Sobrevivência', [
+          {
+            label: 'Casco (4)',
+            active: profSettings.survivalRule === 'hull-v1',
+            action: () => { globalProfileStore.updateSettings({ survivalRule: 'hull-v1' }); this.refreshPortraitMenu(); },
+          },
+          {
+            label: 'Clássico',
+            active: profSettings.survivalRule === 'classic-v1',
+            action: () => { globalProfileStore.updateSettings({ survivalRule: 'classic-v1' }); this.refreshPortraitMenu(); },
+          },
+        ], 'Vale na próxima partida. Cada modo tem recordes próprios.');
+      });
+      view.settingsGroup('Visual e conforto', () => {
+        view.segmented('Qualidade visual', (['Baixa', 'Média', 'Alta'] as const).map((label, idx) => ({
+          label,
+          active: this.quality === idx,
+          action: () => {
+            this.quality = idx;
+            globalProfileStore.updateSettings({ visualQuality: idx as 0 | 1 | 2 });
+            this.refreshPortraitMenu();
+          },
+        })));
+        view.toggle('Reduzir tremor', profSettings.reducedShake, () => {
+          globalProfileStore.updateSettings({ reducedShake: !profSettings.reducedShake });
+          this.refreshPortraitMenu();
+        });
+        view.toggle('Reduzir flashes', profSettings.reducedFlash, () => {
+          globalProfileStore.updateSettings({ reducedFlash: !profSettings.reducedFlash });
+          this.refreshPortraitMenu();
+        });
+      });
+      view.settingsGroup('Tela, controles e privacidade', () => {
+        view.segmented('Orientação', [
+          {
+            label: 'Retrato',
+            active: !this.landscapeEnabled,
+            action: () => { void this.changeMobileOrientation('portrait'); },
+          },
+          {
+            label: 'Paisagem',
+            active: this.landscapeEnabled,
+            disabled: !this.mobileDisplay.connected,
+            locked: !this.mobileDisplay.connected,
+            action: () => { if (this.mobileDisplay.connected) void this.changeMobileOrientation('landscape'); },
+          },
+        ], this.mobileDisplay.connected ? 'Controle conectado · USB / Bluetooth' : 'Conecte um controle USB ou Bluetooth para usar paisagem.');
+        view.actionRow('Ajustar controles touch', 'Posição, tamanho, mão dominante e opacidade', () => this.show('touch-settings'));
+        view.actionRow('Política de Privacidade e LGPD', 'Consulte como seus dados locais são protegidos (Lei nº 13.709/2018)', () => {
+          this.showPrivacyModal = true;
+          this.refreshPortraitMenu();
+        });
+      });
+      if (this.showPrivacyModal) {
+        view.privacyPolicyModal({
+          acceptedAt: profile.account.privacyAcceptedAt ?? null,
+          onClose: () => {
+            this.showPrivacyModal = false;
+            this.refreshPortraitMenu();
+          },
+        });
+      }
+      view.button('Voltar', () => this.show(this.pauseOrigin), { footer: true, style: 'back' });
     } else if (screen === 'touch-settings') {
       const touch = settings.touch;
       const values = [touch.handedness === 'left' ? 'Canhoto' : 'Destro', ({ corner: 'Canto', raised: 'Elevada', wide: 'Aberta' })[touch.position], ({ compact: 'Pequeno', standard: 'Padrão', large: 'Grande' })[touch.size], `${Math.round(touch.opacity * 100)}%`, `${touch.offsetY}`];
       ['Mão dominante', 'Posição', 'Tamanho', 'Visibilidade', 'Altura fina'].forEach((label, i) => view.setting(label, values[i], invoke(i, -1, true), invoke(i, 1, true)));
-      view.card('Três controles de combate', 'Analógico para mover, CARGA para carregar e ESP para o especial. O tiro principal é automático.');
+      view.card('Movimento livre e dois botões', 'Arraste em qualquer área livre para mover. CARGA carrega o tiro e ESP usa o especial. O tiro principal é automático.');
       action(5, 'Restaurar padrão'); action(6, 'Voltar', true);
     } else if (screen === 'pause') {
       if (w) view.metrics([['Rota', MISSIONS[this.currentMission].name], ['Progresso', `${Math.round(w.progressRatio * 100)}%`], ['Pontos', w.score], [w.survivalRule === 'hull-v1' ? 'Casco' : 'Vidas', w.survivalRule === 'hull-v1' ? `${w.hull}/${w.hullMaximum}` : w.lives]]);
-      this.buttons.forEach((_, i) => action(i, undefined, false, i === 0));
+      const pauseLabels = ['Continuar', 'Controles', 'Configurações', 'Sair da missão'];
+      view.dialogActions(() => {
+        this.buttons.forEach((_, i) => action(i, pauseLabels[i], false, i === 0));
+      });
     } else if (screen === 'confirm-exit') {
       view.text('O progresso da fase atual será perdido ao voltar ao menu.');
-      action(0, 'Continuar na missão', true, true); action(1, 'Sair da missão', true);
+      view.dialogActions(() => {
+        action(0, 'Continuar na missão', false, true);
+        action(1, 'Sair da missão', false, false, true);
+      });
     } else if ((screen === 'result' || screen === 'defeat') && w) {
       view.portrait(frame('arc-pilots', w.pilotId === 'nolan' ? (screen === 'result' ? 1 : 2) : w.pilotContract.portraitFrame), w.pilotContract.name, MISSIONS[this.currentMission].name);
       const evaluation = this.lastRunOutcome?.evaluation ?? w.evaluateRun().evaluation;
@@ -1627,17 +1977,21 @@ export class ArcadeScene extends Phaser.Scene {
       }
       if (w.survivalRule === 'hull-v1') view.text(`Casco ${w.hull}/${w.hullMaximum} · Reparos ${w.repairsCollected}`, 'gold');
       view.text(screen === 'defeat' ? 'Respire, ajuste a rota e volte ao voo.' : (evaluation.badges.join(' · ') || 'Potência, casco e especiais seguem para a próxima rota.'), 'hint');
-      this.buttons.forEach((_, i) => action(i, undefined, true, i === 0));
+      view.dialogActions(() => {
+        this.buttons.forEach((_, i) => action(i, undefined, false, i === 0));
+      });
     } else if (screen === 'ending') {
       view.portrait(frame('arc-pilots', pilot.portraitFrame), pilot.name, 'Operação concluída');
       view.text('Duas missões concluídas. A equipe de resgate tem caminho livre! Experimente novos pilotos e busque o Rank S+.');
       view.metrics([['Recorde', this.bestScoreFor()], ['Créditos', profile.wallet.credits]]);
       action(0, 'Voar de novo', true, true);
     } else if (screen === 'credits') {
-      view.card('Botan Studio', 'Direção e criação\nEmerson Barros\n\nGame design e programação\nEmerson Barros');
-      view.card('Arte e áudio', 'Botan Studio · Cartoon / Anime\nBotan Studio Audio · Web Audio Synth');
-      view.card('Obrigado por voar!', 'Aos fãs dos shoot ’em ups arcade clássicos e a todos que acompanham a evolução de Bullet Wake.');
-      action(0, 'Voltar', true);
+      view.card('Botan Studio', 'Direção Geral & Criação\nEmerson Barros\n\nProdução Executiva & Publicação\nBotan Studio');
+      view.card('Direção de Arte & Fotografia', 'Direção de Arte & Identidade Visual\nEmerson Barros · Botan Studio\n\nDireção de Fotografia, Cenários & Iluminação\nEmerson Barros · Botan Studio\n\nDesign de Personagens, Naves & Chefes\nEmerson Barros · Botan Studio');
+      view.card('Game Design & Engenharia', 'Game Design, Fases & Balanceamento\nEmerson Barros\n\nProgramação, Arquitetura & Simulação\nEmerson Barros\n\nUX/UI, Controles Touch & Gamepad\nEmerson Barros · Botan Studio');
+      view.card('Áudio & Tecnologia', 'Direção de Áudio, Trilha Sonora & SFX\nBotan Studio Audio · Emerson Barros\n\nEngine & Stack\nPhaser 4 · TypeScript · Vite · WebGL · Web Audio');
+      view.card('Agradecimento Especial', 'Aos fãs dos shoot ’em ups arcade clássicos e a todos que acompanham e apoiam a evolução de Bullet Wake.');
+      view.button('Voltar', () => this.show('title'), { footer: true, style: 'back' });
     }
     this.setTouchVisible(false);
     view.end();
@@ -1647,7 +2001,10 @@ export class ArcadeScene extends Phaser.Scene {
     this.disposeWorld(); this.currentMission = index; this.stageClearSaved = false; this.defeatRecorded = false; this.lastRunOutcome = undefined; this.pelagicComms.reset();
     const settings = globalSave.getSettings();
     const usePortrait = index === 0 && this.isPortraitMobileMode();
-    const portH = usePortrait ? this.portraitCanvasHeight() : 432;
+    const host = this.game.canvas.parentElement!;
+    const portrait = mobilePortraitViewport(host.clientWidth, host.clientHeight);
+    const landscape = this.isMobileLandscape() ? mobileLandscapeViewport(host.clientWidth, host.clientHeight, { left: 160, right: 608, top: 18, bottom: 424 }, true) : undefined;
+    const mobileArenaWidth = landscape ? clamp(Math.round(landscape.w - 24), 448, 768) : 448;
     const practiceMode = Boolean(opts?.practiceMode);
     const survivalRule = globalProfileStore.getSettings().survivalRule;
     if (carry && (carry.survival?.rule ?? 'classic-v1') !== survivalRule) carry = undefined;
@@ -1656,8 +2013,11 @@ export class ArcadeScene extends Phaser.Scene {
     this.world = new ArcadeWorld(MISSIONS[index], carry, {
       ...(index === 0 ? {
         upLayout: usePortrait ? 'portrait' : 'pc',
-        arena: usePortrait ? { left: 0, right: 384, top: 34, bottom: portH - 14 } : { left: 160, right: 608, top: 18, bottom: 424 },
+        arena: usePortrait ? { left: 0, right: portrait.w, top: 34, bottom: portrait.h - 14 } : { left: 384 - mobileArenaWidth / 2, right: 384 + mobileArenaWidth / 2, top: 18, bottom: 424 },
       } : {}),
+      playerSidePadding: isMobileDisplay() ? (index === 0 ? 24 : 26) : 14,
+      aircraftScale: isMobileDisplay() ? (this.isMobileLandscape() ? 1.08 : 1.15) : 1,
+      supplyBalance: 'balanced-v2',
       pilotId,
       practiceMode,
       survivalRule,
@@ -1685,6 +2045,9 @@ export class ArcadeScene extends Phaser.Scene {
       carry,
       upLayout: this.world.upLayout,
       arena: this.world.arena,
+      playerSidePadding: this.world.playerSidePadding,
+      aircraftScale: this.world.aircraftScale,
+      supplyBalance: this.world.supplyBalance,
       rapidFire: this.world.accessibility,
     });
     this.world.bossContact = (_boss, ax, ay, bx, by, radius) => spriteContact(this.bossSprite, ax, ay, bx, by, radius);
@@ -1692,17 +2055,16 @@ export class ArcadeScene extends Phaser.Scene {
     this.world.contact = (e, ax, ay, bx, by, radius) => {
       const sprite = this.enemySprites.get(e.id), turret = this.turrets.get(e.id), mounts = this.pelagicAnims?.mountSpritesFor(e.id);
       const customBase = e.navigation?.customAnchor ? sweepEllipse(ax, ay, bx, by, e.x, e.y, e.size * 0.34 + radius, e.size * 0.38 + radius) : null;
-      const hits = [
-        sprite ? spriteContact(sprite, ax, ay, bx, by, radius) : null,
-        turret ? spriteContact(turret, ax, ay, bx, by, radius) : null,
-        customBase,
-        ...(mounts ? mounts.map(ms => spriteContact(ms, ax, ay, bx, by, radius)) : []),
-      ].filter((v): v is number => v !== null);
-      return hits.length ? Math.min(...hits) : null;
+      let nearest = customBase ?? Infinity;
+      if (sprite) nearest = Math.min(nearest, spriteContact(sprite, ax, ay, bx, by, radius) ?? Infinity);
+      if (turret) nearest = Math.min(nearest, spriteContact(turret, ax, ay, bx, by, radius) ?? Infinity);
+      if (mounts) for (const mount of mounts) nearest = Math.min(nearest, spriteContact(mount, ax, ay, bx, by, radius) ?? Infinity);
+      return nearest === Infinity ? null : nearest;
     };
     this.player.setVisible(true); this.audio.play(index ? 'stage2' : 'stage1'); this.show('play');
   }
   beginPractice(missionIndex: number, targetSeconds: number): void {
+    if (isMobileDisplay()) return;
     this.begin(missionIndex, undefined, { practiceMode: true });
     const w = this.world;
     if (!w) return;
@@ -1718,6 +2080,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.refreshHudVisual();
   }
   private disposeWorld(): void {
+    this.mobileFlightHud.hide();
     this.hullArt?.clear();
     this.touchController?.clearAll(); this.emplacements?.clear(); this.hitOverlays?.clear(); this.bombArt?.draw(); this.subBossArt?.clear(); this.bossHudLabel?.setVisible(false); this.pelagicAssistBadge?.setVisible(false); this.pelagicCheckpointBadge?.setVisible(false); this.pelagicSpecialText?.setVisible(false); this.pelagicAnims?.clear(); this.pelagicComms.reset(); this.pelagicDesktopHud?.resetComms();
     this.clearBonusPopups();
@@ -1743,13 +2106,14 @@ export class ArcadeScene extends Phaser.Scene {
     if (this.screen === 'loading') {
       const nowMs = performance.now();
       const elapsed = Math.max(0, (nowMs - this.loadStartMs) / 1000);
-      const ready = this.loadRealProgress >= 1 && this.criticalOpeningAssetsReady();
+      this.contactWarmup?.advance();
+      const ready = this.loadRealProgress >= 1 && this.criticalOpeningAssetsReady() && this.contactWarmup?.done;
       if (ready && this.loadCompleteAtMs === undefined) {
         this.loadCompleteAtMs = nowMs;
         this.setOpeningPhase('LOADING_COMPLETE');
         this.syncLoadVisual(1, true);
       } else if (!ready) {
-        this.syncLoadVisual(Math.min(this.loadRealProgress * 0.98, clamp(elapsed / 0.55, 0.02, 0.98)), true);
+        this.syncLoadVisual(Math.min(this.loadRealProgress * 0.90 + (this.contactWarmup?.progress ?? 0) * 0.10, 0.99), true);
       }
       const heldAfterComplete = this.loadCompleteAtMs === undefined ? 0 : (nowMs - this.loadCompleteAtMs) / 1000;
       if (ready && !this.splashHandoffCommitted && elapsed >= 0.72 && heldAfterComplete >= 0.14) {
@@ -1761,6 +2125,7 @@ export class ArcadeScene extends Phaser.Scene {
       return;
     }
     const escDown = just('ESC');
+    if (this.checkMobileController(gp.connected)) return;
     const escHandledByDev = escDown && !!this.devEscapeHandler?.();
     const escPressed = escDown && !escHandledByDev;
     const startedInPlay = this.screen === 'play';
@@ -1791,54 +2156,65 @@ export class ArcadeScene extends Phaser.Scene {
         if (just('TWO') && this.controlsTab !== 'gamepad') { this.controlsTab = 'gamepad'; this.nextControlsFocus = 1; this.show('controls'); return; }
         if (just('THREE') && this.controlsTab !== 'android') { this.controlsTab = 'android'; this.nextControlsFocus = 2; this.show('controls'); return; }
       }
-      const active = this.buttons[this.focus];
-      if (!this.menuActionLocked) {
-        if (just('DOWN') || gp.down) { this.audio.unlock(); this.focus = (this.focus + 1) % Math.max(1, this.buttons.length); this.focusButtons(); globalAudio.playArcade('navigate'); }
-        if (just('UP') || gp.up) { this.audio.unlock(); this.focus = (this.focus + this.buttons.length - 1) % Math.max(1, this.buttons.length); this.focusButtons(); globalAudio.playArcade('navigate'); }
-        if (just('RIGHT') || gp.right) {
-          this.audio.unlock();
-          if (active?.onRight) { active.modern?.playStepPulse(); active.onRight(); }
-          else { this.focus = (this.focus + 1) % Math.max(1, this.buttons.length); this.focusButtons(); globalAudio.playArcade('navigate'); }
-        }
-        if (just('LEFT') || gp.left) {
-          this.audio.unlock();
-          if (active?.onLeft) { active.modern?.playStepPulse(); active.onLeft(); }
-          else { this.focus = (this.focus + this.buttons.length - 1) % Math.max(1, this.buttons.length); this.focusButtons(); globalAudio.playArcade('navigate'); }
-        }
+      if (this.portraitMenu.visible) {
+        const down = just('DOWN') || gp.down, up = just('UP') || gp.up;
+        const right = just('RIGHT') || gp.right, left = just('LEFT') || gp.left;
         const confirm = just('ENTER') || just('SPACE') || gp.confirm;
-        const backPressed = escPressed || gp.cancel;
-        const pausePressed = gp.pause;
-        if (confirm && active) {
+        if (down || up || right || left || confirm) {
           this.audio.unlock();
-          if (active.modern) {
-            if (active.modern.disabled) {
-              active.modern.playLockedFeedback();
-            } else if (active.modern.variant === 'tab') {
-              globalAudio.playArcade('navigate');
-              active.action();
-            } else if (active.onLeft && active.onRight) {
-              globalAudio.playArcade('confirm');
-              active.modern.playStepPulse();
-              active.action();
-            } else {
-              this.menuActionLocked = true;
-              active.modern.playConfirmAndRun(active.action, () => globalAudio.playArcade('confirm'));
-            }
-          } else {
-            globalAudio.playArcade('confirm');
-            active.action();
-          }
+          this.portraitMenu.navigate(down || right ? 1 : up || left ? -1 : 0, confirm, !!(right || left));
         }
-        else if (this.screen === 'pause' && (pausePressed || backPressed)) { this.show('play'); }
-        else if (backPressed || pausePressed) {
-          if (this.screen === 'confirm-exit') this.show('pause');
-          else if (this.screen === 'controls') this.show(this.world ? 'pause' : this.pauseOrigin);
-          else if (this.screen === 'touch-settings') this.show('settings');
-          else if (this.screen === 'settings') this.show(this.pauseOrigin);
-          else if (this.screen === 'practice') this.show('missions');
-          else if (this.screen === 'missions') this.show('pilot');
-          else if (this.screen === 'pilot' || this.screen === 'credits' || this.screen === 'hangar') this.show('title');
-          else if (backPressed && ['result', 'defeat', 'ending'].includes(this.screen)) { this.disposeWorld(); this.show('title'); }
+        if (escPressed || gp.cancel || gp.pause) this.backMobileMenu();
+      } else {
+        const active = this.buttons[this.focus];
+        if (!this.menuActionLocked) {
+          if (just('DOWN') || gp.down) { this.audio.unlock(); this.focus = (this.focus + 1) % Math.max(1, this.buttons.length); this.focusButtons(); globalAudio.playArcade('navigate'); }
+          if (just('UP') || gp.up) { this.audio.unlock(); this.focus = (this.focus + this.buttons.length - 1) % Math.max(1, this.buttons.length); this.focusButtons(); globalAudio.playArcade('navigate'); }
+          if (just('RIGHT') || gp.right) {
+            this.audio.unlock();
+            if (active?.onRight) { active.modern?.playStepPulse(); active.onRight(); }
+            else { this.focus = (this.focus + 1) % Math.max(1, this.buttons.length); this.focusButtons(); globalAudio.playArcade('navigate'); }
+          }
+          if (just('LEFT') || gp.left) {
+            this.audio.unlock();
+            if (active?.onLeft) { active.modern?.playStepPulse(); active.onLeft(); }
+            else { this.focus = (this.focus + this.buttons.length - 1) % Math.max(1, this.buttons.length); this.focusButtons(); globalAudio.playArcade('navigate'); }
+          }
+          const confirm = just('ENTER') || just('SPACE') || gp.confirm;
+          const backPressed = escPressed || gp.cancel;
+          const pausePressed = gp.pause;
+          if (confirm && active) {
+            this.audio.unlock();
+            if (active.modern) {
+              if (active.modern.disabled) {
+                active.modern.playLockedFeedback();
+              } else if (active.modern.variant === 'tab') {
+                globalAudio.playArcade('navigate');
+                active.action();
+              } else if (active.onLeft && active.onRight) {
+                globalAudio.playArcade('confirm');
+                active.modern.playStepPulse();
+                active.action();
+              } else {
+                this.menuActionLocked = true;
+                active.modern.playConfirmAndRun(active.action, () => globalAudio.playArcade('confirm'));
+              }
+            } else {
+              globalAudio.playArcade('confirm');
+              active.action();
+            }
+          }
+          else if (this.screen === 'pause' && (pausePressed || backPressed)) { this.show('play'); }
+          else if (backPressed || pausePressed) {
+            if (this.screen === 'confirm-exit') this.show('pause');
+            else if (this.screen === 'controls') this.show(this.world ? 'pause' : this.pauseOrigin);
+            else if (this.screen === 'touch-settings') this.show('settings');
+            else if (this.screen === 'settings') this.show(this.pauseOrigin);
+            else if (this.screen === 'practice') this.show('missions');
+            else if (this.screen === 'missions') this.show('pilot');
+            else if (this.screen === 'pilot' || this.screen === 'credits' || this.screen === 'hangar') this.show('title');
+            else if (backPressed && ['result', 'defeat', 'ending'].includes(this.screen)) { this.disposeWorld(); this.show('title'); }
+          }
         }
       }
     } else if (escPressed || gp.pause) this.show('pause');
@@ -1849,7 +2225,7 @@ export class ArcadeScene extends Phaser.Scene {
       const touchCmd = this.touchController.consumeStep();
       const rawFire = held('SPACE') || gp.firePrimary || touchCmd.fire;
       if (this.suppressHeldFireUntilRelease && !rawFire) this.suppressHeldFireUntilRelease = false;
-      const fireInput = this.touchShown || (this.suppressHeldFireUntilRelease ? false : rawFire);
+      const fireInput = isMobileDisplay() || this.touchShown || (this.suppressHeldFireUntilRelease ? false : rawFire);
       const rawCharge = held('Z') || gp.chargeHeld || touchCmd.charge;
       if (this.suppressChargeUntilRelease && !rawCharge) this.suppressChargeUntilRelease = false;
       const chargeInput = this.suppressChargeUntilRelease ? false : rawCharge;
@@ -1874,11 +2250,43 @@ export class ArcadeScene extends Phaser.Scene {
       this.renderTouchOverlay();
       if (this.world.state === 'victory') { this.saveClear(); this.show('result'); } else if (this.world.state === 'defeat' && this.clock >= this.hullDefeatAt) this.show('defeat');
     }
+    // Native menus fully cover the canvas. Keep controller navigation alive without drawing a hidden battle.
+    if (this.portraitMenu.visible) return;
     const animated = this.world && this.screen !== 'play' ? this.world.elapsed : this.clock;
     const showMenuBackdrop = !['loading', 'intro'].includes(this.screen);
     this.backdrop.draw(animated, this.world, this.quality, showMenuBackdrop);
     if (this.world) this.renderWorld(this.screen === 'play' && !this.devSimulationPaused ? dt * this.devTimeScale : 0); else this.renderMenu();
     this.devOverlayCallback?.(this, delta);
+  }
+  private backMobileMenu(): void {
+    if (this.pendingPilotPurchase) {
+      this.pendingPilotPurchase = undefined;
+      this.refreshPortraitMenu();
+      return;
+    }
+    if (this.showAllStagesModal) {
+      this.showAllStagesModal = false;
+      this.refreshPortraitMenu();
+      return;
+    }
+    if (this.showPrivacyModal) {
+      this.showPrivacyModal = false;
+      this.refreshPortraitMenu();
+      return;
+    }
+    if (this.screen === 'title' && (!globalProfileStore.getProfile().account.welcomePromptSeen || !globalProfileStore.getProfile().account.privacyAccepted)) {
+      return;
+    }
+    if (this.screen === 'controller-orientation' || this.screen === 'controller-lost') {
+      this.show(this.controllerReturnScreen); return;
+    }
+    if (this.screen === 'pause') this.show('play');
+    else if (this.screen === 'confirm-exit') this.show('pause');
+    else if (this.screen === 'touch-settings') this.show('settings');
+    else if (this.screen === 'settings') this.show(this.pauseOrigin);
+    else if (this.screen === 'controls') this.show(this.world ? 'pause' : this.pauseOrigin);
+    else if (this.screen === 'practice' || this.screen === 'missions' || this.screen === 'credits' || this.screen === 'hangar' || this.screen === 'options' || this.screen === 'pilot') this.show('title');
+    else if (['result', 'defeat', 'ending'].includes(this.screen)) { this.disposeWorld(); this.show('title'); }
   }
   private installIntroActors(): void {
     this.introWash = this.add.rectangle(384, 216, 768, 432, 0x040d21, 1).setDepth(30).setVisible(false);
@@ -1985,7 +2393,7 @@ export class ArcadeScene extends Phaser.Scene {
       this.pelagicAnims.updatePlayer(w, this.player, dt, this.lastInput, this.quality);
     } else {
       this.pelagicAnims.hide();
-      this.player.setTexture('arc-rivet', w.player.bank < -.3 ? 6 : w.player.bank > .3 ? 5 : Math.floor(time * 9) % 2 ? 4 : 7).setPosition(w.player.x, w.player.y).setDisplaySize(42, 34).setAngle(0).setAlpha(1).clearTint().setVisible(w.state !== 'defeat');
+      this.player.setTexture('arc-rivet', w.player.bank < -.3 ? 6 : w.player.bank > .3 ? 5 : Math.floor(time * 9) % 2 ? 4 : 7).setPosition(w.player.x, w.player.y).setDisplaySize(42 * w.aircraftScale, 34 * w.aircraftScale).setAngle(0).setAlpha(1).clearTint().setVisible(w.state !== 'defeat');
       // Temporary invulnerability remains readable without making the ship translucent.
       if (w.player.invulnerable > 0) this.player.setAlpha(.72 + .28 * Math.cos(time * 18) ** 2);
     }
@@ -2186,7 +2594,7 @@ export class ArcadeScene extends Phaser.Scene {
       this.warningBannerText.setVisible(false);
     }
 
-    const showHint = this.screen === 'play' && this.clock < this.firstSortieHintUntil && !this.touchShown && w.state !== 'defeat';
+    const showHint = this.screen === 'play' && this.clock < this.firstSortieHintUntil && !this.touchShown && !isMobileDisplay() && w.state !== 'defeat';
     if (showHint) {
       const fade = clamp((this.firstSortieHintUntil - this.clock) / 0.8, 0, 1);
       const cx = (w.arena.left + w.arena.right) * 0.5;
@@ -2350,9 +2758,30 @@ export class ArcadeScene extends Phaser.Scene {
     }
   }
   private renderHud(dt = 0): void {
-    const w = this.world!, g = this.decor; g.clear();
+    const w = this.world!, g = this.decor; g.clear().setScale(1).setPosition(0, 0);
+    [this.hud, this.pelagicLevel, this.pelagicSpecialText, this.pelagicCheckpointBadge, this.bossHudLabel].forEach(node => node.setScale(1));
+    if (this.isMobileLandscape()) {
+      this.pelagicDesktopHud.setVisible(false);
+      [this.hud, this.radio, this.pelagicLevel, this.pelagicSpecialText, this.pelagicAssistBadge, this.pelagicCheckpointBadge, this.bossHudLabel, this.footerScore, ...this.lifeIcons].forEach(node => node.setVisible(false));
+      if (this.screen === 'play') {
+        const host = this.game.canvas.parentElement!;
+        const view = mobileLandscapeViewport(host.clientWidth, host.clientHeight, w.arena, w.up);
+        const f = this.player.frame;
+        const image = f.source.image ? this.portraitMenu.frame(`ship:${this.player.texture.key}:${f.name}`, f.source.image, f.cutX, f.cutY, f.cutWidth, f.cutHeight) : '';
+        const sub = w.boss?.sub;
+        const hp = sub ? subTotalHp(sub) : undefined;
+        this.mobileFlightHud.draw({
+          width: view.sidebar + host.getBoundingClientRect().left, ship: w.pilotContract.shipName, image,
+          hull: w.survivalRule === 'hull-v1' ? w.hull : w.lives, maximum: w.survivalRule === 'hull-v1' ? w.hullMaximum : Math.max(3, w.lives), classic: w.survivalRule !== 'hull-v1',
+          power: w.weapons.weaponLevel, charge: w.chargedShot.snapshot().ratio, specials: w.weapons.specialCharges,
+          boss: hp && hp.max > 0 ? `Chefe  ${Math.ceil(hp.current / hp.max * 100)}%` : undefined,
+        }, () => this.triggerPause());
+      } else this.mobileFlightHud.hide();
+      return;
+    }
+    this.mobileFlightHud.hide();
     this.footerScore.setVisible(!w.up || this.portraitUpActive).setText(`PONTOS ${w.score}`)
-      .setFontSize(this.portraitUpActive ? 8 : 9)
+      .setFontSize(this.portraitUpActive ? 8 : 9).setScale(1)
       .setPosition(this.portraitUpActive ? 376 : 748, this.portraitUpActive ? getCombatVirtualSize(this).h - 6 : 424);
     if (w.up) {
       const cpVisible = this.clock < this.checkpointBannerUntil && this.screen === 'play';
@@ -2378,6 +2807,7 @@ export class ArcadeScene extends Phaser.Scene {
           g.fillStyle(cPort.isFull ? 0xfef08a : 0x38bdf8, 0.96).fillRoundedRect(122, 23, Math.max(3, 53 * cPort.ratio), 4, 2);
         }
         const scoreLine = w.survivalRule === 'hull-v1' ? `${w.hull}/${w.hullMaximum} ${HULL_STATES[w.hullState].label}` : `${w.lives} VIDAS`;
+        this.hud.setPosition(344, 16);
         if (scoreLine !== this.lastHud) {
           this.hud.setFontSize(8.5).setColor('#b8fff1').setStroke('#032f74', 2).setOrigin(1, .5);
           this.hud.setText(scoreLine).setPosition(344, 16);
@@ -2392,7 +2822,15 @@ export class ArcadeScene extends Phaser.Scene {
           if (ratio > 0) g.fillStyle(ratio < .25 ? 0xff6e54 : 0xffd84d, .95).fillRoundedRect(12, 35, 360 * ratio, 6, 2);
           this.bossHudLabel.setPosition(16, 38).setFontSize(8).setText(`${sec.index + 1}/5 ${sec.name}`).setVisible(true);
         } else {
-          this.bossHudLabel.setVisible(false);
+          this.bossHudLabel.setPosition(16, 38).setVisible(false);
+        }
+        const viewport = getCombatVirtualSize(this), scale = viewport.w / 384;
+        const left = (viewport.cx ?? viewport.w / 2) - viewport.w / 2;
+        if (scale !== 1 || left !== 0) {
+          g.setScale(scale).setPosition(left, 0);
+          [this.hud, this.pelagicLevel, this.pelagicSpecialText, this.pelagicCheckpointBadge, this.bossHudLabel, ...this.lifeIcons].forEach(node => node.setPosition(left + node.x * scale, node.y * scale).setScale(node.scaleX * scale, node.scaleY * scale));
+          // Scale the existing texture; resizing the font here uploaded it twice every frame.
+          this.footerScore.setScale(scale).setPosition(left + viewport.w - 8 * scale, viewport.h - 6 * scale);
         }
         return;
       }
@@ -2556,7 +2994,7 @@ export class ArcadeScene extends Phaser.Scene {
     if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.(35);
     const pad = Array.from(navigator.getGamepads?.() ?? []).find(p => p?.connected);
     const actuator = pad?.vibrationActuator;
-    if (actuator) void actuator.playEffect('dual-rumble', { duration: 65, strongMagnitude: .2, weakMagnitude: .3 }).catch(() => {});
+    if (actuator) void actuator.playEffect('dual-rumble', { duration: 65, strongMagnitude: .2, weakMagnitude: .3 }).catch(() => { });
   }
   private pushPelagicCommsEvent(code: string): void {
     if (code === 'start') {
@@ -2655,6 +3093,7 @@ export class ArcadeScene extends Phaser.Scene {
         noBomb: evaluation.badges.includes('NO-BOMB'),
         oneCC: evaluation.badges.includes('1CC'),
         creditsEarned: evaluation.creditsEarned,
+        kills: w.kills,
         achievements,
         flight: this.carried,
       });
@@ -2684,6 +3123,7 @@ export class ArcadeScene extends Phaser.Scene {
       noBomb: evaluation.badges.includes('NO-BOMB'),
       oneCC: evaluation.badges.includes('1CC'),
       creditsEarned: evaluation.creditsEarned,
+      kills: w.kills,
       achievements,
     });
     this.lastRunOutcome = { ...outcome, evaluation };
@@ -2714,6 +3154,7 @@ export class ArcadeScene extends Phaser.Scene {
   private syncPauseButton(): void {
     if (this.screen !== 'play' || !this.world) return;
     this.pauseBtn?.destroy();
+    if (this.isMobileLandscape()) { this.pauseBtn = undefined; return; }
     const isDesktopPelagic = !!this.world.up && !this.touchShown && !this.portraitUpActive;
     const container = this.add.container(0, 0).setDepth(68);
     if (isDesktopPelagic) {
@@ -2737,7 +3178,7 @@ export class ArcadeScene extends Phaser.Scene {
       container.on('pointerout', () => drawCompactPc(false));
     } else {
       const pPos = this.touchShown ? this.touchController.getLayout().pause : { x: 734, y: 19 };
-      if (!this.world.up && this.isPortraitMobileMode()) container.setScale(2);
+      if (this.isPortraitMobileMode()) container.setScale(getCombatVirtualSize(this).w / 384);
       const w = 36, h = 19;
       container.setPosition(pPos.x, pPos.y).setSize(44, 24);
       const bg = this.add.graphics();
@@ -2763,13 +3204,13 @@ export class ArcadeScene extends Phaser.Scene {
   }
   private refreshTouchLayout(): void {
     const portrait = this.isPortraitMobileMode();
-    const sidePortrait = portrait && !!this.world && !this.world.up;
     const v = getCombatVirtualSize(this);
-    const scale = sidePortrait ? 2 : 1;
+    const scale = portrait ? v.w / 384 : 1;
+    const offsetX = portrait ? (v.cx ?? v.w / 2) - v.w / 2 : 0;
     const portH = portrait ? v.h / scale : undefined;
     const safe = this.readViewportSafeInsets();
     const insets = { top: safe.top / scale, right: safe.right / scale, bottom: safe.bottom / scale, left: safe.left / scale };
-    this.touchController.configure(globalSave.getSettings().touch, insets, portH, true, sidePortrait ? { scale, offsetY: 0 } : undefined);
+    this.touchController.configure(globalSave.getSettings().touch, insets, portH, true, portrait ? { scale, offsetY: 0, offsetX } : undefined);
     this.syncPauseButton();
     this.renderTouchOverlay();
   }
@@ -2785,21 +3226,23 @@ export class ArcadeScene extends Phaser.Scene {
     const op = l.opacity;
     g.clear();
 
-    // 1. Virtual joystick (translucent cockpit-harmonized ring + 8-way ticks + live puck)
+    // Floating movement feedback appears where the finger is, without a fixed corner pad.
     const ox = out.stickOriginX, oy = out.stickOriginY, jr = l.joystick.radius;
-    g.fillStyle(0x071a38, op * 0.34).fillCircle(ox, oy, jr);
-    g.lineStyle(1.7, out.stickActive ? 0xa3fbff : 0x5be0ff, Math.min(0.95, op * (out.stickActive ? 1.45 : 1.05))).strokeCircle(ox, oy, jr);
-    g.lineStyle(1, 0xd8ffff, op * 0.42).strokeCircle(ox, oy, jr * 0.54);
-    for (let k = 0; k < 8; k++) {
-      const ang = (k * Math.PI) / 4;
-      const r0 = jr - 4.5, r1 = jr - 1.2;
-      g.lineStyle(1.1, 0x7aefff, op * 0.6).lineBetween(ox + Math.cos(ang) * r0, oy + Math.sin(ang) * r0, ox + Math.cos(ang) * r1, oy + Math.sin(ang) * r1);
+    if (out.stickActive || !l.freeMovement) {
+      g.fillStyle(0x071a38, op * 0.34).fillCircle(ox, oy, jr);
+      g.lineStyle(1.7, out.stickActive ? 0xa3fbff : 0x5be0ff, Math.min(0.95, op * (out.stickActive ? 1.45 : 1.05))).strokeCircle(ox, oy, jr);
+      g.lineStyle(1, 0xd8ffff, op * 0.42).strokeCircle(ox, oy, jr * 0.54);
+      for (let k = 0; !l.freeMovement && k < 8; k++) {
+        const ang = (k * Math.PI) / 4;
+        const r0 = jr - 4.5, r1 = jr - 1.2;
+        g.lineStyle(1.1, 0x7aefff, op * 0.6).lineBetween(ox + Math.cos(ang) * r0, oy + Math.sin(ang) * r0, ox + Math.cos(ang) * r1, oy + Math.sin(ang) * r1);
+      }
+      if (out.stickActive) {
+        g.lineStyle(2, 0x8ef7ff, op * 0.65).lineBetween(ox, oy, out.knobX, out.knobY);
+      }
+      g.fillStyle(out.stickActive ? 0x2a7ec2 : 0x154470, Math.min(0.88, op * 1.05)).fillCircle(out.knobX, out.knobY, l.joystick.knobRadius);
+      g.lineStyle(1.5, 0xe8ffff, Math.min(0.95, op * 1.35)).strokeCircle(out.knobX, out.knobY, l.joystick.knobRadius);
     }
-    if (out.stickActive) {
-      g.lineStyle(2, 0x8ef7ff, op * 0.65).lineBetween(ox, oy, out.knobX, out.knobY);
-    }
-    g.fillStyle(out.stickActive ? 0x2a7ec2 : 0x154470, Math.min(0.88, op * 1.05)).fillCircle(out.knobX, out.knobY, l.joystick.knobRadius);
-    g.lineStyle(1.5, 0xe8ffff, Math.min(0.95, op * 1.35)).strokeCircle(out.knobX, out.knobY, l.joystick.knobRadius);
 
     this.touchFireText.setVisible(false);
 
@@ -2876,7 +3319,7 @@ export class ArcadeScene extends Phaser.Scene {
   }
   private setTouchVisible(visible: boolean): void {
     const hasTouchCap = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0 || this.touchDeviceActive);
-    const show = visible && (hasTouchCap || this.screen === 'touch-settings');
+    const show = visible && !this.isMobileLandscape() && (hasTouchCap || this.screen === 'touch-settings');
     this.touchShown = show;
     this.touchNodes.forEach(n => n.setVisible(show));
     if (show) this.refreshTouchLayout();

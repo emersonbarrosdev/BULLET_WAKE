@@ -387,6 +387,9 @@ test('32: All 10 Tide Arch cannons sit synced to rock coordinates and can be ind
     { upLayout: 'pc', difficulty: 'hard' },
     { upLayout: 'portrait', difficulty: 'normal' },
     { upLayout: 'portrait', difficulty: 'hard' },
+    { upLayout: 'portrait', difficulty: 'easy', playerSidePadding: 20, arena: { left: 0, right: 336, top: 34, bottom: 582.4 } },
+    { upLayout: 'portrait', difficulty: 'normal', playerSidePadding: 20, arena: { left: 0, right: 336, top: 34, bottom: 708.4 } },
+    { upLayout: 'portrait', difficulty: 'hard', playerSidePadding: 20, arena: { left: 0, right: 336, top: 34, bottom: 732.2 } },
   ];
 
   for (const cfg of configs) {

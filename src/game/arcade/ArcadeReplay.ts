@@ -1,5 +1,5 @@
 import type { PilotId } from './ArcadeContracts.ts';
-import type { GameDifficulty } from './PelagicDifficulty.ts';
+import type { GameDifficulty, SupplyBalance } from './PelagicDifficulty.ts';
 import type { Controls, UpLayoutMode } from './ArcadeWorld.ts';
 import type { CampaignFlight } from '../systems/campaignFlight.ts';
 import type { SurvivalRule } from './HullIntegrity.ts';
@@ -29,11 +29,14 @@ export interface DeterministicReplay {
   readonly carry?: CampaignFlight;
   readonly upLayout?: UpLayoutMode;
   readonly arena?: { left: number; right: number; top: number; bottom: number };
+  readonly playerSidePadding?: number;
+  readonly aircraftScale?: number;
+  readonly supplyBalance?: SupplyBalance;
   readonly rapidFire?: boolean;
 }
 
 export type ReplayMetadata = Pick<DeterministicReplay, 'missionId' | 'pilotId' | 'difficulty' | 'assisted' | 'seed' |
-  'survivalRule' | 'maxHull' | 'carry' | 'upLayout' | 'arena' | 'rapidFire'>;
+  'survivalRule' | 'maxHull' | 'carry' | 'upLayout' | 'arena' | 'playerSidePadding' | 'aircraftScale' | 'supplyBalance' | 'rapidFire'>;
 
 function sanitizeAxis(v: number): number {
   return Number.isFinite(v) ? Math.max(-1, Math.min(1, v)) : 0;
@@ -80,6 +83,9 @@ export class ReplayRecorder {
       ...(meta.carry ? { carry: structuredClone(meta.carry) } : {}),
       ...(meta.upLayout ? { upLayout: meta.upLayout } : {}),
       ...(meta.arena ? { arena: { ...meta.arena } } : {}),
+      ...(meta.playerSidePadding !== undefined ? { playerSidePadding: meta.playerSidePadding } : {}),
+      ...(meta.aircraftScale !== undefined ? { aircraftScale: meta.aircraftScale } : {}),
+      ...(meta.supplyBalance ? { supplyBalance: meta.supplyBalance } : {}),
       rapidFire: meta.rapidFire ?? false,
     };
   }

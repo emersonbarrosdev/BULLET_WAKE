@@ -132,11 +132,23 @@ test('ArcadeProfileStore v4 migrates legacy storage cleanly, guards idempotent c
   assert.equal(p.settings.visualQuality, 1);
   assert.ok(p.clearedStages.includes(1));
   assert.equal(store.bestScoreForMission(1, 'nolan'), 155000);
-  assert.equal(store.isPilotUnlocked('cora'), true);
-  assert.ok(store.getProfile().account.mode === 'guest');
+  assert.equal(store.isPilotUnlocked('nolan'), true);
+  assert.equal(store.isPilotUnlocked('cora'), false);
+  assert.equal(store.getProfile().account.mode, 'guest');
+  assert.equal(store.getProfile().account.welcomePromptSeen, false);
+  assert.equal(store.getProfile().account.privacyAccepted, false);
+  store.signInLocal('Comandante');
+  assert.equal(store.getProfile().account.mode, 'linked');
+  assert.equal(store.getProfile().account.displayName, 'Comandante');
+  assert.equal(store.getProfile().account.welcomePromptSeen, true);
+  assert.equal(store.getProfile().account.privacyAccepted, true);
+  store.signOutLocal();
+  assert.equal(store.getProfile().account.mode, 'guest');
+  assert.equal(store.getProfile().account.displayName, 'Piloto Convidado');
+  assert.equal(store.getProfile().account.privacyAccepted, true);
   assert.equal(ACHIEVEMENTS.length, 14);
 
-  // Claiming the same runId twice must not duplicate credits
+  // Claiming the same runId twice must not duplicate credits or pilot service history
   const runPayload = {
     runId: 'run-idempotent-1',
     missionId: 1,
@@ -151,12 +163,18 @@ test('ArcadeProfileStore v4 migrates legacy storage cleanly, guards idempotent c
     noBomb: false,
     oneCC: true,
     creditsEarned: 350,
+    kills: 42,
     achievements: ['first_clear'],
   };
   const r1 = store.recordRunResult(runPayload);
   const r2 = store.recordRunResult(runPayload);
   assert.ok(r1.creditsAdded >= 350);
   assert.equal(r2.creditsAdded, 0);
+  const hist = store.getPilotHistory('nolan');
+  assert.equal(hist.sorties, 1);
+  assert.equal(hist.clears, 1);
+  assert.equal(hist.kills, 42);
+  assert.equal(hist.bestScore, 185000);
 
   // Buying a cosmetic skin equips it without altering gameplay stats
   const buy = store.buyHangarItem('skin:cobalt_ace');

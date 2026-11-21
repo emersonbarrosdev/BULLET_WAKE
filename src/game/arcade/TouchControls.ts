@@ -34,6 +34,7 @@ export interface TouchJoystickGeometry extends TouchButtonGeometry {
 
 export interface TouchLayout {
     automaticFire?: boolean;
+    freeMovement?: boolean;
     joystick: TouchJoystickGeometry;
     fire: TouchButtonGeometry;
     special: TouchButtonGeometry;
@@ -324,24 +325,25 @@ export function computeTouchLayout(
 }
 
 /**
- * Converts virtual stick displacement into an 8-way assisted analog vector
- * (`hypot(x, y) <= 1`) with an inner deadzone.
+ * Converts stick displacement into a bounded analog vector. Mobile free movement
+ * uses a small deadzone and continuous angles; legacy controls retain assistance.
  */
 export function computeStickVector(
     dx: number,
     dy: number,
     travelRadius: number,
+    freeMovement = false,
 ): { x: number; y: number; knobOffsetX: number; knobOffsetY: number } {
-    const safeTravel = Math.max(8, travelRadius);
+    const safeTravel = Math.max(freeMovement ? 1 : 8, travelRadius);
     const dist = Math.hypot(dx, dy);
-    const deadzone = safeTravel * 0.14;
+    const deadzone = safeTravel * (freeMovement ? 0.06 : 0.14);
     if (dist <= deadzone || dist === 0) {
         return { x: 0, y: 0, knobOffsetX: 0, knobOffsetY: 0 };
     }
 
     const rawAngle = Math.atan2(dy, dx);
     const nearest = Math.round(rawAngle / EIGHT_WAY_STEP) * EIGHT_WAY_STEP;
-    const angle = Math.abs(rawAngle - nearest) <= CARDINAL_SNAP_RAD ? nearest : rawAngle;
+    const angle = !freeMovement && Math.abs(rawAngle - nearest) <= CARDINAL_SNAP_RAD ? nearest : rawAngle;
     const mag = clamp((dist - deadzone) / (safeTravel - deadzone), 0, 1);
     const clampedDist = Math.min(dist, safeTravel);
 
@@ -391,23 +393,24 @@ export class TouchInputController {
         return this.settings;
     }
 
-    configure(settings: TouchControlSettings, insets: SafeAreaInsets = ZERO_INSETS, portraitHeight?: number, automaticFire = false, transform?: { scale: number; offsetY: number }): void {
+    configure(settings: TouchControlSettings, insets: SafeAreaInsets = ZERO_INSETS, portraitHeight?: number, automaticFire = false, transform?: { scale: number; offsetY: number; offsetX?: number }): void {
         this.settings = sanitizeTouchSettings(settings);
         this.layout = computeTouchLayout(this.settings, insets, portraitHeight);
         if (automaticFire) {
             this.layout.automaticFire = true;
+            this.layout.freeMovement = true;
             // The freed primary-fire position becomes a generous charged-shot target.
             this.layout.charge = { ...this.layout.fire };
         }
         if (transform) {
             for (const key of ['joystick', 'fire', 'special', 'charge', 'pause'] as const) {
                 const button = this.layout[key]; if (!button) continue;
-                button.x *= transform.scale; button.y = button.y * transform.scale + transform.offsetY;
+                button.x = button.x * transform.scale + (transform.offsetX ?? 0); button.y = button.y * transform.scale + transform.offsetY;
                 button.radius *= transform.scale; button.hitRadius *= transform.scale;
             }
             this.layout.joystick.travelRadius *= transform.scale;
             this.layout.joystick.knobRadius *= transform.scale;
-            this.layout.moveZoneSplitX *= transform.scale;
+            this.layout.moveZoneSplitX = this.layout.moveZoneSplitX * transform.scale + (transform.offsetX ?? 0);
             this.layout.scale *= transform.scale;
         }
         if (this.moveId === null) {
@@ -443,7 +446,7 @@ export class TouchInputController {
         const isLeftAction = this.settings.handedness === 'left';
         const inMoveHalf = isLeftAction ? x >= l.moveZoneSplitX : x < l.moveZoneSplitX;
 
-        if (!inMoveHalf) {
+        if (l.freeMovement || !inMoveHalf) {
             const distSpec = Math.hypot(x - l.special.x, y - l.special.y);
             const distFire = l.automaticFire ? Infinity : Math.hypot(x - l.fire.x, y - l.fire.y);
             const distCharge = l.charge ? Math.hypot(x - l.charge.x, y - l.charge.y) : Infinity;
@@ -462,14 +465,21 @@ export class TouchInputController {
                 this.firePulsePending = true;
                 return 'fire';
             }
-            return 'none';
+            // An occupied action target must not acquire a second movement pointer.
+            if (!l.freeMovement || distSpec <= l.special.hitRadius ||
+                distFire <= l.fire.hitRadius || (l.charge && distCharge <= l.charge.hitRadius)) return 'none';
         }
 
         if (this.moveId === null) {
             this.moveId = pointerId;
             // Allow comfortable thumb reach around the side zone while anchoring visual origin near pad bounds.
             const distFromBase = Math.hypot(x - l.joystick.x, y - l.joystick.y);
-            if (distFromBase <= l.joystick.hitRadius * 1.15) {
+            if (l.freeMovement) {
+                // Anchor exactly at touchdown, anywhere outside dedicated action targets.
+                // Desktop side-column clamps are invalid in portrait/camera-transformed space.
+                this.stickOriginX = x;
+                this.stickOriginY = y;
+            } else if (distFromBase <= l.joystick.hitRadius * 1.15) {
                 this.stickOriginX = l.joystick.x;
                 this.stickOriginY = l.joystick.y;
             } else {
@@ -539,7 +549,18 @@ export class TouchInputController {
     }
 
     private updateStickFromPoint(x: number, y: number): void {
-        const v = computeStickVector(x - this.stickOriginX, y - this.stickOriginY, this.layout.joystick.travelRadius);
+        const travel = this.layout.joystick.travelRadius;
+        if (this.layout.freeMovement) {
+            const dx = x - this.stickOriginX, dy = y - this.stickOriginY;
+            const distance = Math.hypot(dx, dy);
+            // Follow long drags so changing direction never requires returning to the
+            // first touch position. Keep the same sensitivity after a camera transform.
+            if (distance > travel) {
+                this.stickOriginX = x - dx / distance * travel;
+                this.stickOriginY = y - dy / distance * travel;
+            }
+        }
+        const v = computeStickVector(x - this.stickOriginX, y - this.stickOriginY, travel, this.layout.freeMovement);
         this.vecX = v.x;
         this.vecY = v.y;
         this.knobX = this.stickOriginX + v.knobOffsetX;

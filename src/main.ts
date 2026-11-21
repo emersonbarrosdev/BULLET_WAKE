@@ -3,6 +3,7 @@ import './style.css';
 import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from './game/constants';
 import { ArcadeScene } from './game/arcade/ArcadeScene';
 import { renderPixelRatio } from './game/render/combatResolution';
+import { isMobileDisplay } from './game/arcade/MobileDisplay';
 
 async function bootGame(): Promise<void> {
   // Inicia o carregamento de fontes sem bloquear a criação imediata do canvas Phaser e do loading.
@@ -37,13 +38,14 @@ async function bootGame(): Promise<void> {
     height: initHeight,
     render: {
       antialias: true,
-      antialiasGL: true,
+      antialiasGL: !isMobileDisplay(),
       pixelArt: false,
       roundPixels: false,
     },
     fps: {
       min: 30,
       target: 60,
+      limit: isMobileDisplay() ? 62 : 0,
       forceSetTimeOut: false,
       smoothStep: true,
     },
@@ -61,7 +63,7 @@ async function bootGame(): Promise<void> {
   const game = new Phaser.Game(config);
 
   let cleanupDevTools: (() => void) | undefined;
-  if (__BW_DEVTOOLS__ && import.meta.env.DEV) {
+  if (__BW_DEVTOOLS__ && import.meta.env.DEV && !isMobileDisplay()) {
     const { mountDevTools } = await import('./devtools/mountDevTools');
     cleanupDevTools = mountDevTools(game, Phaser);
   }

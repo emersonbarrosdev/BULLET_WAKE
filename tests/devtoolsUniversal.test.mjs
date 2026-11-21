@@ -161,7 +161,7 @@ test('Production build isolation: source gating and compiled dist/ contain zero 
   const viteCfg = fs.readFileSync(path.resolve('vite.config.ts'), 'utf8');
   const mainTs = fs.readFileSync(path.resolve('src/main.ts'), 'utf8');
   assert(viteCfg.includes("command === 'serve'") && viteCfg.includes('__BW_DEVTOOLS__'));
-  assert(mainTs.includes('if (__BW_DEVTOOLS__ && import.meta.env.DEV)'));
+  assert(mainTs.includes('if (__BW_DEVTOOLS__ && import.meta.env.DEV && !isMobileDisplay())'));
 
   // Verify real compiled dist/ bundle built with --mode development still strips DevTools completely!
   execFileSync(process.execPath, [path.resolve('node_modules/vite/bin/vite.js'), 'build', '--mode', 'development'], {

@@ -259,7 +259,7 @@ export class PelagicActorAnims {
     const frame = sheetReady ? rivetSheetFrame(bank, time, advancing) : (bank < -.3 ? 0 : bank > .3 ? 2 : Math.floor(time * 9) % 2 ? 1 : 3);
 
     const alt = clamp(w.player.altitude ?? 1, 0, 1);
-    const altScale = 0.78 + alt * 0.22;
+    const altScale = (0.78 + alt * 0.22) * w.aircraftScale;
     // Pure longitudinal roll via 2.5D spritesheet frames: nose stays strictly pointed UP (0 deg 2D yaw in flight).
     const damageShakeDeg = this.damageAge < .22 ? Math.sin(this.damageAge * 58) * 7 * (1 - this.damageAge / .22) : 0;
     const recoilY = this.recoil * 2.1;
@@ -290,8 +290,8 @@ export class PelagicActorAnims {
     const shOffY = 8 + alt * 16;
     const shScale = clamp(1.04 - alt * 0.24, 0.72, 1.04);
     const shAlpha = underBridge ? 0.14 : clamp(0.30 - alt * 0.10, 0.16, 0.32);
-    const shW = 28 * Math.max(0.52, Math.cos(bank * 0.95)) * shScale;
-    const shH = 20 * shScale;
+    const shW = 28 * Math.max(0.52, Math.cos(bank * 0.95)) * shScale * w.aircraftScale;
+    const shH = 20 * shScale * w.aircraftScale;
     this.shadowGfx.fillStyle(0x04152d, shAlpha).fillEllipse(w.player.x + shOffX, w.player.y + shOffY, shW, shH);
 
     // Low-altitude ocean wave wake spray beneath RIVET when skimming near the waves
@@ -360,7 +360,7 @@ export class PelagicActorAnims {
       if (this.missileAge < .14) {
         const mp = this.missileAge / .14;
         const f = 4 + Math.min(3, Math.floor(mp * 4));
-        const span = 10 * Math.max(.26, Math.cos(Math.abs(bank) * 1.28));
+        const span = 10 * Math.max(.26, Math.cos(Math.abs(bank) * 1.28)) * w.aircraftScale;
         this.pylonL.setTexture(PELAGIC_VFX_SHEET, f).setPosition(w.player.x - span, w.player.y - 2 + recoilY).setDisplaySize(12, 12).setAlpha((1 - mp) * .85).setTint(0xffdf68).setBlendMode(Phaser.BlendModes.ADD).setVisible(true);
         this.pylonR.setTexture(PELAGIC_VFX_SHEET, f).setPosition(w.player.x + span, w.player.y - 2 + recoilY).setDisplaySize(12, 12).setAlpha((1 - mp) * .85).setTint(0xffdf68).setBlendMode(Phaser.BlendModes.ADD).setVisible(true);
       } else {
@@ -374,7 +374,7 @@ export class PelagicActorAnims {
         this.shield
           .setTexture(PELAGIC_VFX_SHEET, sFrame)
           .setPosition(w.player.x, w.player.y + recoilY)
-          .setDisplaySize(44, 44)
+          .setDisplaySize(44 * w.aircraftScale, 44 * w.aircraftScale)
           .setRotation(time * 2.6)
           .setTint(this.damageAge < .3 ? 0xff7676 : 0x8cf4ff)
           .setAlpha(.52 * warnPulse)
@@ -415,7 +415,7 @@ export class PelagicActorAnims {
     // Wingtip contrail ribbons & subtle air-speed slipstream streaks (low alpha, below bullets!)
     if (quality > 0) {
       const moveMag = Math.hypot(this.playerSmoothVx, this.playerSmoothVy);
-      const spanX = 13.5 * Math.max(.25, Math.cos(Math.abs(bank) * 1.32));
+      const spanX = 13.5 * Math.max(.25, Math.cos(Math.abs(bank) * 1.32)) * w.aircraftScale;
       const lx = w.player.x - spanX, ly = w.player.y + 8 - bank * 4.2;
       const rx = w.player.x + spanX, ry = w.player.y + 8 + bank * 4.2;
       const trailStrength = clamp(Math.abs(bank) * .68 + (advancing ? .42 : moveMag > 45 ? .22 : .08), 0, 1);

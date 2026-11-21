@@ -42,6 +42,7 @@ export interface PlayerSettings {
   touch: TouchControlSettings;
   keyBindings: KeyBindings;
   survivalRule: SurvivalRule;
+  mobileOrientation: 'portrait' | 'landscape';
 }
 
 export interface CompetitiveRecord {
@@ -83,11 +84,24 @@ export interface LocalWallet {
   claimedRunIds: string[];
 }
 
+export const PRIVACY_POLICY_VERSION = '1.0';
+
 export interface AccountProfileState {
   mode: 'guest' | 'linked';
   displayName: string;
   syncState: 'local-only' | 'pending' | 'synced';
   lastSyncedAt: number | null;
+  welcomePromptSeen?: boolean;
+  privacyAccepted?: boolean;
+  privacyAcceptedAt?: number | null;
+  privacyVersion?: string;
+}
+
+export interface PilotServiceHistory {
+  sorties: number;
+  clears: number;
+  kills: number;
+  bestScore: number;
 }
 
 export interface PlayerProfileV4 {
@@ -99,6 +113,7 @@ export interface PlayerProfileV4 {
   /** Key format: `m{missionId}:{pilotId}:{difficulty}:{pure|assist}` */
   records: Record<string, CompetitiveRecord>;
   achievements: Record<string, number>;
+  pilotStats: Partial<Record<PilotId, PilotServiceHistory>>;
   unlocks: {
     pilots: PilotId[];
     skins: string[];
@@ -186,11 +201,13 @@ export function defaultProfileV4(): PlayerProfileV4 {
       touch: defaultTouchSettings(),
       keyBindings: { ...DEFAULT_KEY_BINDINGS },
       survivalRule: 'hull-v1',
+      mobileOrientation: 'portrait',
     },
     clearedStages: [],
     flights: {},
     records: {},
     achievements: {},
+    pilotStats: {},
     unlocks: {
       pilots: ['nolan'],
       skins: ['skin:classic'],
@@ -208,6 +225,10 @@ export function defaultProfileV4(): PlayerProfileV4 {
       displayName: 'Piloto Convidado',
       syncState: 'local-only',
       lastSyncedAt: null,
+      welcomePromptSeen: false,
+      privacyAccepted: false,
+      privacyAcceptedAt: null,
+      privacyVersion: PRIVACY_POLICY_VERSION,
     },
   };
 }
@@ -283,6 +304,7 @@ export class ArcadeProfileStore {
         touch: sanitizeTouchSettings(rawSettings.touch),
         keyBindings: sanitizeKeyBindings(rawSettings.keyBindings),
         survivalRule: rawSettings.survivalRule === 'classic-v1' ? 'classic-v1' : 'hull-v1',
+        mobileOrientation: rawSettings.mobileOrientation === 'landscape' ? 'landscape' : 'portrait',
       },
       clearedStages: Array.isArray(raw.clearedStages)
         ? [...new Set<number>(raw.clearedStages.filter((n): n is number => n === 1 || n === 2))].sort((a, b) => a - b)
@@ -290,6 +312,7 @@ export class ArcadeProfileStore {
       flights: raw.flights && typeof raw.flights === 'object' ? { ...raw.flights } : {},
       records: raw.records && typeof raw.records === 'object' ? { ...raw.records } : {},
       achievements: raw.achievements && typeof raw.achievements === 'object' ? { ...raw.achievements } : {},
+      pilotStats: sanitizePilotStats(raw.pilotStats),
       unlocks: {
         pilots,
         skins,
@@ -311,6 +334,10 @@ export class ArcadeProfileStore {
           : base.account.displayName,
         syncState: raw.account?.syncState === 'synced' || raw.account?.syncState === 'pending' ? raw.account.syncState : 'local-only',
         lastSyncedAt: typeof raw.account?.lastSyncedAt === 'number' ? raw.account.lastSyncedAt : null,
+        welcomePromptSeen: Boolean(raw.account?.welcomePromptSeen),
+        privacyAccepted: Boolean(raw.account?.privacyAccepted),
+        privacyAcceptedAt: typeof raw.account?.privacyAcceptedAt === 'number' ? raw.account.privacyAcceptedAt : null,
+        privacyVersion: typeof raw.account?.privacyVersion === 'string' && raw.account.privacyVersion ? raw.account.privacyVersion : PRIVACY_POLICY_VERSION,
       },
     };
   }
@@ -378,18 +405,7 @@ export class ArcadeProfileStore {
       if (n === 0 || n === 1 || n === 2) next.settings.visualQuality = n;
     }
 
-    // Clearing Stage 1 already unlocks Tita & Osvald organically for existing veterans
-    if (next.clearedStages.includes(1)) {
-      for (const pid of ['cora', 'harlan'] as const) {
-        if (!next.unlocks.pilots.includes(pid)) next.unlocks.pilots.push(pid);
-      }
-    }
-    if (next.clearedStages.includes(2)) {
-      for (const pid of ['lyra', 'bento'] as const) {
-        if (!next.unlocks.pilots.includes(pid)) next.unlocks.pilots.push(pid);
-      }
-    }
-
+    // Only Bayek starts unlocked; additional pilots are unlocked via credits.
     next.clearedStages.sort((a, b) => a - b);
     return next;
   }
@@ -455,6 +471,7 @@ export class ArcadeProfileStore {
     noBomb: boolean;
     oneCC: boolean;
     creditsEarned: number;
+    kills?: number;
     achievements: readonly AchievementId[];
     flight?: CampaignFlight;
   }): { newRecord: boolean; newlyUnlockedAchievements: AchievementId[]; newlyUnlockedPilots: PilotId[]; creditsAdded: number } {
@@ -473,20 +490,6 @@ export class ArcadeProfileStore {
         if (survival) flight.survival = survival;
         else delete flight.survival;
         this.profile.flights[`${params.pilotId}:${params.missionId}`] = flight;
-      }
-      // Organic milestone unlocks for pilots
-      if (params.missionId === 1) {
-        for (const pid of ['cora', 'harlan'] as const) {
-          if (this.unlockPilot(pid)) newlyUnlockedPilots.push(pid);
-        }
-        if (rankWeight(params.rank) >= rankWeight('A') && this.unlockPilot('lyra')) {
-          newlyUnlockedPilots.push('lyra');
-        }
-      }
-      if (params.missionId === 2) {
-        for (const pid of ['lyra', 'bento'] as const) {
-          if (this.unlockPilot(pid)) newlyUnlockedPilots.push(pid);
-        }
       }
     }
 
@@ -523,6 +526,14 @@ export class ArcadeProfileStore {
       creditsAdded = Math.max(0, Math.round(params.creditsEarned + achievementBonusCredits));
       this.profile.wallet.credits += creditsAdded;
       this.profile.wallet.totalEarned += creditsAdded;
+
+      const prevStats = this.profile.pilotStats[params.pilotId] ?? { sorties: 0, clears: 0, kills: 0, bestScore: 0 };
+      this.profile.pilotStats[params.pilotId] = {
+        sorties: prevStats.sorties + 1,
+        clears: prevStats.clears + (params.victory ? 1 : 0),
+        kills: prevStats.kills + Math.max(0, Math.round(params.kills ?? 0)),
+        bestScore: Math.max(prevStats.bestScore, Math.round(params.score)),
+      };
     }
 
     this.save();
@@ -595,6 +606,55 @@ export class ArcadeProfileStore {
     this.save();
   }
 
+  markWelcomeSeen(): void {
+    this.profile.account.welcomePromptSeen = true;
+    this.profile.account.privacyAccepted = true;
+    this.profile.account.privacyAcceptedAt = this.profile.account.privacyAcceptedAt ?? Date.now();
+    this.profile.account.privacyVersion = PRIVACY_POLICY_VERSION;
+    this.save();
+  }
+
+  acceptPrivacy(version = PRIVACY_POLICY_VERSION): void {
+    this.profile.account.privacyAccepted = true;
+    this.profile.account.privacyAcceptedAt = Date.now();
+    this.profile.account.privacyVersion = version;
+    this.save();
+  }
+
+  signInLocal(displayName?: string): void {
+    const clean = (displayName ?? '').trim().slice(0, 24);
+    this.profile.account = {
+      mode: 'linked',
+      displayName: clean || (this.profile.account.mode === 'linked' && this.profile.account.displayName ? this.profile.account.displayName : 'Comandante'),
+      syncState: 'local-only',
+      lastSyncedAt: null,
+      welcomePromptSeen: true,
+      privacyAccepted: true,
+      privacyAcceptedAt: this.profile.account.privacyAcceptedAt ?? Date.now(),
+      privacyVersion: PRIVACY_POLICY_VERSION,
+    };
+    this.save();
+  }
+
+  signOutLocal(): void {
+    this.profile.account = {
+      mode: 'guest',
+      displayName: 'Piloto Convidado',
+      syncState: 'local-only',
+      lastSyncedAt: null,
+      welcomePromptSeen: true,
+      privacyAccepted: Boolean(this.profile.account.privacyAccepted),
+      privacyAcceptedAt: this.profile.account.privacyAcceptedAt ?? null,
+      privacyVersion: this.profile.account.privacyVersion ?? PRIVACY_POLICY_VERSION,
+    };
+    this.save();
+  }
+
+  getPilotHistory(pilotId: PilotId): PilotServiceHistory {
+    const h = this.profile.pilotStats[pilotId];
+    return h ? { ...h } : { sorties: 0, clears: 0, kills: 0, bestScore: 0 };
+  }
+
   resetAll(): void {
     this.profile = defaultProfileV4();
     this.save();
@@ -604,6 +664,21 @@ export class ArcadeProfileStore {
   pilotRosterStatus(): Array<{ id: PilotId; unlocked: boolean }> {
     return PILOT_IDS.map((id) => ({ id, unlocked: this.isPilotUnlocked(id) }));
   }
+}
+
+function sanitizePilotStats(raw: unknown): Partial<Record<PilotId, PilotServiceHistory>> {
+  const out: Partial<Record<PilotId, PilotServiceHistory>> = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const [key, val] of Object.entries(raw as Record<string, Partial<PilotServiceHistory>>)) {
+    if (!isValidPilotId(key) || !val || typeof val !== 'object') continue;
+    out[key] = {
+      sorties: Math.max(0, Math.floor(Number(val.sorties) || 0)),
+      clears: Math.max(0, Math.floor(Number(val.clears) || 0)),
+      kills: Math.max(0, Math.floor(Number(val.kills) || 0)),
+      bestScore: Math.max(0, Math.floor(Number(val.bestScore) || 0)),
+    };
+  }
+  return out;
 }
 
 function clampNum(raw: unknown, lo: number, hi: number, fallback: number): number {

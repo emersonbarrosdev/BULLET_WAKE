@@ -21,6 +21,7 @@ export class AudioSystem {
   private readonly lastSound = new Map<string, number>();
 
   private isMuted = false;
+  private foreground = true;
   private masterVolume = 0.8;
   private sfxVolume = 0.85;
   private musicVolume = 0.099;
@@ -58,16 +59,28 @@ export class AudioSystem {
   }
 
   unlock(): void {
+    if (!this.foreground) return;
     this.initCtx();
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {});
     }
   }
 
+  /** Suspend the audio clock as well as muting; background tabs consume no audio work. */
+  setForeground(active: boolean): void {
+    if (active === this.foreground) return;
+    this.foreground = active;
+    if (!active) this.stopCombatEffects();
+    if (!this.ctx) return;
+    this.masterGain?.gain.setValueAtTime(!active || this.isMuted || this.environment === 'space' ? 0 : this.masterVolume, this.ctx.currentTime);
+    if (active) void this.ctx.resume().catch(() => {});
+    else void this.ctx.suspend().catch(() => {});
+  }
+
   setMute(mute: boolean): void {
     this.isMuted = mute;
     if (this.masterGain && this.ctx) {
-      this.masterGain.gain.setValueAtTime(mute||this.environment==='space' ? 0 : this.masterVolume, this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(!this.foreground||mute||this.environment==='space' ? 0 : this.masterVolume, this.ctx.currentTime);
     }
   }
 
@@ -87,7 +100,7 @@ export class AudioSystem {
   /** Short, bounded cartoon accents. The approved RIVET cannon remains unchanged. */
   playArcade(kind:'navigate'|'confirm'|'impact'|'pop'|'boom'|'orb'|'cannon'|'transition'|'special'|'bonus'|'arch-descent'|'arch-ascent'|'checkpoint'|'level-up'|'boss-warning'|'graze'|'low-life'):void {
     this.unlock();
-    if(!this.ctx||!this.sfxGain||this.isMuted||this.environment==='space'||!this.allowSound('arcade-'+kind,kind==='impact'?.07:kind==='orb'?.09:kind==='graze'?.05:kind==='bonus'?.18:.12))return;
+    if(!this.foreground||!this.ctx||!this.sfxGain||this.isMuted||this.environment==='space'||!this.allowSound('arcade-'+kind,kind==='impact'?.07:kind==='orb'?.09:kind==='graze'?.05:kind==='bonus'?.18:.12))return;
     if(kind==='navigate'){this.tone('sine',660,880,.045,.08);return;}
     if(kind==='confirm'){this.tone('triangle',523,523,.07,.13);this.tone('sine',1046,1046,.10,.1,.06);return;}
     if(kind==='bonus'){this.tone('sine',880,1175,.075,.075);this.tone('triangle',1318,1568,.11,.06,.045);return;}
@@ -107,7 +120,7 @@ export class AudioSystem {
 
   playShot(pilotId: 'nolan' | 'cora' | 'harlan' | 'lyra' | 'bento', level = 1): void {
     this.unlock();
-    if (!this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
+    if (!this.foreground || !this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
     if(!this.allowSound('player-shot',.025))return;
     const voices:Partial<Record<string,CombatVoice>>={cora:'violet',lyra:'emerald',harlan:'amber',bento:'celestial'};
     const voice=voices[pilotId];if(voice){this.playDesignedVoice(voice);return;}
@@ -159,7 +172,7 @@ export class AudioSystem {
 
   playMissile(): void {
     this.unlock();
-    if (!this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
+    if (!this.foreground || !this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
     const now = this.ctx.currentTime;
     const osc = this.trackSoundSource(this.ctx.createOscillator());
     const gain = this.ctx.createGain();
@@ -178,7 +191,7 @@ export class AudioSystem {
   }
 
   private allowSound(key: string, interval: number): boolean {
-    if (!this.ctx) return false;
+    if (!this.foreground || !this.ctx) return false;
     const now=this.ctx.currentTime, last=this.lastSound.get(key) ?? -Infinity;
     if(now-last<interval)return false;
     this.lastSound.set(key,now);return true;
@@ -216,7 +229,7 @@ export class AudioSystem {
 
   playEnemyShot(kind='scout'): void {
     this.unlock();
-    if (!this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
+    if (!this.foreground || !this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
     // One voice per salvo, with bounded overlap across different alien species.
     if(!this.allowSound('alien-salvo',.035)||!this.allowSound('alien-'+kind,.085))return;
     const now = this.ctx.currentTime;
@@ -236,7 +249,7 @@ export class AudioSystem {
 
   playHit(target:'alien'|'hull'|'shield'|'metal'|'energy'='alien'): void {
     this.unlock();
-    if (!this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
+    if (!this.foreground || !this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
     if(!this.allowSound('hit-'+target,target==='alien'?.045:.12))return;
     if(target==='energy'){this.tone('sine',1200,490,.075,.1);this.noise(.045,.07,3300);return;}
     if(target==='metal'){this.noise(.055,.15,5100);this.tone('triangle',780,230,.06,.08);return;}
@@ -247,7 +260,7 @@ export class AudioSystem {
 
   playExplosion(isLarge = false): void {
     this.unlock();
-    if (!this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
+    if (!this.foreground || !this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
     if(!this.allowSound(isLarge?'explosion-large':'explosion',isLarge?.08:.04))return;
     this.noise(isLarge?.46:.23,isLarge?.40:.26,isLarge?3600:2900);
     this.tone('triangle',isLarge?610:800,isLarge?190:270,.075,isLarge?.12:.075);
@@ -268,11 +281,11 @@ export class AudioSystem {
   private trackSoundSource<T extends AudioScheduledSourceNode>(source:T):T {this.combatSources.add(source);source.addEventListener('ended',()=>this.combatSources.delete(source),{once:true});return source;}
   stopCombatEffects():void {for(const source of this.combatSources){try{source.stop();}catch{}}this.designedSources.clear();this.combatSources.clear();}
   playSpecial(type: 'scarlet'|'phantom'|'nova'|'orbital'|'comet'):void {
-    this.unlock();if(!this.ctx||!this.sfxGain||this.isMuted||this.environment==='space')return;
+    this.unlock();if(!this.foreground||!this.ctx||!this.sfxGain||this.isMuted||this.environment==='space')return;
     if(!this.allowSound('special',.2))return;this.playDesignedVoice(type);
   }
   playBossTransition(phase:'escape'|'submerged'|'emerge'|'eclipse'):void {
-    this.unlock();if(!this.ctx||!this.sfxGain||this.isMuted||this.environment==='space')return;
+    this.unlock();if(!this.foreground||!this.ctx||!this.sfxGain||this.isMuted||this.environment==='space')return;
     if(!this.allowSound('boss-transition',.18))return;
     if(phase==='submerged'){this.noise(1.7,.09,700);this.tone('sine',58,32,2,.13);}
     else if(phase==='escape'){this.noise(.6,.15,1600);this.tone('triangle',90,280,.7,.09);}
@@ -282,7 +295,7 @@ export class AudioSystem {
 
   playBomb(): void {
     this.playExplosion(true);
-    if (!this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
+    if (!this.foreground || !this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
     const now = this.ctx.currentTime;
     const osc = this.trackSoundSource(this.ctx.createOscillator());
     const gain = this.ctx.createGain();
@@ -302,7 +315,7 @@ export class AudioSystem {
 
   playPickup(type: string): void {
     this.unlock();
-    if (!this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
+    if (!this.foreground || !this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
     if (type === 'repair') {
       [740, 1109, 1480].forEach((freq, i) => this.tone('triangle', freq, freq * 1.015, .11, .12, i * .055));
       this.tone('sine', 370, 740, .17, .06);
@@ -314,7 +327,7 @@ export class AudioSystem {
 
   playChargeWindup(ratio: number): void {
     this.unlock();
-    if (!this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
+    if (!this.foreground || !this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
     if(!this.allowSound('charge-windup',.10))return;
     const now = this.ctx.currentTime;
     const osc = this.trackSoundSource(this.ctx.createOscillator());
@@ -337,7 +350,7 @@ export class AudioSystem {
 
   playChargedShot(pilotId: string, level = 2): void {
     this.unlock();
-    if (!this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
+    if (!this.foreground || !this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
     const now = this.ctx.currentTime;
 
     if (pilotId === 'nolan') {
@@ -393,7 +406,7 @@ export class AudioSystem {
 
   playOverheat(): void {
     this.unlock();
-    if (!this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
+    if (!this.foreground || !this.ctx || !this.sfxGain || this.isMuted||this.environment==='space') return;
     const now = this.ctx.currentTime;
     const osc = this.trackSoundSource(this.ctx.createOscillator());
     const gain = this.ctx.createGain();
@@ -415,7 +428,7 @@ export class AudioSystem {
 
   setEnvironment(environment:'atmosphere'|'space'):void {
     this.environment=environment;if(environment==='space')this.stopMusic();
-    if(this.masterGain&&this.ctx)this.masterGain.gain.setValueAtTime(environment==='space'||this.isMuted?0:this.masterVolume,this.ctx.currentTime);
+    if(this.masterGain&&this.ctx)this.masterGain.gain.setValueAtTime(!this.foreground||environment==='space'||this.isMuted?0:this.masterVolume,this.ctx.currentTime);
   }
   private startTrack(theme:MusicTheme):void {
     if(this.environment==='space'||this.currentTrack===theme)return;

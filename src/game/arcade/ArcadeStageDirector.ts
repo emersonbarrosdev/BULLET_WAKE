@@ -90,7 +90,7 @@ const REGION_START_TIMES_SIDE = SOLAR_REGION_STARTS;
  * Builds the canonical declarative event graph for any mission registered in `MISSIONS`.
  * Both normal gameplay (`ArcadeWorld`) and DEV tools consume this exact single source of truth.
  */
-export function buildMissionStageEvents(mission: Mission, missionIndex: number): StageEventDef[] {
+export function buildMissionStageEvents(mission: Mission, missionIndex: number, supplies?: readonly { at: number; kind: SupplyKind }[]): StageEventDef[] {
     const events: StageEventDef[] = [];
     const stageId = mission.id;
     const isUp = mission.perspective === 'UP';
@@ -270,7 +270,7 @@ export function buildMissionStageEvents(mission: Mission, missionIndex: number):
         });
     }
 
-    const missionSupplies = isUp ? FENDA_BASE_SUPPLIES : SUPPLIES;
+    const missionSupplies = supplies ?? (isUp ? FENDA_BASE_SUPPLIES : SUPPLIES);
     missionSupplies.forEach((sup, idx) => {
         events.push({
             id: `stage-${stageId}-supply-${idx}-${sup.kind}`,
@@ -372,11 +372,13 @@ export class ArcadeStageDirector {
     readonly defs: readonly StageEventDef[];
     private readonly runtime = new Map<string, StageEventRuntimeEntry>();
     private paused = false;
+    private readonly supplies: readonly { at: number; kind: SupplyKind }[];
 
-    constructor(mission: Mission, missionIndex: number) {
+    constructor(mission: Mission, missionIndex: number, supplies: readonly { at: number; kind: SupplyKind }[] = mission.perspective === 'UP' ? FENDA_BASE_SUPPLIES : SUPPLIES) {
         this.mission = mission;
         this.missionIndex = missionIndex;
-        this.defs = buildMissionStageEvents(mission, missionIndex);
+        this.supplies = supplies;
+        this.defs = buildMissionStageEvents(mission, missionIndex, supplies);
         this.reset();
     }
 
@@ -427,7 +429,7 @@ export class ArcadeStageDirector {
     }
 
     markSupplyTriggered(supplyIndex: number, atRoute: number): void {
-        const list = this.mission.perspective === 'UP' ? FENDA_BASE_SUPPLIES : SUPPLIES;
+        const list = this.supplies;
         const sup = list[supplyIndex];
         if (!sup) return;
         this.setStatus(`stage-${this.mission.id}-supply-${supplyIndex}-${sup.kind}`, 'completed', atRoute);

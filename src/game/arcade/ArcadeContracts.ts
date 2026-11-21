@@ -96,7 +96,7 @@ const PILOT_CONTRACTS_LIST: readonly PilotCombatContract[] = [
     stats: { speed: 5, firepower: 4, armor: 2 },
     defaultUnlocked: false,
     creditCost: 500,
-    unlockHint: 'Conclua a Rota 01 ou desbloqueie no Hangar (500 CR).',
+    unlockHint: 'Desbloqueie com 500 CR.',
   },
   {
     id: 'lyra',
@@ -123,7 +123,7 @@ const PILOT_CONTRACTS_LIST: readonly PilotCombatContract[] = [
     stats: { speed: 4, firepower: 4, armor: 4 },
     defaultUnlocked: false,
     creditCost: 750,
-    unlockHint: 'Obtenha Rank A+ na Rota 01 ou desbloqueie no Hangar (750 CR).',
+    unlockHint: 'Desbloqueie com 750 CR.',
   },
   {
     id: 'harlan',
@@ -150,7 +150,7 @@ const PILOT_CONTRACTS_LIST: readonly PilotCombatContract[] = [
     stats: { speed: 2, firepower: 5, armor: 5 },
     defaultUnlocked: false,
     creditCost: 750,
-    unlockHint: 'Conclua a Rota 01 ou desbloqueie no Hangar (750 CR).',
+    unlockHint: 'Desbloqueie com 750 CR.',
   },
   {
     id: 'bento',
@@ -177,7 +177,7 @@ const PILOT_CONTRACTS_LIST: readonly PilotCombatContract[] = [
     stats: { speed: 5, firepower: 4, armor: 3 },
     defaultUnlocked: false,
     creditCost: 1200,
-    unlockHint: 'Conclua a campanha ou desbloqueie no Hangar (1200 CR).',
+    unlockHint: 'Desbloqueie com 1200 CR.',
     isSecret: true,
   },
 ];

@@ -34,6 +34,7 @@ import {
     type DifficultyProfile,
     type GameDifficulty,
     type SupplyEntry,
+    type SupplyBalance,
 } from './PelagicDifficulty.ts';
 import {
     computeHelicopterSlotLayout,
@@ -158,6 +159,10 @@ export type UpLayoutMode = 'classic' | 'pc' | 'portrait';
 export interface ArcadeWorldOptions {
     upLayout?: UpLayoutMode;
     arena?: Box;
+    /** Keep the complete ship inside a mobile field; omitted in older replays. */
+    playerSidePadding?: number;
+    aircraftScale?: number;
+    supplyBalance?: SupplyBalance;
     seed?: number;
     difficulty?: GameDifficulty | 'arcade';
     pilotId?: PilotId;
@@ -206,8 +211,14 @@ export class ArcadeWorld {
     private stepEnemyShots = 0; private directorPaused = false;
     readonly mission: Mission;
     readonly upLayout: UpLayoutMode;
+    readonly playerSidePadding: number;
+    readonly aircraftScale: number;
+    readonly supplyBalance: SupplyBalance;
     constructor(mission: Mission, carry?: CampaignFlight, options?: ArcadeWorldOptions) {
         this.mission = mission;
+        this.playerSidePadding = Number.isFinite(options?.playerSidePadding) ? clamp(options!.playerSidePadding!, 14, 28) : 14;
+        this.aircraftScale = Number.isFinite(options?.aircraftScale) ? clamp(options!.aircraftScale!, 1, 1.2) : 1;
+        this.supplyBalance = options?.supplyBalance ?? 'classic-v1';
         this.pilotId = getPilotContract(options?.pilotId ?? carry?.pilotId ?? 'nolan').id;
         this.pilotContract = getPilotContract(this.pilotId);
         this.survivalRule = options?.survivalRule ?? carry?.survival?.rule ?? 'classic-v1';
@@ -217,7 +228,7 @@ export class ArcadeWorld {
         this.hull = this.hullMaximum;
         this.practiceMode = Boolean(options?.practiceMode);
         const mIdx = Math.max(0, MISSIONS.indexOf(mission));
-        this.stageDirector = new ArcadeStageDirector(mission, mIdx);
+        this.stageDirector = new ArcadeStageDirector(mission, mIdx, this.supplyBalance === 'balanced-v2' ? buildMissionSupplies(mission, 'normal', false, this.supplyBalance) : undefined);
         this.setSeed(options?.seed ?? 1337);
         if (options?.difficulty) this._difficulty = normalizeGameDifficulty(options.difficulty);
         this.upLayout = options?.upLayout ?? 'classic';
@@ -333,7 +344,7 @@ export class ArcadeWorld {
     private get effectiveHard(): boolean { return this.effectiveDifficulty !== 'easy'; }
     private get effectiveExtreme(): boolean { return this.effectiveDifficulty === 'hard'; }
     private get activeEncounters(): readonly Encounter[] { return buildMissionEncounters(this.mission, this.effectiveDifficulty); }
-    private get activeSupplies(): readonly SupplyEntry[] { return buildMissionSupplies(this.mission, this.effectiveDifficulty, this.isAssisted); }
+    private get activeSupplies(): readonly SupplyEntry[] { return buildMissionSupplies(this.mission, this.effectiveDifficulty, this.isAssisted, this.supplyBalance); }
     setDifficulty(mode: GameDifficulty | 'arcade'): void {
         const next = normalizeGameDifficulty(mode);
         if (this._difficulty === next) return;
@@ -356,7 +367,7 @@ export class ArcadeWorld {
         const relX = (this.player.x - oldCenter) / oldW;
         const prevHomeY = this.playerHomeY;
         Object.assign(this.arena, bounds);
-        this.player.x = clamp(this.arenaCenterX + relX * this.arenaWidth, this.arena.left + 14, this.arena.right - 14);
+        this.player.x = clamp(this.arenaCenterX + relX * this.arenaWidth, this.arena.left + this.playerSidePadding, this.arena.right - this.playerSidePadding);
         this.player.y = clamp(this.player.y + (this.playerHomeY - prevHomeY), this.arena.top + 16, this.arena.bottom - 15);
     }
     emit(type: WorldEvent['type'], x = this.player.x, y = this.player.y, size = 1, text?: string): void { this.events.push({ type, x, y, size, text }); }
@@ -399,7 +410,7 @@ export class ArcadeWorld {
         const speedMul = this.playerSpeedScale !== 1 ? clamp(this.playerSpeedScale, 0.35, 2.5) : 1;
         const focusMul = this.player.focusActive ? this.pilotContract.focusSpeedFactor : 1;
         const n = Math.max(1, Math.hypot(input.x, input.y)), speed = this.pilotContract.moveSpeed * focusMul * speedMul;
-        this.player.x = clamp(this.player.x + input.x / n * speed * dt, this.arena.left + 14, this.arena.right - 14);
+        this.player.x = clamp(this.player.x + input.x / n * speed * dt, this.arena.left + this.playerSidePadding, this.arena.right - this.playerSidePadding);
         const yRange = this.up
             ? this.tideArch.playerLongitudinalClamp(this.arena.top, this.arena.bottom, this.playerHomeY)
             : { minY: this.arena.top + 16, maxY: this.arena.bottom - 15 };
@@ -878,7 +889,7 @@ export class ArcadeWorld {
                 id: ++this.sequence,
                 x: spawnX,
                 y: spawnY,
-                size: def.size,
+                size: def.size * (ground ? 1 : this.aircraftScale),
                 hp: resolvedHp,
                 maxHp: resolvedHp,
                 age: 0,
@@ -990,7 +1001,7 @@ export class ArcadeWorld {
                 const dirs: ReadonlyArray<[number, number]> = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [.707, .707], [.707, -.707], [-.707, .707], [-.707, -.707]];
                 let free = 0;
                 for (const [dx, dy] of dirs) {
-                    const px = clamp(this.player.x + dx * 174 * 0.14, this.arena.left + 14, this.arena.right - 14);
+                    const px = clamp(this.player.x + dx * 174 * 0.14, this.arena.left + this.playerSidePadding, this.arena.right - this.playerSidePadding);
                     const py = clamp(this.player.y + dy * 174 * 0.14, this.arena.top + 16, this.arena.bottom - 15);
                     let blocked = false;
                     for (const b of nearList) {

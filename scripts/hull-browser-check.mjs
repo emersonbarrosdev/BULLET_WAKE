@@ -129,6 +129,8 @@ try {
   await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...pausePoint, id: 2 }] }); await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await sleep(80); assert.equal(await evaluate('s.screen'), 'pause'); report.inputs.touch.pause = true;
   await shot('mobile-touch-pause');
 
+  await send('Emulation.setTouchEmulationEnabled', { enabled: false });
+  await evaluate('s.touchDeviceActive=false;true');
   await send('Emulation.setDeviceMetricsOverride', { width: 1366, height: 768, deviceScaleFactor: 1, mobile: false }); await sleep(180);
   report.inputs.gamepads = [];
   for (const id of ['Xbox 360 Controller (XInput STANDARD GAMEPAD)', 'Sony DualSense Wireless Controller (Vendor: 054c Product: 0ce6)']) {
