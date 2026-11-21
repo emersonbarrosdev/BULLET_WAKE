@@ -2050,7 +2050,7 @@ export class ArcadeScene extends Phaser.Scene {
         arena: usePortrait ? { left: 0, right: portrait.w, top: 34, bottom: portrait.h - 14 } : { left: 384 - mobileArenaWidth / 2, right: 384 + mobileArenaWidth / 2, top: 18, bottom: 424 },
       } : {}),
       playerSidePadding: isMobileDisplay() ? (index === 0 ? 24 : 26) : 14,
-      aircraftScale: isMobileDisplay() ? (this.isMobileLandscape() ? 1.08 : 1.15) : 1,
+      aircraftScale: isMobileDisplay() ? (this.isMobileLandscape() ? 1.14 : 1.2) : 1,
       supplyBalance: 'balanced-v2',
       pilotId,
       practiceMode,
@@ -2581,7 +2581,10 @@ export class ArcadeScene extends Phaser.Scene {
       }
     }
     this.renderBoss(g);
+    const mobileBullets = isMobileDisplay();
     const playerArt = w.up ? pelagicShotSize(w.weapons.weaponLevel) : rivetShotPresentation(w.weapons.weaponLevel);
+    const pShotW = playerArt.width * (mobileBullets ? 1.16 : 1);
+    const pShotH = playerArt.height * (mobileBullets ? 1.12 : 1);
     const hasEnemyMissileTex = this.textures.exists(PELAGIC_ENEMY_MISSILE_SHEET);
     for (let i = 0; i < w.bullets.length; i++) {
       const b = w.bullets[i];
@@ -2595,15 +2598,16 @@ export class ArcadeScene extends Phaser.Scene {
       if (b.enemy && b.enemyMissile && hasEnemyMissileTex) {
         const f = Math.floor(b.age * 18) % 4;
         if (s.texture.key !== PELAGIC_ENEMY_MISSILE_SHEET || String(s.frame.name) !== String(f)) s.setTexture(PELAGIC_ENEMY_MISSILE_SHEET, f);
-        s.clearTint().setDisplaySize(18, 28).setRotation(Math.atan2(b.vy, b.vx) - Math.PI / 2);
+        s.clearTint().setDisplaySize(mobileBullets ? 20 : 18, mobileBullets ? 31 : 28).setRotation(Math.atan2(b.vy, b.vx) - Math.PI / 2);
       } else if (b.enemy) {
         const orbTex = 'arc-orb-' + b.color;
         if (s.texture.key !== orbTex) s.setTexture(orbTex);
-        s.clearTint().setDisplaySize(b.radius * 2 + 2.0, b.radius * 2 + 2.0).setRotation(0);
+        const orbDiam = b.radius * 2 + (mobileBullets ? 4.4 : 2.0);
+        s.clearTint().setDisplaySize(orbDiam, orbDiam).setRotation(0);
       } else if (b.charged) {
         const isFull = b.chargeTier === 'full';
-        const bw = playerArt.width * Math.max(1.25, b.scale * 0.9);
-        const bh = playerArt.height * Math.max(1.4, b.scale * 1.05);
+        const bw = pShotW * Math.max(1.25, b.scale * 0.9);
+        const bh = pShotH * Math.max(1.4, b.scale * 1.05);
         const chTex = w.up ? 'pelagic-plasma' : 'arc-red';
         const chFrame = w.up ? undefined : Math.floor(b.age * 20) % 8;
         if (s.texture.key !== chTex || (chFrame !== undefined && String(s.frame.name) !== String(chFrame))) s.setTexture(chTex, chFrame);
@@ -2620,7 +2624,7 @@ export class ArcadeScene extends Phaser.Scene {
         const bTex = b.missile ? 'arc-missile' : w.up ? 'pelagic-plasma' : 'arc-red';
         const bFrame = w.up && !b.missile ? undefined : Math.floor(b.age * 20) % (b.missile ? 4 : 8);
         if (s.texture.key !== bTex || (bFrame !== undefined && String(s.frame.name) !== String(bFrame))) s.setTexture(bTex, bFrame);
-        s.clearTint().setDisplaySize(b.missile ? 17 : playerArt.width, b.missile ? 25 : playerArt.height).setRotation(Math.atan2(b.vy, b.vx) + Math.PI / 2);
+        s.clearTint().setDisplaySize(b.missile ? (mobileBullets ? 19 : 17) : pShotW, b.missile ? (mobileBullets ? 28 : 25) : pShotH).setRotation(Math.atan2(b.vy, b.vx) + Math.PI / 2);
         if (!b.missile && w.pilotId !== 'nolan') s.setTint(w.pilotContract.projectileTint);
       }
       s.setPosition(b.x, b.y);

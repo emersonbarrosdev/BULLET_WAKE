@@ -721,8 +721,9 @@ export class PortraitMenu {
   pilotShowcase(opts: PilotShowcaseOptions): void {
     const wrap = this.el('div', 'bw-pilot-layout');
 
-    const pilotCard = this.el('section', 'bw-pilot-card');
-    const pilotTop = this.el('div', 'bw-pilot-card-top');
+    // Open sunlit hangar spotlight stage: Pilot portrait + floating Aircraft bay side-by-side!
+    const stage = this.el('section', 'bw-pilot-stage');
+    const heroPilot = this.el('div', 'bw-pilot-hero');
     const avatar = this.el('div', `bw-pilot-avatar${opts.unlocked ? '' : ' is-locked'}`);
     const pImg = this.el('img'); pImg.src = opts.portraitImage; pImg.alt = opts.name; pImg.draggable = false;
     avatar.append(pImg);
@@ -731,43 +732,35 @@ export class PortraitMenu {
       lock.append(this.icon('lock', 'bw-ico bw-ico-lock'));
       avatar.append(lock);
     }
-
-    const pilotInfo = this.el('div', 'bw-pilot-card-info');
-    pilotInfo.append(
+    const pilotTitle = this.el('div', 'bw-pilot-title-plate');
+    pilotTitle.append(
       this.el('h2', '', opts.name),
       this.el('p', 'bw-pilot-origin', `${opts.callsign} · ${opts.nationality}`),
-      this.el('p', `bw-pilot-bio${opts.unlocked ? '' : ' locked'}`, opts.detail),
     );
-    pilotTop.append(avatar, pilotInfo);
+    heroPilot.append(avatar, pilotTitle);
 
-    const historyRow = this.el('div', 'bw-pilot-history');
-    const statusText = opts.history.sorties > 0 ? `${opts.history.sorties} ${opts.history.sorties === 1 ? 'voo' : 'voos'}` : 'Estreante';
-    const histItems: Array<[string, string]> = [
-      ['Histórico', statusText],
-      ['Abates', String(opts.history.kills)],
-      ['Recorde', String(opts.history.bestScore)],
-    ];
-    for (const [k, v] of histItems) {
-      const cell = this.el('div', 'bw-pilot-hist-cell');
-      cell.append(this.el('span', '', k), this.el('strong', '', v));
-      historyRow.append(cell);
-    }
-    pilotCard.append(pilotTop, historyRow);
-
-    const shipCard = this.el('section', 'bw-ship-card');
-    const shipTop = this.el('div', 'bw-ship-card-top');
-    const shipBay = this.el('div', 'bw-pilot-ship-bay');
+    const heroShip = this.el('div', 'bw-ship-hero');
+    const shipBay = this.el('div', `bw-pilot-ship-bay${opts.unlocked ? '' : ' is-locked'}`);
     const sImg = this.el('img'); sImg.src = opts.shipImage; sImg.alt = opts.shipName; sImg.draggable = false;
     shipBay.append(sImg);
-
-    const shipInfo = this.el('div', 'bw-ship-meta');
-    shipInfo.append(
-      this.el('p', 'bw-ship-eyebrow', 'Aeronave'),
+    const shipPlate = this.el('div', 'bw-ship-plate');
+    shipPlate.append(
+      this.el('span', 'bw-ship-eyebrow', 'Aeronave'),
       this.el('h3', '', opts.shipName),
-      this.el('p', 'bw-pilot-kit', `Arma: ${opts.weaponName}`),
-      this.el('p', 'bw-pilot-special', `Esp: ${opts.specialName}`),
     );
-    shipTop.append(shipBay, shipInfo);
+    heroShip.append(shipBay, shipPlate);
+    stage.append(heroPilot, heroShip);
+
+    // Unified frosted-glass Tactical Dossier: Full bio + Weapon/Special + 3 Stat bars + Service History
+    const dossier = this.el('section', 'bw-pilot-dossier');
+    dossier.append(this.el('p', `bw-pilot-bio${opts.unlocked ? '' : ' locked'}`, opts.detail));
+
+    const loadout = this.el('div', 'bw-pilot-loadout');
+    const wCell = this.el('div', 'bw-loadout-pill');
+    wCell.append(this.el('span', '', 'Arma'), this.el('strong', 'bw-pilot-kit', opts.weaponName));
+    const sCell = this.el('div', 'bw-loadout-pill special');
+    sCell.append(this.el('span', '', 'Especial'), this.el('strong', 'bw-pilot-special', opts.specialName));
+    loadout.append(wCell, sCell);
 
     const bars = this.el('div', 'bw-stat-bars');
     const statList: Array<[string, number, 'cyan' | 'gold' | 'green']> = [
@@ -787,8 +780,21 @@ export class PortraitMenu {
       bars.append(row);
     }
 
-    shipCard.append(shipTop, bars);
-    wrap.append(pilotCard, shipCard);
+    const historyRow = this.el('div', 'bw-pilot-history');
+    const statusText = opts.history.sorties > 0 ? `${opts.history.sorties} ${opts.history.sorties === 1 ? 'voo' : 'voos'}` : 'Estreante';
+    const histItems: Array<[string, string]> = [
+      ['Histórico', statusText],
+      ['Abates', String(opts.history.kills)],
+      ['Recorde', String(opts.history.bestScore)],
+    ];
+    for (const [k, v] of histItems) {
+      const cell = this.el('div', 'bw-pilot-hist-cell');
+      cell.append(this.el('span', '', k), this.el('strong', '', v));
+      historyRow.append(cell);
+    }
+
+    dossier.append(loadout, bars, historyRow);
+    wrap.append(stage, dossier);
     this.body?.append(wrap);
   }
 

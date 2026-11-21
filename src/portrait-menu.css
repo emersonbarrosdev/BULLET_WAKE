@@ -642,20 +642,24 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* Shop card highlighted in vibrant gold/amber as the final card! */
+/* Shop card highlighted in vibrant emerald-teal so it stands out without clashing with the gold Launch CTA! */
 .bw-dash-tile.is-shop,
 .bw-dash-tile.is-shop:disabled {
-  border: 1.5px solid rgba(255, 244, 178, 0.92);
-  background: linear-gradient(175deg, #ffe77a 0%, #f5b726 58%, #cf7e0c 100%);
-  box-shadow: 0 6px 18px rgba(245, 176, 30, 0.34), inset 0 1px 0 rgba(255, 253, 224, 0.8);
-  color: #132544;
-  opacity: 0.92;
+  border: 1.5px solid rgba(154, 255, 224, 0.88);
+  background: linear-gradient(175deg, #1fd49b 0%, #0d946f 56%, #065747 100%);
+  box-shadow: 0 6px 18px rgba(14, 184, 134, 0.34), inset 0 1px 0 rgba(196, 255, 236, 0.72);
+  color: #f4fffb;
+  opacity: 0.96;
   cursor: default;
 }
+.bw-dash-tile.is-shop .bw-ico-tile {
+  color: #ffffff;
+  filter: drop-shadow(0 2px 4px rgba(3, 38, 30, 0.52));
+}
 .bw-dash-tile.is-shop .bw-lock-badge {
-  background: #102444;
-  border-color: #ffe88a;
-  color: #ffe57d;
+  background: #07262c;
+  border-color: #9effdf;
+  color: #9effdf;
 }
 
 /* Padlock corner badge */
@@ -900,86 +904,142 @@
 }
 .bw-purchase-ship { width: 66px; height: 66px; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.7)); }
 
-/* ==================== REDESIGNED SINGLE-SCREEN PILOT SELECT ==================== */
+/* ==================== HANGAR-BACKDROP PILOT SELECT ==================== */
+.bw-mobile-screen-pilot {
+  background:
+    linear-gradient(180deg, rgba(4, 14, 32, 0.76) 0%, rgba(4, 14, 32, 0.16) 22%, rgba(4, 15, 34, 0.24) 48%, rgba(4, 13, 30, 0.82) 76%, rgba(3, 10, 24, 0.94) 100%),
+    url('/assets/arcade/ui/hangar-bay-bg.webp') center 42%/cover;
+}
+.bw-mobile-screen-hangar {
+  background:
+    linear-gradient(180deg, rgba(4, 14, 32, 0.84) 0%, rgba(4, 16, 36, 0.74) 44%, rgba(3, 11, 26, 0.94) 100%),
+    url('/assets/arcade/ui/hangar-bay-bg.webp') center 42%/cover;
+}
 .bw-mobile-screen-pilot .bw-mobile-scroll { overflow-y: auto; display: flex; flex-direction: column; }
-.bw-mobile-screen-pilot .bw-mobile-body { flex: 1; justify-content: space-between; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; gap: 10px; }
-.bw-pilot-layout { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; min-height: 0; }
-.bw-pilot-card {
+.bw-mobile-screen-pilot .bw-mobile-body { flex: 1; justify-content: space-between; padding: calc(10px + env(safe-area-inset-top)) 14px 8px; gap: 8px; }
+.bw-pilot-layout { flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; min-height: 0; }
+
+/* Open Hangar Hero Stage (lets the sunlit coastal hangar bay shine behind pilot & hovering ship!) */
+.bw-pilot-stage {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 4px 2px;
+}
+.bw-pilot-hero,
+.bw-ship-hero {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(90, 224, 255, 0.5);
-  background: linear-gradient(155deg, rgba(22, 68, 118, 0.92), rgba(7, 25, 52, 0.95));
-  box-shadow: 0 10px 24px rgba(2, 10, 26, 0.42);
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  text-align: center;
+  min-width: 0;
 }
-.bw-pilot-card-top { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; }
 .bw-pilot-avatar {
   position: relative;
-  width: 88px;
-  height: 88px;
-  border-radius: 16px;
+  width: clamp(92px, 27vw, 116px);
+  height: clamp(92px, 27vw, 116px);
+  border-radius: 20px;
   padding: 4px;
-  background: linear-gradient(160deg, rgba(14, 48, 88, 0.95), rgba(5, 19, 40, 0.95));
-  border: 1.5px solid rgba(255, 226, 122, 0.7);
+  background: linear-gradient(160deg, rgba(12, 42, 82, 0.88), rgba(5, 17, 36, 0.92));
+  border: 2px solid rgba(255, 228, 126, 0.85);
+  box-shadow: 0 12px 28px rgba(2, 10, 26, 0.62), 0 0 22px rgba(72, 214, 255, 0.24);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.bw-pilot-avatar.is-locked { border-color: rgba(124, 162, 198, 0.45); }
+.bw-pilot-avatar.is-locked { border-color: rgba(146, 178, 212, 0.56); }
 .bw-pilot-avatar img { width: 100%; height: 100%; object-fit: contain; }
-.bw-pilot-avatar.is-locked img { opacity: 0.56; filter: grayscale(0.32); }
+.bw-pilot-avatar.is-locked img { opacity: 0.6; filter: grayscale(0.32); }
 
-.bw-pilot-card-info { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.bw-pilot-card-info h2 { font: 800 21px/1.1 'Oxanium', sans-serif; color: #ffe57d; }
-.bw-pilot-origin { font: 700 12px/1.15 'Oxanium', sans-serif; color: #7ee9ff; letter-spacing: 0.04em; }
-.bw-pilot-bio { font-size: 13px; color: #cbe2f4; line-height: 1.26; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.bw-pilot-bio.locked { color: #ffe57d; }
+.bw-pilot-title-plate,
+.bw-ship-plate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 5px 11px;
+  border-radius: 11px;
+  background: rgba(5, 19, 42, 0.78);
+  border: 1px solid rgba(94, 222, 255, 0.36);
+  backdrop-filter: blur(5px);
+  max-width: 100%;
+}
+.bw-pilot-title-plate h2 { font: 800 20px/1.1 'Oxanium', sans-serif; color: #ffe57d; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6); }
+.bw-pilot-origin { font: 700 11px/1.15 'Oxanium', sans-serif; color: #84ecff; letter-spacing: 0.04em; white-space: nowrap; }
+
+.bw-pilot-ship-bay {
+  position: relative;
+  width: clamp(96px, 28vw, 120px);
+  height: clamp(96px, 28vw, 120px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, rgba(96, 232, 255, 0.34) 0%, rgba(16, 66, 126, 0.56) 56%, rgba(5, 20, 44, 0.78) 100%);
+  border: 2px solid rgba(112, 234, 255, 0.72);
+  box-shadow: 0 12px 30px rgba(2, 12, 30, 0.58), 0 0 26px rgba(68, 222, 255, 0.32), inset 0 0 18px rgba(142, 242, 255, 0.25);
+}
+.bw-pilot-ship-bay.is-locked { border-color: rgba(142, 174, 208, 0.45); opacity: 0.78; }
+.bw-pilot-ship-bay img {
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 10px rgba(2, 12, 30, 0.85));
+  animation: bw-ship-hover 2.8s ease-in-out infinite;
+}
+.bw-ship-eyebrow { font: 700 10px/1.1 'Oxanium', sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: #84ecff; }
+.bw-ship-plate h3 { font: 800 18px/1.15 'Oxanium', sans-serif; color: #ffe57d; }
+
+/* Unified Frosted-Glass Tactical Dossier */
+.bw-pilot-dossier {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 11px 12px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(92, 224, 255, 0.46);
+  background: linear-gradient(162deg, rgba(11, 36, 70, 0.88), rgba(5, 17, 38, 0.93));
+  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 28px rgba(2, 10, 26, 0.56), inset 0 1px 0 rgba(178, 240, 255, 0.22);
+}
+.bw-pilot-bio { font-size: 13px; color: #d6eaf9; line-height: 1.28; }
+.bw-pilot-bio.locked { color: #ffe57d; font-weight: 700; }
+
+.bw-pilot-loadout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.bw-loadout-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 7px;
+  border-radius: 9px;
+  background: rgba(4, 17, 38, 0.72);
+  border: 1px solid rgba(74, 200, 244, 0.26);
+  min-width: 0;
+}
+.bw-loadout-pill span { font: 700 9.5px/1.1 'Oxanium', sans-serif; text-transform: uppercase; letter-spacing: 0.1em; color: #88bedc; }
+.bw-pilot-kit { font: 700 clamp(10.5px, 2.9vw, 12px)/1.18 'Oxanium', sans-serif; color: #eaf7ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bw-pilot-special { font: 700 clamp(10.5px, 2.9vw, 12px)/1.18 'Oxanium', sans-serif; color: #ffe17a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .bw-pilot-history { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .bw-pilot-hist-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 6px;
-  border-radius: 10px;
+  padding: 5px 6px;
+  border-radius: 9px;
   background: rgba(4, 17, 38, 0.72);
   border: 1px solid rgba(72, 198, 240, 0.25);
   text-align: center;
 }
-.bw-pilot-hist-cell span { font-size: 11px; color: #9fc4df; line-height: 1.1; }
-.bw-pilot-hist-cell strong { font: 700 13.5px/1.2 'Oxanium', sans-serif; color: #ffe57d; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.bw-pilot-hist-cell span { font-size: 10.5px; color: #9fc4df; line-height: 1.1; }
+.bw-pilot-hist-cell strong { font: 700 13px/1.2 'Oxanium', sans-serif; color: #ffe57d; font-variant-numeric: tabular-nums; margin-top: 1px; }
 
-.bw-ship-card {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  padding: 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(84, 212, 255, 0.42);
-  background: linear-gradient(155deg, rgba(14, 48, 88, 0.92), rgba(6, 20, 42, 0.95));
-  box-shadow: 0 10px 24px rgba(2, 10, 26, 0.38);
-}
-.bw-ship-card-top { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; }
-.bw-pilot-ship-bay {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle, rgba(66, 212, 255, 0.24) 0%, rgba(10, 38, 76, 0.78) 72%);
-  border: 1.5px solid rgba(86, 222, 255, 0.42);
-}
-.bw-pilot-ship-bay img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 5px 8px rgba(2, 12, 30, 0.75)); }
-.bw-ship-meta { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.bw-ship-eyebrow { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #7ee9ff; }
-.bw-ship-meta h3 { font: 800 18px/1.15 'Oxanium', sans-serif; color: #ffe57d; }
-.bw-pilot-kit { font-size: 12.5px; color: #e4f4ff; line-height: 1.18; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bw-pilot-special { font-size: 12px; color: #ffd978; line-height: 1.18; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.bw-stat-bars { display: flex; flex-direction: column; gap: 5px; padding: 8px 10px; border-radius: 12px; background: rgba(4, 17, 38, 0.72); border: 1px solid rgba(72, 198, 240, 0.24); }
+.bw-stat-bars { display: flex; flex-direction: column; gap: 5px; padding: 7px 9px; border-radius: 11px; background: rgba(4, 17, 38, 0.72); border: 1px solid rgba(72, 198, 240, 0.24); }
 .bw-stat-row { display: grid; grid-template-columns: 82px minmax(0, 1fr); align-items: center; gap: 8px; }
 .bw-stat-label { font: 700 11.5px/1.1 'Oxanium', sans-serif; text-transform: uppercase; letter-spacing: 0.04em; color: #c7e2f5; }
 .bw-stat-track { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; height: 11px; }
@@ -1133,18 +1193,23 @@
 
   .bw-mobile-screen-pilot .bw-mobile-body { padding-top: calc(6px + env(safe-area-inset-top)); padding-bottom: 6px; gap: 6px; }
   .bw-pilot-layout { gap: 6px; }
-  .bw-pilot-card, .bw-ship-card { padding: 8px 10px; gap: 6px; }
-  .bw-pilot-avatar { width: 62px; height: 62px; }
-  .bw-pilot-card-info h2 { font-size: 17px; }
-  .bw-pilot-bio { font-size: 11.5px; -webkit-line-clamp: 2; }
-  .bw-pilot-hist-cell { padding: 4px; }
-  .bw-pilot-hist-cell strong { font-size: 12px; }
-  .bw-pilot-ship-bay { width: 52px; height: 52px; }
-  .bw-ship-meta h3 { font-size: 15px; }
-  .bw-stat-bars { padding: 5px 8px; gap: 4px; }
+  .bw-pilot-stage { gap: 8px; padding: 2px 0; }
+  .bw-pilot-hero, .bw-ship-hero { gap: 4px; }
+  .bw-pilot-avatar, .bw-pilot-ship-bay { width: 72px; height: 72px; }
+  .bw-pilot-title-plate, .bw-ship-plate { padding: 3px 8px; }
+  .bw-pilot-title-plate h2 { font-size: 16px; }
+  .bw-pilot-origin { font-size: 9.5px; }
+  .bw-ship-plate h3 { font-size: 14.5px; }
+  .bw-pilot-dossier { padding: 8px 10px; gap: 5px; }
+  .bw-pilot-bio { font-size: 11.5px; line-height: 1.22; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .bw-loadout-pill { padding: 4px 6px; }
+  .bw-pilot-kit, .bw-pilot-special { font-size: 11px; }
+  .bw-pilot-hist-cell { padding: 3px 4px; }
+  .bw-pilot-hist-cell strong { font-size: 11.5px; }
+  .bw-stat-bars { padding: 5px 8px; gap: 3px; }
   .bw-stat-track { height: 9px; }
-  .bw-mobile-pilots button { min-height: 64px; padding: 4px 2px 3px; }
-  .bw-pilot-thumb, .bw-mobile-pilots img { width: 34px; height: 34px; }
+  .bw-mobile-pilots button { min-height: 62px; padding: 4px 2px 3px; }
+  .bw-pilot-thumb, .bw-mobile-pilots img { width: 32px; height: 32px; }
   .bw-mobile-screen-pilot .bw-mobile-footer { padding-top: 6px; padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
   .bw-mobile-screen-pilot .bw-mobile-footer.row > .bw-mobile-button { min-height: 44px; font-size: 14px; }
 }
@@ -1188,21 +1253,25 @@
   .bw-stages-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
   /* Landscape Pilot Select */
-  .bw-mobile-screen-pilot .bw-mobile-body { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.85fr); grid-template-rows: auto minmax(0, 1fr); align-items: stretch; gap: 6px 10px; padding-top: calc(6px + env(safe-area-inset-top)); padding-bottom: 6px; }
+  .bw-mobile-screen-pilot { background-position: center 48%; }
+  .bw-mobile-screen-pilot .bw-mobile-body { display: grid; grid-template-columns: minmax(0, 1.42fr) minmax(0, 0.85fr); grid-template-rows: auto minmax(0, 1fr); align-items: stretch; gap: 6px 12px; padding-top: calc(6px + env(safe-area-inset-top)); padding-bottom: 6px; }
   .bw-mobile-screen-pilot .bw-mobile-header { grid-column: 1 / -1; padding-bottom: 5px; }
-  .bw-pilot-layout { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; gap: 8px; }
-  .bw-pilot-card, .bw-ship-card { padding: 10px; gap: 8px; justify-content: center; }
-  .bw-pilot-avatar { width: 52px; height: 52px; }
-  .bw-pilot-card-info h2 { font-size: 15px; }
-  .bw-pilot-bio { font-size: 11px; -webkit-line-clamp: 2; }
+  .bw-pilot-layout { display: grid; grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr); align-items: center; gap: 10px; }
+  .bw-pilot-stage { grid-template-columns: 1fr 1fr; gap: 8px; padding: 0; }
+  .bw-pilot-avatar, .bw-pilot-ship-bay { width: 66px; height: 66px; }
+  .bw-pilot-title-plate, .bw-ship-plate { padding: 3px 7px; }
+  .bw-pilot-title-plate h2 { font-size: 15px; }
+  .bw-pilot-origin { font-size: 9px; }
+  .bw-ship-plate h3 { font-size: 13.5px; }
+  .bw-pilot-dossier { padding: 8px 10px; gap: 5px; }
+  .bw-pilot-bio { font-size: 11px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .bw-loadout-pill { padding: 3px 5px; }
+  .bw-pilot-kit, .bw-pilot-special { font-size: 9.8px; }
   .bw-pilot-hist-cell { padding: 3px; }
-  .bw-pilot-hist-cell span { font-size: 10px; }
-  .bw-pilot-hist-cell strong { font-size: 11.5px; }
-  .bw-pilot-ship-bay { width: 46px; height: 46px; }
-  .bw-ship-meta h3 { font-size: 14px; }
-  .bw-pilot-kit, .bw-pilot-special { font-size: 11px; }
+  .bw-pilot-hist-cell span { font-size: 9.5px; }
+  .bw-pilot-hist-cell strong { font-size: 11px; }
   .bw-stat-bars { padding: 5px 6px; gap: 3px; }
-  .bw-stat-row { grid-template-columns: 70px minmax(0, 1fr); gap: 5px; }
+  .bw-stat-row { grid-template-columns: 68px minmax(0, 1fr); gap: 5px; }
   .bw-stat-label { font-size: 10px; }
   .bw-stat-track { height: 8px; gap: 3px; }
   .bw-mobile-pilots { grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: center; gap: 5px; }
@@ -1236,8 +1305,13 @@
 .bw-mobile button:not(:disabled).is-pressed,
 .bw-mobile button:not(:disabled).is-confirmed { transform: translateY(1.5px) scale(0.97); filter: brightness(1.18); box-shadow: inset 0 0 0 2px rgba(255, 246, 203, 0.72), inset 0 0 20px rgba(165, 236, 255, 0.34); }
 .bw-mobile button:focus-visible, .bw-mobile input:focus-visible { outline: 3px solid #fff4b6; outline-offset: 2px; }
+@keyframes bw-ship-hover {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
 @media (prefers-reduced-motion: reduce) {
   .bw-dash-sky-lane { display: none; }
+  .bw-pilot-ship-bay img { animation: none; }
   .bw-countdown-num.is-pop { animation: none; }
   .bw-mobile button { transition: none; }
   .bw-mobile button:not(:disabled).is-pressed, .bw-mobile button:not(:disabled).is-confirmed { transform: none; }
