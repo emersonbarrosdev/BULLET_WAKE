@@ -6,7 +6,10 @@ import android.hardware.input.InputManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.view.View;
 import android.view.InputDevice;
 import android.view.HapticFeedbackConstants;
@@ -103,6 +106,21 @@ public final class MainActivity extends Activity implements InputManager.InputDe
         @JavascriptInterface public void menuFeedback() {
             // Uses the system touch-feedback preference; no vibration permission or override.
             runOnUiThread(() -> { if (game != null) game.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY); });
+        }
+        @JavascriptInterface public void vibrate(int ms, int amplitude) {
+            final int dur = Math.max(8, Math.min(120, ms));
+            final int amp = Math.max(20, Math.min(255, amplitude));
+            runOnUiThread(() -> {
+                try {
+                    Vibrator v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+                    if (v == null || !v.hasVibrator()) return;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        v.vibrate(VibrationEffect.createOneShot(dur, amp));
+                    } else {
+                        v.vibrate(dur);
+                    }
+                } catch (Throwable ignored) { }
+            });
         }
         @JavascriptInterface public boolean isControllerConnected() { return controllerConnected; }
         @JavascriptInterface public boolean setOrientation(String orientation) {

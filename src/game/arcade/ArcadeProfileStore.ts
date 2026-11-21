@@ -39,6 +39,7 @@ export interface PlayerSettings {
   visualQuality: 0 | 1 | 2;
   reducedShake: boolean;
   reducedFlash: boolean;
+  hapticsEnabled: boolean;
   touch: TouchControlSettings;
   keyBindings: KeyBindings;
   survivalRule: SurvivalRule;
@@ -199,6 +200,7 @@ export function defaultProfileV4(): PlayerProfileV4 {
       visualQuality: 2,
       reducedShake: false,
       reducedFlash: false,
+      hapticsEnabled: true,
       touch: defaultTouchSettings(),
       keyBindings: { ...DEFAULT_KEY_BINDINGS },
       survivalRule: 'hull-v1',
@@ -303,6 +305,7 @@ export class ArcadeProfileStore {
         visualQuality,
         reducedShake: Boolean(rawSettings.reducedShake),
         reducedFlash: Boolean(rawSettings.reducedFlash),
+        hapticsEnabled: rawSettings.hapticsEnabled !== false,
         touch: sanitizeTouchSettings(rawSettings.touch),
         keyBindings: sanitizeKeyBindings(rawSettings.keyBindings),
         survivalRule: rawSettings.survivalRule === 'classic-v1' ? 'classic-v1' : 'hull-v1',

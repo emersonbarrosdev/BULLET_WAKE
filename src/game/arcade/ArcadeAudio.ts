@@ -2,9 +2,13 @@ import {globalAudio} from '../audio/audioSystem';
 export type ArcadeTrack='intro'|'menu'|'select'|'stage1'|'mini1'|'boss1'|'stage2'|'mini2'|'boss2'|'victory'|'defeat'|'results';
 /** One music voice with short crossfade transitions; HTML transport keeps its exact cursor on pause. Approved SFX remain on Web Audio. */
 export class ArcadeAudio {
- private music?:HTMLAudioElement;private fadingOut?:HTMLAudioElement;private fadeTimer?:number;private track?:ArcadeTrack;private volume=.18;private muted=false;failed=false;private suspended=false;
+ private music?:HTMLAudioElement;private fadingOut?:HTMLAudioElement;private fadeTimer?:number;private track?:ArcadeTrack;private currentFile?:string;private volume=.18;private muted=false;failed=false;private suspended=false;
  private foreground=true;
- private targetVol():number{return this.muted?0:Math.min(1,this.volume*.85);}
+ private targetVol():number{
+  if(this.muted)return 0;
+  const stageDuck=this.track==='stage1'||this.track==='stage2'?0.78:0.95;
+  return Math.min(1,this.volume*stageDuck);
+ }
  private clearFade():void{
   if(this.fadeTimer!==undefined){window.clearInterval(this.fadeTimer);this.fadeTimer=undefined;}
   if(this.fadingOut){this.fadingOut.pause();this.fadingOut.removeAttribute('src');this.fadingOut.load();this.fadingOut=undefined;}
@@ -22,10 +26,17 @@ export class ArcadeAudio {
  unlock():void{globalAudio.unlock();if(this.foreground&&this.music?.paused&&!this.muted&&!this.suspended){this.music.volume=this.targetVol();void this.music.play().catch(()=>{});}}
  play(track:ArcadeTrack):void{
   if(this.track===track)return;
+  const file=(track==='intro'||track==='select'||track==='results')?'menu':track==='mini1'?'boss1':track==='mini2'?'boss2':track;
+  // Keep menu theme playing continuously across Home, Pilots, Hangar, Controls, Settings & Credits without restarting!
+  if(this.music&&this.currentFile===file&&!this.failed){
+   this.track=track;this.suspended=false;
+   this.music.volume=this.targetVol();
+   if(this.foreground&&!this.muted&&this.music.paused)void this.music.play().catch(()=>{});
+   return;
+  }
   const prev=this.music;
   this.clearFade();
-  this.track=track;this.failed=false;this.suspended=false;
-  const file=track==='intro'?'menu':track==='mini1'?'boss1':track==='mini2'?'boss2':track==='results'?'select':track;
+  this.track=track;this.currentFile=file;this.failed=false;this.suspended=false;
   const audio=new Audio(`${import.meta.env.BASE_URL}assets/audio/arcade/${file}.ogg`);
   this.music=audio;
   audio.loop=!['victory','defeat'].includes(track);
@@ -53,6 +64,6 @@ export class ArcadeAudio {
  }
  pause():void{this.suspended=true;this.clearFade();this.music?.pause();globalAudio.stopCombatEffects();}
  resume():void{this.suspended=false;if(this.foreground&&!this.muted&&this.music){this.music.volume=this.targetVol();void this.music.play().catch(()=>{});}}
- stop():void{this.clearFade();if(this.music){this.music.pause();this.music.removeAttribute('src');this.music.load();this.music=undefined;}this.track=undefined;}
+ stop():void{this.clearFade();if(this.music){this.music.pause();this.music.removeAttribute('src');this.music.load();this.music=undefined;}this.track=undefined;this.currentFile=undefined;}
  status(){return{track:this.track,position:this.music?.currentTime??0,volume:this.music?.volume??0,paused:this.music?.paused??true,failed:this.failed};}
 }

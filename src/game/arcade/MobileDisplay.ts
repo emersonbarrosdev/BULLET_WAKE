@@ -6,6 +6,7 @@ declare global {
       isControllerConnected(): boolean;
       setOrientation(orientation: MobileOrientation): boolean;
       menuFeedback?(): void;
+      vibrate?(ms: number, amplitude?: number): void;
     };
   }
 }

@@ -549,7 +549,7 @@ export class PortraitMenu {
       const btn = (e.target as HTMLElement | null)?.closest('.bw-stage-hero-card');
       if (!btn || Math.abs(lastDx) > 8 || this.activationTimer !== undefined) return;
       btn.classList.add('is-confirmed');
-      this.onConfirm?.(); window.BulletWakeAndroid?.menuFeedback?.();
+      this.onConfirm?.();
       this.activationTimer = window.setTimeout(() => {
         this.activationTimer = undefined; btn.classList.remove('is-confirmed');
         if (btn.isConnected) opts.onOpenAllStages();
@@ -1158,7 +1158,7 @@ export class PortraitMenu {
       if (e.detail === 0) cancelled = false;
       if (cancelled || button.disabled || this.activationTimer !== undefined) return;
       button.classList.add('is-confirmed');
-      this.onConfirm?.(); window.BulletWakeAndroid?.menuFeedback?.();
+      this.onConfirm?.();
       this.activationTimer = window.setTimeout(() => {
         this.activationTimer = undefined; button.classList.remove('is-confirmed');
         if (button.isConnected) action();

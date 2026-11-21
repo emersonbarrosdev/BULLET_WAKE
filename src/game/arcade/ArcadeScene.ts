@@ -138,7 +138,11 @@ export class ArcadeScene extends Phaser.Scene {
   private runId = '';
   private footerScore!: Phaser.GameObjects.Text;
   private hullArt!: HullDamageArt;
-  private portraitMenu = new PortraitMenu(() => { this.audio.unlock(); globalAudio.playArcade('confirm'); });
+  private portraitMenu = new PortraitMenu(() => {
+    this.audio.unlock();
+    globalAudio.playArcade('confirm');
+    if (globalProfileStore.getSettings().hapticsEnabled) window.BulletWakeAndroid?.menuFeedback?.();
+  });
   private mobileDisplay = new MobileDisplay();
   private mobileFlightHud = new MobileFlightHud();
   private landscapeEnabled = false;
@@ -2023,6 +2027,12 @@ export class ArcadeScene extends Phaser.Scene {
           globalProfileStore.updateSettings({ reducedFlash: !profSettings.reducedFlash });
           this.refreshPortraitMenu();
         });
+        view.toggle('Vibração', profSettings.hapticsEnabled, () => {
+          const next = !profSettings.hapticsEnabled;
+          globalProfileStore.updateSettings({ hapticsEnabled: next });
+          if (next) this.triggerHaptic('tap');
+          this.refreshPortraitMenu();
+        }, 'Retorno tátil nos botões, carga, especial e impactos');
       });
       view.settingsGroup('Tela, controles e privacidade', () => {
         view.segmented('Orientação', [
@@ -3350,11 +3360,12 @@ export class ArcadeScene extends Phaser.Scene {
   private consumeEvents(): void {
     const w = this.world!; for (const e of w.events) {
       if (e.type === 'shot') { globalAudio.playShot(w.pilotId, w.weapons.weaponLevel); if (w.up) this.pelagicAnims.triggerShot(); }
-      else if (e.type === 'charge-windup') { globalAudio.playChargeWindup(e.size ?? 0); }
-      else if (e.type === 'charge-full') { globalAudio.playArcade('bonus'); }
+      else if (e.type === 'charge-windup') { globalAudio.playChargeWindup(e.size ?? 0); this.triggerHaptic('charge-tick'); }
+      else if (e.type === 'charge-full') { globalAudio.playArcade('bonus'); this.triggerHaptic('charge-full'); }
       else if (e.type === 'charged-shot') {
         const intensity = e.size ?? 1;
         globalAudio.playChargedShot(w.pilotId, intensity >= 1.5 ? 2 : 1);
+        this.triggerHaptic('charge-release');
         if (w.up) this.pelagicAnims.triggerShot();
         this.explosion(e.x, e.y, intensity >= 1.5 ? 18 : 12, .16);
       }
@@ -3413,6 +3424,7 @@ export class ArcadeScene extends Phaser.Scene {
       else if (e.type === 'pickup' && e.text !== 'repair') globalAudio.playPickup(e.text ?? 'power');
       else if (e.type === 'special') {
         globalAudio.playSpecial(w.pilotContract.specialType);
+        this.triggerHaptic('special');
         this.shakeTime = Math.max(this.shakeTime, 0.28);
         this.shakeAmp = Math.max(this.shakeAmp, 3.8);
       }
@@ -3452,12 +3464,31 @@ export class ArcadeScene extends Phaser.Scene {
       }
     } w.events.length = 0;
   }
+  private triggerHaptic(kind: 'tap' | 'charge-hold' | 'charge-tick' | 'charge-full' | 'charge-release' | 'special' | 'impact'): void {
+    if (!globalProfileStore.getSettings().hapticsEnabled) return;
+    const spec: Record<typeof kind, { ms: number; amp: number; rumbleMs: number; strong: number; weak: number }> = {
+      tap: { ms: 14, amp: 80, rumbleMs: 20, strong: 0.08, weak: 0.14 },
+      'charge-hold': { ms: 18, amp: 105, rumbleMs: 24, strong: 0.10, weak: 0.18 },
+      'charge-tick': { ms: 10, amp: 55, rumbleMs: 14, strong: 0.04, weak: 0.10 },
+      'charge-full': { ms: 26, amp: 165, rumbleMs: 36, strong: 0.18, weak: 0.26 },
+      'charge-release': { ms: 28, amp: 185, rumbleMs: 42, strong: 0.22, weak: 0.28 },
+      special: { ms: 46, amp: 235, rumbleMs: 85, strong: 0.36, weak: 0.45 },
+      impact: { ms: 38, amp: 210, rumbleMs: 65, strong: 0.22, weak: 0.32 },
+    };
+    const s = spec[kind];
+    if (typeof window !== 'undefined' && window.BulletWakeAndroid?.vibrate) {
+      window.BulletWakeAndroid.vibrate(s.ms, s.amp);
+    } else if (typeof navigator !== 'undefined' && navigator.userActivation?.hasBeenActive) {
+      navigator.vibrate?.(s.ms);
+    }
+    if (typeof navigator !== 'undefined') {
+      const pad = Array.from(navigator.getGamepads?.() ?? []).find(p => p?.connected);
+      const actuator = pad?.vibrationActuator;
+      if (actuator) void actuator.playEffect('dual-rumble', { duration: s.rumbleMs, strongMagnitude: s.strong, weakMagnitude: s.weak }).catch(() => { });
+    }
+  }
   private vibrateHullImpact(): void {
-    if (typeof navigator === 'undefined') return;
-    if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.(35);
-    const pad = Array.from(navigator.getGamepads?.() ?? []).find(p => p?.connected);
-    const actuator = pad?.vibrationActuator;
-    if (actuator) void actuator.playEffect('dual-rumble', { duration: 65, strongMagnitude: .2, weakMagnitude: .3 }).catch(() => { });
+    this.triggerHaptic('impact');
   }
   private pushPelagicCommsEvent(code: string): void {
     if (code === 'start') {
@@ -3963,7 +3994,9 @@ export class ArcadeScene extends Phaser.Scene {
       if (!p.wasTouch) return;
       this.touchDeviceActive = true;
       this.setTouchVisible(true);
-      this.touchController.onPointerDown(p.id, q.x, q.y);
+      const touchAction = this.touchController.onPointerDown(p.id, q.x, q.y);
+      if (touchAction === 'charge') this.triggerHaptic('charge-hold');
+      else if (touchAction === 'special' && (this.world?.weapons.specialCharges ?? 0) <= 0) this.triggerHaptic('tap');
       this.touchOverlayDirty = true;
     });
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {

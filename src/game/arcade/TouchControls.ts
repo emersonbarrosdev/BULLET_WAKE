@@ -165,27 +165,30 @@ export function computeTouchLayout(
         const joyRadius = Math.round(33 * scale * 10) / 10;
         const travelRadius = Math.round(29 * scale * 10) / 10;
         const knobRadius = Math.round(13.5 * scale * 10) / 10;
-        const btnRadius = Math.round(30 * scale * 10) / 10;
+        const btnRadius = Math.round(33 * scale * 10) / 10;
         const fireRadius = btnRadius;
         const specialRadius = btnRadius;
         const mirrorX = clean.handedness === 'left';
         const pad = 12;
         const lift = clean.position === 'raised' ? 28 : clean.position === 'wide' ? 4 : 8;
-        const baseY = ph - safeBottom - btnRadius - 20 - lift + clean.offsetY;
-        const leftX = safeLeft + joyRadius + pad + (mirrorX ? -clean.offsetX : clean.offsetX);
-        const rightX = pw - safeRight - fireRadius - pad + (mirrorX ? -clean.offsetX : clean.offsetX);
-        const joyX = clamp(mirrorX ? pw - safeRight - joyRadius - pad : leftX, safeLeft + joyRadius + 8, pw - safeRight - joyRadius - 8);
-        const fireX = clamp(mirrorX ? safeLeft + fireRadius + pad : rightX, safeLeft + fireRadius + 8, pw - safeRight - fireRadius - 8);
+        const baseY = ph - safeBottom - btnRadius - 18 - lift + clean.offsetY;
         const minControlY = ph * 0.56;
-        const joyY = clamp(baseY, minControlY, ph - safeBottom - joyRadius - 10);
-        const fireY = clamp(baseY, minControlY, ph - safeBottom - fireRadius - 10);
-        const btnGap = Math.round(18 * scale);
+        // Symmetrical split footer layout: ESPECIAL on bottom-left, CARGA on bottom-right (mirrored for left-handed).
+        const fireX = clamp(
+            mirrorX ? safeLeft + fireRadius + pad - clean.offsetX : pw - safeRight - fireRadius - pad + clean.offsetX,
+            safeLeft + fireRadius + 8,
+            pw - safeRight - fireRadius - 8,
+        );
         const specX = clamp(
-            fireX + (mirrorX ? 1 : -1) * (fireRadius + specialRadius + btnGap),
+            mirrorX ? pw - safeRight - specialRadius - pad - clean.offsetX : safeLeft + specialRadius + pad + clean.offsetX,
             safeLeft + specialRadius + 8,
             pw - safeRight - specialRadius - 8,
         );
-        const specY = clamp(fireY + Math.round(6 * scale), minControlY, ph - safeBottom - specialRadius - 8);
+        const fireY = clamp(baseY, minControlY, ph - safeBottom - fireRadius - 10);
+        const specY = clamp(baseY, minControlY, ph - safeBottom - specialRadius - 10);
+        // Reference free-movement anchor stays clear in the open lower flight corridor above the split corner buttons.
+        const joyX = clamp(mirrorX ? pw - safeRight - 96 : safeLeft + 96, safeLeft + joyRadius + 8, pw - safeRight - joyRadius - 8);
+        const joyY = clamp(fireY - btnRadius * 2 - 28, minControlY - 64, ph - safeBottom - joyRadius - 10);
         const pauseX = clamp(pw - Math.max(24, safeRight + 24), 346, pw - 20);
         const pauseY = clamp(Math.max(16, safeTop + 16), 16, 26);
 
@@ -199,8 +202,8 @@ export function computeTouchLayout(
 
         return {
             joystick: { x: joyX, y: joyY, radius: joyRadius, hitRadius: joyRadius + 16, travelRadius, knobRadius },
-            fire: { x: fireX, y: fireY, radius: fireRadius, hitRadius: fireRadius + 8 },
-            special: { x: specX, y: specY, radius: specialRadius, hitRadius: specialRadius + 8 },
+            fire: { x: fireX, y: fireY, radius: fireRadius, hitRadius: fireRadius + 7 },
+            special: { x: specX, y: specY, radius: specialRadius, hitRadius: specialRadius + 7 },
             charge: chargeClear ? { x: chargeX, y: chargeY, radius: chargeRadius, hitRadius: chargeRadius + 6 } : null,
             pause: { x: pauseX, y: pauseY, radius: 17, hitRadius: 23 },
             moveZoneSplitX: pw / 2,
