@@ -63,7 +63,7 @@ import {
 } from './ArcadeProfileStore';
 import { stageDurationFor } from './PelagicProgression';
 import { ReplayRecorder } from './ArcadeReplay';
-import { HULL_STATES } from './HullIntegrity';
+import { HULL_STATES, hullCondition } from './HullIntegrity';
 import { drawHullSegments } from './HullHud';
 import { HullDamageArt, preloadHullDamageArt } from './HullDamageArt';
 import { PortraitMenu } from './PortraitMenu';
@@ -97,7 +97,7 @@ export class ArcadeScene extends Phaser.Scene {
   private contactWarmup?: SpriteContactWarmup;
   private splashHandoffCommitted = false; private bootOverlayDismissed = false; private loadErrors: string[] = [];
   private controlsTab: ControlsTab = 'pc'; private lastControlsPadId = ''; private nextControlsFocus?: number; private controlsPadPreview: 'auto' | 'playstation' | 'xbox' = 'auto';
-  private enemySprites = new Map<number, Phaser.GameObjects.Sprite>(); private cargoSprites = new Map<number, Phaser.GameObjects.Sprite>(); private cargoExtras = new Map<number, { shadow: Phaser.GameObjects.Image; glow: Phaser.GameObjects.Image; prop: Phaser.GameObjects.Sprite }>(); private partSprites = new Map<number, Phaser.GameObjects.Sprite>(); private bulletSprites: Phaser.GameObjects.Sprite[] = []; private effects: Effect[] = [];
+  private enemySprites = new Map<number, Phaser.GameObjects.Sprite>(); private cargoSprites = new Map<number, Phaser.GameObjects.Sprite>(); private cargoExtras = new Map<number, { shadow: Phaser.GameObjects.Image; glow: Phaser.GameObjects.Image; prop: Phaser.GameObjects.Sprite }>(); private partSprites = new Map<number, Phaser.GameObjects.Sprite>(); private bulletSprites: Phaser.GameObjects.Image[] = []; private effects: Effect[] = [];
   private bonusPopups: BonusPopup[] = []; private bonusPopupPool: Phaser.GameObjects.Text[] = [];
   private turrets = new Map<number, Phaser.GameObjects.Sprite>(); private effectPool: Phaser.GameObjects.Sprite[] = [];
   private controls!: Record<string, Phaser.Input.Keyboard.Key>; private pad = new GamepadReader(); buttons: MenuButton[] = []; private focus = 0;
@@ -105,7 +105,9 @@ export class ArcadeScene extends Phaser.Scene {
   private clock = 0; private introClock = 0; private accumulator = 0; private lastHud = ''; private messageUntil = 0; private pauseOrigin: Screen = 'pause'; private carried?: CampaignFlight; private currentMission = 0; private stageClearSaved = false;
   private touchController = new TouchInputController(globalSave.getSettings().touch);
   private touchGfx!: Phaser.GameObjects.Graphics; private touchFireText!: Phaser.GameObjects.Text; private touchChargeText!: Phaser.GameObjects.Text; private touchSpecialText!: Phaser.GameObjects.Text;
-  private touchNodes: (Phaser.GameObjects.Graphics | Phaser.GameObjects.Text)[] = [];
+  private touchJoyRing!: Phaser.GameObjects.Image; private touchJoyKnob!: Phaser.GameObjects.Image; private touchSpecDisc!: Phaser.GameObjects.Image; private touchChargeDisc!: Phaser.GameObjects.Image;
+  private touchNodes: (Phaser.GameObjects.Graphics | Phaser.GameObjects.Text | Phaser.GameObjects.Image)[] = [];
+  private portraitHudImg?: Phaser.GameObjects.Image;
   private touchShown = false; private touchDeviceActive = false; private pauseBtn?: Phaser.GameObjects.Container;
   private suppressHeldFireUntilRelease = false;
   private suppressChargeUntilRelease = false;
@@ -152,6 +154,8 @@ export class ArcadeScene extends Phaser.Scene {
   private readonly liveCargoIds = new Set<number>();
   private lastFooterScore = '';
   private lastFooterFont = 0;
+  private scoreUploadCooldown = 0;
+  private lastDecorSig = '';
   private lastPelagicLevelText = '';
   private lastPelagicLevelFont = 0;
   private lastPelagicSpecialText = '';
@@ -292,7 +296,8 @@ export class ArcadeScene extends Phaser.Scene {
     this.pelagicSpecialText = this.add.text(224, 15, '', { fontFamily: FONT, fontSize: '10px', fontStyle: 'bold', color: '#ffe159', stroke: '#041430', strokeThickness: 2 }).setResolution(2).setOrigin(0, .5).setDepth(46).setVisible(false);
     this.bossHudLabel = this.add.text(207, 16, '', { fontFamily: FONT, fontSize: '9.5px', fontStyle: 'bold', color: '#ffe654', stroke: '#041430', strokeThickness: 2 }).setResolution(2).setOrigin(0, .5).setDepth(46).setVisible(false);
     this.radio = this.add.text(384, 66, '', { fontFamily: FONT, fontSize: '12px', color: '#16385b', backgroundColor: '#fff7cb', padding: { x: 8, y: 5 }, wordWrap: { width: 280 }, align: 'center' }).setResolution(2).setOrigin(.5).setDepth(48).setVisible(false);
-    for (let i = 0; i < 960; i++)this.bulletSprites.push(this.add.sprite(0, 0, 'arc-red').setVisible(false).setDepth(19.5));
+    const initialBulletPool = isMobileDisplay() ? 96 : 160;
+    for (let i = 0; i < initialBulletPool; i++) this.bulletSprites.push(this.add.image(0, 0, 'arc-red').setVisible(false).setDepth(19.5));
     this.makeOrbTextures(); this.installTouch(); this.show('loading');
     const blur = () => { this.touchController.clearAll(); this.input.keyboard?.resetKeys(); this.renderTouchOverlay(); if (this.screen === 'play') this.show('pause'); };
     const onResize = () => { this.touchController.clearAll(); this.syncResponsiveViewport(); this.refreshTouchLayout(); this.refreshPortraitMenu(); };
@@ -2135,6 +2140,8 @@ export class ArcadeScene extends Phaser.Scene {
     this.portraitMenu.hideCountdown();
     this.lastFooterScore = '';
     this.lastFooterFont = 0;
+    this.scoreUploadCooldown = 0;
+    this.lastDecorSig = '';
     this.lastPelagicLevelText = '';
     this.lastPelagicLevelFont = 0;
     this.lastPelagicSpecialText = '';
@@ -2155,8 +2162,8 @@ export class ArcadeScene extends Phaser.Scene {
     this.firstSortieHintUntil = 0;
     const viewport = getCombatVirtualSize(this);
     this.cameras?.main?.centerOn(viewport.cx ?? viewport.w / 2, viewport.cy ?? viewport.h / 2);
-    this.world = undefined; this.pelagicDesktopHud?.setVisible(false); this.player?.setVisible(false); this.bossSprite?.setVisible(false); this.lifeIcons.forEach(s => s.setVisible(false)); this.hud?.setText(''); this.radio?.setVisible(false); this.combatInk?.clear(); this.decor?.clear(); this.lastHud = '';
-    for (const map of [this.enemySprites, this.partSprites, this.turrets]) { for (const s of map.values()) s.destroy(); map.clear(); } for (const s of this.cargoSprites.values()) s.destroy(); this.cargoSprites.clear(); for (const ex of this.cargoExtras.values()) { ex.shadow.destroy(); ex.glow.destroy(); ex.prop.destroy(); } this.cargoExtras.clear(); for (const s of this.bulletSprites) s.setVisible(false); for (const e of this.effects) { e.sprite.setVisible(false); this.effectPool.push(e.sprite); } this.effects = []; globalAudio.stopCombatEffects();
+    this.world = undefined; this.pelagicDesktopHud?.setVisible(false); this.portraitHudImg?.setVisible(false); this.player?.setVisible(false); this.bossSprite?.setVisible(false); this.lifeIcons.forEach(s => s.setVisible(false)); this.hud?.setText(''); this.radio?.setVisible(false); this.combatInk?.clear().setVisible(false); this.decor?.clear().setVisible(false); this.lastHud = '';
+    for (const map of [this.enemySprites, this.partSprites, this.turrets]) { for (const s of map.values()) s.destroy(); map.clear(); } for (const s of this.cargoSprites.values()) s.destroy(); this.cargoSprites.clear(); for (const ex of this.cargoExtras.values()) { ex.shadow.destroy(); ex.glow.destroy(); ex.prop.destroy(); } this.cargoExtras.clear(); for (const s of this.bulletSprites) s?.setVisible(false); for (const e of this.effects) { e.sprite.setVisible(false); this.effectPool.push(e.sprite); } this.effects = []; globalAudio.stopCombatEffects();
     this.syncResponsiveViewport();
   }
   update(_time: number, delta: number): void {
@@ -2420,7 +2427,8 @@ export class ArcadeScene extends Phaser.Scene {
       return;
     }
     this.footerScore.setVisible(false);
-    this.decor.clear(); this.hud.setText(''); this.combatInk.clear(); const time = this.clock;
+    this.portraitHudImg?.setVisible(false);
+    this.decor.clear().setVisible(false); this.lastDecorSig = ''; this.hud.setText(''); this.combatInk.clear().setVisible(false); const time = this.clock;
     this.hero.setVisible(false);
     this.wingmen.forEach(s => s.setVisible(false));
     if (this.screen === 'loading') {
@@ -2576,8 +2584,13 @@ export class ArcadeScene extends Phaser.Scene {
     const playerArt = w.up ? pelagicShotSize(w.weapons.weaponLevel) : rivetShotPresentation(w.weapons.weaponLevel);
     const hasEnemyMissileTex = this.textures.exists(PELAGIC_ENEMY_MISSILE_SHEET);
     for (let i = 0; i < w.bullets.length; i++) {
-      const b = w.bullets[i], s = this.bulletSprites[i];
-      if (!b.active) { if (s.visible) s.setVisible(false); continue; }
+      const b = w.bullets[i];
+      let s = this.bulletSprites[i];
+      if (!b.active) { if (s?.visible) s.setVisible(false); continue; }
+      if (!s) {
+        s = this.add.image(b.x, b.y, 'arc-red').setDepth(19.5);
+        this.bulletSprites[i] = s;
+      }
       if (!s.visible) s.setVisible(true);
       if (b.enemy && b.enemyMissile && hasEnemyMissileTex) {
         const f = Math.floor(b.age * 18) % 4;
@@ -2614,6 +2627,7 @@ export class ArcadeScene extends Phaser.Scene {
     }
     this.renderCargo(); this.renderObstacles(g);
     this.renderSpecialVisuals(w, g);
+    g.setVisible(g.commandBuffer.length > 0);
     for (const fx of this.effects) { fx.age += dt; fx.sprite.setPosition(fx.sprite.x + fx.vx * dt, fx.sprite.y + fx.vy * dt).setRotation(fx.sprite.rotation + fx.spin * dt).setAlpha(1 - fx.age / fx.duration * .7); fx.sprite.setFrame(Math.min(15, Math.floor(fx.age / fx.duration * 16))); }
     this.effects = this.effects.filter(f => { if (f.age >= f.duration) { f.sprite.setVisible(false); this.effectPool.push(f.sprite); return false; } return true; });
     this.updateBonusPopups(dt);
@@ -2709,6 +2723,7 @@ export class ArcadeScene extends Phaser.Scene {
     } else {
       this.sortieHintText.setVisible(false);
     }
+    g.setVisible(g.commandBuffer.length > 0);
   }
   private renderBoss(g: Phaser.GameObjects.Graphics): void {
     const w = this.world!, b = w.boss, live = this.liveBossPartIds;
@@ -2865,10 +2880,132 @@ export class ArcadeScene extends Phaser.Scene {
       if (o.warning > 0 || o.x > 735) { g.fillStyle(0xff6857, .85).fillTriangle(731, o.y - 8, 731, o.y + 8, 718, o.y); }
     }
   }
+  private drawPortraitHudTexture(
+    survivalRule: 'hull-v1' | 'classic-v1',
+    hull: number,
+    hullMax: number,
+    weaponLevel: number,
+    chargeRatio: number,
+    chargeFull: boolean,
+    hasSubBoss: boolean,
+    bossRatio: number,
+  ): Phaser.GameObjects.Image {
+    const key = 'arc-portrait-hud';
+    let tex = this.textures.exists(key) ? (this.textures.get(key) as Phaser.Textures.CanvasTexture) : null;
+    if (!tex) tex = this.textures.createCanvas(key, 768, 96)!;
+    const ctx = tex.context;
+    ctx.setTransform(2, 0, 0, 2, 0, 0);
+    ctx.clearRect(0, 0, 384, 48);
+
+    const roundRect = (x: number, y: number, w: number, h: number, r: number) => {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    };
+    const hexRgb = (c: number) => `${(c >> 16) & 255},${(c >> 8) & 255},${c & 255}`;
+
+    // Top HUD capsule
+    roundRect(4, 3, 376, 26, 7);
+    ctx.fillStyle = 'rgba(5,25,54,0.90)';
+    ctx.fill();
+    ctx.lineWidth = 1.3;
+    ctx.strokeStyle = 'rgba(38,220,255,0.85)';
+    ctx.stroke();
+
+    // Chamfered hull segments
+    if (survivalRule === 'hull-v1') {
+      const x = 12, y = 10, width = 64, height = 12, gap = 3;
+      const cell = (width - gap * (hullMax - 1)) / hullMax;
+      const color = hexRgb(HULL_STATES[hullCondition(hull, hullMax)].color);
+      const cut = Math.min(4, height * 0.25);
+      for (let i = 0; i < hullMax; i++) {
+        const left = x + i * (cell + gap);
+        ctx.beginPath();
+        ctx.moveTo(left + cut, y);
+        ctx.lineTo(left + cell, y);
+        ctx.lineTo(left + cell, y + height - cut);
+        ctx.lineTo(left + cell - cut, y + height);
+        ctx.lineTo(left, y + height);
+        ctx.lineTo(left, y + cut);
+        ctx.closePath();
+        ctx.fillStyle = i < hull ? `rgba(${color},0.95)` : 'rgba(9,34,63,0.80)';
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = i < hull ? 'rgba(217,255,255,0.90)' : 'rgba(65,97,130,0.90)';
+        ctx.stroke();
+        if (i < hull) {
+          ctx.beginPath();
+          ctx.moveTo(left + cut + 1, y + 2);
+          ctx.lineTo(left + cell - 3, y + 2);
+          ctx.strokeStyle = 'rgba(255,255,255,0.60)';
+          ctx.stroke();
+        }
+      }
+    }
+
+    // 5 weapon power pips
+    for (let i = 0; i < 5; i++) {
+      roundRect(122 + i * 11, 11.5, 9, 8.5, 2);
+      ctx.fillStyle = i < weaponLevel ? '#21e3f4' : '#103d68';
+      ctx.fill();
+      ctx.lineWidth = 0.6;
+      ctx.strokeStyle = 'rgba(131,237,255,0.70)';
+      ctx.stroke();
+    }
+
+    // Gold lightning icon for specials
+    const sx = 188;
+    ctx.beginPath();
+    ctx.moveTo(sx + 2, 8);
+    ctx.lineTo(sx - 3, 16);
+    ctx.lineTo(sx, 16);
+    ctx.lineTo(sx - 2, 24);
+    ctx.lineTo(sx + 5, 14);
+    ctx.lineTo(sx + 1, 14);
+    ctx.closePath();
+    ctx.fillStyle = '#ffdc39';
+    ctx.fill();
+
+    // Charged shot gauge
+    if (chargeRatio > 0) {
+      roundRect(122, 23, 53, 4, 2);
+      ctx.fillStyle = 'rgba(5,25,54,0.90)';
+      ctx.fill();
+      roundRect(122, 23, Math.max(3, 53 * chargeRatio), 4, 2);
+      ctx.fillStyle = chargeFull ? 'rgba(254,240,138,0.96)' : 'rgba(56,189,248,0.96)';
+      ctx.fill();
+    }
+
+    // Submarine boss HP strip
+    if (hasSubBoss) {
+      roundRect(8, 32, 368, 12, 4);
+      ctx.fillStyle = 'rgba(5,25,54,0.88)';
+      ctx.fill();
+      if (bossRatio > 0) {
+        roundRect(12, 35, 360 * bossRatio, 6, 2);
+        ctx.fillStyle = bossRatio < 0.25 ? 'rgba(255,110,84,0.95)' : 'rgba(255,216,77,0.95)';
+        ctx.fill();
+      }
+    }
+
+    tex.refresh();
+    if (!this.portraitHudImg) {
+      this.portraitHudImg = this.add.image(0, 0, key).setOrigin(0, 0).setDepth(40);
+    }
+    return this.portraitHudImg;
+  }
   private renderHud(dt = 0): void {
-    const w = this.world!, g = this.decor; g.clear().setScale(1).setPosition(0, 0);
-    [this.hud, this.pelagicLevel, this.pelagicSpecialText, this.pelagicCheckpointBadge, this.bossHudLabel].forEach(node => node.setScale(1));
+    const w = this.world!, g = this.decor;
     if (this.isMobileLandscape()) {
+      this.portraitHudImg?.setVisible(false);
+      if (this.lastDecorSig !== 'landscape') {
+        g.clear().setVisible(false);
+        this.lastDecorSig = 'landscape';
+      }
       this.pelagicDesktopHud.setVisible(false);
       [this.hud, this.radio, this.pelagicLevel, this.pelagicSpecialText, this.pelagicAssistBadge, this.pelagicCheckpointBadge, this.bossHudLabel, this.footerScore, ...this.lifeIcons].forEach(node => node.setVisible(false));
       if (this.screen === 'play') {
@@ -2896,21 +3033,36 @@ export class ArcadeScene extends Phaser.Scene {
       this.footerScore.setFontSize(scoreFont);
       this.lastFooterFont = scoreFont;
     }
+    if (this.scoreUploadCooldown > 0 && dt > 0) this.scoreUploadCooldown = Math.max(0, this.scoreUploadCooldown - dt);
     const scoreStr = `PONTOS ${w.score}`;
-    if (scoreStr !== this.lastFooterScore) {
+    const allowScoreUpload = !isMobileDisplay() || dt === 0 || this.lastFooterScore === '' || w.state !== 'play' || this.scoreUploadCooldown <= 0;
+    if (scoreStr !== this.lastFooterScore && allowScoreUpload) {
       this.footerScore.setText(scoreStr);
       this.lastFooterScore = scoreStr;
+      if (isMobileDisplay() && dt > 0) this.scoreUploadCooldown = 0.15;
     }
     if (w.up) {
       const cpVisible = this.clock < this.checkpointBannerUntil && this.screen === 'play';
       if (this.portraitUpActive) {
         this.pelagicDesktopHud.setVisible(false);
         this.hud.setVisible(true);
-        // Android Portrait HUD: compact essential top strip only (no side panels, no Bayek portrait, no radio).
-        g.fillStyle(0x051936, .90).fillRoundedRect(4, 3, 376, 26, 7);
-        g.lineStyle(1.3, 0x26dcff, .85).strokeRoundedRect(4, 3, 376, 26, 7);
+        const cPort = w.chargedShot.snapshot();
+        const hasSubBoss = !!(w.boss?.sub && w.boss.sub.phase !== 'done');
+        const subTotals = hasSubBoss ? subTotalHp(w.boss!.sub!) : undefined;
+        const bossRatio = subTotals && subTotals.max > 0 ? clamp(subTotals.current / subTotals.max, 0, 1) : 0;
+        const viewport = getCombatVirtualSize(this), scale = viewport.w / 384;
+        const left = (viewport.cx ?? viewport.w / 2) - viewport.w / 2;
+        const decorSig = `port|${w.survivalRule}|${w.hull}|${w.hullMaximum}|${w.weapons.weaponLevel}|${Math.round(cPort.ratio * 32)}|${cPort.isFull ? 1 : 0}|${hasSubBoss ? Math.round(bossRatio * 100) : -1}|${Math.round(scale * 1000)}|${Math.round(left)}`;
+        if (decorSig !== this.lastDecorSig) {
+          this.lastDecorSig = decorSig;
+          g.clear().setVisible(false);
+          const img = this.drawPortraitHudTexture(w.survivalRule, w.hull, w.hullMaximum, w.weapons.weaponLevel, cPort.ratio, cPort.isFull, hasSubBoss, bossRatio);
+          img.setVisible(true).setPosition(left, 0).setDisplaySize(384 * scale, 48 * scale);
+        } else if (this.portraitHudImg && !this.portraitHudImg.visible) {
+          this.portraitHudImg.setVisible(true);
+        }
+        [this.hud, this.pelagicLevel, this.pelagicSpecialText, this.pelagicCheckpointBadge, this.bossHudLabel].forEach(node => node.setScale(1));
         this.lifeIcons.forEach((sprite, i) => sprite.setPosition(16 + i * 13.5, 16).setDisplaySize(12.5, 15).setVisible(w.survivalRule !== 'hull-v1').setAlpha(i < w.lives ? 1 : .20));
-        if (w.survivalRule === 'hull-v1') drawHullSegments(g, 12, 10, 64, 12, w.hull, w.hullMaximum);
         if (this.lastPelagicLevelFont !== 9.5) {
           this.pelagicLevel.setFontSize(9.5);
           this.lastPelagicLevelFont = 9.5;
@@ -2921,23 +3073,12 @@ export class ArcadeScene extends Phaser.Scene {
           this.lastPelagicLevelText = lvlStr;
         }
         this.pelagicLevel.setOrigin(0, .5).setPosition(90, 16).setVisible(true);
-        for (let i = 0; i < 5; i++) {
-          g.fillStyle(i < w.weapons.weaponLevel ? 0x21e3f4 : 0x103d68).fillRoundedRect(122 + i * 11, 11.5, 9, 8.5, 2);
-          g.lineStyle(.6, 0x83edff, .7).strokeRoundedRect(122 + i * 11, 11.5, 9, 8.5, 2);
-        }
-        const sx = 188;
-        g.fillStyle(0xffdc39).beginPath().moveTo(sx + 2, 8).lineTo(sx - 3, 16).lineTo(sx, 16).lineTo(sx - 2, 24).lineTo(sx + 5, 14).lineTo(sx + 1, 14).closePath().fillPath();
         const specStr = `${w.weapons.specialCharges}`;
         if (specStr !== this.lastPelagicSpecialText) {
           this.pelagicSpecialText.setText(specStr);
           this.lastPelagicSpecialText = specStr;
         }
-        this.pelagicSpecialText.setPosition(sx + 9, 16).setVisible(true);
-        const cPort = w.chargedShot.snapshot();
-        if (cPort.ratio > 0) {
-          g.fillStyle(0x051936, 0.9).fillRoundedRect(122, 23, 53, 4, 2);
-          g.fillStyle(cPort.isFull ? 0xfef08a : 0x38bdf8, 0.96).fillRoundedRect(122, 23, Math.max(3, 53 * cPort.ratio), 4, 2);
-        }
+        this.pelagicSpecialText.setPosition(197, 16).setVisible(true);
         const scoreLine = w.survivalRule === 'hull-v1' ? `${w.hull}/${w.hullMaximum} ${HULL_STATES[w.hullState].label}` : `${w.lives} VIDAS`;
         this.hud.setPosition(344, 16);
         if (scoreLine !== this.lastHud) {
@@ -2947,11 +3088,8 @@ export class ArcadeScene extends Phaser.Scene {
         }
         this.pelagicAssistBadge.setVisible(false);
         this.pelagicCheckpointBadge.setPosition(192, 46).setVisible(cpVisible);
-        if (w.boss?.sub && w.boss.sub.phase !== 'done') {
-          const sub = w.boss.sub, sec = sub.sections[sub.activeSection], totals = subTotalHp(sub);
-          const ratio = totals.max > 0 ? clamp(totals.current / totals.max, 0, 1) : 0;
-          g.fillStyle(0x051936, .88).fillRoundedRect(8, 32, 368, 12, 4);
-          if (ratio > 0) g.fillStyle(ratio < .25 ? 0xff6e54 : 0xffd84d, .95).fillRoundedRect(12, 35, 360 * ratio, 6, 2);
+        if (hasSubBoss) {
+          const sec = w.boss!.sub!.sections[w.boss!.sub!.activeSection];
           if (this.lastBossHudFont !== 8) {
             this.bossHudLabel.setFontSize(8);
             this.lastBossHudFont = 8;
@@ -2965,10 +3103,7 @@ export class ArcadeScene extends Phaser.Scene {
         } else {
           this.bossHudLabel.setPosition(16, 38).setVisible(false);
         }
-        const viewport = getCombatVirtualSize(this), scale = viewport.w / 384;
-        const left = (viewport.cx ?? viewport.w / 2) - viewport.w / 2;
         if (scale !== 1 || left !== 0) {
-          g.setScale(scale).setPosition(left, 0);
           [this.hud, this.pelagicLevel, this.pelagicSpecialText, this.pelagicCheckpointBadge, this.bossHudLabel, ...this.lifeIcons].forEach(node => node.setPosition(left + node.x * scale, node.y * scale).setScale(node.scaleX * scale, node.scaleY * scale));
           // Scale the existing texture; resizing the font here uploaded it twice every frame.
           this.footerScore.setScale(scale).setPosition(left + viewport.w - 8 * scale, viewport.h - 6 * scale);
@@ -2977,6 +3112,12 @@ export class ArcadeScene extends Phaser.Scene {
       }
 
       // PC Horizontal Layout: 160 / 448 / 160 modular arcade HUD (X = 160..608, Y = 0..432)
+      this.portraitHudImg?.setVisible(false);
+      if (this.lastDecorSig !== 'pc-up') {
+        g.clear().setVisible(false);
+        this.lastDecorSig = 'pc-up';
+      }
+      [this.hud, this.pelagicLevel, this.pelagicSpecialText, this.pelagicCheckpointBadge, this.bossHudLabel].forEach(node => node.setScale(1));
       this.hud.setVisible(false);
       this.radio.setVisible(false);
       this.pelagicSpecialText.setVisible(false);
@@ -2995,6 +3136,10 @@ export class ArcadeScene extends Phaser.Scene {
         this.touchShown,
       );
     } else {
+      this.portraitHudImg?.setVisible(false);
+      this.lastDecorSig = 'side';
+      g.clear().setVisible(true).setScale(1).setPosition(0, 0);
+      [this.hud, this.pelagicLevel, this.pelagicSpecialText, this.pelagicCheckpointBadge, this.bossHudLabel].forEach(node => node.setScale(1));
       this.pelagicDesktopHud.setVisible(false);
       this.hud.setVisible(true);
       this.bossHudLabel.setVisible(false);
@@ -3158,7 +3303,9 @@ export class ArcadeScene extends Phaser.Scene {
   }
   private spawnBonusPopup(x: number, y: number, points: number, label?: string): void {
     if (!this.world?.up || points <= 0) return;
-    if (this.bonusPopups.length >= 10) {
+    if (isMobileDisplay() && label === 'GRAZE') return;
+    const maxPopups = isMobileDisplay() ? 5 : 10;
+    if (this.bonusPopups.length >= maxPopups) {
       const oldest = this.bonusPopups.shift();
       if (oldest) { oldest.node.setVisible(false); this.bonusPopupPool.push(oldest.node); }
     }
@@ -3170,11 +3317,13 @@ export class ArcadeScene extends Phaser.Scene {
     const sectorOrPerf = !!label && (label.startsWith('SETOR') || label.startsWith('COLOSSO') || label.startsWith('PATRULHA'));
     const color = sectorOrPerf ? '#8ef6ff' : '#ffe654';
     const text = label ? `+${points} ${label}` : `+${points}`;
-    const node = (this.bonusPopupPool.pop() ?? this.add.text(0, 0, '', {
-      fontFamily: FONT, fontSize: '10.5px', fontStyle: 'bold', color: '#ffe654',
+    const node = this.bonusPopupPool.pop() ?? this.add.text(0, 0, '', {
+      fontFamily: FONT, fontSize: '10.5px', fontStyle: 'bold', color,
       stroke: '#041430', strokeThickness: 2, align: 'center',
-    }).setResolution(2).setOrigin(.5).setDepth(14.2))
-      .setText(text).setColor(color).setPosition(px, py).setScale(.86).setAlpha(0).setVisible(true);
+    }).setResolution(2).setOrigin(.5).setDepth(14.2);
+    // Assign color directly before setText so Phaser executes only 1 Canvas2D -> WebGL texImage2D upload instead of 2!
+    if (node.style.color !== color) node.style.color = color;
+    node.setText(text).setPosition(px, py).setScale(.86).setAlpha(0).setVisible(true);
     this.bonusPopups.push({ node, age: 0, duration: .95, y0: py });
   }
   private updateBonusPopups(dt: number): void {
@@ -3322,22 +3471,25 @@ export class ArcadeScene extends Phaser.Scene {
       if (this.isPortraitMobileMode()) container.setScale(getCombatVirtualSize(this).w / 384);
       const w = 36, h = 19;
       container.setPosition(pPos.x, pPos.y).setSize(44, 24);
-      const bg = this.add.graphics();
-      const drawCompact = (focused: boolean) => {
-        bg.clear()
-          .fillStyle(focused ? 0x10407c : 0x07214a, .94)
-          .fillRoundedRect(-w / 2, -h / 2, w, h, 6)
-          .lineStyle(1.4, focused ? 0xffe46b : 0x3ce5ff, .96)
-          .strokeRoundedRect(-w / 2, -h / 2, w, h, 6)
-          .fillStyle(focused ? 0xffffff : 0xfff2a1, 1)
-          .fillRoundedRect(-5, -4.5, 3, 9, 1)
-          .fillRoundedRect(2, -4.5, 3, 9, 1);
-      };
-      drawCompact(false);
-      container.add(bg);
+      const key = 'arc-pause-btn';
+      if (!this.textures.exists(key)) {
+        const tex = this.textures.createCanvas(key, 80, 44)!;
+        const c = tex.context;
+        c.setTransform(2, 0, 0, 2, 2, 3);
+        c.beginPath();
+        c.moveTo(6, 0); c.arcTo(w, 0, w, h, 6); c.arcTo(w, h, 0, h, 6); c.arcTo(0, h, 0, 0, 6); c.arcTo(0, 0, w, 0, 6); c.closePath();
+        c.fillStyle = 'rgba(7,33,74,0.94)'; c.fill();
+        c.lineWidth = 1.4; c.strokeStyle = 'rgba(60,229,255,0.96)'; c.stroke();
+        c.fillStyle = '#fff2a1';
+        c.fillRect(w / 2 - 5, h / 2 - 4.5, 3, 9);
+        c.fillRect(w / 2 + 2, h / 2 - 4.5, 3, 9);
+        tex.refresh();
+      }
+      const btnImg = this.add.image(0, 0, key).setDisplaySize(40, 22);
+      container.add(btnImg);
       container.setInteractive({ useHandCursor: true });
-      container.on('pointerover', () => drawCompact(true));
-      container.on('pointerout', () => drawCompact(false));
+      container.on('pointerover', () => btnImg.setTint(0xfff2b2));
+      container.on('pointerout', () => btnImg.clearTint());
     }
     container.on('pointerdown', () => this.triggerPause());
     this.ui.add(container);
@@ -3360,7 +3512,11 @@ export class ArcadeScene extends Phaser.Scene {
     if (!this.touchGfx) return;
     if (!this.touchShown) {
       if (this.lastTouchOverlaySig !== 'hidden') {
-        this.touchGfx.clear();
+        this.touchGfx.clear().setVisible(false);
+        this.touchJoyRing.setVisible(false);
+        this.touchJoyKnob.setVisible(false);
+        this.touchSpecDisc.setVisible(false);
+        this.touchChargeDisc.setVisible(false);
         this.lastTouchOverlaySig = 'hidden';
       }
       return;
@@ -3377,31 +3533,37 @@ export class ArcadeScene extends Phaser.Scene {
     this.lastTouchOverlaySig = touchSig;
     g.clear();
 
-    // Floating movement feedback appears where the finger is, without a fixed corner pad.
+    // Floating movement feedback via pre-baked sprite quads (0 Graphics triangulation overhead!)
     const ox = out.stickOriginX, oy = out.stickOriginY, jr = l.joystick.radius;
     if (out.stickActive || !l.freeMovement) {
-      g.fillStyle(0x071a38, op * 0.34).fillCircle(ox, oy, jr);
-      g.lineStyle(1.7, out.stickActive ? 0xa3fbff : 0x5be0ff, Math.min(0.95, op * (out.stickActive ? 1.45 : 1.05))).strokeCircle(ox, oy, jr);
-      g.lineStyle(1, 0xd8ffff, op * 0.42).strokeCircle(ox, oy, jr * 0.54);
-      for (let k = 0; !l.freeMovement && k < 8; k++) {
-        const ang = (k * Math.PI) / 4;
-        const r0 = jr - 4.5, r1 = jr - 1.2;
-        g.lineStyle(1.1, 0x7aefff, op * 0.6).lineBetween(ox + Math.cos(ang) * r0, oy + Math.sin(ang) * r0, ox + Math.cos(ang) * r1, oy + Math.sin(ang) * r1);
-      }
-      if (out.stickActive) {
-        g.lineStyle(2, 0x8ef7ff, op * 0.65).lineBetween(ox, oy, out.knobX, out.knobY);
-      }
-      g.fillStyle(out.stickActive ? 0x2a7ec2 : 0x154470, Math.min(0.88, op * 1.05)).fillCircle(out.knobX, out.knobY, l.joystick.knobRadius);
-      g.lineStyle(1.5, 0xe8ffff, Math.min(0.95, op * 1.35)).strokeCircle(out.knobX, out.knobY, l.joystick.knobRadius);
+      this.touchJoyRing
+        .setVisible(true)
+        .setPosition(ox, oy)
+        .setDisplaySize(jr * 2, jr * 2)
+        .setTint(out.stickActive ? 0x8ef7ff : 0x5be0ff)
+        .setAlpha(Math.min(0.92, op * (out.stickActive ? 1.25 : 0.9)));
+      this.touchJoyKnob
+        .setVisible(true)
+        .setPosition(out.knobX, out.knobY)
+        .setDisplaySize(l.joystick.knobRadius * 2, l.joystick.knobRadius * 2)
+        .setTint(out.stickActive ? 0x4cc4ff : 0x266ea6)
+        .setAlpha(Math.min(0.92, op * 1.15));
+    } else {
+      this.touchJoyRing.setVisible(false);
+      this.touchJoyKnob.setVisible(false);
     }
 
     this.touchFireText.setVisible(false);
 
-    // 3. Dedicated SPECIAL button (guarded against accidental drags; dims gracefully at 0 charges)
+    // Dedicated SPECIAL button sprite quad
     const sx = l.special.x, sy = l.special.y, sr = l.special.radius;
-    const specColor = hasSpecial ? 0xff7e60 : 0x768ea6;
-    g.fillStyle(out.specialPressed ? 0xff6e52 : 0x261018, op * (out.specialPressed ? 0.76 : 0.36)).fillCircle(sx, sy, sr);
-    g.lineStyle(1.8, specColor, Math.min(0.96, op * (hasSpecial ? 1.2 : 0.6))).strokeCircle(sx, sy, sr);
+    const specColor = hasSpecial ? (out.specialPressed ? 0xff9b7a : 0xff7e60) : 0x768ea6;
+    this.touchSpecDisc
+      .setVisible(true)
+      .setPosition(sx, sy)
+      .setDisplaySize(sr * 2, sr * 2)
+      .setTint(specColor)
+      .setAlpha(Math.min(0.95, op * (out.specialPressed ? 1.35 : hasSpecial ? 0.95 : 0.55)));
     const specFont = `${Math.round(9.5 * l.scale)}px`;
     if (specFont !== this.lastTouchSpecialFont) {
       this.touchSpecialText.setFontSize(specFont);
@@ -3409,12 +3571,16 @@ export class ArcadeScene extends Phaser.Scene {
     }
     this.touchSpecialText.setPosition(sx, sy).setAlpha(Math.min(1, hasSpecial ? op + 0.28 : op * 0.7)).setScale(out.specialPressed ? 0.92 : 1);
 
-    // 4. Optional ergonomic CHARGED SHOT button (shown when touch layout provides room)
+    // Optional ergonomic CHARGED SHOT button sprite quad (+ Graphics arc ONLY while actively charging!)
     if (l.charge) {
       const cx = l.charge.x, cy = l.charge.y, cr = l.charge.radius;
       const activeCol = chargeRatio >= 0.99 ? 0xfef08a : 0x38bdf8;
-      g.fillStyle(out.chargePressed ? 0x0ea5e9 : 0x082246, op * (out.chargePressed ? 0.75 : 0.38)).fillCircle(cx, cy, cr);
-      g.lineStyle(1.7, activeCol, Math.min(0.96, op * (out.chargePressed ? 1.5 : 1.1))).strokeCircle(cx, cy, cr);
+      this.touchChargeDisc
+        .setVisible(true)
+        .setPosition(cx, cy)
+        .setDisplaySize(cr * 2, cr * 2)
+        .setTint(activeCol)
+        .setAlpha(Math.min(0.95, op * (out.chargePressed ? 1.35 : 0.95)));
       if (chargeRatio > 0) {
         g.lineStyle(2.4, activeCol, 0.95).beginPath().arc(cx, cy, cr - 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * chargeRatio, false).strokePath();
       }
@@ -3425,15 +3591,39 @@ export class ArcadeScene extends Phaser.Scene {
       }
       this.touchChargeText.setVisible(true).setPosition(cx, cy).setAlpha(Math.min(1, op + 0.28)).setScale(out.chargePressed ? 0.92 : 1);
     } else {
+      this.touchChargeDisc.setVisible(false);
       this.touchChargeText.setVisible(false);
     }
+    g.setVisible(g.commandBuffer.length > 0);
   }
   private installTouch(): void {
-    this.touchGfx = this.add.graphics().setDepth(65);
+    if (!this.textures.exists('arc-touch-ring')) {
+      const t = this.textures.createCanvas('arc-touch-ring', 96, 96)!;
+      const c = t.context;
+      c.beginPath(); c.arc(48, 48, 44, 0, Math.PI * 2);
+      c.fillStyle = 'rgba(18, 42, 74, 0.42)'; c.fill();
+      c.lineWidth = 4; c.strokeStyle = 'rgba(255, 255, 255, 0.95)'; c.stroke();
+      c.beginPath(); c.arc(48, 48, 26, 0, Math.PI * 2);
+      c.lineWidth = 1.6; c.strokeStyle = 'rgba(255, 255, 255, 0.25)'; c.stroke();
+      t.refresh();
+    }
+    if (!this.textures.exists('arc-touch-knob')) {
+      const t = this.textures.createCanvas('arc-touch-knob', 64, 64)!;
+      const c = t.context;
+      c.beginPath(); c.arc(32, 32, 28, 0, Math.PI * 2);
+      c.fillStyle = 'rgba(255, 255, 255, 0.68)'; c.fill();
+      c.lineWidth = 3.5; c.strokeStyle = 'rgba(255, 255, 255, 0.98)'; c.stroke();
+      t.refresh();
+    }
+    this.touchGfx = this.add.graphics().setDepth(65.5).setVisible(false);
+    this.touchJoyRing = this.add.image(0, 0, 'arc-touch-ring').setDepth(65).setVisible(false);
+    this.touchJoyKnob = this.add.image(0, 0, 'arc-touch-knob').setDepth(65.1).setVisible(false);
+    this.touchSpecDisc = this.add.image(0, 0, 'arc-touch-ring').setDepth(65).setVisible(false);
+    this.touchChargeDisc = this.add.image(0, 0, 'arc-touch-ring').setDepth(65).setVisible(false);
     this.touchFireText = this.add.text(0, 0, 'TIRO', { fontFamily: FONT, fontSize: '10.5px', fontStyle: 'bold', color: '#fff8d4', stroke: '#081b38', strokeThickness: 2.5 }).setResolution(2).setOrigin(.5).setDepth(66);
     this.touchChargeText = this.add.text(0, 0, 'CARGA', { fontFamily: FONT, fontSize: '8.2px', fontStyle: 'bold', color: '#a5f3fc', stroke: '#081b38', strokeThickness: 2.2 }).setResolution(2).setOrigin(.5).setDepth(66);
     this.touchSpecialText = this.add.text(0, 0, 'ESP', { fontFamily: FONT, fontSize: '9.5px', fontStyle: 'bold', color: '#ffe4dc', stroke: '#081b38', strokeThickness: 2.5 }).setResolution(2).setOrigin(.5).setDepth(66);
-    this.touchNodes = [this.touchGfx, this.touchFireText, this.touchChargeText, this.touchSpecialText];
+    this.touchNodes = [this.touchGfx, this.touchJoyRing, this.touchJoyKnob, this.touchSpecDisc, this.touchChargeDisc, this.touchFireText, this.touchChargeText, this.touchSpecialText];
     this.setTouchVisible(false);
 
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
@@ -3617,7 +3807,9 @@ export class ArcadeScene extends Phaser.Scene {
   refreshHudVisual(): void {
     if (!this.world) return;
     this.lastHud = '';
+    this.lastDecorSig = '';
     this.lastFooterScore = '';
+    this.scoreUploadCooldown = 0;
     this.lastPelagicLevelText = '';
     this.lastPelagicSpecialText = '';
     this.lastBossHudText = '';

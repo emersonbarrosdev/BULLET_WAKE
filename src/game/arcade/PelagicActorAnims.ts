@@ -76,6 +76,7 @@ export class PelagicActorAnims {
   private speedGfx: Phaser.GameObjects.Graphics;
   private shadowGfx: Phaser.GameObjects.Graphics;
   private groundShadowGfx: Phaser.GameObjects.Graphics;
+  private playerShadow?: Phaser.GameObjects.Image;
 
   private playerPrevX = 384;
   private playerPrevY = 376;
@@ -106,6 +107,9 @@ export class PelagicActorAnims {
     this.scene = scene;
     this.groundShadowGfx = scene.add.graphics().setDepth(1.85).setVisible(false);
     this.shadowGfx = scene.add.graphics().setDepth(4.5).setVisible(false);
+    if (scene.textures.exists('arc-supply-shadow')) {
+      this.playerShadow = scene.add.image(0, 0, 'arc-supply-shadow').setDepth(4.5).setVisible(false);
+    }
     this.speedGfx = scene.add.graphics().setDepth(11.6).setVisible(false);
     this.booster = scene.add.sprite(0, 0, PELAGIC_VFX_SHEET, 0).setDepth(17.7).setVisible(false);
     this.energyCore = scene.add.sprite(0, 0, PELAGIC_VFX_SHEET, 8).setDepth(17.8).setVisible(false);
@@ -123,6 +127,7 @@ export class PelagicActorAnims {
     this.speedGfx.clear().setVisible(false);
     this.shadowGfx.clear().setVisible(false);
     this.groundShadowGfx.clear().setVisible(false);
+    this.playerShadow?.setVisible(false);
     for (const s of [this.booster, this.energyCore, this.muzzle, this.pylonL, this.pylonR, this.shield, this.recoveryRing]) s.setVisible(false);
     for (const arr of this.mountSprites.values()) for (const s of arr) { s.setVisible(false); this.pool.push(s); }
     for (const arr of this.rotorSprites.values()) for (const s of arr) { s.setVisible(false); this.pool.push(s); }
@@ -143,6 +148,7 @@ export class PelagicActorAnims {
     this.speedGfx.clear().setVisible(false);
     this.shadowGfx.clear().setVisible(false);
     this.groundShadowGfx.clear().setVisible(false);
+    this.playerShadow?.setVisible(false);
     for (const s of [this.booster, this.energyCore, this.muzzle, this.pylonL, this.pylonR, this.shield, this.recoveryRing]) s.setVisible(false);
     for (const arr of this.mountSprites.values()) for (const s of arr) s.setVisible(false);
     for (const arr of this.rotorSprites.values()) for (const s of arr) s.setVisible(false);
@@ -151,6 +157,7 @@ export class PelagicActorAnims {
 
   destroy(): void {
     this.clear();
+    this.playerShadow?.destroy();
     this.groundShadowGfx.destroy();
     this.shadowGfx.destroy();
     this.speedGfx.destroy();
@@ -272,11 +279,15 @@ export class PelagicActorAnims {
     const underBridge = w.tideArch.isInBridgeBand(w.scroll, w.player.y);
 
     const flicker = (w.player.invulnerable > 0 && w.player.invulnerable < .85) ? (.55 + .45 * Math.cos(time * 28) ** 2) : (w.player.invulnerable > 0 ? (.80 + .20 * Math.cos(time * 15) ** 2) : 1);
+    const targetDepth = underBridge ? 16.4 : 18;
+    const pTex = sheetReady ? PELAGIC_RIVET_SHEET : 'arc-rivet';
+    if (playerSprite.texture.key !== pTex || String(playerSprite.frame.name) !== String(frame)) {
+      playerSprite.setTexture(pTex, frame);
+    }
+    if (playerSprite.depth !== targetDepth) playerSprite.setDepth(targetDepth);
     playerSprite
-      .setTexture(sheetReady ? PELAGIC_RIVET_SHEET : 'arc-rivet', frame)
       .setPosition(w.player.x, w.player.y + recoilY)
       .setDisplaySize(dispW, dispH)
-      .setDepth(underBridge ? 16.4 : 18)
       .setAngle(damageShakeDeg)
       .setAlpha(flicker)
       .setVisible(true);
@@ -287,14 +298,18 @@ export class PelagicActorAnims {
       playerSprite.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
     }
 
-    // 2.5D altitude-linked cast shadow over ocean surface (`depth 4.5`): tightens & darkens during low-flight
+    // 2.5D altitude-linked cast shadow over ocean surface (`depth 4.5`): sprite quad eliminates per-frame Graphics ellipse tessellation!
     const shOffX = 6 + alt * 12;
     const shOffY = 8 + alt * 16;
     const shScale = clamp(1.04 - alt * 0.24, 0.72, 1.04);
     const shAlpha = underBridge ? 0.14 : clamp(0.30 - alt * 0.10, 0.16, 0.32);
     const shW = 28 * Math.max(0.52, Math.cos(bank * 0.95)) * shScale * w.aircraftScale;
     const shH = 20 * shScale * w.aircraftScale;
-    this.shadowGfx.fillStyle(0x04152d, shAlpha).fillEllipse(w.player.x + shOffX, w.player.y + shOffY, shW, shH);
+    if (this.playerShadow) {
+      this.playerShadow.setPosition(w.player.x + shOffX, w.player.y + shOffY).setDisplaySize(shW * 1.25, shH * 1.25).setAlpha(Math.min(1, shAlpha * 1.6)).setVisible(true);
+    } else {
+      this.shadowGfx.fillStyle(0x04152d, shAlpha).fillEllipse(w.player.x + shOffX, w.player.y + shOffY, shW, shH);
+    }
 
     // Low-altitude ocean wave wake spray beneath RIVET when skimming near the waves
     if (alt < 0.72 && quality > 0) {
@@ -414,8 +429,8 @@ export class PelagicActorAnims {
       }
     }
 
-    // Wingtip contrail ribbons & subtle air-speed slipstream streaks (low alpha, below bullets!)
-    if (quality > 0) {
+    // Wingtip contrail ribbons & subtle air-speed slipstream streaks (desktop only: skips per-frame DrawLine CPU tessellation on mobile)
+    if (quality > 0 && !isMobileDisplay()) {
       const moveMag = Math.hypot(this.playerSmoothVx, this.playerSmoothVy);
       const spanX = 13.5 * Math.max(.25, Math.cos(Math.abs(bank) * 1.32)) * w.aircraftScale;
       const lx = w.player.x - spanX, ly = w.player.y + 8 - bank * 4.2;
@@ -576,7 +591,7 @@ export class PelagicActorAnims {
           .setDisplaySize(e.size * (1 + hitSquash), e.size * (surgeScale - hitSquash))
           .setRotation(leanRot);
 
-        if (quality > 0 && (Math.abs(bankEff) > .28 || e.motion === 'dive' || e.motion === 'turn' || e.entry === 'left' || e.entry === 'right')) {
+        if (quality > 0 && !isMobileDisplay() && (Math.abs(bankEff) > .28 || e.motion === 'dive' || e.motion === 'turn' || e.entry === 'left' || e.entry === 'right')) {
           const tipR = e.size * .42 * (1 - Math.abs(bankEff) * .18);
           const perpX = Math.cos(leanRot) * tipR, perpY = Math.sin(leanRot) * tipR;
           const trailA = clamp(Math.abs(bankEff) * .45 + .14, 0, .38);
@@ -608,8 +623,8 @@ export class PelagicActorAnims {
         if (e.eventRole === 'convoy-lead' && e.flash <= 0) s.setTint(0xfff2ba);
       }
 
-      // Rock/island contact shadow beneath anchored coastal turrets & bunkers
-      if (e.family === 'tank' || e.family === 'tower') {
+      // Rock/island contact shadow beneath anchored coastal turrets & bunkers (desktop only; mobile saves FillPath shader switch)
+      if (!isMobileDisplay() && (e.family === 'tank' || e.family === 'tower')) {
         const customAnchor = !!e.navigation?.customAnchor;
         const isCastle = e.family === 'tower' && !customAnchor;
         const shW = e.size * (isCastle ? 1.55 : customAnchor ? 0.76 : 1.24);
@@ -751,6 +766,9 @@ export class PelagicActorAnims {
         g.lineStyle(2 * (1 - k * .5), 0xdcfbff, (1 - k) * .75).strokeEllipse(r.x, r.y, rad * 2, rad * 1.1);
       }
     }
+    gsh.setVisible(gsh.commandBuffer.length > 0);
+    sh.setVisible(sh.commandBuffer.length > 0);
+    g.setVisible(g.commandBuffer.length > 0);
   }
 
   private syncSpritePool(map: Map<number, Phaser.GameObjects.Sprite[]>, id: number, count: number, texture: string, depth: number): Phaser.GameObjects.Sprite[] {

@@ -102,7 +102,7 @@ export class ArcadeBackdrop {
     const shoalKey = installCoastalShoalTexture(scene);
     this.oceanDepth = scene.add.tileSprite(384, 216, STAGE1_WIDTH, 432, installOceanDepthTexture(scene)).setDepth(-19.8).setVisible(false);
     for (let i = 0; i < 8; i++) {
-      this.deepReefs.push(scene.add.image(0, 0, shoalKey, 0).setDepth(-19.55).setTint(0x2d94b8).setAlpha(.3).setVisible(false));
+      this.deepReefs.push(scene.add.image(0, 0, shoalKey, 0).setDepth(-19.06).setTint(0x2d94b8).setAlpha(.3).setVisible(false));
     }
     this.waterSwell = scene.add.tileSprite(384, 216, STAGE1_WIDTH, 432, 'pelagic-water-review').setDepth(-19.35).setAlpha(.30).setVisible(false).setTileScale(WATER_SCALE * 1.45, WATER_SCALE * 1.45);
     this.water = scene.add.tileSprite(384, 216, STAGE1_WIDTH, 432, 'pelagic-water-review').setDepth(-19.2).setAlpha(.78).setTint(0xd0e9ff).setVisible(false).setTileScale(WATER_SCALE, WATER_SCALE);
@@ -163,7 +163,7 @@ export class ArcadeBackdrop {
     this.oceanDepth.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up);
     this.waterSwell.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up && quality >= 1 && !mobile);
     this.water.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setAlpha(mobile ? .86 : .78).setVisible(up);
-    this.oceanCaustics.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up && quality >= 1);
+    this.oceanCaustics.setPosition(areaCenter, viewH * 0.5).setSize(areaWidth, viewH).setVisible(up && quality >= 1 && !mobile);
     if (!world) {
       this.navTrack.clear();
       this.tideArch.hide();
@@ -173,6 +173,7 @@ export class ArcadeBackdrop {
       const skyW = Math.max(vSize.w, Math.round((vSize.h * 16) / 9));
       const skyH = Math.max(vSize.h, Math.round((skyW * 9) / 16));
       this.menuSky.setPosition(skyCenterX, skyCenterY).setDisplaySize(skyW, skyH).setVisible(showMenuBackdrop);
+      this.ink.setVisible(false); this.waterGlint.setVisible(false); this.seaFx.setVisible(false); this.surfaceSplash.setVisible(false);
       return;
     }
     if (world.up) {
@@ -183,6 +184,10 @@ export class ArcadeBackdrop {
       this.tideArch.hide();
       this.city(time, world, quality);
     }
+    this.ink.setVisible(this.ink.commandBuffer.length > 0);
+    this.waterGlint.setVisible(this.waterGlint.commandBuffer.length > 0);
+    this.seaFx.setVisible(this.seaFx.commandBuffer.length > 0);
+    this.surfaceSplash.setVisible(this.surfaceSplash.commandBuffer.length > 0);
   }
 
   /** Read-only snapshot of live Pelagic scene layers for automated visual checks. */
@@ -386,38 +391,39 @@ export class ArcadeBackdrop {
           .setAlpha(holding ? .18 : clamp(.26 + speedRatio * .28, .22, .56));
       }
 
-      // 3. Stern churning foam pocket scaled by velocity
-      g.fillStyle(0x28d6f0, holding ? .16 : .30 * clamp(speedRatio, .4, 1.2)).fillEllipse(e.x - fx * e.size * .38, e.y - fy * e.size * .38, e.size * (.26 + speedRatio * .08), e.size * (.18 + speedRatio * .06));
-      g.fillStyle(0xe8ffff, holding ? .14 : .32 * clamp(speedRatio, .4, 1.2)).fillEllipse(e.x - fx * e.size * .41, e.y - fy * e.size * .41, e.size * .16, e.size * .10);
+      // 3. Stern churning foam pocket & Kelvin V-wakes (desktop vector trails; mobile relies on animated wet-hull + wake sprites)
+      if (!mobile) {
+        g.fillStyle(0x28d6f0, holding ? .16 : .30 * clamp(speedRatio, .4, 1.2)).fillEllipse(e.x - fx * e.size * .38, e.y - fy * e.size * .38, e.size * (.26 + speedRatio * .08), e.size * (.18 + speedRatio * .06));
+        g.fillStyle(0xe8ffff, holding ? .14 : .32 * clamp(speedRatio, .4, 1.2)).fillEllipse(e.x - fx * e.size * .41, e.y - fy * e.size * .41, e.size * .16, e.size * .10);
 
-      // 4. Bow cutwater splash & Kelvin V-wakes reacting smoothly to speed & turn direction
-      if (speedRatio > .28) {
-        const bowX = e.x + fx * e.size * .36, bowY = e.y + fy * e.size * .36;
-        const flareAlpha = clamp((speedRatio - .25) * .68, .15, .64);
-        splash.lineStyle(1.6, 0xf2ffff, flareAlpha).beginPath();
-        for (const side of [-1, 1]) {
-          const kx = bowX - fx * e.size * .16 + sx * side * e.size * (.16 + speedRatio * .05);
-          const ky = bowY - fy * e.size * .16 + sy * side * e.size * (.16 + speedRatio * .05);
-          splash.moveTo(bowX, bowY).lineTo(kx, ky);
+        if (speedRatio > .28) {
+          const bowX = e.x + fx * e.size * .36, bowY = e.y + fy * e.size * .36;
+          const flareAlpha = clamp((speedRatio - .25) * .68, .15, .64);
+          splash.lineStyle(1.6, 0xf2ffff, flareAlpha).beginPath();
+          for (const side of [-1, 1]) {
+            const kx = bowX - fx * e.size * .16 + sx * side * e.size * (.16 + speedRatio * .05);
+            const ky = bowY - fy * e.size * .16 + sy * side * e.size * (.16 + speedRatio * .05);
+            splash.moveTo(bowX, bowY).lineTo(kx, ky);
+          }
+          splash.strokePath();
         }
-        splash.strokePath();
-      }
 
-      const wakeLen = e.size * (.32 + speedRatio * .72);
-      const wakeSpread = e.size * (.12 + speedRatio * .18);
-      const segs = quality > 1 ? 8 : quality === 1 ? 6 : 4;
-      for (const side of [-1, 1]) {
-        const turnBias = 1 + clamp(-side * turnRate * .28, -.28, .38);
-        for (let j = 0; j < segs; j++) {
-          const t0 = j / segs, t1 = (j + 1) / segs;
-          const fade = (1 - t0) * clamp((holding ? .22 : .50) * (.65 + speedRatio * .45) * turnBias, .12, .62);
-          const bend0 = clamp(-turnRate * 9, -8, 8) * t0 * t0;
-          const bend1 = clamp(-turnRate * 9, -8, 8) * t1 * t1;
-          const a0 = e.size * .22 + t0 * wakeLen, a1 = e.size * .22 + t1 * wakeLen;
-          const w0 = (e.size * .10 + t0 * wakeSpread) * side + bend0 + Math.sin(time * 5.6 - t0 * 8 + e.id) * 1.4;
-          const w1 = (e.size * .10 + t1 * wakeSpread) * side + bend1 + Math.sin(time * 5.6 - t1 * 8 + e.id) * 1.4;
-          g.lineStyle((2.5 - t0 * 1.5) * (.8 + speedRatio * .25), j < 2 ? 0xe8ffff : 0x56e4fb, fade);
-          g.lineBetween(e.x - fx * a0 + sx * w0, e.y - fy * a0 + sy * w0, e.x - fx * a1 + sx * w1, e.y - fy * a1 + sy * w1);
+        const wakeLen = e.size * (.32 + speedRatio * .72);
+        const wakeSpread = e.size * (.12 + speedRatio * .18);
+        const segs = quality > 1 ? 8 : quality === 1 ? 6 : 4;
+        for (const side of [-1, 1]) {
+          const turnBias = 1 + clamp(-side * turnRate * .28, -.28, .38);
+          for (let j = 0; j < segs; j++) {
+            const t0 = j / segs, t1 = (j + 1) / segs;
+            const fade = (1 - t0) * clamp((holding ? .22 : .50) * (.65 + speedRatio * .45) * turnBias, .12, .62);
+            const bend0 = clamp(-turnRate * 9, -8, 8) * t0 * t0;
+            const bend1 = clamp(-turnRate * 9, -8, 8) * t1 * t1;
+            const a0 = e.size * .22 + t0 * wakeLen, a1 = e.size * .22 + t1 * wakeLen;
+            const w0 = (e.size * .10 + t0 * wakeSpread) * side + bend0 + Math.sin(time * 5.6 - t0 * 8 + e.id) * 1.4;
+            const w1 = (e.size * .10 + t1 * wakeSpread) * side + bend1 + Math.sin(time * 5.6 - t1 * 8 + e.id) * 1.4;
+            g.lineStyle((2.5 - t0 * 1.5) * (.8 + speedRatio * .25), j < 2 ? 0xe8ffff : 0x56e4fb, fade);
+            g.lineBetween(e.x - fx * a0 + sx * w0, e.y - fy * a0 + sy * w0, e.x - fx * a1 + sx * w1, e.y - fy * a1 + sy * w1);
+          }
         }
       }
     }
