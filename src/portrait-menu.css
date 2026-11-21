@@ -1131,58 +1131,72 @@
 .bw-segmented button.active { background: linear-gradient(180deg, #ffec96, #ffd442); border-color: #fff6c2; color: #102444; }
 .bw-segmented button:disabled { opacity: 0.48; cursor: default; }
 
-.bw-account-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; border: 1px solid rgba(90, 224, 255, 0.46); background: linear-gradient(160deg, rgba(19, 60, 108, 0.92), rgba(7, 24, 49, 0.94)); }
-.bw-account-head { display: flex; align-items: center; gap: 12px; }
-.bw-account-avatar { width: 56px; height: 56px; border-radius: 14px; object-fit: contain; background: rgba(5, 19, 41, 0.9); border: 1.5px solid rgba(255, 226, 122, 0.65); flex: none; }
-.bw-account-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.bw-account-copy h2 { color: #ffe57d; font-size: 19px; overflow-wrap: anywhere; }
+.bw-account-card { display: flex; flex-direction: column; gap: 15px; padding: 20px 16px; border-radius: 16px; border: 1px solid rgba(90, 224, 255, 0.46); background: linear-gradient(160deg, rgba(19, 60, 108, 0.92), rgba(7, 24, 49, 0.94)); }
+.bw-account-head { display: flex; align-items: center; gap: 13px; }
+.bw-account-avatar { width: 62px; height: 62px; border-radius: 14px; object-fit: contain; background: rgba(5, 19, 41, 0.9); border: 1.5px solid rgba(255, 226, 122, 0.65); flex: none; }
+.bw-account-copy { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.bw-account-copy h2 { color: #ffe57d; font-size: 20px; overflow-wrap: anywhere; }
 .bw-account-pill { align-self: flex-start; padding: 3px 9px; border-radius: 999px; font: 700 11.5px/1.1 'Oxanium', sans-serif; background: rgba(56, 118, 178, 0.34); border: 1px solid rgba(114, 206, 248, 0.45); color: #c2eaff; }
 .bw-account-pill.linked { background: rgba(44, 196, 134, 0.24); border-color: rgba(110, 245, 188, 0.68); color: #96ffd2; }
-.bw-account-form { display: flex; flex-direction: column; gap: 10px; }
+.bw-account-form { display: flex; flex-direction: column; gap: 11px; }
 
-/* Hangar Paint Showcase & Visual Achievements & Result Rank Hero */
+/* Hangar balanced vertical spacing & taller cards (Perfil + Pinturas) */
+.bw-mobile[data-screen="hangar"] .bw-mobile-body { gap: 14px; padding-top: 4px; padding-bottom: 10px; }
+.bw-mobile[data-screen="hangar"] .bw-mobile-metrics { gap: 11px; }
+.bw-mobile[data-screen="hangar"] .bw-mobile-metrics > div {
+  padding: 14px 13px;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 13px;
+}
+
+/* Hangar Paint Showcase & Detail Modal & Visual Achievements & Result Rank Hero */
 .bw-paint-stage {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px 14px;
+  padding: 15px 16px;
   border-radius: 16px;
   border: 1.5px solid rgba(92, 224, 255, 0.52);
   background: linear-gradient(155deg, rgba(16, 52, 98, 0.9), rgba(6, 21, 45, 0.94));
   backdrop-filter: blur(6px);
   box-shadow: 0 12px 26px rgba(2, 10, 26, 0.48);
 }
-.bw-paint-bay { width: 78px !important; height: 78px !important; flex: none; }
-.bw-paint-stage-copy { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.bw-paint-stage-copy h2 { font: 800 18px/1.15 'Oxanium', sans-serif; color: #ffe57d; }
-.bw-paint-stage-copy p { font-size: 13px; color: #c7e1f5; line-height: 1.28; }
+.bw-paint-bay { width: 82px !important; height: 82px !important; flex: none; }
+.bw-paint-stage-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.bw-paint-stage-copy h2 { font: 800 18.5px/1.15 'Oxanium', sans-serif; color: #ffe57d; }
+.bw-paint-stage-copy p { font-size: 13.5px; color: #c7e1f5; line-height: 1.3; }
 
-.bw-paint-list { display: flex; flex-direction: column; gap: 8px; }
+.bw-paint-list { display: flex; flex-direction: column; gap: 11px; }
 .bw-paint-card {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 12px;
   width: 100%;
-  min-height: 58px;
-  padding: 9px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(84, 198, 240, 0.42);
-  background: linear-gradient(165deg, rgba(16, 50, 92, 0.88), rgba(7, 23, 47, 0.92));
+  min-height: 68px;
+  padding: 12px 14px;
+  border-radius: 15px;
+  border: 1px solid rgba(84, 198, 240, 0.44);
+  background: linear-gradient(165deg, rgba(16, 50, 92, 0.9), rgba(7, 23, 47, 0.94));
   color: #eff8ff;
   text-align: left;
   cursor: pointer;
   touch-action: manipulation;
+  transition: transform 0.1s ease, border-color 0.14s ease;
 }
+.bw-paint-card:active { transform: scale(0.985); }
 .bw-paint-card.is-equipped {
   border: 1.5px solid #ffe57d;
   background: linear-gradient(165deg, rgba(24, 72, 126, 0.94), rgba(10, 34, 68, 0.96));
   box-shadow: 0 0 16px rgba(255, 229, 125, 0.22);
 }
-.bw-paint-card:disabled:not(.is-equipped) { opacity: 0.62; cursor: default; }
+.bw-paint-card.is-locked { opacity: 0.94; }
 .bw-paint-swatch {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
   flex: none;
   border: 1.5px solid rgba(255, 255, 255, 0.65);
   box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.3), 0 3px 8px rgba(0, 0, 0, 0.42);
@@ -1191,12 +1205,12 @@
   justify-content: center;
   color: #081c36;
 }
-.bw-paint-card-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.bw-paint-card-copy strong { font: 700 14.5px/1.15 'Oxanium', sans-serif; color: #f4faff; }
-.bw-paint-card-copy small { font-size: 12px; color: #a7c9e2; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bw-paint-card-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.bw-paint-card-copy strong { font: 700 15px/1.15 'Oxanium', sans-serif; color: #f4faff; }
+.bw-paint-card-copy small { font-size: 12.5px; color: #a7c9e2; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bw-paint-pill {
   flex: none;
-  padding: 5px 10px;
+  padding: 5px 11px;
   border-radius: 999px;
   font: 700 11.5px/1.1 'Oxanium', sans-serif;
   font-variant-numeric: tabular-nums;
@@ -1204,7 +1218,28 @@
 .bw-paint-pill.active { background: linear-gradient(180deg, #ffec94, #f5b92a); color: #102444; }
 .bw-paint-pill.owned { background: rgba(56, 206, 255, 0.22); border: 1px solid rgba(94, 224, 255, 0.65); color: #9ff3ff; }
 .bw-paint-pill.buy { background: rgba(31, 212, 155, 0.24); border: 1px solid rgba(114, 255, 210, 0.72); color: #9effe0; }
-.bw-paint-pill.locked { background: rgba(20, 42, 72, 0.8); border: 1px solid rgba(130, 162, 194, 0.4); color: #b5cbe0; }
+.bw-paint-pill.locked { background: rgba(20, 42, 72, 0.85); border: 1px solid rgba(130, 162, 194, 0.45); color: #bfd4e8; }
+
+.bw-skin-preview { position: relative; }
+.bw-skin-preview-swatch { position: absolute; right: -6px; bottom: -6px; width: 28px; height: 28px; border-radius: 8px; }
+.bw-skin-detail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 13px;
+  border-radius: 13px;
+  background: rgba(5, 19, 44, 0.82);
+  border: 1px solid rgba(88, 196, 240, 0.32);
+}
+.bw-skin-detail-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+.bw-skin-detail-row span { color: #98bedc; flex: none; }
+.bw-skin-detail-row strong { color: #eaf6ff; text-align: right; font: 700 13px/1.25 'Rajdhani', sans-serif; }
 
 .bw-ach-summary {
   display: flex;

@@ -15,6 +15,7 @@
     "preview": "vite preview",
     "android:apk": "npm run build && node scripts/build-android-apk.mjs",
     "android:install": "node scripts/install-android-apk.mjs",
+    "windows:exe": "npm run build && node scripts/build-windows-exe.mjs",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "assets:generate": "node scripts/generate-sprites.mjs",
     "assets:rivet": "node scripts/generate-rivet-v2.mjs",

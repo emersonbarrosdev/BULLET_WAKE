@@ -151,6 +151,7 @@ export class ArcadeScene extends Phaser.Scene {
   private showAllStagesModal = false;
   private showPrivacyModal = false;
   private pendingPilotPurchase?: PilotId;
+  private inspectedSkinId?: string;
   private pendingSkinPurchase?: string;
   private lastAnnouncedRegion = -1;
   private hitStopTime = 0;
@@ -574,6 +575,7 @@ export class ArcadeScene extends Phaser.Scene {
     this.showAllStagesModal = false;
     this.showPrivacyModal = false;
     this.pendingPilotPurchase = undefined;
+    this.inspectedSkinId = undefined;
     this.pendingSkinPurchase = undefined;
     const old = this.screen; this.screen = screen;
     this.syncResponsiveViewport();
@@ -1883,18 +1885,20 @@ export class ArcadeScene extends Phaser.Scene {
               canAfford,
               action: () => {
                 this.audio.unlock();
-                if (owned) {
-                  globalProfileStore.equipSkin(activeProfilePilot.id, skin.id);
-                  globalAudio.playArcade('confirm');
-                  this.refreshPortraitMenu();
-                } else if (canAfford) {
-                  this.pendingSkinPurchase = skin.id;
-                  this.refreshPortraitMenu();
-                }
+                this.inspectedSkinId = skin.id;
+                this.pendingSkinPurchase = undefined;
+                this.refreshPortraitMenu();
               },
             };
           }),
         });
+        const finishNotes: Record<string, string> = {
+          'skin:classic': 'Esmalte tático padrão Botan Studio',
+          'skin:cobalt_ace': 'Liga metálica azul-cobalto de alta altitude',
+          'skin:solar_gold': 'Verniz dourado comemorativo de esquadrão',
+          'skin:crimson_night': 'Revestimento escarlate antirreflexo noturno',
+          'skin:emerald_tide': 'Pintura oceânica esmeralda hidrodinâmica',
+        };
         if (this.pendingSkinPurchase) {
           const targetSkin = skins.find(s => s.id === this.pendingSkinPurchase);
           if (targetSkin) {
@@ -1912,10 +1916,47 @@ export class ArcadeScene extends Phaser.Scene {
                   globalAudio.playArcade('level-up');
                 }
                 this.pendingSkinPurchase = undefined;
+                this.inspectedSkinId = undefined;
                 this.refreshPortraitMenu();
               },
               onCancel: () => {
                 this.pendingSkinPurchase = undefined;
+                this.refreshPortraitMenu();
+              },
+            });
+          }
+        } else if (this.inspectedSkinId) {
+          const targetSkin = skins.find(s => s.id === this.inspectedSkinId);
+          if (targetSkin) {
+            const owned = profile.unlocks.skins.includes(targetSkin.id);
+            const equipped = equippedId === targetSkin.id;
+            const canAfford = profile.wallet.credits >= targetSkin.cost;
+            const previewTint = targetSkin.tintHex && targetSkin.tintHex !== 0xffffff ? targetSkin.tintHex : (activeProfilePilot.id === 'nolan' ? undefined : activeProfilePilot.hullColor);
+            view.skinDetailModal({
+              shipImage: frame(PELAGIC_RIVET_SHEET, 3, previewTint),
+              swatchHex: swatchFor(targetSkin),
+              skinName: targetSkin.name,
+              skinDesc: targetSkin.description,
+              finishDetail: finishNotes[targetSkin.id] ?? 'Acabamento tático especial',
+              pilotName: activeProfilePilot.name,
+              shipName: activeProfilePilot.shipName,
+              cost: targetSkin.cost,
+              currentCredits: profile.wallet.credits,
+              owned,
+              equipped,
+              canAfford,
+              onEquip: owned && !equipped ? () => {
+                globalProfileStore.equipSkin(activeProfilePilot.id, targetSkin.id);
+                globalAudio.playArcade('confirm');
+                this.inspectedSkinId = undefined;
+                this.refreshPortraitMenu();
+              } : undefined,
+              onRequestBuy: !owned && canAfford ? () => {
+                this.pendingSkinPurchase = targetSkin.id;
+                this.refreshPortraitMenu();
+              } : undefined,
+              onClose: () => {
+                this.inspectedSkinId = undefined;
                 this.refreshPortraitMenu();
               },
             });
@@ -2487,6 +2528,11 @@ export class ArcadeScene extends Phaser.Scene {
   private backMobileMenu(): void {
     if (this.pendingSkinPurchase) {
       this.pendingSkinPurchase = undefined;
+      this.refreshPortraitMenu();
+      return;
+    }
+    if (this.inspectedSkinId) {
+      this.inspectedSkinId = undefined;
       this.refreshPortraitMenu();
       return;
     }

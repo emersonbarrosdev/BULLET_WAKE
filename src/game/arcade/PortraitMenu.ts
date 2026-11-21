@@ -167,6 +167,24 @@ export interface HangarPaintShowcaseOptions {
   readonly items: readonly HangarPaintItem[];
 }
 
+export interface SkinDetailModalOptions {
+  readonly shipImage: string;
+  readonly swatchHex: string;
+  readonly skinName: string;
+  readonly skinDesc: string;
+  readonly finishDetail: string;
+  readonly pilotName: string;
+  readonly shipName: string;
+  readonly cost: number;
+  readonly currentCredits: number;
+  readonly owned: boolean;
+  readonly equipped: boolean;
+  readonly canAfford: boolean;
+  readonly onEquip?: () => void;
+  readonly onRequestBuy?: () => void;
+  readonly onClose: () => void;
+}
+
 export interface ConfirmSkinPurchaseOptions {
   readonly shipImage: string;
   readonly skinName: string;
@@ -950,7 +968,7 @@ export class PortraitMenu {
     for (const item of opts.items) {
       const btn = this.el('button', `bw-paint-card${item.equipped ? ' is-equipped' : ''}${!item.owned ? ' is-locked' : ''}`);
       btn.type = 'button';
-      btn.disabled = item.equipped || (!item.owned && !item.canAfford);
+      btn.setAttribute('aria-label', `${item.name} — ${item.equipped ? 'Equipada' : item.owned ? 'Disponível' : `${item.cost} créditos`}. Toque para ver detalhes`);
 
       const swatch = this.el('span', 'bw-paint-swatch');
       swatch.style.background = item.swatchHex;
@@ -967,6 +985,78 @@ export class PortraitMenu {
       list.append(btn);
     }
     this.body?.append(list);
+  }
+
+  skinDetailModal(opts: SkinDetailModalOptions): void {
+    const overlay = this.el('div', 'bw-modal-overlay bw-purchase-overlay');
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', `Detalhes da pintura ${opts.skinName}`);
+
+    const card = this.el('div', 'bw-modal-card bw-skin-detail-card');
+    const preview = this.el('div', 'bw-purchase-preview bw-skin-preview');
+    const sImg = this.el('img', 'bw-purchase-ship'); sImg.src = opts.shipImage; sImg.alt = opts.shipName; sImg.draggable = false;
+    const sw = this.el('span', 'bw-paint-swatch bw-skin-preview-swatch');
+    sw.style.background = opts.swatchHex;
+    if (!opts.owned) sw.append(this.icon('lock', 'bw-ico bw-ico-lock'));
+    preview.append(sImg, sw);
+
+    const statusClass = opts.equipped ? 'active' : opts.owned ? 'owned' : opts.canAfford ? 'buy' : 'locked';
+    const statusLabel = opts.equipped ? 'Equipada atualmente' : opts.owned ? 'Desbloqueada' : `${opts.cost} CR`;
+
+    const head = this.el('div', 'bw-modal-head');
+    head.append(
+      preview,
+      this.el('span', `bw-paint-pill ${statusClass}`, statusLabel),
+      this.el('p', 'bw-mobile-eyebrow', `${opts.pilotName} · ${opts.shipName}`),
+      this.el('h2', '', opts.skinName),
+      this.el('p', 'bw-modal-desc', opts.skinDesc),
+    );
+
+    const infoBox = this.el('div', 'bw-skin-detail-meta');
+    const rows: Array<[string, string]> = [
+      ['Acabamento', opts.finishDetail],
+      ['Compatibilidade', 'Toda a frota (100% cosmético)'],
+      ['Saldo atual', `${opts.currentCredits} CR`],
+    ];
+    if (!opts.owned) {
+      rows.push(['Preço', opts.canAfford ? `${opts.cost} CR` : `${opts.cost} CR (faltam ${opts.cost - opts.currentCredits} CR)`]);
+    }
+    for (const [label, value] of rows) {
+      const row = this.el('div', 'bw-skin-detail-row');
+      row.append(this.el('span', '', label), this.el('strong', '', value));
+      infoBox.append(row);
+    }
+
+    const actions = this.el('div', 'bw-dialog-actions');
+    if (opts.owned && !opts.equipped && opts.onEquip) {
+      const eqBtn = this.el('button', 'bw-mobile-button primary');
+      eqBtn.type = 'button';
+      eqBtn.append(this.icon('check', 'bw-ico bw-ico-btn'), this.el('span', '', 'Equipar pintura'));
+      this.bindAction(eqBtn, opts.onEquip);
+      actions.append(eqBtn);
+    } else if (!opts.owned && opts.canAfford && opts.onRequestBuy) {
+      const buyBtn = this.el('button', 'bw-mobile-button primary');
+      buyBtn.type = 'button';
+      buyBtn.append(this.icon('coin', 'bw-ico bw-ico-btn'), this.el('span', '', `Comprar pintura · ${opts.cost} CR`));
+      this.bindAction(buyBtn, opts.onRequestBuy);
+      actions.append(buyBtn);
+    } else if (!opts.owned && !opts.canAfford) {
+      const lockedBtn = this.el('button', 'bw-mobile-button secondary');
+      lockedBtn.type = 'button';
+      lockedBtn.disabled = true;
+      lockedBtn.append(this.icon('lock', 'bw-ico bw-ico-btn'), this.el('span', '', `Faltam ${opts.cost - opts.currentCredits} CR`));
+      actions.append(lockedBtn);
+    }
+
+    const closeBtn = this.el('button', 'bw-mobile-button back', 'Fechar');
+    closeBtn.type = 'button';
+    this.bindAction(closeBtn, opts.onClose);
+    actions.append(closeBtn);
+
+    card.append(head, infoBox, actions);
+    overlay.append(card);
+    this.root?.append(overlay);
   }
 
   confirmSkinPurchaseModal(opts: ConfirmSkinPurchaseOptions): void {

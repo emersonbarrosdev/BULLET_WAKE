@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { homedir } from 'node:os';
 
 const root = resolve('.');
-const versionCode = '20261135', versionName = '0.1.0-hull-preview.15';
+const versionCode = '20261136', versionName = '0.1.0-hull-preview.16';
 const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT ?? join(homedir(), 'AppData/Local/Android/Sdk');
 const jdk = process.env.JAVA_HOME;
 if (!jdk) throw new Error('JAVA_HOME must point to JDK 17 or newer.');
