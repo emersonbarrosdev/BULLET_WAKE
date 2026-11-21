@@ -68,6 +68,8 @@ export interface HomeStageItem {
 }
 
 export interface DashboardOptions {
+  readonly desktop?: boolean;
+  readonly difficultyLabel?: string;
   readonly stages: readonly HomeStageItem[];
   readonly activeStageIndex: number;
   readonly flybys: string[][];
@@ -224,26 +226,36 @@ export class PortraitMenu {
   private sectorBannerEl?: HTMLElement;
   private sectorBannerTimer?: number;
   private screen = '';
+  private desktopMode = false;
+  private onCarouselStep?: (dir: -1 | 1) => void;
   private restoreScroll = 0;
   private restoreFocus = -1;
   private images = new Map<string, string>();
   private activationTimer?: number;
   constructor(private readonly onConfirm?: () => void) {}
   get visible(): boolean { return !!this.root; }
+  get hasOpenModal(): boolean { return !!this.root?.querySelector('.bw-modal-overlay'); }
+  stepCarousel(dir: -1 | 1): boolean {
+    if (!this.onCarouselStep || this.hasOpenModal) return false;
+    this.onCarouselStep(dir);
+    return true;
+  }
 
   begin(
     screen: string,
     title: string,
     subtitle = '',
-    opts: { compactHeader?: boolean; headerBadge?: string; footerRow?: boolean; liveBackdrop?: boolean } = {},
+    opts: { compactHeader?: boolean; headerBadge?: string; footerRow?: boolean; liveBackdrop?: boolean; desktop?: boolean } = {},
   ): void {
     this.restoreScroll = this.screen === screen ? this.scroll?.scrollTop ?? 0 : 0;
     this.restoreFocus = this.screen === screen ? [...this.root?.querySelectorAll('button:not(:disabled),input') ?? []].indexOf(document.activeElement!) : -1;
     this.hide();
     this.screen = screen;
+    this.desktopMode = Boolean(opts.desktop);
     const isDialog = DIALOG_SCREENS.has(screen);
     const liveCls = opts.liveBackdrop ? ' bw-live-backdrop' : '';
-    const root = this.el('section', `bw-mobile bw-mobile-screen-${screen}${isDialog ? ' bw-mobile-is-dialog' : ''}${liveCls}`);
+    const desktopCls = this.desktopMode ? ' is-desktop' : '';
+    const root = this.el('section', `bw-mobile${desktopCls} bw-mobile-screen-${screen}${isDialog ? ' bw-mobile-is-dialog' : ''}${liveCls}`);
     root.dataset.screen = screen;
     root.setAttribute('aria-label', title);
     if (isDialog) {
@@ -280,6 +292,7 @@ export class PortraitMenu {
   }
   hide(): void {
     window.clearTimeout(this.activationTimer); this.activationTimer = undefined;
+    this.onCarouselStep = undefined;
     this.root?.remove(); this.root = this.body = this.footer = this.scroll = this.container = undefined;
   }
   hideCountdown(): void {
@@ -371,12 +384,13 @@ export class PortraitMenu {
     for (const item of iconBtns) {
       const btn = this.el('button', item.cls);
       btn.type = 'button';
+      btn.title = item.label;
       btn.setAttribute('aria-label', item.label);
       btn.append(this.icon(item.icon, 'bw-ico bw-ico-gear'));
       this.bindAction(btn, item.action);
       tools.append(btn);
     }
-    topbar.append(brand, tools);
+    topbar.append(brand);
 
     // Row 2: Profile & Currencies strip (Profile + active pilot on left; Credits + Gems pills on right).
     const statusBar = this.el('div', 'bw-dash-status-bar');
@@ -402,6 +416,13 @@ export class PortraitMenu {
     gemPill.append(this.icon('gem', 'bw-ico bw-ico-curr'), this.el('strong', '', `${opts.gems}`));
     currencies.append(crPill, gemPill);
     statusBar.append(profileBtn, currencies);
+    if (opts.desktop) {
+      const rightCluster = this.el('div', 'bw-dash-desktop-right');
+      rightCluster.append(statusBar, tools);
+      topbar.append(rightCluster);
+    } else {
+      topbar.append(tools);
+    }
 
     // Row 3: Dedicated aerial corridor where flyby planes pass exclusively.
     const skyLane = this.el('div', 'bw-dash-sky-lane');
@@ -466,11 +487,13 @@ export class PortraitMenu {
     });
     viewport.append(track);
 
-    // Pagination dots ONLY (no left/right arrow buttons).
+    // Pagination dots (with clickable prev/next arrows on Desktop widescreen).
     const dotsWrap = this.el('div', 'bw-stage-dots');
     dotsWrap.setAttribute('role', 'tablist');
     dotsWrap.setAttribute('aria-label', 'Selecionar fase');
     const dotButtons: HTMLButtonElement[] = [];
+    let prevArrow: HTMLButtonElement | undefined;
+    let nextArrow: HTMLButtonElement | undefined;
 
     // Primary Launch CTA + 3-Tile Bottom Dock (Pilotos, Hangar, Loja highlighted!).
     const actions = this.el('div', 'bw-dash-actions');
@@ -485,6 +508,8 @@ export class PortraitMenu {
         btn.classList.toggle('active', idx === currentIdx);
         btn.setAttribute('aria-selected', String(idx === currentIdx));
       });
+      if (prevArrow) prevArrow.disabled = currentIdx <= 0;
+      if (nextArrow) nextArrow.disabled = currentIdx >= opts.stages.length - 1;
       playBtn.disabled = !stage.unlocked;
       playBtn.className = `bw-mobile-button ${stage.unlocked ? 'primary' : 'secondary'} bw-dash-play`;
       playBtn.replaceChildren(
@@ -499,6 +524,14 @@ export class PortraitMenu {
       currentIdx = clamped;
       syncStageUI(false);
       if (changed) opts.onSelectStage(currentIdx);
+    };
+
+    this.onCarouselStep = (dir: -1 | 1) => {
+      const next = currentIdx + dir;
+      if (next >= 0 && next < opts.stages.length) {
+        this.onConfirm?.();
+        goToStage(next);
+      }
     };
 
     opts.stages.forEach((st, idx) => {
@@ -574,7 +607,23 @@ export class PortraitMenu {
       }, 90);
     });
 
-    carousel.append(viewport, dotsWrap);
+    if (opts.desktop) {
+      const stageNav = this.el('div', 'bw-stage-nav');
+      prevArrow = this.el('button', 'bw-stage-arrow prev', '‹');
+      prevArrow.type = 'button';
+      prevArrow.title = 'Rota anterior';
+      prevArrow.setAttribute('aria-label', 'Rota anterior');
+      this.bindAction(prevArrow, () => goToStage(currentIdx - 1));
+      nextArrow = this.el('button', 'bw-stage-arrow next', '›');
+      nextArrow.type = 'button';
+      nextArrow.title = 'Próxima rota';
+      nextArrow.setAttribute('aria-label', 'Próxima rota');
+      this.bindAction(nextArrow, () => goToStage(currentIdx + 1));
+      stageNav.append(prevArrow, dotsWrap, nextArrow);
+      carousel.append(viewport, stageNav);
+    } else {
+      carousel.append(viewport, dotsWrap);
+    }
 
     this.bindAction(playBtn, () => {
       const st = opts.stages[currentIdx];
@@ -605,8 +654,26 @@ export class PortraitMenu {
     }
 
     syncStageUI(true);
-    actions.append(playBtn, dock);
-    shell.append(topbar, statusBar, skyLane, carousel, actions);
+    if (opts.desktop) {
+      const brief = this.el('div', 'bw-desktop-flight-brief');
+      const briefLeft = this.el('div', 'bw-desktop-brief-copy');
+      briefLeft.append(
+        this.el('span', 'bw-desktop-brief-eyebrow', 'Esquadrão pronto para decolagem'),
+        this.el('strong', '', `${opts.pilotName} · ${opts.shipName}`),
+      );
+      brief.append(briefLeft);
+      if (opts.difficultyLabel) {
+        brief.append(this.el('span', 'bw-desktop-diff-pill', opts.difficultyLabel));
+      }
+      const kbdHint = this.el('p', 'bw-desktop-kbd-hint', '← / → trocar rota · Enter iniciar missão · F11 tela cheia');
+      actions.append(brief, playBtn, dock, kbdHint);
+      const desktopGrid = this.el('div', 'bw-desktop-home-grid');
+      desktopGrid.append(carousel, actions);
+      shell.append(topbar, skyLane, desktopGrid);
+    } else {
+      actions.append(playBtn, dock);
+      shell.append(topbar, statusBar, skyLane, carousel, actions);
+    }
     this.body?.append(shell);
   }
 
@@ -1263,7 +1330,15 @@ export class PortraitMenu {
     const items = [...scope?.querySelectorAll<HTMLButtonElement | HTMLInputElement>('button:not(:disabled),input:not(:disabled)') ?? []];
     if (!items.length) return;
     let index = items.indexOf(document.activeElement as HTMLButtonElement);
-    if (index < 0) index = 0;
+    if (index < 0) {
+      if (direction === 0 && confirm) {
+        const primary = scope?.querySelector<HTMLButtonElement>('.bw-dash-play:not(:disabled), .bw-mobile-button.primary:not(:disabled)');
+        const primaryIdx = primary ? items.indexOf(primary) : -1;
+        index = primaryIdx >= 0 ? primaryIdx : 0;
+      } else {
+        index = 0;
+      }
+    }
     else if (direction && !(horizontal && items[index] instanceof HTMLInputElement && items[index].type === 'range')) index = (index + direction + items.length) % items.length;
     const item = items[index]; item.focus({ preventScroll: true }); item.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     if (horizontal && direction && item instanceof HTMLInputElement && item.type === 'range') {

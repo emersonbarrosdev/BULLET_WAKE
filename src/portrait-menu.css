@@ -1538,6 +1538,461 @@
   .bw-mobile-flight [data-instrument=hull] { font-size: 16px; }
 }
 
+/* ==================== PC DESKTOP WIDESCREEN (.is-desktop) ==================== */
+.bw-mobile.is-desktop {
+  background-position: center center;
+}
+.bw-mobile.is-desktop .bw-mobile-body {
+  max-width: 1080px;
+  padding: 24px 36px 26px;
+  gap: 18px;
+}
+.bw-mobile.is-desktop .bw-mobile-footer {
+  max-width: none;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 13px max(36px, calc((100% - 1008px) / 2)) 16px;
+  gap: 14px;
+}
+.bw-mobile.is-desktop.bw-mobile-screen-pilot .bw-mobile-footer {
+  padding-inline: max(36px, calc((100% - 1048px) / 2));
+}
+.bw-mobile.is-desktop[data-screen="hangar"] .bw-mobile-footer {
+  padding-inline: max(36px, calc((100% - 948px) / 2));
+}
+.bw-mobile.is-desktop[data-screen="controls"] .bw-mobile-footer,
+.bw-mobile.is-desktop[data-screen="credits"] .bw-mobile-footer {
+  padding-inline: max(36px, calc((100% - 908px) / 2));
+}
+.bw-mobile.is-desktop .bw-mobile-footer > .bw-mobile-button {
+  width: auto;
+  min-width: 200px;
+  max-width: 300px;
+  min-height: 48px;
+  padding: 11px 24px;
+}
+.bw-mobile.is-desktop .bw-mobile-footer.row {
+  justify-content: space-between;
+}
+.bw-mobile.is-desktop .bw-mobile-footer.row > .bw-mobile-button.back {
+  flex: 0 0 auto;
+  min-width: 180px;
+}
+.bw-mobile.is-desktop .bw-mobile-footer.row > .bw-mobile-button:not(.back) {
+  flex: 0 0 auto;
+  min-width: 260px;
+}
+.bw-mobile.is-desktop h1 {
+  font-size: 28px;
+}
+
+/* Desktop Hover Polish */
+.bw-mobile.is-desktop button:not(:disabled):hover {
+  filter: brightness(1.1);
+}
+.bw-mobile.is-desktop .bw-dash-icon-btn:hover,
+.bw-mobile.is-desktop .bw-stage-arrow:not(:disabled):hover,
+.bw-mobile.is-desktop .bw-dash-tile:not(:disabled):hover,
+.bw-mobile.is-desktop .bw-paint-card:hover,
+.bw-mobile.is-desktop .bw-mobile-pilots button:hover,
+.bw-mobile.is-desktop .bw-stage-mini-card:not(:disabled):hover {
+  transform: translateY(-2px);
+  border-color: rgba(132, 232, 255, 0.85);
+  box-shadow: 0 10px 24px rgba(2, 12, 32, 0.56), 0 0 16px rgba(72, 214, 255, 0.22);
+}
+.bw-mobile.is-desktop .bw-dash-play:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(245, 166, 26, 0.48), inset 0 1px 0 rgba(255, 253, 226, 0.9);
+}
+.bw-mobile.is-desktop .bw-dash-profile:hover {
+  background: rgba(56, 154, 226, 0.22);
+}
+.bw-mobile.is-desktop .bw-stage-hero-card:hover {
+  border-color: rgba(138, 234, 255, 0.88);
+  box-shadow: 0 18px 38px rgba(2, 10, 26, 0.68), 0 0 22px rgba(74, 216, 255, 0.22);
+}
+
+/* Desktop Home Dashboard (Widescreen 2-Column Cockpit) */
+.bw-mobile.is-desktop.bw-mobile-screen-title {
+  background:
+    linear-gradient(180deg, rgba(4, 18, 46, 0.58) 0%, rgba(5, 20, 48, 0.14) 22%, rgba(4, 18, 44, 0.34) 60%, rgba(3, 11, 28, 0.92) 100%),
+    url('/assets/arcade/ui/sky-panorama.webp') center center/cover;
+}
+.bw-mobile.is-desktop.bw-mobile-screen-title .bw-mobile-body {
+  max-width: 1180px;
+  padding: 20px 36px 24px;
+}
+.bw-mobile.is-desktop .bw-dash {
+  gap: 12px;
+  justify-content: flex-start;
+}
+.bw-mobile.is-desktop .bw-dash-topbar {
+  gap: 18px;
+  padding-bottom: 4px;
+}
+.bw-mobile.is-desktop .bw-dash-logo img {
+  height: 56px;
+  max-width: 196px;
+}
+.bw-dash-desktop-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.bw-mobile.is-desktop .bw-dash-status-bar {
+  padding: 4px 10px 4px 5px;
+  gap: 14px;
+  border-radius: 16px;
+}
+.bw-mobile.is-desktop .bw-dash-profile {
+  flex: 0 1 auto;
+  padding-right: 10px;
+}
+.bw-mobile.is-desktop .bw-dash-sky-lane {
+  height: clamp(54px, 9vh, 84px);
+}
+.bw-desktop-home-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.38fr) minmax(320px, 0.92fr);
+  gap: 28px;
+  align-items: center;
+}
+.bw-mobile.is-desktop .bw-stage-carousel {
+  width: 100%;
+  height: 100%;
+  max-height: 490px;
+  justify-content: center;
+  gap: 10px;
+}
+.bw-mobile.is-desktop .bw-stage-viewport {
+  width: 100%;
+  max-width: 660px;
+  flex: 0 1 auto;
+  border-radius: 22px;
+}
+.bw-mobile.is-desktop .bw-stage-hero-media {
+  flex: none;
+  aspect-ratio: 16 / 9;
+  min-height: 220px;
+  max-height: 300px;
+}
+.bw-mobile.is-desktop .bw-stage-hero-body {
+  padding: 16px 20px 18px;
+  gap: 10px;
+}
+.bw-mobile.is-desktop .bw-stage-hero-title-row h2 {
+  font-size: 24px;
+}
+.bw-mobile.is-desktop .bw-stage-hero-summary {
+  font-size: 15px;
+  line-height: 1.42;
+}
+.bw-mobile.is-desktop .bw-stage-hero-meta {
+  font-size: 14px;
+  padding-top: 10px;
+}
+.bw-stage-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.bw-stage-arrow {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(94, 218, 255, 0.54);
+  background: linear-gradient(160deg, rgba(16, 56, 104, 0.92), rgba(7, 25, 53, 0.94));
+  color: #e4f7ff;
+  font: 800 24px/1 'Oxanium', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0 0 2px;
+}
+.bw-stage-arrow:disabled {
+  opacity: 0.34;
+  cursor: default;
+}
+
+/* Desktop Right Command Deck */
+.bw-mobile.is-desktop .bw-dash-actions {
+  gap: 14px;
+  padding: 20px 22px 18px;
+  border-radius: 22px;
+  border: 1.5px solid rgba(92, 220, 255, 0.42);
+  background: linear-gradient(168deg, rgba(11, 38, 76, 0.84), rgba(5, 17, 38, 0.92));
+  backdrop-filter: blur(8px);
+  box-shadow: 0 20px 44px rgba(2, 10, 26, 0.56), inset 0 1px 0 rgba(182, 240, 255, 0.22);
+}
+.bw-desktop-flight-brief {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 13px;
+  background: rgba(4, 17, 38, 0.72);
+  border: 1px solid rgba(84, 204, 246, 0.3);
+}
+.bw-desktop-brief-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.bw-desktop-brief-eyebrow {
+  font: 700 10.5px/1.1 'Oxanium', sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7ee8ff;
+}
+.bw-desktop-brief-copy strong {
+  font: 800 16px/1.2 'Oxanium', sans-serif;
+  color: #ffe57d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-desktop-diff-pill {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(56, 176, 238, 0.2);
+  border: 1px solid rgba(102, 226, 255, 0.52);
+  color: #c8f5ff;
+  font: 700 11.5px/1.1 'Oxanium', sans-serif;
+  text-transform: uppercase;
+}
+.bw-mobile.is-desktop .bw-dash-play {
+  min-height: 60px;
+  font-size: 19px;
+  border-radius: 16px;
+}
+.bw-mobile.is-desktop .bw-dash-dock {
+  gap: 12px;
+}
+.bw-mobile.is-desktop .bw-dash-tile {
+  min-height: 84px;
+  gap: 7px;
+  font-size: 14px;
+  border-radius: 15px;
+}
+.bw-mobile.is-desktop .bw-ico-tile {
+  width: 26px;
+  height: 26px;
+}
+.bw-desktop-kbd-hint {
+  text-align: center;
+  font: 600 12.5px/1.25 'Rajdhani', sans-serif;
+  color: #9dc2de;
+  letter-spacing: 0.03em;
+  padding-top: 2px;
+}
+
+/* Desktop All Stages Modal */
+.bw-mobile.is-desktop .bw-stages-sheet {
+  max-width: 780px;
+  height: auto;
+  max-height: 82vh;
+  padding: 22px 24px;
+}
+.bw-mobile.is-desktop .bw-stages-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.bw-mobile.is-desktop .bw-stage-mini-name {
+  font-size: 16px;
+  padding: 12px 10px;
+}
+
+/* Desktop Pilot Select (2-column Hangar Spotlight + Bottom 5-Pilot Strip) */
+.bw-mobile.is-desktop.bw-mobile-screen-pilot {
+  background-position: center 45%;
+}
+.bw-mobile.is-desktop.bw-mobile-screen-pilot .bw-mobile-body {
+  max-width: 1120px;
+  padding: 18px 36px 16px;
+  gap: 16px;
+}
+.bw-mobile.is-desktop .bw-pilot-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.14fr);
+  align-items: center;
+  gap: 28px;
+}
+.bw-mobile.is-desktop .bw-pilot-stage {
+  gap: 20px;
+  padding: 10px 6px;
+}
+.bw-mobile.is-desktop .bw-pilot-avatar {
+  width: 148px;
+  height: 148px;
+  border-radius: 24px;
+  padding: 6px;
+}
+.bw-mobile.is-desktop .bw-pilot-ship-bay {
+  width: 154px;
+  height: 154px;
+}
+.bw-mobile.is-desktop .bw-pilot-title-plate,
+.bw-mobile.is-desktop .bw-ship-plate {
+  padding: 7px 15px;
+}
+.bw-mobile.is-desktop .bw-pilot-title-plate h2 { font-size: 24px; }
+.bw-mobile.is-desktop .bw-pilot-origin { font-size: 12.5px; }
+.bw-mobile.is-desktop .bw-ship-plate h3 { font-size: 21px; }
+.bw-mobile.is-desktop .bw-pilot-dossier {
+  padding: 18px 20px;
+  gap: 14px;
+  border-radius: 20px;
+}
+.bw-mobile.is-desktop .bw-pilot-bio { font-size: 15px; line-height: 1.4; }
+.bw-mobile.is-desktop .bw-loadout-pill { padding: 9px 12px; gap: 3px; }
+.bw-mobile.is-desktop .bw-pilot-kit,
+.bw-mobile.is-desktop .bw-pilot-special { font-size: 14px; }
+.bw-mobile.is-desktop .bw-stat-bars { padding: 11px 14px; gap: 8px; }
+.bw-mobile.is-desktop .bw-stat-row { grid-template-columns: 104px minmax(0, 1fr); }
+.bw-mobile.is-desktop .bw-stat-label { font-size: 12.5px; }
+.bw-mobile.is-desktop .bw-stat-track { height: 13px; gap: 6px; }
+.bw-mobile.is-desktop .bw-pilot-hist-cell { padding: 8px 10px; }
+.bw-mobile.is-desktop .bw-pilot-hist-cell span { font-size: 12px; }
+.bw-mobile.is-desktop .bw-pilot-hist-cell strong { font-size: 16px; }
+.bw-mobile.is-desktop .bw-mobile-pilots { gap: 12px; }
+.bw-mobile.is-desktop .bw-mobile-pilots button {
+  min-height: 96px;
+  padding: 10px 8px;
+  gap: 5px;
+  font-size: 14.5px;
+  border-radius: 14px;
+}
+.bw-mobile.is-desktop .bw-pilot-thumb,
+.bw-mobile.is-desktop .bw-mobile-pilots img { width: 52px; height: 52px; }
+.bw-mobile.is-desktop .bw-mobile-pilots small { font-size: 11.5px; }
+
+/* Desktop Hangar & Perfil (Widescreen Multi-Column) */
+.bw-mobile.is-desktop[data-screen="hangar"] .bw-mobile-body {
+  max-width: 1020px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  align-items: start;
+  gap: 18px 22px;
+  padding-top: 22px;
+}
+.bw-mobile.is-desktop[data-screen="hangar"] .bw-mobile-header,
+.bw-mobile.is-desktop[data-screen="hangar"] .bw-mobile-tabs,
+.bw-mobile.is-desktop[data-screen="hangar"] .bw-paint-stage,
+.bw-mobile.is-desktop[data-screen="hangar"] .bw-paint-list,
+.bw-mobile.is-desktop[data-screen="hangar"] .bw-ach-summary,
+.bw-mobile.is-desktop[data-screen="hangar"] .bw-ach-list {
+  grid-column: 1 / -1;
+}
+.bw-mobile.is-desktop[data-screen="hangar"] .bw-mobile-tabs {
+  max-width: 540px;
+}
+.bw-mobile.is-desktop .bw-paint-stage {
+  padding: 18px 22px;
+  gap: 20px;
+}
+.bw-mobile.is-desktop .bw-paint-bay { width: 104px !important; height: 104px !important; }
+.bw-mobile.is-desktop .bw-paint-stage-copy h2 { font-size: 22px; }
+.bw-mobile.is-desktop .bw-paint-stage-copy p { font-size: 15px; }
+.bw-mobile.is-desktop .bw-paint-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.bw-mobile.is-desktop .bw-paint-card {
+  min-height: 78px;
+  padding: 14px 16px;
+}
+.bw-mobile.is-desktop .bw-ach-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.bw-mobile.is-desktop[data-screen="hangar"] .bw-mobile-metrics {
+  gap: 12px;
+}
+.bw-mobile.is-desktop[data-screen="hangar"] .bw-mobile-metrics > div {
+  min-height: 82px;
+  padding: 16px 16px;
+}
+
+/* Desktop Settings (2x2 Widescreen Dashboard) */
+.bw-mobile.is-desktop[data-screen="settings"] .bw-mobile-body {
+  max-width: 1080px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 14px 20px;
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+.bw-mobile.is-desktop[data-screen="settings"] .bw-mobile-header {
+  grid-column: 1 / -1;
+  padding-bottom: 8px;
+}
+.bw-mobile.is-desktop[data-screen="settings"] .bw-settings-group {
+  padding: 12px 14px;
+  gap: 8px;
+}
+.bw-mobile.is-desktop[data-screen="settings"] .bw-toggle-row,
+.bw-mobile.is-desktop[data-screen="settings"] .bw-action-row {
+  min-height: 42px;
+  padding: 8px 12px;
+}
+.bw-mobile.is-desktop[data-screen="settings"] .bw-mobile-volume {
+  padding: 8px 12px;
+  gap: 4px;
+}
+.bw-mobile.is-desktop[data-screen="settings"] .bw-mobile-volume input {
+  height: 24px;
+}
+
+/* Desktop Controls & Credits (2-Column Cards) */
+.bw-mobile.is-desktop[data-screen="controls"] .bw-mobile-body,
+.bw-mobile.is-desktop[data-screen="credits"] .bw-mobile-body {
+  max-width: 980px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 14px 18px;
+}
+.bw-mobile.is-desktop[data-screen="controls"] .bw-mobile-header,
+.bw-mobile.is-desktop[data-screen="controls"] .bw-mobile-tabs,
+.bw-mobile.is-desktop[data-screen="controls"] .bw-mobile-copy,
+.bw-mobile.is-desktop[data-screen="credits"] .bw-mobile-header {
+  grid-column: 1 / -1;
+}
+.bw-mobile.is-desktop[data-screen="controls"] .bw-mobile-tabs {
+  max-width: 420px;
+  justify-self: center;
+  width: 100%;
+}
+
+/* Desktop Dialogs & Modals */
+.bw-mobile.is-desktop.bw-mobile-is-dialog .bw-mobile-body {
+  max-width: 520px;
+  padding: 26px 28px 24px;
+  gap: 16px;
+}
+.bw-mobile.is-desktop[data-screen="result"] .bw-mobile-body {
+  max-width: 580px;
+}
+.bw-mobile.is-desktop[data-screen="result"] .bw-mobile-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.bw-mobile.is-desktop .bw-modal-card {
+  max-width: 470px;
+  padding: 24px 24px 22px;
+}
+
 /* Motion & interaction feedback */
 @keyframes bw-fly-right {
   0% { transform: translateX(0) scaleX(-1); }

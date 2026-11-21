@@ -1588,11 +1588,12 @@ export class ArcadeScene extends Phaser.Scene {
   private refreshPortraitMenu(): void {
     const screen = this.screen;
     const mobile = isMobileDisplay();
-    const liveBackdrop = mobile && !!this.world && ['pause', 'confirm-exit', 'defeat', 'result', 'controller-orientation', 'controller-lost'].includes(screen);
-    const covered = mobile && !['loading', 'intro', 'play'].includes(screen) && !liveBackdrop;
+    const desktop = !mobile;
+    const liveBackdrop = !!this.world && ['pause', 'confirm-exit', 'defeat', 'result', 'controller-orientation', 'controller-lost'].includes(screen);
+    const covered = !['loading', 'intro', 'play'].includes(screen) && !liveBackdrop;
     this.cameras.main.setVisible(!covered);
     if (this.game.loop.fpsLimit !== 0) this.game.loop.setFPSLimit(0);
-    if (!mobile || ['loading', 'intro', 'play'].includes(screen)) {
+    if (['loading', 'intro', 'play'].includes(screen)) {
       this.portraitMenu.hide();
       this.ui?.setVisible(!['loading', 'intro'].includes(screen));
       return;
@@ -1611,7 +1612,7 @@ export class ArcadeScene extends Phaser.Scene {
     };
     const compactHeader = screen === 'pilot' || screen === 'hangar';
     const headerBadge = compactHeader ? `${profile.wallet.credits} CR` : undefined;
-    view.begin(screen, titles[screen] ?? 'Bullet Wake', '', { compactHeader, headerBadge, footerRow: screen === 'pilot', liveBackdrop });
+    view.begin(screen, titles[screen] ?? 'Bullet Wake', '', { compactHeader, headerBadge, footerRow: screen === 'pilot', liveBackdrop, desktop });
     this.ui.setVisible(false);
     if (liveBackdrop && w) {
       this.backdrop.draw(w.elapsed, w, this.quality, false);
@@ -1672,6 +1673,8 @@ export class ArcadeScene extends Phaser.Scene {
       this.selectedHomeStage = activeStageIdx;
 
       view.homeDashboard({
+        desktop,
+        difficultyLabel: DIFFICULTY_PROFILES[normalizeGameDifficulty(settings.difficulty)].label,
         stages,
         activeStageIndex: activeStageIdx,
         flybys: [0, 4, 8].map(start => Array.from({ length: 4 }, (_, i) => frame(UI_TEX.wingmenAnim, start + i))),
@@ -1722,7 +1725,7 @@ export class ArcadeScene extends Phaser.Scene {
         onControls: () => {
           this.audio.unlock();
           this.pauseOrigin = 'title';
-          this.controlsTab = this.mobileDisplay.connected ? 'gamepad' : 'android';
+          this.controlsTab = connectedPad() ? 'gamepad' : (desktop ? 'pc' : 'android');
           this.show('controls');
         },
         onCredits: () => {
@@ -1998,15 +2001,41 @@ export class ArcadeScene extends Phaser.Scene {
       }
       view.button('Voltar', () => this.show('title'), { footer: true, style: 'back' });
     } else if (screen === 'controls') {
-      if (this.controlsTab === 'pc') this.controlsTab = 'android';
-      view.tabs([
-        { label: 'Touch', active: this.controlsTab === 'android', action: () => { this.controlsTab = 'android'; this.refreshPortraitMenu(); } },
-        { label: 'Controle', active: this.controlsTab === 'gamepad', action: () => { this.controlsTab = 'gamepad'; this.refreshPortraitMenu(); } },
-      ]);
-      const rows = this.controlsTab === 'android'
-        ? [['Movimento livre', 'Toque e arraste em qualquer área livre. O controle acompanha seu dedo em todas as direções e para ao soltar.'], ['Tiro automático', 'A nave dispara automaticamente durante o voo. Não é preciso segurar botão de tiro.'], ['Tiro carregado', 'Segure CARGA e solte para liberar o disparo carregado.'], ['Especial', 'Toque em ESP para ativar a habilidade especial do piloto.'], ['Pausa', 'Toque no botão de pausa no canto superior direito.']]
-        : [['Analógico esquerdo / direcional', 'Mover a nave.'], ['○ / B ou R1 / RB', 'Tiro principal.'], ['□ / X', 'Segurar e soltar o tiro carregado.'], ['× / A ou R2 / RT', 'Especial do piloto.'], ['Options / Start', 'Pausar ou retomar.']];
-      rows.forEach(([title, detail]) => view.card(title, detail));
+      if (desktop) {
+        if (this.controlsTab === 'android') this.controlsTab = 'pc';
+        view.tabs([
+          { label: 'Teclado', active: this.controlsTab === 'pc', action: () => { this.controlsTab = 'pc'; this.refreshPortraitMenu(); } },
+          { label: 'Controle', active: this.controlsTab === 'gamepad', action: () => { this.controlsTab = 'gamepad'; this.refreshPortraitMenu(); } },
+        ]);
+        const rows = this.controlsTab === 'pc'
+          ? [
+            ['WASD / Setas', 'Movimenta a nave em 8 direções com resposta imediata.'],
+            ['Espaço', 'Tiro principal contínuo (ou ative Disparo automático em Configurações).'],
+            ['Tecla Z', 'Segure para carregar energia e solte para disparar o tiro carregado.'],
+            ['Tecla X', 'Ativa a habilidade especial do piloto selecionado.'],
+            ['Shift', 'Modo foco: reduz velocidade para desvios precisos e exibe o núcleo da nave.'],
+            ['Esc / F11', 'Esc pausa ou retoma a partida. F11 alterna modo tela cheia.'],
+          ]
+          : [
+            ['Analógico esquerdo / D-Pad', 'Movimenta a nave em 8 direções.'],
+            ['○ / B ou R1 / RB', 'Tiro principal contínuo.'],
+            ['□ / X', 'Segure para carregar e solte para disparar o tiro carregado.'],
+            ['× / A ou R2 / RT', 'Ativa a habilidade especial do piloto.'],
+            ['L1 / LB', 'Modo foco para movimentação precisa entre projéteis.'],
+            ['Options / Start', 'Pausar ou retomar a partida.'],
+          ];
+        rows.forEach(([title, detail]) => view.card(title, detail));
+      } else {
+        if (this.controlsTab === 'pc') this.controlsTab = 'android';
+        view.tabs([
+          { label: 'Touch', active: this.controlsTab === 'android', action: () => { this.controlsTab = 'android'; this.refreshPortraitMenu(); } },
+          { label: 'Controle', active: this.controlsTab === 'gamepad', action: () => { this.controlsTab = 'gamepad'; this.refreshPortraitMenu(); } },
+        ]);
+        const rows = this.controlsTab === 'android'
+          ? [['Movimento livre', 'Toque e arraste em qualquer área livre. O controle acompanha seu dedo em todas as direções e para ao soltar.'], ['Tiro automático', 'A nave dispara automaticamente durante o voo. Não é preciso segurar botão de tiro.'], ['Tiro carregado', 'Segure CARGA e solte para liberar o disparo carregado.'], ['Especial', 'Toque em ESP para ativar a habilidade especial do piloto.'], ['Pausa', 'Toque no botão de pausa no canto superior direito.']]
+          : [['Analógico esquerdo / direcional', 'Mover a nave.'], ['○ / B ou R1 / RB', 'Tiro principal.'], ['□ / X', 'Segurar e soltar o tiro carregado.'], ['× / A ou R2 / RT', 'Especial do piloto.'], ['Options / Start', 'Pausar ou retomar.']];
+        rows.forEach(([title, detail]) => view.card(title, detail));
+      }
       view.text('Casco: 4 impactos. REPAIR recupera 1 segmento. P recupera POWER.', 'hint');
       view.button('Voltar', () => this.show(this.world ? 'pause' : this.pauseOrigin), { footer: true, style: 'back' });
     } else if (screen === 'settings') {
@@ -2033,6 +2062,14 @@ export class ArcadeScene extends Phaser.Scene {
           active: curDiff === d,
           action: () => { globalSave.updateSettings({ difficulty: d }); this.refreshPortraitMenu(); },
         })));
+        if (desktop) {
+          view.toggle('Disparo automático', settings.rapidFire, () => {
+            const next = !settings.rapidFire;
+            globalSave.updateSettings({ rapidFire: next });
+            if (this.world) this.world.accessibility = next;
+            this.refreshPortraitMenu();
+          }, 'Dispara sem precisar manter Espaço pressionado');
+        }
         view.toggle('Modo assistido', settings.assisted, () => {
           globalSave.updateSettings({ assisted: !settings.assisted });
           this.refreshPortraitMenu();
@@ -2073,29 +2110,39 @@ export class ArcadeScene extends Phaser.Scene {
           globalProfileStore.updateSettings({ hapticsEnabled: next });
           if (next) this.triggerHaptic('tap');
           this.refreshPortraitMenu();
-        }, 'Retorno tátil nos botões, carga, especial e impactos');
+        }, desktop ? 'Retorno tátil quando um controle compatível estiver conectado' : 'Retorno tátil nos botões, carga, especial e impactos');
       });
-      view.settingsGroup('Tela, controles e privacidade', () => {
-        view.segmented('Orientação', [
-          {
-            label: 'Retrato',
-            active: !this.landscapeEnabled,
-            action: () => { void this.changeMobileOrientation('portrait'); },
-          },
-          {
-            label: 'Paisagem',
-            active: this.landscapeEnabled,
-            disabled: !this.mobileDisplay.connected,
-            locked: !this.mobileDisplay.connected,
-            action: () => { if (this.mobileDisplay.connected) void this.changeMobileOrientation('landscape'); },
-          },
-        ], this.mobileDisplay.connected ? 'Controle conectado · USB / Bluetooth' : 'Conecte um controle USB ou Bluetooth para usar paisagem.');
-        view.actionRow('Ajustar controles touch', 'Posição, tamanho, mão dominante e opacidade', () => this.show('touch-settings'));
-        view.actionRow('Política de Privacidade e LGPD', 'Consulte como seus dados locais são protegidos (Lei nº 13.709/2018)', () => {
-          this.showPrivacyModal = true;
-          this.refreshPortraitMenu();
+      if (desktop) {
+        view.settingsGroup('Privacidade e exibição', () => {
+          view.actionRow('Política de Privacidade e LGPD', 'Consulte como seus dados locais são protegidos (Lei nº 13.709/2018)', () => {
+            this.showPrivacyModal = true;
+            this.refreshPortraitMenu();
+          });
+          view.text('Pressione F11 a qualquer momento para alternar entre janela e tela cheia.', 'hint');
         });
-      });
+      } else {
+        view.settingsGroup('Tela, controles e privacidade', () => {
+          view.segmented('Orientação', [
+            {
+              label: 'Retrato',
+              active: !this.landscapeEnabled,
+              action: () => { void this.changeMobileOrientation('portrait'); },
+            },
+            {
+              label: 'Paisagem',
+              active: this.landscapeEnabled,
+              disabled: !this.mobileDisplay.connected,
+              locked: !this.mobileDisplay.connected,
+              action: () => { if (this.mobileDisplay.connected) void this.changeMobileOrientation('landscape'); },
+            },
+          ], this.mobileDisplay.connected ? 'Controle conectado · USB / Bluetooth' : 'Conecte um controle USB ou Bluetooth para usar paisagem.');
+          view.actionRow('Ajustar controles touch', 'Posição, tamanho, mão dominante e opacidade', () => this.show('touch-settings'));
+          view.actionRow('Política de Privacidade e LGPD', 'Consulte como seus dados locais são protegidos (Lei nº 13.709/2018)', () => {
+            this.showPrivacyModal = true;
+            this.refreshPortraitMenu();
+          });
+        });
+      }
       if (this.showPrivacyModal) {
         view.privacyPolicyModal({
           acceptedAt: profile.account.privacyAcceptedAt ?? null,
@@ -2388,15 +2435,18 @@ export class ArcadeScene extends Phaser.Scene {
           this.show('controls');
           return;
         }
-        if (just('ONE') && this.controlsTab !== 'pc') { this.controlsTab = 'pc'; this.nextControlsFocus = 0; this.show('controls'); return; }
+        if (just('ONE') && this.controlsTab !== 'pc' && !isMobileDisplay()) { this.controlsTab = 'pc'; this.nextControlsFocus = 0; this.show('controls'); return; }
         if (just('TWO') && this.controlsTab !== 'gamepad') { this.controlsTab = 'gamepad'; this.nextControlsFocus = 1; this.show('controls'); return; }
-        if (just('THREE') && this.controlsTab !== 'android') { this.controlsTab = 'android'; this.nextControlsFocus = 2; this.show('controls'); return; }
+        if (just('THREE') && this.controlsTab !== 'android' && isMobileDisplay()) { this.controlsTab = 'android'; this.nextControlsFocus = 2; this.show('controls'); return; }
       }
       if (this.portraitMenu.visible) {
         const down = just('DOWN') || gp.down, up = just('UP') || gp.up;
         const right = just('RIGHT') || gp.right, left = just('LEFT') || gp.left;
         const confirm = just('ENTER') || just('SPACE') || gp.confirm;
-        if (down || up || right || left || confirm) {
+        if (!isMobileDisplay() && this.screen === 'title' && !this.portraitMenu.hasOpenModal && (left || right) && !down && !up && !confirm) {
+          this.audio.unlock();
+          this.portraitMenu.stepCarousel(right ? 1 : -1);
+        } else if (down || up || right || left || confirm) {
           this.audio.unlock();
           this.portraitMenu.navigate(down || right ? 1 : up || left ? -1 : 0, confirm, !!(right || left));
         }
