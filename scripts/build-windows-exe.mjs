@@ -196,6 +196,7 @@ app.whenReady().then(() => {
         'Content-Type': mime,
         'Accept-Ranges': 'bytes',
         'Content-Length': String(stat.size),
+        'Cache-Control': 'no-store',
       },
     });
   });
